@@ -38,6 +38,9 @@ export const SUPPORTED_TOKENS = [
 
 export type SupportedTokenSymbol = (typeof SUPPORTED_TOKENS)[number]["symbol"];
 
+/** Default currency for listings and offers — Circle-native USDC on Starknet. */
+export const DEFAULT_CURRENCY: SupportedTokenSymbol = "USDC";
+
 export const SUPPORTED_NETWORKS = ["mainnet", "sepolia"] as const;
 export type Network = (typeof SUPPORTED_NETWORKS)[number];
 

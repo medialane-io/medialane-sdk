@@ -10,7 +10,7 @@ import {
 } from "starknet";
 import { IPMarketplaceABI } from "../abis.js";
 import type { ResolvedConfig } from "../config.js";
-import { SUPPORTED_TOKENS } from "../constants.js";
+import { SUPPORTED_TOKENS, DEFAULT_CURRENCY } from "../constants.js";
 import type {
   CreateListingParams,
   MakeOfferParams,
@@ -83,7 +83,7 @@ export async function createListing(
   params: CreateListingParams,
   config: ResolvedConfig
 ): Promise<TxResult> {
-  const { nftContract, tokenId, price, currency, durationSeconds } = params;
+  const { nftContract, tokenId, price, currency = DEFAULT_CURRENCY, durationSeconds } = params;
   const { contract, provider } = makeContract(config);
 
   const token = resolveToken(currency);
@@ -191,7 +191,7 @@ export async function makeOffer(
   params: MakeOfferParams,
   config: ResolvedConfig
 ): Promise<TxResult> {
-  const { nftContract, tokenId, price, currency, durationSeconds } = params;
+  const { nftContract, tokenId, price, currency = DEFAULT_CURRENCY, durationSeconds } = params;
   const { contract, provider } = makeContract(config);
 
   const token = resolveToken(currency);

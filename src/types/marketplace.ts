@@ -43,7 +43,8 @@ export interface CreateListingParams {
   nftContract: string;
   tokenId: string;
   price: string;
-  currency: string;
+  /** Currency symbol or token address. Defaults to "USDC" (native). */
+  currency?: string;
   durationSeconds: number;
 }
 
@@ -51,7 +52,8 @@ export interface MakeOfferParams {
   nftContract: string;
   tokenId: string;
   price: string;
-  currency: string;
+  /** Currency symbol or token address. Defaults to "USDC" (native). */
+  currency?: string;
   durationSeconds: number;
 }
 
