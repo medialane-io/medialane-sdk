@@ -12,6 +12,7 @@ import type {
   ApiMetadataUpload,
   ApiPortalMe,
   ApiPortalKey,
+  ApiPortalKeyCreated,
   ApiUsageDay,
   ApiWebhookEndpoint,
   ApiWebhookCreated,
@@ -254,6 +255,14 @@ export class ApiClient {
 
   getApiKeys(): Promise<ApiResponse<ApiPortalKey[]>> {
     return this.get<ApiResponse<ApiPortalKey[]>>("/v1/portal/keys");
+  }
+
+  createApiKey(label?: string): Promise<ApiResponse<ApiPortalKeyCreated>> {
+    return this.post<ApiResponse<ApiPortalKeyCreated>>("/v1/portal/keys", label ? { label } : {});
+  }
+
+  deleteApiKey(id: string): Promise<ApiResponse<{ id: string; status: string }>> {
+    return this.del<ApiResponse<{ id: string; status: string }>>(`/v1/portal/keys/${id}`);
   }
 
   getUsage(): Promise<ApiResponse<ApiUsageDay[]>> {

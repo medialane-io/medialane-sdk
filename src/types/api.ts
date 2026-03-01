@@ -263,6 +263,14 @@ export interface ApiPortalKey {
   createdAt: string;
 }
 
+export interface ApiPortalKeyCreated {
+  id: string;
+  prefix: string;
+  label: string | null;
+  /** Plaintext key — shown ONCE at creation */
+  plaintext: string;
+}
+
 export interface ApiUsageDay {
   day: string;
   requests: number;

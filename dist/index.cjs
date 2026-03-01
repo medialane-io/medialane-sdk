@@ -1000,6 +1000,12 @@ var ApiClient = class {
   getApiKeys() {
     return this.get("/v1/portal/keys");
   }
+  createApiKey(label) {
+    return this.post("/v1/portal/keys", label ? { label } : {});
+  }
+  deleteApiKey(id) {
+    return this.del(`/v1/portal/keys/${id}`);
+  }
   getUsage() {
     return this.get("/v1/portal/usage");
   }
