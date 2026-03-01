@@ -3,10 +3,14 @@ import { MarketplaceModule } from "./marketplace/index.js";
 import { ApiClient } from "./api/client.js";
 
 export class MedialaneClient {
+  /** On-chain marketplace interactions (create listing, fulfill order, etc.) */
   readonly marketplace: MarketplaceModule;
-  readonly indexer: ApiClient;
-  readonly tokens: ApiClient;
-  readonly collections: ApiClient;
+
+  /**
+   * Off-chain API client — covers all /v1/* backend endpoints.
+   * Requires `backendUrl` in config; pass `apiKey` for authenticated routes.
+   */
+  readonly api: ApiClient;
 
   private readonly config: ResolvedConfig;
 
@@ -16,23 +20,17 @@ export class MedialaneClient {
     this.marketplace = new MarketplaceModule(this.config);
 
     if (!this.config.backendUrl) {
-      const noBackend = new Proxy({} as ApiClient, {
+      this.api = new Proxy({} as ApiClient, {
         get(_target, prop) {
           return () => {
             throw new Error(
-              `backendUrl not configured. Pass backendUrl to MedialaneClient to use .${String(prop)}()`
+              `backendUrl not configured. Pass backendUrl to MedialaneClient to use .api.${String(prop)}()`
             );
           };
         },
       });
-      this.indexer = noBackend;
-      this.tokens = noBackend;
-      this.collections = noBackend;
     } else {
-      const api = new ApiClient(this.config.backendUrl);
-      this.indexer = api;
-      this.tokens = api;
-      this.collections = api;
+      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey);
     }
   }
 

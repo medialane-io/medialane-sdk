@@ -5,10 +5,12 @@ export type SupportedToken = (typeof SUPPORTED_TOKENS)[number];
 /**
  * Parse a human-readable amount (e.g. "1.5") to its raw integer string
  * representation given the token's decimal places.
+ * Uses pure BigInt arithmetic to avoid floating point precision loss.
  */
 export function parseAmount(human: string, decimals: number): string {
-  const factor = Math.pow(10, decimals);
-  return BigInt(Math.floor(parseFloat(human) * factor)).toString();
+  const [whole, frac = ""] = human.split(".");
+  const fracPadded = frac.padEnd(decimals, "0").slice(0, decimals);
+  return (BigInt(whole) * BigInt(10) ** BigInt(decimals) + BigInt(fracPadded)).toString();
 }
 
 /**

@@ -20,6 +20,7 @@ import type {
   TxResult,
 } from "../types/marketplace.js";
 import { stringifyBigInts } from "../utils/bigint.js";
+import { parseAmount } from "../utils/token.js";
 import {
   buildOrderTypedData,
   buildFulfillmentTypedData,
@@ -66,9 +67,6 @@ function resolveToken(currency: string) {
   return token;
 }
 
-function computePriceWei(price: string, decimals: number): string {
-  return BigInt(Math.floor(parseFloat(price) * Math.pow(10, decimals))).toString();
-}
 
 /**
  * Create a listing — offerer offers ERC721, asks for ERC20.
@@ -82,7 +80,7 @@ export async function createListing(
   const { contract, provider } = makeContract(config);
 
   const token = resolveToken(currency);
-  const priceWei = computePriceWei(price, token.decimals);
+  const priceWei = parseAmount(price, token.decimals);
 
   const now = Math.floor(Date.now() / 1000);
   const startTime = now + 300;
@@ -188,7 +186,7 @@ export async function makeOffer(
   const { contract, provider } = makeContract(config);
 
   const token = resolveToken(currency);
-  const priceWei = computePriceWei(price, token.decimals);
+  const priceWei = parseAmount(price, token.decimals);
 
   const now = Math.floor(Date.now() / 1000);
   const startTime = now + 300;

@@ -29,16 +29,20 @@ declare const MedialaneConfigSchema: z.ZodObject<{
     network: z.ZodDefault<z.ZodEnum<["mainnet", "sepolia"]>>;
     rpcUrl: z.ZodOptional<z.ZodString>;
     backendUrl: z.ZodOptional<z.ZodString>;
+    /** API key for authenticated /v1/* backend endpoints */
+    apiKey: z.ZodOptional<z.ZodString>;
     marketplaceContract: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     network: "mainnet" | "sepolia";
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
+    apiKey?: string | undefined;
     marketplaceContract?: string | undefined;
 }, {
     network?: "mainnet" | "sepolia" | undefined;
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
+    apiKey?: string | undefined;
     marketplaceContract?: string | undefined;
 }>;
 type MedialaneConfig = z.input<typeof MedialaneConfigSchema>;
@@ -46,6 +50,7 @@ interface ResolvedConfig {
     network: Network;
     rpcUrl: string;
     backendUrl: string | undefined;
+    apiKey: string | undefined;
     marketplaceContract: string;
 }
 declare function resolveConfig(raw: MedialaneConfig): ResolvedConfig;
@@ -136,6 +141,22 @@ declare class MarketplaceModule {
 
 type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
 type SortOrder = "price_asc" | "price_desc" | "recent";
+type ActivityType = "transfer" | "sale" | "listing" | "offer" | "cancelled";
+type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER";
+type IntentStatus = "PENDING" | "SIGNED" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
+type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANCELLED" | "TRANSFER";
+type WebhookStatus = "ACTIVE" | "DISABLED";
+type ApiKeyStatus = "ACTIVE" | "REVOKED";
+type TenantPlan = "FREE" | "PREMIUM";
+interface ApiMeta {
+    page: number;
+    limit: number;
+    total?: number;
+}
+interface ApiResponse<T> {
+    data: T;
+    meta?: ApiMeta;
+}
 interface ApiOrdersQuery {
     status?: OrderStatus;
     collection?: string;
@@ -156,9 +177,9 @@ interface ApiOrderConsideration extends ApiOrderOffer {
     recipient: string;
 }
 interface ApiOrderPrice {
-    raw: string;
-    formatted: string;
-    currency: string;
+    raw: string | null;
+    formatted: string | null;
+    currency: string | null;
 }
 interface ApiOrderTxHash {
     created: string | null;
@@ -167,6 +188,7 @@ interface ApiOrderTxHash {
 }
 interface ApiOrder {
     id: string;
+    chain: string;
     orderHash: string;
     offerer: string;
     offer: ApiOrderOffer;
@@ -175,8 +197,8 @@ interface ApiOrder {
     endTime: string;
     status: OrderStatus;
     fulfiller: string | null;
-    nftContract: string;
-    nftTokenId: string;
+    nftContract: string | null;
+    nftTokenId: string | null;
     price: ApiOrderPrice;
     txHash: ApiOrderTxHash;
     createdBlockNumber: string;
@@ -195,11 +217,12 @@ interface ApiTokenMetadata {
 }
 interface ApiToken {
     id: string;
+    chain: string;
     contractAddress: string;
     tokenId: string;
     owner: string;
     tokenUri: string | null;
-    metadataStatus: "PENDING" | "FETCHED" | "FAILED";
+    metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
     metadata: ApiTokenMetadata;
     activeOrders: ApiOrder[];
     createdAt: string;
@@ -207,6 +230,7 @@ interface ApiToken {
 }
 interface ApiCollection {
     id: string;
+    chain: string;
     contractAddress: string;
     name: string | null;
     startBlock: string;
@@ -218,14 +242,139 @@ interface ApiCollection {
     createdAt: string;
     updatedAt: string;
 }
-interface ApiMeta {
-    page: number;
-    limit: number;
-    total: number;
+interface ApiActivityPrice {
+    raw: string | null;
+    formatted: string | null;
+    currency: string | null;
 }
-interface ApiResponse<T> {
-    data: T;
-    meta?: ApiMeta;
+interface ApiActivity {
+    type: ActivityType;
+    contractAddress?: string;
+    tokenId?: string;
+    from?: string;
+    to?: string;
+    blockNumber?: string;
+    orderHash?: string;
+    nftContract?: string;
+    nftTokenId?: string;
+    offerer?: string;
+    fulfiller?: string | null;
+    price?: ApiActivityPrice;
+    txHash: string | null;
+    timestamp: string;
+}
+interface ApiActivitiesQuery {
+    type?: ActivityType;
+    page?: number;
+    limit?: number;
+}
+interface ApiSearchTokenResult {
+    contractAddress: string;
+    tokenId: string;
+    name: string | null;
+    image: string | null;
+    owner: string;
+    metadataStatus: string;
+}
+interface ApiSearchCollectionResult {
+    contractAddress: string;
+    name: string | null;
+    totalSupply: number | null;
+    floorPrice: string | null;
+    holderCount: number | null;
+}
+interface ApiSearchResult {
+    tokens: ApiSearchTokenResult[];
+    collections: ApiSearchCollectionResult[];
+}
+interface ApiIntent {
+    id: string;
+    chain: string;
+    type: IntentType;
+    status: IntentStatus;
+    requester: string;
+    typedData: unknown;
+    calls: unknown;
+    signature: string[];
+    txHash: string | null;
+    orderHash: string | null;
+    expiresAt: string;
+    createdAt: string;
+    updatedAt: string;
+}
+interface ApiIntentCreated {
+    id: string;
+    typedData: unknown;
+    calls: unknown;
+    expiresAt: string;
+}
+interface CreateListingIntentParams {
+    offerer: string;
+    nftContract: string;
+    tokenId: string;
+    currency: string;
+    price: string;
+    endTime: number;
+    salt?: string;
+}
+interface MakeOfferIntentParams {
+    offerer: string;
+    nftContract: string;
+    tokenId: string;
+    currency: string;
+    price: string;
+    endTime: number;
+    salt?: string;
+}
+interface FulfillOrderIntentParams {
+    fulfiller: string;
+    orderHash: string;
+}
+interface CancelOrderIntentParams {
+    offerer: string;
+    orderHash: string;
+}
+interface ApiMetadataSignedUrl {
+    url: string;
+}
+interface ApiMetadataUpload {
+    cid: string;
+    url: string;
+}
+interface ApiPortalMe {
+    id: string;
+    name: string;
+    email: string;
+    plan: TenantPlan;
+    status: string;
+}
+interface ApiPortalKey {
+    id: string;
+    prefix: string;
+    label: string;
+    status: ApiKeyStatus;
+    lastUsedAt: string | null;
+    createdAt: string;
+}
+interface ApiUsageDay {
+    day: string;
+    requests: number;
+}
+interface ApiWebhookEndpoint {
+    id: string;
+    url: string;
+    events: WebhookEventType[];
+    status: WebhookStatus;
+    createdAt: string;
+}
+interface ApiWebhookCreated extends ApiWebhookEndpoint {
+    /** Signing secret — shown ONCE at creation, not stored in plaintext */
+    secret: string;
+}
+interface CreateWebhookParams {
+    url: string;
+    events: WebhookEventType[];
+    label?: string;
 }
 
 declare class MedialaneApiError extends Error {
@@ -234,23 +383,57 @@ declare class MedialaneApiError extends Error {
 }
 declare class ApiClient {
     private readonly baseUrl;
-    constructor(baseUrl: string);
+    private readonly baseHeaders;
+    constructor(baseUrl: string, apiKey?: string);
     private request;
+    private get;
+    private post;
+    private patch;
+    private del;
     getOrders(query?: ApiOrdersQuery): Promise<ApiResponse<ApiOrder[]>>;
     getOrder(orderHash: string): Promise<ApiResponse<ApiOrder>>;
-    getListingsForToken(contract: string, tokenId: string): Promise<ApiResponse<ApiOrder[]>>;
+    getActiveOrdersForToken(contract: string, tokenId: string): Promise<ApiResponse<ApiOrder[]>>;
     getOrdersByUser(address: string, page?: number, limit?: number): Promise<ApiResponse<ApiOrder[]>>;
     getToken(contract: string, tokenId: string, wait?: boolean): Promise<ApiResponse<ApiToken>>;
     getTokensByOwner(address: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
+    getTokenHistory(contract: string, tokenId: string, page?: number, limit?: number): Promise<ApiResponse<ApiActivity[]>>;
     getCollections(page?: number, limit?: number): Promise<ApiResponse<ApiCollection[]>>;
     getCollection(contract: string): Promise<ApiResponse<ApiCollection>>;
+    getCollectionTokens(contract: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
+    getActivities(query?: ApiActivitiesQuery): Promise<ApiResponse<ApiActivity[]>>;
+    getActivitiesByAddress(address: string, page?: number, limit?: number): Promise<ApiResponse<ApiActivity[]>>;
+    search(q: string, limit?: number): Promise<ApiResponse<ApiSearchResult> & {
+        query: string;
+    }>;
+    createListingIntent(params: CreateListingIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
+    createOfferIntent(params: MakeOfferIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
+    createFulfillIntent(params: FulfillOrderIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
+    createCancelIntent(params: CancelOrderIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
+    getIntent(id: string): Promise<ApiResponse<ApiIntent>>;
+    submitIntentSignature(id: string, signature: string[]): Promise<ApiResponse<ApiIntent>>;
+    getMetadataSignedUrl(): Promise<ApiResponse<ApiMetadataSignedUrl>>;
+    uploadMetadata(metadata: Record<string, unknown>): Promise<ApiResponse<ApiMetadataUpload>>;
+    resolveMetadata(uri: string): Promise<ApiResponse<unknown>>;
+    uploadFile(file: File): Promise<ApiResponse<ApiMetadataUpload>>;
+    getMe(): Promise<ApiResponse<ApiPortalMe>>;
+    getApiKeys(): Promise<ApiResponse<ApiPortalKey[]>>;
+    getUsage(): Promise<ApiResponse<ApiUsageDay[]>>;
+    getWebhooks(): Promise<ApiResponse<ApiWebhookEndpoint[]>>;
+    createWebhook(params: CreateWebhookParams): Promise<ApiResponse<ApiWebhookCreated>>;
+    deleteWebhook(id: string): Promise<ApiResponse<{
+        id: string;
+        status: string;
+    }>>;
 }
 
 declare class MedialaneClient {
+    /** On-chain marketplace interactions (create listing, fulfill order, etc.) */
     readonly marketplace: MarketplaceModule;
-    readonly indexer: ApiClient;
-    readonly tokens: ApiClient;
-    readonly collections: ApiClient;
+    /**
+     * Off-chain API client — covers all /v1/* backend endpoints.
+     * Requires `backendUrl` in config; pass `apiKey` for authenticated routes.
+     */
+    readonly api: ApiClient;
     private readonly config;
     constructor(rawConfig?: MedialaneConfig);
     get network(): "mainnet" | "sepolia";
@@ -641,6 +824,7 @@ type SupportedToken = (typeof SUPPORTED_TOKENS)[number];
 /**
  * Parse a human-readable amount (e.g. "1.5") to its raw integer string
  * representation given the token's decimal places.
+ * Uses pure BigInt arithmetic to avoid floating point precision loss.
  */
 declare function parseAmount(human: string, decimals: number): string;
 /**
@@ -682,4 +866,4 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { ApiClient, type ApiCollection, type ApiMeta, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTxHash, type ApiOrdersQuery, type ApiResponse, type ApiToken, type ApiTokenMetadata, COLLECTION_CONTRACT_MAINNET, type CancelOrderParams, type Cancelation, type CartItem, type ConsiderationItem, type CreateListingParams, DEFAULT_RPC_URLS, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TxResult, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ConsiderationItem, type CreateListingIntentParams, type CreateListingParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

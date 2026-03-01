@@ -41,6 +41,8 @@ var MedialaneConfigSchema = zod.z.object({
   network: zod.z.enum(SUPPORTED_NETWORKS).default("mainnet"),
   rpcUrl: zod.z.string().url().optional(),
   backendUrl: zod.z.string().url().optional(),
+  /** API key for authenticated /v1/* backend endpoints */
+  apiKey: zod.z.string().optional(),
   marketplaceContract: zod.z.string().optional()
 });
 function resolveConfig(raw) {
@@ -49,6 +51,7 @@ function resolveConfig(raw) {
     network: parsed.network,
     rpcUrl: parsed.rpcUrl ?? DEFAULT_RPC_URLS[parsed.network],
     backendUrl: parsed.backendUrl,
+    apiKey: parsed.apiKey,
     marketplaceContract: parsed.marketplaceContract ?? MARKETPLACE_CONTRACT_MAINNET
   };
 }
@@ -477,6 +480,29 @@ function u256ToBigInt(low, high) {
   return BigInt(low) + (BigInt(high) << 128n);
 }
 
+// src/utils/token.ts
+function parseAmount(human, decimals) {
+  const [whole, frac = ""] = human.split(".");
+  const fracPadded = frac.padEnd(decimals, "0").slice(0, decimals);
+  return (BigInt(whole) * BigInt(10) ** BigInt(decimals) + BigInt(fracPadded)).toString();
+}
+function formatAmount(raw, decimals) {
+  const value = BigInt(raw);
+  const factor = BigInt(Math.pow(10, decimals));
+  const whole = value / factor;
+  const remainder = value % factor;
+  const fractional = remainder.toString().padStart(decimals, "0");
+  return `${whole}.${fractional}`;
+}
+function getTokenByAddress(address) {
+  const lower = address.toLowerCase();
+  return SUPPORTED_TOKENS.find((t) => t.address.toLowerCase() === lower);
+}
+function getTokenBySymbol(symbol) {
+  const upper = symbol.toUpperCase();
+  return SUPPORTED_TOKENS.find((t) => t.symbol === upper);
+}
+
 // src/marketplace/orders.ts
 var MedialaneError = class extends Error {
   constructor(message, cause) {
@@ -509,14 +535,11 @@ function resolveToken(currency) {
   if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`);
   return token;
 }
-function computePriceWei(price, decimals) {
-  return BigInt(Math.floor(parseFloat(price) * Math.pow(10, decimals))).toString();
-}
 async function createListing(account, params, config) {
   const { nftContract, tokenId, price, currency, durationSeconds } = params;
   const { contract, provider } = makeContract(config);
   const token = resolveToken(currency);
-  const priceWei = computePriceWei(price, token.decimals);
+  const priceWei = parseAmount(price, token.decimals);
   const now = Math.floor(Date.now() / 1e3);
   const startTime = now + 300;
   const endTime = now + durationSeconds;
@@ -598,7 +621,7 @@ async function makeOffer(account, params, config) {
   const { nftContract, tokenId, price, currency, durationSeconds } = params;
   const { contract, provider } = makeContract(config);
   const token = resolveToken(currency);
-  const priceWei = computePriceWei(price, token.decimals);
+  const priceWei = parseAmount(price, token.decimals);
   const now = Math.floor(Date.now() / 1e3);
   const startTime = now + 300;
   const endTime = now + durationSeconds;
@@ -813,12 +836,20 @@ var MedialaneApiError = class extends Error {
   }
 };
 var ApiClient = class {
-  constructor(baseUrl) {
+  constructor(baseUrl, apiKey) {
     this.baseUrl = baseUrl;
+    this.baseHeaders = apiKey ? { "x-api-key": apiKey } : {};
   }
-  async request(path) {
+  async request(path, init) {
     const url = `${this.baseUrl.replace(/\/$/, "")}${path}`;
-    const res = await fetch(url);
+    const headers = { ...this.baseHeaders };
+    if (!(init?.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+    const res = await fetch(url, {
+      ...init,
+      headers: { ...headers, ...init?.headers }
+    });
     if (!res.ok) {
       let message = res.statusText;
       try {
@@ -830,7 +861,19 @@ var ApiClient = class {
     }
     return res.json();
   }
-  // ─── Orders ──────────────────────────────────────────────────────────────
+  get(path) {
+    return this.request(path, { method: "GET" });
+  }
+  post(path, body) {
+    return this.request(path, { method: "POST", body: JSON.stringify(body) });
+  }
+  patch(path, body) {
+    return this.request(path, { method: "PATCH", body: JSON.stringify(body) });
+  }
+  del(path) {
+    return this.request(path, { method: "DELETE" });
+  }
+  // ─── Orders ────────────────────────────────────────────────────────────────
   getOrders(query = {}) {
     const params = new URLSearchParams();
     if (query.status) params.set("status", query.status);
@@ -841,38 +884,126 @@ var ApiClient = class {
     if (query.limit !== void 0) params.set("limit", String(query.limit));
     if (query.offerer) params.set("offerer", query.offerer);
     const qs = params.toString();
-    return this.request(`/v1/orders${qs ? `?${qs}` : ""}`);
+    return this.get(`/v1/orders${qs ? `?${qs}` : ""}`);
   }
   getOrder(orderHash) {
-    return this.request(`/v1/orders/${orderHash}`);
+    return this.get(`/v1/orders/${orderHash}`);
   }
-  getListingsForToken(contract, tokenId) {
-    return this.request(`/v1/orders/token/${contract}/${tokenId}`);
+  getActiveOrdersForToken(contract, tokenId) {
+    return this.get(`/v1/orders/token/${contract}/${tokenId}`);
   }
   getOrdersByUser(address, page = 1, limit = 20) {
-    return this.request(
+    return this.get(
       `/v1/orders/user/${address}?page=${page}&limit=${limit}`
     );
   }
-  // ─── Tokens ──────────────────────────────────────────────────────────────
+  // ─── Tokens ────────────────────────────────────────────────────────────────
   getToken(contract, tokenId, wait = false) {
-    return this.request(
+    return this.get(
       `/v1/tokens/${contract}/${tokenId}${wait ? "?wait=true" : ""}`
     );
   }
   getTokensByOwner(address, page = 1, limit = 20) {
-    return this.request(
+    return this.get(
       `/v1/tokens/owned/${address}?page=${page}&limit=${limit}`
     );
   }
-  // ─── Collections ─────────────────────────────────────────────────────────
-  getCollections(page = 1, limit = 20) {
-    return this.request(
-      `/v1/collections?page=${page}&limit=${limit}`
+  getTokenHistory(contract, tokenId, page = 1, limit = 20) {
+    return this.get(
+      `/v1/tokens/${contract}/${tokenId}/history?page=${page}&limit=${limit}`
     );
   }
+  // ─── Collections ───────────────────────────────────────────────────────────
+  getCollections(page = 1, limit = 20) {
+    return this.get(`/v1/collections?page=${page}&limit=${limit}`);
+  }
   getCollection(contract) {
-    return this.request(`/v1/collections/${contract}`);
+    return this.get(`/v1/collections/${contract}`);
+  }
+  getCollectionTokens(contract, page = 1, limit = 20) {
+    return this.get(
+      `/v1/collections/${contract}/tokens?page=${page}&limit=${limit}`
+    );
+  }
+  // ─── Activities ────────────────────────────────────────────────────────────
+  getActivities(query = {}) {
+    const params = new URLSearchParams();
+    if (query.type) params.set("type", query.type);
+    if (query.page !== void 0) params.set("page", String(query.page));
+    if (query.limit !== void 0) params.set("limit", String(query.limit));
+    const qs = params.toString();
+    return this.get(`/v1/activities${qs ? `?${qs}` : ""}`);
+  }
+  getActivitiesByAddress(address, page = 1, limit = 20) {
+    return this.get(
+      `/v1/activities/${address}?page=${page}&limit=${limit}`
+    );
+  }
+  // ─── Search ────────────────────────────────────────────────────────────────
+  search(q, limit = 10) {
+    const params = new URLSearchParams({ q, limit: String(limit) });
+    return this.get(
+      `/v1/search?${params.toString()}`
+    );
+  }
+  // ─── Intents ───────────────────────────────────────────────────────────────
+  createListingIntent(params) {
+    return this.post("/v1/intents/listing", params);
+  }
+  createOfferIntent(params) {
+    return this.post("/v1/intents/offer", params);
+  }
+  createFulfillIntent(params) {
+    return this.post("/v1/intents/fulfill", params);
+  }
+  createCancelIntent(params) {
+    return this.post("/v1/intents/cancel", params);
+  }
+  getIntent(id) {
+    return this.get(`/v1/intents/${id}`);
+  }
+  submitIntentSignature(id, signature) {
+    return this.patch(`/v1/intents/${id}/signature`, { signature });
+  }
+  // ─── Metadata ──────────────────────────────────────────────────────────────
+  getMetadataSignedUrl() {
+    return this.get("/v1/metadata/signed-url");
+  }
+  uploadMetadata(metadata) {
+    return this.post("/v1/metadata/upload", metadata);
+  }
+  resolveMetadata(uri) {
+    const params = new URLSearchParams({ uri });
+    return this.get(`/v1/metadata/resolve?${params.toString()}`);
+  }
+  uploadFile(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    return this.request("/v1/metadata/upload-file", {
+      method: "POST",
+      body: formData
+    });
+  }
+  // ─── Portal (tenant self-service) ──────────────────────────────────────────
+  getMe() {
+    return this.get("/v1/portal/me");
+  }
+  getApiKeys() {
+    return this.get("/v1/portal/keys");
+  }
+  getUsage() {
+    return this.get("/v1/portal/usage");
+  }
+  getWebhooks() {
+    return this.get("/v1/portal/webhooks");
+  }
+  createWebhook(params) {
+    return this.post("/v1/portal/webhooks", params);
+  }
+  deleteWebhook(id) {
+    return this.del(
+      `/v1/portal/webhooks/${id}`
+    );
   }
 };
 
@@ -882,23 +1013,17 @@ var MedialaneClient = class {
     this.config = resolveConfig(rawConfig);
     this.marketplace = new MarketplaceModule(this.config);
     if (!this.config.backendUrl) {
-      const noBackend = new Proxy({}, {
+      this.api = new Proxy({}, {
         get(_target, prop) {
           return () => {
             throw new Error(
-              `backendUrl not configured. Pass backendUrl to MedialaneClient to use .${String(prop)}()`
+              `backendUrl not configured. Pass backendUrl to MedialaneClient to use .api.${String(prop)}()`
             );
           };
         }
       });
-      this.indexer = noBackend;
-      this.tokens = noBackend;
-      this.collections = noBackend;
     } else {
-      const api = new ApiClient(this.config.backendUrl);
-      this.indexer = api;
-      this.tokens = api;
-      this.collections = api;
+      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey);
     }
   }
   get network() {
@@ -920,28 +1045,6 @@ function normalizeAddress(address) {
 function shortenAddress(address, chars = 4) {
   const norm = normalizeAddress(address);
   return `${norm.slice(0, chars + 2)}...${norm.slice(-chars)}`;
-}
-
-// src/utils/token.ts
-function parseAmount(human, decimals) {
-  const factor = Math.pow(10, decimals);
-  return BigInt(Math.floor(parseFloat(human) * factor)).toString();
-}
-function formatAmount(raw, decimals) {
-  const value = BigInt(raw);
-  const factor = BigInt(Math.pow(10, decimals));
-  const whole = value / factor;
-  const remainder = value % factor;
-  const fractional = remainder.toString().padStart(decimals, "0");
-  return `${whole}.${fractional}`;
-}
-function getTokenByAddress(address) {
-  const lower = address.toLowerCase();
-  return SUPPORTED_TOKENS.find((t) => t.address.toLowerCase() === lower);
-}
-function getTokenBySymbol(symbol) {
-  const upper = symbol.toUpperCase();
-  return SUPPORTED_TOKENS.find((t) => t.symbol === upper);
 }
 
 exports.ApiClient = ApiClient;
