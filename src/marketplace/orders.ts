@@ -85,7 +85,9 @@ export async function createListing(
   const now = Math.floor(Date.now() / 1000);
   const startTime = now + 300;
   const endTime = now + durationSeconds;
-  const salt = Math.floor(Math.random() * 1_000_000).toString();
+  const saltBytes = new Uint8Array(4);
+  crypto.getRandomValues(saltBytes);
+  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
 
   const currentNonce = await contract.nonces(account.address);
 
@@ -191,7 +193,9 @@ export async function makeOffer(
   const now = Math.floor(Date.now() / 1000);
   const startTime = now + 300;
   const endTime = now + durationSeconds;
-  const salt = Math.floor(Math.random() * 1_000_000).toString();
+  const saltBytes = new Uint8Array(4);
+  crypto.getRandomValues(saltBytes);
+  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
 
   const currentNonce = await contract.nonces(account.address);
 
