@@ -8,15 +8,9 @@ export const INDEXER_START_BLOCK_MAINNET = 6204232;
 
 export const SUPPORTED_TOKENS = [
   {
-    // Circle-native USDC on Starknet (canonical; matches backend "USDC")
+    // Circle-native USDC on Starknet (canonical)
     symbol: "USDC",
     address: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb",
-    decimals: 6,
-  },
-  {
-    // StarkGate-bridged USDC from Ethereum (matches backend "USDC.e")
-    symbol: "USDC.e",
-    address: "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
     decimals: 6,
   },
   {
