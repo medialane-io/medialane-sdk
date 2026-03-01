@@ -49,14 +49,21 @@ function getChainId(config: ResolvedConfig): constants.StarknetChainId {
     : constants.StarknetChainId.SN_SEPOLIA;
 }
 
+const _contractCache = new WeakMap<ResolvedConfig, { contract: Contract; provider: RpcProvider }>();
+
 function makeContract(config: ResolvedConfig): { contract: Contract; provider: RpcProvider } {
+  const cached = _contractCache.get(config);
+  if (cached) return cached;
+
   const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
   const contract = new Contract(
     IPMarketplaceABI as unknown as Abi,
     config.marketplaceContract,
     provider
   );
-  return { contract, provider };
+  const result = { contract, provider };
+  _contractCache.set(config, result);
+  return result;
 }
 
 function resolveToken(currency: string) {

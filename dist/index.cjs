@@ -519,14 +519,19 @@ function toSignatureArray(sig) {
 function getChainId(config) {
   return config.network === "mainnet" ? starknet.constants.StarknetChainId.SN_MAIN : starknet.constants.StarknetChainId.SN_SEPOLIA;
 }
+var _contractCache = /* @__PURE__ */ new WeakMap();
 function makeContract(config) {
+  const cached = _contractCache.get(config);
+  if (cached) return cached;
   const provider = new starknet.RpcProvider({ nodeUrl: config.rpcUrl });
   const contract = new starknet.Contract(
     IPMarketplaceABI,
     config.marketplaceContract,
     provider
   );
-  return { contract, provider };
+  const result = { contract, provider };
+  _contractCache.set(config, result);
+  return result;
 }
 function resolveToken(currency) {
   const token = SUPPORTED_TOKENS.find(
@@ -543,7 +548,9 @@ async function createListing(account, params, config) {
   const now = Math.floor(Date.now() / 1e3);
   const startTime = now + 300;
   const endTime = now + durationSeconds;
-  const salt = Math.floor(Math.random() * 1e6).toString();
+  const saltBytes = new Uint8Array(4);
+  crypto.getRandomValues(saltBytes);
+  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
   const currentNonce = await contract.nonces(account.address);
   const orderParams = {
     offerer: account.address,
@@ -625,7 +632,9 @@ async function makeOffer(account, params, config) {
   const now = Math.floor(Date.now() / 1e3);
   const startTime = now + 300;
   const endTime = now + durationSeconds;
-  const salt = Math.floor(Math.random() * 1e6).toString();
+  const saltBytes = new Uint8Array(4);
+  crypto.getRandomValues(saltBytes);
+  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
   const currentNonce = await contract.nonces(account.address);
   const orderParams = {
     offerer: account.address,
