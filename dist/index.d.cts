@@ -5,7 +5,7 @@ declare const MARKETPLACE_CONTRACT_MAINNET = "0x059deafbbafbf7051c315cf75a94b03c
 declare const COLLECTION_CONTRACT_MAINNET = "0x05e73b7be06d82beeb390a0e0d655f2c9e7cf519658e04f05d9c690ccc41da03";
 declare const SUPPORTED_TOKENS: readonly [{
     readonly symbol: "USDC";
-    readonly address: "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8";
+    readonly address: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb";
     readonly decimals: 6;
 }, {
     readonly symbol: "USDT";
@@ -92,14 +92,16 @@ interface CreateListingParams {
     nftContract: string;
     tokenId: string;
     price: string;
-    currency: string;
+    /** Currency symbol or token address. Defaults to "USDC" (native). */
+    currency?: string;
     durationSeconds: number;
 }
 interface MakeOfferParams {
     nftContract: string;
     tokenId: string;
     price: string;
-    currency: string;
+    /** Currency symbol or token address. Defaults to "USDC" (native). */
+    currency?: string;
     durationSeconds: number;
 }
 interface FulfillOrderParams {
