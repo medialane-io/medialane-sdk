@@ -1,10 +1,8 @@
 # Medialane SDK
 
-[![npm version](https://badge.fury.io/js/@medialane%2Fsdk.svg)](https://www.npmjs.com/package/@medialane/sdk)
+The Medialane SDK provides a unified interface for interacting with the Medialane marketplace, offering both **on-chain operations** (create listings, make offers, fulfill orders) and **REST API access** (search tokens, manage orders, upload metadata).
 
 Framework-agnostic TypeScript SDK for [Medialane.xyz](https://medialane.xyz) portal for tokenization and monetization services and [Medialane.io](https://medialane.io) NFT marketplace.
-
-The Medialane SDK provides a unified interface for interacting with the Medialane marketplace, offering both **on-chain operations** (create listings, make offers, fulfill orders) and **REST API access** (search tokens, manage orders, upload metadata).
 
 ## Features
 
@@ -374,6 +372,7 @@ The SDK uses:
 
 ## Support
 
-- **Documentation**: [medialane.io/docs](https://medialane.io/docs)
-- **Issues**: [GitHub Issues](https://github.com/medialane/sdk/issues)
-- **Discord**: [Medialane Community](https://discord.gg/medialane)
+- **Services App**: [medialane.xyz](https://medialane.xyz)
+- **Documentation**: [medialane.xyz/docs](https://medialane.xyz/docs)
+- **Issues**: [GitHub Issues](https://github.com/medialane-io/sdk/issues)
+- **Medialane Github**: [GitHub Issues](https://github.com/medialane-io)
