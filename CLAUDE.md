@@ -71,6 +71,7 @@ const client = new MedialaneClient({
   backendUrl: "https://api.medialane.xyz",  // optional; required to use .api
   apiKey: "ml_live_...",           // optional; sent as x-api-key on all API calls
   marketplaceContract: "0x059de...", // optional; defaults to mainnet contract
+  collectionContract: "0x05e73b...", // optional; defaults to mainnet collection registry
 })
 ```
 
@@ -89,6 +90,8 @@ On-chain write operations. All require a starknet.js `AccountInterface`.
 | `fulfillOrder(account, params)` | Buy a listed NFT. Fetches nonce, signs fulfillment typed data |
 | `cancelOrder(account, params)` | Cancel active order. Fetches nonce, signs cancellation typed data |
 | `checkoutCart(account, items)` | Atomic multicall: one ERC-20 approve per token (summed), sequential nonce per fulfill |
+| `mint(account, params)` | Mint NFT into a collection. Calls `mint(collection_id, recipient, token_uri)` on collection registry. No SNIP-12 |
+| `createCollection(account, params)` | Register new collection. Calls `create_collection(name, symbol, base_uri)`. No SNIP-12 |
 | `getOrderDetails(orderHash)` | View call: `get_order_details(order_hash)` → `OrderDetails` |
 | `getNonce(address)` | View call: `nonces(owner)` → `bigint` |
 
@@ -141,8 +144,10 @@ client.api.createListingIntent(params)   // { nftContract, tokenId, currency, pr
 client.api.createOfferIntent(params)     // same params as listing
 client.api.createFulfillIntent(params)   // { fulfiller, orderHash }
 client.api.createCancelIntent(params)    // { offerer, orderHash }
+client.api.createMintIntent(params)      // { collectionId, recipient, tokenUri, collectionContract? } — pre-SIGNED
+client.api.createCollectionIntent(params) // { owner, name, symbol, baseUri, collectionContract? } — pre-SIGNED
 client.api.getIntent(id)
-client.api.submitIntentSignature(id, signature)  // signature: string[]
+client.api.submitIntentSignature(id, signature)  // signature: string[] — NOT for MINT/CREATE_COLLECTION
 ```
 
 **Metadata**
