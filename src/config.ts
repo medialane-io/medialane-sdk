@@ -3,6 +3,7 @@ import {
   SUPPORTED_NETWORKS,
   DEFAULT_RPC_URLS,
   MARKETPLACE_CONTRACT_MAINNET,
+  COLLECTION_CONTRACT_MAINNET,
   type Network,
 } from "./constants.js";
 
@@ -13,6 +14,7 @@ export const MedialaneConfigSchema = z.object({
   /** API key for authenticated /v1/* backend endpoints */
   apiKey: z.string().optional(),
   marketplaceContract: z.string().optional(),
+  collectionContract: z.string().optional(),
 });
 
 export type MedialaneConfig = z.input<typeof MedialaneConfigSchema>;
@@ -23,6 +25,7 @@ export interface ResolvedConfig {
   backendUrl: string | undefined;
   apiKey: string | undefined;
   marketplaceContract: string;
+  collectionContract: string;
 }
 
 export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
@@ -33,5 +36,6 @@ export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
     backendUrl: parsed.backendUrl,
     apiKey: parsed.apiKey,
     marketplaceContract: parsed.marketplaceContract ?? MARKETPLACE_CONTRACT_MAINNET,
+    collectionContract: parsed.collectionContract ?? COLLECTION_CONTRACT_MAINNET,
   };
 }

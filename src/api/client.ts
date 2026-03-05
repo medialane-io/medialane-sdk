@@ -21,6 +21,7 @@ import type {
   MakeOfferIntentParams,
   FulfillOrderIntentParams,
   CancelOrderIntentParams,
+  CreateMintIntentParams,
   ApiResponse,
 } from "../types/api.js";
 
@@ -219,6 +220,10 @@ export class ApiClient {
 
   submitIntentSignature(id: string, signature: string[]): Promise<ApiResponse<ApiIntent>> {
     return this.patch<ApiResponse<ApiIntent>>(`/v1/intents/${id}/signature`, { signature });
+  }
+
+  createMintIntent(params: CreateMintIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/mint", params);
   }
 
   // ─── Metadata ──────────────────────────────────────────────────────────────

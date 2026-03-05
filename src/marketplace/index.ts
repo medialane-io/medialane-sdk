@@ -6,6 +6,7 @@ import type {
   FulfillOrderParams,
   CancelOrderParams,
   CartItem,
+  MintParams,
   TxResult,
 } from "../types/marketplace.js";
 import {
@@ -19,6 +20,7 @@ import {
   fulfillOrder,
   cancelOrder,
   checkoutCart,
+  mint,
 } from "./orders.js";
 
 export { MedialaneError } from "./orders.js";
@@ -46,6 +48,10 @@ export class MarketplaceModule {
 
   checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult> {
     return checkoutCart(account, items, this.config);
+  }
+
+  mint(account: AccountInterface, params: MintParams): Promise<TxResult> {
+    return mint(account, params, this.config);
   }
 
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────

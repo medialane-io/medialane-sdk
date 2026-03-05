@@ -75,6 +75,13 @@ export interface CartItem {
   offerIdentifier?: string;
 }
 
+export interface MintParams {
+  recipient: string;
+  tokenUri: string;
+  /** Optional: override the collection contract from config */
+  collectionContract?: string;
+}
+
 export interface TxResult {
   txHash: string;
 }
