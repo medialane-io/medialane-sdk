@@ -54,12 +54,22 @@ function getChainId(config: ResolvedConfig): constants.StarknetChainId {
 }
 
 const _contractCache = new WeakMap<ResolvedConfig, { contract: Contract; provider: RpcProvider }>();
+const _providerCache = new WeakMap<ResolvedConfig, RpcProvider>();
+
+function getProvider(config: ResolvedConfig): RpcProvider {
+  let provider = _providerCache.get(config);
+  if (!provider) {
+    provider = new RpcProvider({ nodeUrl: config.rpcUrl });
+    _providerCache.set(config, provider);
+  }
+  return provider;
+}
 
 function makeContract(config: ResolvedConfig): { contract: Contract; provider: RpcProvider } {
   const cached = _contractCache.get(config);
   if (cached) return cached;
 
-  const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
+  const provider = getProvider(config);
   const contract = new Contract(
     IPMarketplaceABI as unknown as Abi,
     config.marketplaceContract,
@@ -367,8 +377,8 @@ function encodeByteArray(str: string): string[] {
   const ba = byteArray.byteArrayFromString(str);
   return [
     ba.data.length.toString(),
-    ...ba.data.map((d) => num.toHex(BigInt(d.toString()))),
-    num.toHex(BigInt(ba.pending_word.toString())),
+    ...ba.data.map((d) => num.toHex(d)),
+    num.toHex(ba.pending_word),
     ba.pending_word_len.toString(),
   ];
 }
@@ -383,14 +393,11 @@ export async function mint(
   config: ResolvedConfig
 ): Promise<TxResult> {
   const { collectionId, recipient, tokenUri, collectionContract } = params;
-  const { provider } = makeContract(config);
+  const provider = getProvider(config);
   const contractAddress = collectionContract ?? config.collectionContract;
 
-  const id = BigInt(collectionId);
-  const idLow = (id & BigInt("0xffffffffffffffffffffffffffffffff")).toString();
-  const idHigh = (id >> BigInt(128)).toString();
-
-  const calldata = [idLow, idHigh, recipient, ...encodeByteArray(tokenUri)];
+  const id = cairo.uint256(collectionId);
+  const calldata = [id.low.toString(), id.high.toString(), recipient, ...encodeByteArray(tokenUri)];
 
   try {
     const tx = await account.execute([{ contractAddress, entrypoint: "mint", calldata }]);
@@ -412,7 +419,7 @@ export async function createCollection(
   config: ResolvedConfig
 ): Promise<TxResult> {
   const { name, symbol, baseUri, collectionContract } = params;
-  const { provider } = makeContract(config);
+  const provider = getProvider(config);
   const contractAddress = collectionContract ?? config.collectionContract;
 
   const calldata = [

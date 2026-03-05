@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TypedDataRevision, shortString, cairo, RpcProvider, Contract, constants } from 'starknet';
+import { TypedDataRevision, shortString, cairo, Contract, constants, RpcProvider, byteArray, num } from 'starknet';
 
 // src/config.ts
 
@@ -43,7 +43,8 @@ var MedialaneConfigSchema = z.object({
   backendUrl: z.string().url().optional(),
   /** API key for authenticated /v1/* backend endpoints */
   apiKey: z.string().optional(),
-  marketplaceContract: z.string().optional()
+  marketplaceContract: z.string().optional(),
+  collectionContract: z.string().optional()
 });
 function resolveConfig(raw) {
   const parsed = MedialaneConfigSchema.parse(raw);
@@ -52,7 +53,8 @@ function resolveConfig(raw) {
     rpcUrl: parsed.rpcUrl ?? DEFAULT_RPC_URLS[parsed.network],
     backendUrl: parsed.backendUrl,
     apiKey: parsed.apiKey,
-    marketplaceContract: parsed.marketplaceContract ?? MARKETPLACE_CONTRACT_MAINNET
+    marketplaceContract: parsed.marketplaceContract ?? MARKETPLACE_CONTRACT_MAINNET,
+    collectionContract: parsed.collectionContract ?? COLLECTION_CONTRACT_MAINNET
   };
 }
 function buildOrderTypedData(message, chainId) {
@@ -520,10 +522,19 @@ function getChainId(config) {
   return config.network === "mainnet" ? constants.StarknetChainId.SN_MAIN : constants.StarknetChainId.SN_SEPOLIA;
 }
 var _contractCache = /* @__PURE__ */ new WeakMap();
+var _providerCache = /* @__PURE__ */ new WeakMap();
+function getProvider(config) {
+  let provider = _providerCache.get(config);
+  if (!provider) {
+    provider = new RpcProvider({ nodeUrl: config.rpcUrl });
+    _providerCache.set(config, provider);
+  }
+  return provider;
+}
 function makeContract(config) {
   const cached = _contractCache.get(config);
   if (cached) return cached;
-  const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
+  const provider = getProvider(config);
   const contract = new Contract(
     IPMarketplaceABI,
     config.marketplaceContract,
@@ -751,6 +762,46 @@ async function cancelOrder(account, params, config) {
     throw new MedialaneError("Failed to cancel order", err);
   }
 }
+function encodeByteArray(str) {
+  const ba = byteArray.byteArrayFromString(str);
+  return [
+    ba.data.length.toString(),
+    ...ba.data.map((d) => num.toHex(d)),
+    num.toHex(ba.pending_word),
+    ba.pending_word_len.toString()
+  ];
+}
+async function mint(account, params, config) {
+  const { collectionId, recipient, tokenUri, collectionContract } = params;
+  const provider = getProvider(config);
+  const contractAddress = collectionContract ?? config.collectionContract;
+  const id = cairo.uint256(collectionId);
+  const calldata = [id.low.toString(), id.high.toString(), recipient, ...encodeByteArray(tokenUri)];
+  try {
+    const tx = await account.execute([{ contractAddress, entrypoint: "mint", calldata }]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to mint NFT", err);
+  }
+}
+async function createCollection(account, params, config) {
+  const { name, symbol, baseUri, collectionContract } = params;
+  const provider = getProvider(config);
+  const contractAddress = collectionContract ?? config.collectionContract;
+  const calldata = [
+    ...encodeByteArray(name),
+    ...encodeByteArray(symbol),
+    ...encodeByteArray(baseUri)
+  ];
+  try {
+    const tx = await account.execute([{ contractAddress, entrypoint: "create_collection", calldata }]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to create collection", err);
+  }
+}
 async function checkoutCart(account, items, config) {
   if (items.length === 0) throw new MedialaneError("Cart is empty");
   const { contract, provider } = makeContract(config);
@@ -823,6 +874,12 @@ var MarketplaceModule = class {
   }
   checkoutCart(account, items) {
     return checkoutCart(account, items, this.config);
+  }
+  mint(account, params) {
+    return mint(account, params, this.config);
+  }
+  createCollection(account, params) {
+    return createCollection(account, params, this.config);
   }
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
   buildListingTypedData(params, chainId) {
@@ -973,6 +1030,12 @@ var ApiClient = class {
   }
   submitIntentSignature(id, signature) {
     return this.patch(`/v1/intents/${id}/signature`, { signature });
+  }
+  createMintIntent(params) {
+    return this.post("/v1/intents/mint", params);
+  }
+  createCollectionIntent(params) {
+    return this.post("/v1/intents/create-collection", params);
   }
   // ─── Metadata ──────────────────────────────────────────────────────────────
   getMetadataSignedUrl() {

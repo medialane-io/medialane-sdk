@@ -32,18 +32,21 @@ declare const MedialaneConfigSchema: z.ZodObject<{
     /** API key for authenticated /v1/* backend endpoints */
     apiKey: z.ZodOptional<z.ZodString>;
     marketplaceContract: z.ZodOptional<z.ZodString>;
+    collectionContract: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     network: "mainnet" | "sepolia";
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
     apiKey?: string | undefined;
     marketplaceContract?: string | undefined;
+    collectionContract?: string | undefined;
 }, {
     network?: "mainnet" | "sepolia" | undefined;
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
     apiKey?: string | undefined;
     marketplaceContract?: string | undefined;
+    collectionContract?: string | undefined;
 }>;
 type MedialaneConfig = z.input<typeof MedialaneConfigSchema>;
 interface ResolvedConfig {
@@ -52,6 +55,7 @@ interface ResolvedConfig {
     backendUrl: string | undefined;
     apiKey: string | undefined;
     marketplaceContract: string;
+    collectionContract: string;
 }
 declare function resolveConfig(raw: MedialaneConfig): ResolvedConfig;
 
@@ -119,6 +123,20 @@ interface CartItem {
     /** Human-readable identifier for the NFT (for logging) */
     offerIdentifier?: string;
 }
+interface MintParams {
+    collectionId: string;
+    recipient: string;
+    tokenUri: string;
+    /** Optional: override the collection contract from config */
+    collectionContract?: string;
+}
+interface CreateCollectionParams {
+    name: string;
+    symbol: string;
+    baseUri: string;
+    /** Optional: override the collection contract from config */
+    collectionContract?: string;
+}
 interface TxResult {
     txHash: string;
 }
@@ -136,6 +154,8 @@ declare class MarketplaceModule {
     fulfillOrder(account: AccountInterface, params: FulfillOrderParams): Promise<TxResult>;
     cancelOrder(account: AccountInterface, params: CancelOrderParams): Promise<TxResult>;
     checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult>;
+    mint(account: AccountInterface, params: MintParams): Promise<TxResult>;
+    createCollection(account: AccountInterface, params: CreateCollectionParams): Promise<TxResult>;
     buildListingTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
     buildFulfillmentTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
     buildCancellationTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
@@ -144,7 +164,7 @@ declare class MarketplaceModule {
 type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
 type SortOrder = "price_asc" | "price_desc" | "recent";
 type ActivityType = "transfer" | "sale" | "listing" | "offer" | "cancelled";
-type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER";
+type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION";
 type IntentStatus = "PENDING" | "SIGNED" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANCELLED" | "TRANSFER";
 type WebhookStatus = "ACTIVE" | "DISABLED";
@@ -336,6 +356,21 @@ interface CancelOrderIntentParams {
     offerer: string;
     orderHash: string;
 }
+interface CreateMintIntentParams {
+    collectionId: string;
+    recipient: string;
+    tokenUri: string;
+    /** Optional: override the default collection contract address */
+    collectionContract?: string;
+}
+interface CreateCollectionIntentParams {
+    owner: string;
+    name: string;
+    symbol: string;
+    baseUri: string;
+    /** Optional: override the default collection contract address */
+    collectionContract?: string;
+}
 interface ApiMetadataSignedUrl {
     url: string;
 }
@@ -420,6 +455,8 @@ declare class ApiClient {
     createCancelIntent(params: CancelOrderIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
     getIntent(id: string): Promise<ApiResponse<ApiIntent>>;
     submitIntentSignature(id: string, signature: string[]): Promise<ApiResponse<ApiIntent>>;
+    createMintIntent(params: CreateMintIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
+    createCollectionIntent(params: CreateCollectionIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
     getMetadataSignedUrl(): Promise<ApiResponse<ApiMetadataSignedUrl>>;
     uploadMetadata(metadata: Record<string, unknown>): Promise<ApiResponse<ApiMetadataUpload>>;
     resolveMetadata(uri: string): Promise<ApiResponse<unknown>>;
@@ -880,4 +917,4 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ConsiderationItem, type CreateListingIntentParams, type CreateListingParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
