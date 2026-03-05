@@ -357,6 +357,8 @@ interface CancelOrderIntentParams {
     orderHash: string;
 }
 interface CreateMintIntentParams {
+    /** Collection owner wallet address — must be the collection owner on-chain */
+    owner: string;
     collectionId: string;
     recipient: string;
     tokenUri: string;
