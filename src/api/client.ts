@@ -22,6 +22,7 @@ import type {
   FulfillOrderIntentParams,
   CancelOrderIntentParams,
   CreateMintIntentParams,
+  CreateCollectionIntentParams,
   ApiResponse,
 } from "../types/api.js";
 
@@ -224,6 +225,10 @@ export class ApiClient {
 
   createMintIntent(params: CreateMintIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/mint", params);
+  }
+
+  createCollectionIntent(params: CreateCollectionIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-collection", params);
   }
 
   // ─── Metadata ──────────────────────────────────────────────────────────────

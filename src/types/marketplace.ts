@@ -76,8 +76,17 @@ export interface CartItem {
 }
 
 export interface MintParams {
+  collectionId: string;
   recipient: string;
   tokenUri: string;
+  /** Optional: override the collection contract from config */
+  collectionContract?: string;
+}
+
+export interface CreateCollectionParams {
+  name: string;
+  symbol: string;
+  baseUri: string;
   /** Optional: override the collection contract from config */
   collectionContract?: string;
 }

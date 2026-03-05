@@ -20,6 +20,7 @@ import type {
   CancelOrderParams,
   CartItem,
   MintParams,
+  CreateCollectionParams,
   TxResult,
 } from "../types/marketplace.js";
 import { stringifyBigInts } from "../utils/bigint.js";
@@ -361,27 +362,35 @@ export async function cancelOrder(
   }
 }
 
+/** Serialize a string as Cairo ByteArray calldata felts. */
+function encodeByteArray(str: string): string[] {
+  const ba = byteArray.byteArrayFromString(str);
+  return [
+    ba.data.length.toString(),
+    ...ba.data.map((d) => num.toHex(BigInt(d.toString()))),
+    num.toHex(BigInt(ba.pending_word.toString())),
+    ba.pending_word_len.toString(),
+  ];
+}
+
 /**
- * Mint an NFT on the Medialane collection contract.
- * Calls `mint(recipient, token_uri)` — no SNIP-12 signing required.
+ * Mint an NFT into a Medialane collection.
+ * Calls `mint(collection_id, recipient, token_uri)` — no SNIP-12 signing required.
  */
 export async function mint(
   account: AccountInterface,
   params: MintParams,
   config: ResolvedConfig
 ): Promise<TxResult> {
-  const { recipient, tokenUri, collectionContract } = params;
+  const { collectionId, recipient, tokenUri, collectionContract } = params;
   const { provider } = makeContract(config);
   const contractAddress = collectionContract ?? config.collectionContract;
 
-  const ba = byteArray.byteArrayFromString(tokenUri);
-  const calldata = [
-    recipient,
-    ba.data.length.toString(),
-    ...ba.data.map((d) => num.toHex(BigInt(d.toString()))),
-    num.toHex(BigInt(ba.pending_word.toString())),
-    ba.pending_word_len.toString(),
-  ];
+  const id = BigInt(collectionId);
+  const idLow = (id & BigInt("0xffffffffffffffffffffffffffffffff")).toString();
+  const idHigh = (id >> BigInt(128)).toString();
+
+  const calldata = [idLow, idHigh, recipient, ...encodeByteArray(tokenUri)];
 
   try {
     const tx = await account.execute([{ contractAddress, entrypoint: "mint", calldata }]);
@@ -389,6 +398,35 @@ export async function mint(
     return { txHash: tx.transaction_hash };
   } catch (err) {
     throw new MedialaneError("Failed to mint NFT", err);
+  }
+}
+
+/**
+ * Create a new collection on the Medialane collection registry.
+ * Calls `create_collection(name, symbol, base_uri)` — no SNIP-12 signing required.
+ * Returns the transaction hash; listen for the CollectionCreated event to get the collection_id.
+ */
+export async function createCollection(
+  account: AccountInterface,
+  params: CreateCollectionParams,
+  config: ResolvedConfig
+): Promise<TxResult> {
+  const { name, symbol, baseUri, collectionContract } = params;
+  const { provider } = makeContract(config);
+  const contractAddress = collectionContract ?? config.collectionContract;
+
+  const calldata = [
+    ...encodeByteArray(name),
+    ...encodeByteArray(symbol),
+    ...encodeByteArray(baseUri),
+  ];
+
+  try {
+    const tx = await account.execute([{ contractAddress, entrypoint: "create_collection", calldata }]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to create collection", err);
   }
 }
 

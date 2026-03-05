@@ -1,7 +1,7 @@
 export type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
 export type SortOrder = "price_asc" | "price_desc" | "recent";
 export type ActivityType = "transfer" | "sale" | "listing" | "offer" | "cancelled";
-export type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT";
+export type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION";
 export type IntentStatus = "PENDING" | "SIGNED" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 export type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANCELLED" | "TRANSFER";
 export type WebhookStatus = "ACTIVE" | "DISABLED";
@@ -234,8 +234,18 @@ export interface CancelOrderIntentParams {
 }
 
 export interface CreateMintIntentParams {
+  collectionId: string;
   recipient: string;
   tokenUri: string;
+  /** Optional: override the default collection contract address */
+  collectionContract?: string;
+}
+
+export interface CreateCollectionIntentParams {
+  owner: string;
+  name: string;
+  symbol: string;
+  baseUri: string;
   /** Optional: override the default collection contract address */
   collectionContract?: string;
 }
