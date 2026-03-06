@@ -10,9 +10,15 @@ var MARKETPLACE_CONTRACT_MAINNET = "0x059deafbbafbf7051c315cf75a94b03c5547892bc0
 var COLLECTION_CONTRACT_MAINNET = "0x05e73b7be06d82beeb390a0e0d655f2c9e7cf519658e04f05d9c690ccc41da03";
 var SUPPORTED_TOKENS = [
   {
-    // Circle-native USDC on Starknet (canonical)
+    // Circle-native USDC on Starknet (canonical — preferred)
     symbol: "USDC",
     address: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb",
+    decimals: 6
+  },
+  {
+    // Bridged USDC.e (Ethereum USDC bridged via Starkgate)
+    symbol: "USDC.e",
+    address: "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
     decimals: 6
   },
   {

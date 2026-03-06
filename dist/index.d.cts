@@ -8,6 +8,10 @@ declare const SUPPORTED_TOKENS: readonly [{
     readonly address: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb";
     readonly decimals: 6;
 }, {
+    readonly symbol: "USDC.e";
+    readonly address: "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8";
+    readonly decimals: 6;
+}, {
     readonly symbol: "USDT";
     readonly address: "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8";
     readonly decimals: 6;
@@ -227,14 +231,57 @@ interface ApiOrder {
     createdAt: string;
     updatedAt: string;
 }
+/**
+ * A single OpenSea-compatible ERC-721 attribute.
+ * Medialane embeds licensing, provenance, and IP metadata as attributes.
+ */
+interface IpAttribute {
+    trait_type: string;
+    value: string;
+}
+/**
+ * Full on-chain + IPFS metadata for a Medialane IP NFT.
+ * Conforms to the OpenSea ERC-721 metadata standard and embeds
+ * Berne Convention-compatible licensing data in `attributes`.
+ *
+ * Common licensing attributes (all optional — absent on pre-v2 tokens):
+ *   License · Commercial Use · Derivatives · Attribution · Territory
+ *   AI Policy · Royalty · Standard ("Berne Convention") · Registration
+ */
+interface IpNftMetadata {
+    name: string;
+    description?: string;
+    image?: string | null;
+    external_url?: string;
+    attributes?: IpAttribute[];
+    /** Populated by the indexer for fast access — not stored in IPFS */
+    ipType?: string | null;
+    licenseType?: string | null;
+    commercialUse?: string | null;
+    derivatives?: string | null;
+    attribution?: string | null;
+    territory?: string | null;
+    aiPolicy?: string | null;
+    royalty?: string | null;
+    registration?: string | null;
+}
+/** Indexed token metadata as returned by the Medialane API. */
 interface ApiTokenMetadata {
     name: string | null;
     description: string | null;
     image: string | null;
-    attributes: unknown | null;
+    /** Parsed OpenSea-standard attributes array. Null when metadata hasn't been fetched. */
+    attributes: IpAttribute[] | null;
+    /** Short-circuit fields extracted from attributes by the indexer */
     ipType: string | null;
     licenseType: string | null;
-    commercialUse: boolean | null;
+    commercialUse: string | null;
+    derivatives: string | null;
+    attribution: string | null;
+    territory: string | null;
+    aiPolicy: string | null;
+    royalty: string | null;
+    registration: string | null;
     author: string | null;
 }
 interface ApiToken {
@@ -919,4 +966,4 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

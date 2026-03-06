@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -90,8 +90,8 @@ On-chain write operations. All require a starknet.js `AccountInterface`.
 | `fulfillOrder(account, params)` | Buy a listed NFT. Fetches nonce, signs fulfillment typed data |
 | `cancelOrder(account, params)` | Cancel active order. Fetches nonce, signs cancellation typed data |
 | `checkoutCart(account, items)` | Atomic multicall: one ERC-20 approve per token (summed), sequential nonce per fulfill |
-| `mint(account, params)` | Mint NFT into a collection. Calls `mint(collection_id, recipient, token_uri)` on collection registry. No SNIP-12 |
-| `createCollection(account, params)` | Register new collection. Calls `create_collection(name, symbol, base_uri)`. No SNIP-12 |
+| `mint(account, params)` | Mint NFT into a collection. Calls `mint(collection_id, recipient, token_uri)` on collection registry. No SNIP-12. params: `{ collectionId, recipient, tokenUri, collectionContract? }` |
+| `createCollection(account, params)` | Register new collection. Calls `create_collection(name, symbol, base_uri)`. No SNIP-12. **Owner = the executing `account` (implicit caller).** params: `{ name, symbol, baseUri, collectionContract? }` |
 | `getOrderDetails(orderHash)` | View call: `get_order_details(order_hash)` → `OrderDetails` |
 | `getNonce(address)` | View call: `nonces(owner)` → `bigint` |
 
@@ -144,7 +144,8 @@ client.api.createListingIntent(params)   // { nftContract, tokenId, currency, pr
 client.api.createOfferIntent(params)     // same params as listing
 client.api.createFulfillIntent(params)   // { fulfiller, orderHash }
 client.api.createCancelIntent(params)    // { offerer, orderHash }
-client.api.createMintIntent(params)      // { collectionId, recipient, tokenUri, collectionContract? } — pre-SIGNED
+client.api.createMintIntent(params)      // { owner, collectionId, recipient, tokenUri, collectionContract? } — pre-SIGNED
+                                          // owner = collection owner wallet; validated on-chain before intent is created
 client.api.createCollectionIntent(params) // { owner, name, symbol, baseUri, collectionContract? } — pre-SIGNED
 client.api.getIntent(id)
 client.api.submitIntentSignature(id, signature)  // signature: string[] — NOT for MINT/CREATE_COLLECTION
@@ -185,16 +186,22 @@ DEFAULT_RPC_URLS = {
 }
 ```
 
-**SUPPORTED_TOKENS** (4 tokens in SDK — backend has 5, native USDC missing here):
+**SUPPORTED_TOKENS** (5 tokens — matches backend as of v0.2.0):
 
-| Symbol | Address | Decimals |
-|---|---|---|
-| USDC (bridged) | `0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8` | 6 |
-| USDT | `0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8` | 6 |
-| ETH | `0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7` | 18 |
-| STRK | `0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d` | 18 |
+| Symbol | Type | Address | Decimals |
+|---|---|---|---|
+| USDC | Circle-native (canonical) | `0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb` | 6 |
+| USDC.e | Bridged (Starkgate) | `0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8` | 6 |
+| USDT | Tether | `0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8` | 6 |
+| ETH | Ether | `0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7` | 18 |
+| STRK | Starknet native | `0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d` | 18 |
 
-> Native USDC (`0x033068f6...`) exists in the backend but is missing from the SDK's `SUPPORTED_TOKENS`. If adding support, add it here too.
+**IP Metadata Types** (added v0.2.0 — `src/types/api.ts`):
+
+- `IpAttribute` — `{ trait_type: string; value: string }` — typed OpenSea ERC-721 attribute
+- `IpNftMetadata` — full IPFS metadata shape (name, description, image, external_url, attributes, + licensing shortcut fields)
+- `ApiTokenMetadata.attributes` — now `IpAttribute[] | null` (was `unknown | null`)
+- `ApiTokenMetadata` — extended with `derivatives`, `attribution`, `territory`, `aiPolicy`, `royalty`, `registration`, `standard` (all `string | null`)
 
 ---
 

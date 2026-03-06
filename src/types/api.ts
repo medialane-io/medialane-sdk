@@ -77,16 +77,63 @@ export interface ApiOrder {
   updatedAt: string;
 }
 
+// ─── IP / IPFS Metadata types ──────────────────────────────────────────────────
+
+/**
+ * A single OpenSea-compatible ERC-721 attribute.
+ * Medialane embeds licensing, provenance, and IP metadata as attributes.
+ */
+export interface IpAttribute {
+  trait_type: string;
+  value: string;
+}
+
+/**
+ * Full on-chain + IPFS metadata for a Medialane IP NFT.
+ * Conforms to the OpenSea ERC-721 metadata standard and embeds
+ * Berne Convention-compatible licensing data in `attributes`.
+ *
+ * Common licensing attributes (all optional — absent on pre-v2 tokens):
+ *   License · Commercial Use · Derivatives · Attribution · Territory
+ *   AI Policy · Royalty · Standard ("Berne Convention") · Registration
+ */
+export interface IpNftMetadata {
+  name: string;
+  description?: string;
+  image?: string | null;
+  external_url?: string;
+  attributes?: IpAttribute[];
+  /** Populated by the indexer for fast access — not stored in IPFS */
+  ipType?: string | null;
+  licenseType?: string | null;
+  commercialUse?: string | null;
+  derivatives?: string | null;
+  attribution?: string | null;
+  territory?: string | null;
+  aiPolicy?: string | null;
+  royalty?: string | null;
+  registration?: string | null;
+}
+
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
+/** Indexed token metadata as returned by the Medialane API. */
 export interface ApiTokenMetadata {
   name: string | null;
   description: string | null;
   image: string | null;
-  attributes: unknown | null;
+  /** Parsed OpenSea-standard attributes array. Null when metadata hasn't been fetched. */
+  attributes: IpAttribute[] | null;
+  /** Short-circuit fields extracted from attributes by the indexer */
   ipType: string | null;
   licenseType: string | null;
-  commercialUse: boolean | null;
+  commercialUse: string | null;
+  derivatives: string | null;
+  attribution: string | null;
+  territory: string | null;
+  aiPolicy: string | null;
+  royalty: string | null;
+  registration: string | null;
   author: string | null;
 }
 
