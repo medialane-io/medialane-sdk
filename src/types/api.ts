@@ -168,6 +168,7 @@ export interface ApiCollection {
   id: string;
   chain: string;
   contractAddress: string;
+  collectionId: string | null;
   name: string | null;
   symbol: string | null;
   description: string | null;

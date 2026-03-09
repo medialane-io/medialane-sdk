@@ -899,6 +899,16 @@ var MarketplaceModule = class {
   }
 };
 
+// src/utils/address.ts
+function normalizeAddress(address) {
+  const hex = address.replace(/^0x/, "").toLowerCase();
+  return "0x" + hex.padStart(64, "0");
+}
+function shortenAddress(address, chars = 4) {
+  const norm = normalizeAddress(address);
+  return `${norm.slice(0, chars + 2)}...${norm.slice(-chars)}`;
+}
+
 // src/api/client.ts
 var MedialaneApiError = class extends Error {
   constructor(status, message) {
@@ -954,7 +964,7 @@ var ApiClient = class {
     if (query.sort) params.set("sort", query.sort);
     if (query.page !== void 0) params.set("page", String(query.page));
     if (query.limit !== void 0) params.set("limit", String(query.limit));
-    if (query.offerer) params.set("offerer", query.offerer);
+    if (query.offerer) params.set("offerer", normalizeAddress(query.offerer));
     if (query.minPrice) params.set("minPrice", query.minPrice);
     if (query.maxPrice) params.set("maxPrice", query.maxPrice);
     const qs = params.toString();
@@ -964,11 +974,11 @@ var ApiClient = class {
     return this.get(`/v1/orders/${orderHash}`);
   }
   getActiveOrdersForToken(contract, tokenId) {
-    return this.get(`/v1/orders/token/${contract}/${tokenId}`);
+    return this.get(`/v1/orders/token/${normalizeAddress(contract)}/${tokenId}`);
   }
   getOrdersByUser(address, page = 1, limit = 20) {
     return this.get(
-      `/v1/orders/user/${address}?page=${page}&limit=${limit}`
+      `/v1/orders/user/${normalizeAddress(address)}?page=${page}&limit=${limit}`
     );
   }
   // ─── Tokens ────────────────────────────────────────────────────────────────
@@ -979,7 +989,7 @@ var ApiClient = class {
   }
   getTokensByOwner(address, page = 1, limit = 20) {
     return this.get(
-      `/v1/tokens/owned/${address}?page=${page}&limit=${limit}`
+      `/v1/tokens/owned/${normalizeAddress(address)}?page=${page}&limit=${limit}`
     );
   }
   getTokenHistory(contract, tokenId, page = 1, limit = 20) {
@@ -994,15 +1004,15 @@ var ApiClient = class {
     return this.get(`/v1/collections?${params}`);
   }
   getCollectionsByOwner(owner, page = 1, limit = 50) {
-    const params = new URLSearchParams({ owner, page: String(page), limit: String(limit) });
+    const params = new URLSearchParams({ owner: normalizeAddress(owner), page: String(page), limit: String(limit) });
     return this.get(`/v1/collections?${params}`);
   }
   getCollection(contract) {
-    return this.get(`/v1/collections/${contract}`);
+    return this.get(`/v1/collections/${normalizeAddress(contract)}`);
   }
   getCollectionTokens(contract, page = 1, limit = 20) {
     return this.get(
-      `/v1/collections/${contract}/tokens?page=${page}&limit=${limit}`
+      `/v1/collections/${normalizeAddress(contract)}/tokens?page=${page}&limit=${limit}`
     );
   }
   // ─── Activities ────────────────────────────────────────────────────────────
@@ -1016,7 +1026,7 @@ var ApiClient = class {
   }
   getActivitiesByAddress(address, page = 1, limit = 20) {
     return this.get(
-      `/v1/activities/${address}?page=${page}&limit=${limit}`
+      `/v1/activities/${normalizeAddress(address)}?page=${page}&limit=${limit}`
     );
   }
   // ─── Search ────────────────────────────────────────────────────────────────
@@ -1128,16 +1138,6 @@ var MedialaneClient = class {
     return this.config.marketplaceContract;
   }
 };
-
-// src/utils/address.ts
-function normalizeAddress(address) {
-  const hex = address.replace(/^0x/, "").toLowerCase();
-  return "0x" + hex.padStart(64, "0");
-}
-function shortenAddress(address, chars = 4) {
-  const norm = normalizeAddress(address);
-  return `${norm.slice(0, chars + 2)}...${norm.slice(-chars)}`;
-}
 
 export { ApiClient, COLLECTION_CONTRACT_MAINNET, DEFAULT_RPC_URLS, IPMarketplaceABI, MARKETPLACE_CONTRACT_MAINNET, MarketplaceModule, MedialaneApiError, MedialaneClient, MedialaneError, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
 //# sourceMappingURL=index.js.map
