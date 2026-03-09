@@ -64,8 +64,8 @@ import { MedialaneClient } from "@medialane/sdk";
 
 const client = new MedialaneClient({
   network: "mainnet",                              // "mainnet" | "sepolia"
-  rpcUrl: "https://starknet-mainnet.public.blastapi.io", // optional; defaults to BlastAPI
-  backendUrl: "https://api.medialane.xyz",        // required for .api methods
+  rpcUrl: "https://rpc.starknet.lava.build", // optional; defaults to Lava
+  backendUrl: "https://medialane-backend-production.up.railway.app",        // required for .api methods
   apiKey: "ml_live_...",                          // from Medialane Portal
 });
 ```
@@ -362,7 +362,7 @@ try {
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `network` | `"mainnet" \| "sepolia"` | `"mainnet"` | Starknet network |
-| `rpcUrl` | `string` | BlastAPI public endpoint | JSON-RPC URL |
+| `rpcUrl` | `string` | Lava public endpoint | JSON-RPC URL |
 | `backendUrl` | `string` | — | Medialane API base URL (required for `.api.*`) |
 | `apiKey` | `string` | — | API key from [Medialane Portal](https://medialane.xyz) |
 | `marketplaceContract` | `string` | Mainnet default | Marketplace contract override |

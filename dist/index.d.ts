@@ -191,6 +191,8 @@ interface ApiOrdersQuery {
     page?: number;
     limit?: number;
     offerer?: string;
+    minPrice?: string;
+    maxPrice?: string;
 }
 interface ApiOrderOffer {
     itemType: string;
@@ -206,11 +208,17 @@ interface ApiOrderPrice {
     raw: string | null;
     formatted: string | null;
     currency: string | null;
+    decimals: number;
 }
 interface ApiOrderTxHash {
     created: string | null;
     fulfilled: string | null;
     cancelled: string | null;
+}
+interface ApiOrderTokenMeta {
+    name: string | null;
+    image: string | null;
+    description: string | null;
 }
 interface ApiOrder {
     id: string;
@@ -230,6 +238,8 @@ interface ApiOrder {
     createdBlockNumber: string;
     createdAt: string;
     updatedAt: string;
+    /** Embedded token metadata (name/image/description). Null when not yet indexed. */
+    token: ApiOrderTokenMeta | null;
 }
 /**
  * A single OpenSea-compatible ERC-721 attribute.
@@ -302,7 +312,12 @@ interface ApiCollection {
     chain: string;
     contractAddress: string;
     name: string | null;
+    symbol: string | null;
+    description: string | null;
+    image: string | null;
+    owner: string | null;
     startBlock: string;
+    metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
     isKnown: boolean;
     floorPrice: string | null;
     totalVolume: string | null;
@@ -348,6 +363,7 @@ interface ApiSearchTokenResult {
 interface ApiSearchCollectionResult {
     contractAddress: string;
     name: string | null;
+    image: string | null;
     totalSupply: number | null;
     floorPrice: string | null;
     holderCount: number | null;
@@ -416,7 +432,12 @@ interface CreateCollectionIntentParams {
     owner: string;
     name: string;
     symbol: string;
-    baseUri: string;
+    /** Optional description stored server-side and surfaced on the collection page. */
+    description?: string;
+    /** Optional IPFS image URI (ipfs://...) for the collection cover image. */
+    image?: string;
+    /** Base URI for token metadata. Defaults to empty string if not provided. */
+    baseUri?: string;
     /** Optional: override the default collection contract address */
     collectionContract?: string;
 }
@@ -490,7 +511,8 @@ declare class ApiClient {
     getToken(contract: string, tokenId: string, wait?: boolean): Promise<ApiResponse<ApiToken>>;
     getTokensByOwner(address: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
     getTokenHistory(contract: string, tokenId: string, page?: number, limit?: number): Promise<ApiResponse<ApiActivity[]>>;
-    getCollections(page?: number, limit?: number): Promise<ApiResponse<ApiCollection[]>>;
+    getCollections(page?: number, limit?: number, isKnown?: boolean): Promise<ApiResponse<ApiCollection[]>>;
+    getCollectionsByOwner(owner: string, page?: number, limit?: number): Promise<ApiResponse<ApiCollection[]>>;
     getCollection(contract: string): Promise<ApiResponse<ApiCollection>>;
     getCollectionTokens(contract: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
     getActivities(query?: ApiActivitiesQuery): Promise<ApiResponse<ApiActivity[]>>;
@@ -966,4 +988,4 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

@@ -96,6 +96,8 @@ export class ApiClient {
     if (query.page !== undefined) params.set("page", String(query.page));
     if (query.limit !== undefined) params.set("limit", String(query.limit));
     if (query.offerer) params.set("offerer", query.offerer);
+    if (query.minPrice) params.set("minPrice", query.minPrice);
+    if (query.maxPrice) params.set("maxPrice", query.maxPrice);
     const qs = params.toString();
     return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders${qs ? `?${qs}` : ""}`);
   }
@@ -141,8 +143,15 @@ export class ApiClient {
 
   // ─── Collections ───────────────────────────────────────────────────────────
 
-  getCollections(page = 1, limit = 20): Promise<ApiResponse<ApiCollection[]>> {
-    return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?page=${page}&limit=${limit}`);
+  getCollections(page = 1, limit = 20, isKnown?: boolean): Promise<ApiResponse<ApiCollection[]>> {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (isKnown !== undefined) params.set("isKnown", String(isKnown));
+    return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
+  }
+
+  getCollectionsByOwner(owner: string, page = 1, limit = 50): Promise<ApiResponse<ApiCollection[]>> {
+    const params = new URLSearchParams({ owner, page: String(page), limit: String(limit) });
+    return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
   }
 
   getCollection(contract: string): Promise<ApiResponse<ApiCollection>> {

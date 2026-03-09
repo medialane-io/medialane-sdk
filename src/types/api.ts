@@ -31,6 +31,8 @@ export interface ApiOrdersQuery {
   page?: number;
   limit?: number;
   offerer?: string;
+  minPrice?: string;
+  maxPrice?: string;
 }
 
 export interface ApiOrderOffer {
@@ -49,12 +51,19 @@ export interface ApiOrderPrice {
   raw: string | null;
   formatted: string | null;
   currency: string | null;
+  decimals: number;
 }
 
 export interface ApiOrderTxHash {
   created: string | null;
   fulfilled: string | null;
   cancelled: string | null;
+}
+
+export interface ApiOrderTokenMeta {
+  name: string | null;
+  image: string | null;
+  description: string | null;
 }
 
 export interface ApiOrder {
@@ -75,6 +84,8 @@ export interface ApiOrder {
   createdBlockNumber: string;
   createdAt: string;
   updatedAt: string;
+  /** Embedded token metadata (name/image/description). Null when not yet indexed. */
+  token: ApiOrderTokenMeta | null;
 }
 
 // ─── IP / IPFS Metadata types ──────────────────────────────────────────────────
@@ -158,7 +169,12 @@ export interface ApiCollection {
   chain: string;
   contractAddress: string;
   name: string | null;
+  symbol: string | null;
+  description: string | null;
+  image: string | null;
+  owner: string | null;
   startBlock: string;
+  metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
   isKnown: boolean;
   floorPrice: string | null;
   totalVolume: string | null;
@@ -215,6 +231,7 @@ export interface ApiSearchTokenResult {
 export interface ApiSearchCollectionResult {
   contractAddress: string;
   name: string | null;
+  image: string | null;
   totalSupply: number | null;
   floorPrice: string | null;
   holderCount: number | null;
@@ -294,7 +311,12 @@ export interface CreateCollectionIntentParams {
   owner: string;
   name: string;
   symbol: string;
-  baseUri: string;
+  /** Optional description stored server-side and surfaced on the collection page. */
+  description?: string;
+  /** Optional IPFS image URI (ipfs://...) for the collection cover image. */
+  image?: string;
+  /** Base URI for token metadata. Defaults to empty string if not provided. */
+  baseUri?: string;
   /** Optional: override the default collection contract address */
   collectionContract?: string;
 }

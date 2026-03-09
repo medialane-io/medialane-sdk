@@ -40,8 +40,8 @@ var SUPPORTED_TOKENS = [
 var DEFAULT_CURRENCY = "USDC";
 var SUPPORTED_NETWORKS = ["mainnet", "sepolia"];
 var DEFAULT_RPC_URLS = {
-  mainnet: "https://starknet-mainnet.public.blastapi.io",
-  sepolia: "https://starknet-sepolia.public.blastapi.io"
+  mainnet: "https://rpc.starknet.lava.build",
+  sepolia: "https://rpc.starknet-sepolia.lava.build"
 };
 
 // src/config.ts
@@ -957,6 +957,8 @@ var ApiClient = class {
     if (query.page !== void 0) params.set("page", String(query.page));
     if (query.limit !== void 0) params.set("limit", String(query.limit));
     if (query.offerer) params.set("offerer", query.offerer);
+    if (query.minPrice) params.set("minPrice", query.minPrice);
+    if (query.maxPrice) params.set("maxPrice", query.maxPrice);
     const qs = params.toString();
     return this.get(`/v1/orders${qs ? `?${qs}` : ""}`);
   }
@@ -988,8 +990,14 @@ var ApiClient = class {
     );
   }
   // ─── Collections ───────────────────────────────────────────────────────────
-  getCollections(page = 1, limit = 20) {
-    return this.get(`/v1/collections?page=${page}&limit=${limit}`);
+  getCollections(page = 1, limit = 20, isKnown) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (isKnown !== void 0) params.set("isKnown", String(isKnown));
+    return this.get(`/v1/collections?${params}`);
+  }
+  getCollectionsByOwner(owner, page = 1, limit = 50) {
+    const params = new URLSearchParams({ owner, page: String(page), limit: String(limit) });
+    return this.get(`/v1/collections?${params}`);
   }
   getCollection(contract) {
     return this.get(`/v1/collections/${contract}`);

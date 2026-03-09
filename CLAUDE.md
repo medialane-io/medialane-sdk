@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.2.0",
+  "version": "0.2.8",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -67,8 +67,8 @@ import { MedialaneClient } from "@medialane/sdk"
 
 const client = new MedialaneClient({
   network: "mainnet",              // "mainnet" | "sepolia" (default: "mainnet")
-  rpcUrl: "https://...",           // optional; defaults to BlastAPI public endpoint
-  backendUrl: "https://api.medialane.xyz",  // optional; required to use .api
+  rpcUrl: "https://...",           // optional; defaults to Lava public endpoint
+  backendUrl: "https://medialane-backend-production.up.railway.app",  // optional; required to use .api
   apiKey: "ml_live_...",           // optional; sent as x-api-key on all API calls
   marketplaceContract: "0x059de...", // optional; defaults to mainnet contract
   collectionContract: "0x05e73b...", // optional; defaults to mainnet collection registry
@@ -123,6 +123,7 @@ client.api.getTokenHistory(contract, tokenId, page?, limit?)
 client.api.getCollections(page?, limit?)
 client.api.getCollection(contract)
 client.api.getCollectionTokens(contract, page?, limit?)
+client.api.getCollectionsByOwner(owner)   // GET /v1/collections?owner=address → ApiCollection[]
 ```
 
 **Activities**
@@ -146,7 +147,8 @@ client.api.createFulfillIntent(params)   // { fulfiller, orderHash }
 client.api.createCancelIntent(params)    // { offerer, orderHash }
 client.api.createMintIntent(params)      // { owner, collectionId, recipient, tokenUri, collectionContract? } — pre-SIGNED
                                           // owner = collection owner wallet; validated on-chain before intent is created
-client.api.createCollectionIntent(params) // { owner, name, symbol, baseUri, collectionContract? } — pre-SIGNED
+client.api.createCollectionIntent(params) // { owner, name, symbol, baseUri, image?: string, collectionContract? } — pre-SIGNED
+                                          // image: ipfs:// URI stored in intent typedData, recovered at collection index time
 client.api.getIntent(id)
 client.api.submitIntentSignature(id, signature)  // signature: string[] — NOT for MINT/CREATE_COLLECTION
 ```
@@ -181,8 +183,8 @@ COLLECTION_CONTRACT_MAINNET  = "0x05e73b7be06d82beeb390a0e0d655f2c9e7cf519658e04
 INDEXER_START_BLOCK_MAINNET  = 6204232
 
 DEFAULT_RPC_URLS = {
-  mainnet: "https://starknet-mainnet.public.blastapi.io",
-  sepolia: "https://starknet-sepolia.public.blastapi.io",
+  mainnet: "https://rpc.starknet.lava.build",
+  sepolia: "https://rpc.starknet-sepolia.lava.build",
 }
 ```
 
@@ -202,6 +204,17 @@ DEFAULT_RPC_URLS = {
 - `IpNftMetadata` — full IPFS metadata shape (name, description, image, external_url, attributes, + licensing shortcut fields)
 - `ApiTokenMetadata.attributes` — now `IpAttribute[] | null` (was `unknown | null`)
 - `ApiTokenMetadata` — extended with `derivatives`, `attribution`, `territory`, `aiPolicy`, `royalty`, `registration`, `standard` (all `string | null`)
+
+**v0.2.6 — Order token enrichment:**
+- `ApiOrderTokenMeta` — `{ name: string | null; image: string | null; description: string | null }`
+- `ApiOrder.token: ApiOrderTokenMeta | null` — populated by batchTokenMeta in the backend; use directly in UI components, no `useToken` needed
+
+**v0.2.7 — Collection image in intent:**
+- `CreateCollectionIntentParams.image?: string` — optional IPFS URI stored in intent typedData
+
+**v0.2.8 — Collection owner:**
+- `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
+- `ApiClient.getCollectionsByOwner(owner: string)` — fetches `GET /v1/collections?owner=address`
 
 ---
 

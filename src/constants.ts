@@ -45,6 +45,6 @@ export const SUPPORTED_NETWORKS = ["mainnet", "sepolia"] as const;
 export type Network = (typeof SUPPORTED_NETWORKS)[number];
 
 export const DEFAULT_RPC_URLS: Record<Network, string> = {
-  mainnet: "https://starknet-mainnet.public.blastapi.io",
-  sepolia: "https://starknet-sepolia.public.blastapi.io",
+  mainnet: "https://rpc.starknet.lava.build",
+  sepolia: "https://rpc.starknet-sepolia.lava.build",
 };

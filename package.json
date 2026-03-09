@@ -1,6 +1,6 @@
 {
   "name": "@medialane/sdk",
-  "version": "0.2.0",
+  "version": "0.2.8",
   "description": "Framework-agnostic TypeScript SDK for Medialane.io — the IP marketplace on Starknet",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -17,7 +17,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
