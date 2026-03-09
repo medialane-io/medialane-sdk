@@ -1,3 +1,4 @@
+import { normalizeAddress } from "../utils/address.js";
 import type {
   ApiOrder,
   ApiOrdersQuery,
@@ -95,7 +96,7 @@ export class ApiClient {
     if (query.sort) params.set("sort", query.sort);
     if (query.page !== undefined) params.set("page", String(query.page));
     if (query.limit !== undefined) params.set("limit", String(query.limit));
-    if (query.offerer) params.set("offerer", query.offerer);
+    if (query.offerer) params.set("offerer", normalizeAddress(query.offerer));
     if (query.minPrice) params.set("minPrice", query.minPrice);
     if (query.maxPrice) params.set("maxPrice", query.maxPrice);
     const qs = params.toString();
@@ -107,12 +108,12 @@ export class ApiClient {
   }
 
   getActiveOrdersForToken(contract: string, tokenId: string): Promise<ApiResponse<ApiOrder[]>> {
-    return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/token/${contract}/${tokenId}`);
+    return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/token/${normalizeAddress(contract)}/${tokenId}`);
   }
 
   getOrdersByUser(address: string, page = 1, limit = 20): Promise<ApiResponse<ApiOrder[]>> {
     return this.get<ApiResponse<ApiOrder[]>>(
-      `/v1/orders/user/${address}?page=${page}&limit=${limit}`
+      `/v1/orders/user/${normalizeAddress(address)}?page=${page}&limit=${limit}`
     );
   }
 
@@ -126,7 +127,7 @@ export class ApiClient {
 
   getTokensByOwner(address: string, page = 1, limit = 20): Promise<ApiResponse<ApiToken[]>> {
     return this.get<ApiResponse<ApiToken[]>>(
-      `/v1/tokens/owned/${address}?page=${page}&limit=${limit}`
+      `/v1/tokens/owned/${normalizeAddress(address)}?page=${page}&limit=${limit}`
     );
   }
 
@@ -150,12 +151,12 @@ export class ApiClient {
   }
 
   getCollectionsByOwner(owner: string, page = 1, limit = 50): Promise<ApiResponse<ApiCollection[]>> {
-    const params = new URLSearchParams({ owner, page: String(page), limit: String(limit) });
+    const params = new URLSearchParams({ owner: normalizeAddress(owner), page: String(page), limit: String(limit) });
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
   }
 
   getCollection(contract: string): Promise<ApiResponse<ApiCollection>> {
-    return this.get<ApiResponse<ApiCollection>>(`/v1/collections/${contract}`);
+    return this.get<ApiResponse<ApiCollection>>(`/v1/collections/${normalizeAddress(contract)}`);
   }
 
   getCollectionTokens(
@@ -164,7 +165,7 @@ export class ApiClient {
     limit = 20
   ): Promise<ApiResponse<ApiToken[]>> {
     return this.get<ApiResponse<ApiToken[]>>(
-      `/v1/collections/${contract}/tokens?page=${page}&limit=${limit}`
+      `/v1/collections/${normalizeAddress(contract)}/tokens?page=${page}&limit=${limit}`
     );
   }
 
@@ -185,7 +186,7 @@ export class ApiClient {
     limit = 20
   ): Promise<ApiResponse<ApiActivity[]>> {
     return this.get<ApiResponse<ApiActivity[]>>(
-      `/v1/activities/${address}?page=${page}&limit=${limit}`
+      `/v1/activities/${normalizeAddress(address)}?page=${page}&limit=${limit}`
     );
   }
 
