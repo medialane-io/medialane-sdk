@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.2.8",
+  "version": "0.3.1",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -216,12 +216,20 @@ DEFAULT_RPC_URLS = {
 - `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
 - `ApiClient.getCollectionsByOwner(owner: string)` — fetches `GET /v1/collections?owner=address`
 
+**v0.3.0 — Internal address normalization:**
+- `normalizeAddress()` now applied internally before every URL construction in `ApiClient` — callers no longer need to normalize addresses themselves
+- Affected methods: `getTokensByOwner`, `getOrdersByUser`, `getActivitiesByAddress`, `getActiveOrdersForToken`, `getCollection`, `getCollectionTokens`, `getCollectionsByOwner`, and `offerer` filter in `getOrders`
+
+**v0.3.1 — Collection on-chain ID:**
+- `ApiCollection.collectionId: string | null` — the on-chain numeric registry ID (decimal string, e.g. `"1"`). Required by `createMintIntent`. Populated for collections indexed after the 2026-03-09 backend migration; null for older collections until re-indexed.
+
 ---
 
 ## Key Conventions
 
 - **Runtime**: Bun. `~/.bun/bin/bun`, never `node`/`npm`/`npx`.
 - **Imports**: Use `.js` extension (ESM resolution via tsup).
+- **Address normalization**: `normalizeAddress()` is called internally in all `ApiClient` methods — callers pass any valid format, SDK normalizes before sending to the backend.
 - **No side effects at import time** — config and contract instances are lazy/cached.
 - **Signatures**: `toSignatureArray()` handles both array format and `{ r, s }` object format from starknet.js.
 - **BigInt serialization**: `stringifyBigInts()` recursively converts BigInt to string before JSON or contract calls.

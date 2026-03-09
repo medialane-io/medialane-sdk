@@ -406,6 +406,20 @@ Built with:
 
 ## Changelog
 
+### v0.3.1
+- `ApiCollection.collectionId: string | null` — on-chain registry numeric ID (decimal string). Required for `createMintIntent`. Populated for collections indexed after 2026-03-09.
+
+### v0.3.0
+- `normalizeAddress()` now applied internally before all API calls — callers no longer need to normalize Starknet addresses before passing them to SDK methods
+- `getCollectionsByOwner(owner)` — fetch collections by wallet address via API
+
+### v0.2.8
+- `ApiCollection.owner: string | null`
+- `ApiClient.getCollectionsByOwner(owner)`
+
+### v0.2.6
+- `ApiOrder.token: ApiOrderTokenMeta | null` — token name/image/description on orders (batchTokenMeta)
+
 ### v0.2.0
 - `IpAttribute` and `IpNftMetadata` interfaces for IP metadata
 - `ApiTokenMetadata.attributes` typed as `IpAttribute[] | null` (was `unknown`)
