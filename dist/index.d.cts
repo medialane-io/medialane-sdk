@@ -512,7 +512,7 @@ declare class ApiClient {
     getToken(contract: string, tokenId: string, wait?: boolean): Promise<ApiResponse<ApiToken>>;
     getTokensByOwner(address: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
     getTokenHistory(contract: string, tokenId: string, page?: number, limit?: number): Promise<ApiResponse<ApiActivity[]>>;
-    getCollections(page?: number, limit?: number, isKnown?: boolean): Promise<ApiResponse<ApiCollection[]>>;
+    getCollections(page?: number, limit?: number, isKnown?: boolean, sort?: "recent" | "supply" | "floor" | "volume" | "name"): Promise<ApiResponse<ApiCollection[]>>;
     getCollectionsByOwner(owner: string, page?: number, limit?: number): Promise<ApiResponse<ApiCollection[]>>;
     getCollection(contract: string): Promise<ApiResponse<ApiCollection>>;
     getCollectionTokens(contract: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;

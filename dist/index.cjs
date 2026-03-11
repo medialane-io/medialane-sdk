@@ -1000,9 +1000,10 @@ var ApiClient = class {
     );
   }
   // ─── Collections ───────────────────────────────────────────────────────────
-  getCollections(page = 1, limit = 20, isKnown) {
+  getCollections(page = 1, limit = 20, isKnown, sort) {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (isKnown !== void 0) params.set("isKnown", String(isKnown));
+    if (sort) params.set("sort", sort);
     return this.get(`/v1/collections?${params}`);
   }
   getCollectionsByOwner(owner, page = 1, limit = 50) {

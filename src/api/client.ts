@@ -144,9 +144,15 @@ export class ApiClient {
 
   // ─── Collections ───────────────────────────────────────────────────────────
 
-  getCollections(page = 1, limit = 20, isKnown?: boolean): Promise<ApiResponse<ApiCollection[]>> {
+  getCollections(
+    page = 1,
+    limit = 20,
+    isKnown?: boolean,
+    sort?: "recent" | "supply" | "floor" | "volume" | "name"
+  ): Promise<ApiResponse<ApiCollection[]>> {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (isKnown !== undefined) params.set("isKnown", String(isKnown));
+    if (sort) params.set("sort", sort);
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
   }
 
