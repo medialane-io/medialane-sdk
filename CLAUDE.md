@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -120,7 +120,8 @@ client.api.getTokenHistory(contract, tokenId, page?, limit?)
 
 **Collections**
 ```ts
-client.api.getCollections(page?, limit?)
+client.api.getCollections(page?, limit?, isKnown?, sort?)
+// sort: "recent" (default) | "supply" | "floor" | "volume" | "name"
 client.api.getCollection(contract)
 client.api.getCollectionTokens(contract, page?, limit?)
 client.api.getCollectionsByOwner(owner)   // GET /v1/collections?owner=address → ApiCollection[]
@@ -219,6 +220,11 @@ DEFAULT_RPC_URLS = {
 **v0.3.0 — Internal address normalization:**
 - `normalizeAddress()` now applied internally before every URL construction in `ApiClient` — callers no longer need to normalize addresses themselves
 - Affected methods: `getTokensByOwner`, `getOrdersByUser`, `getActivitiesByAddress`, `getActiveOrdersForToken`, `getCollection`, `getCollectionTokens`, `getCollectionsByOwner`, and `offerer` filter in `getOrders`
+
+**v0.3.3 — Collections sort:**
+- `getCollections(page?, limit?, isKnown?, sort?)` — added `sort` param: `"recent"` (default, `createdAt DESC`) | `"supply"` | `"floor"` | `"volume"` | `"name"`
+- Build: `bun install && bun x tsup` (v0.3.3 committed to git; npm publish pending — `bun publish` requires `npm adduser` on the publishing machine)
+- **Note**: `medialane-io` uses a direct `fetch` in `useCollections` hook (bypasses SDK client) so the sort param works without needing a published SDK update
 
 **v0.3.1 — Collection on-chain ID:**
 - `ApiCollection.collectionId: string | null` — the on-chain numeric registry ID (decimal string, e.g. `"1"`). Required by `createMintIntent`. Populated for collections indexed after the 2026-03-09 backend migration; null for older collections until re-indexed.

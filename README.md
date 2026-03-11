@@ -181,7 +181,14 @@ const history = await client.api.getTokenHistory(contract, tokenId);
 ### Query Collections
 
 ```typescript
+// All collections — newest first by default
 const collections = await client.api.getCollections();
+
+// With sort and pagination
+const byVolume = await client.api.getCollections(1, 20, undefined, "volume");
+const verified = await client.api.getCollections(1, 18, true, "recent");
+
+// Sort options: "recent" | "supply" | "floor" | "volume" | "name"
 const collection = await client.api.getCollection(contract);
 const tokens = await client.api.getCollectionTokens(contract);
 ```
@@ -405,6 +412,10 @@ Built with:
 ---
 
 ## Changelog
+
+### v0.3.3
+- `getCollections(page?, limit?, isKnown?, sort?)` — added `sort` parameter: `"recent"` (default) | `"supply"` | `"floor"` | `"volume"` | `"name"`
+- Default sort changed from `totalSupply DESC` to `createdAt DESC` (newest first) — matches backend default
 
 ### v0.3.1
 - `ApiCollection.collectionId: string | null` — on-chain registry numeric ID (decimal string). Required for `createMintIntent`. Populated for collections indexed after 2026-03-09.
