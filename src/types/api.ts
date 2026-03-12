@@ -1,3 +1,13 @@
+export type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
+
+export interface ApiCollectionsQuery {
+  page?: number;
+  limit?: number;
+  isKnown?: boolean;
+  sort?: CollectionSort;
+  owner?: string;
+}
+
 export type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
 export type SortOrder = "price_asc" | "price_desc" | "recent";
 export type ActivityType = "transfer" | "sale" | "listing" | "offer" | "cancelled";

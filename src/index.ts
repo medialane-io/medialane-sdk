@@ -10,6 +10,7 @@ export { ApiClient, MedialaneApiError } from "./api/client.js";
 
 // Types
 export * from "./types/index.js";
+export type { MedialaneErrorCode } from "./types/errors.js";
 
 // Constants
 export {
@@ -29,6 +30,7 @@ export { IPMarketplaceABI } from "./abis.js";
 export { normalizeAddress, shortenAddress } from "./utils/address.js";
 export { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol } from "./utils/token.js";
 export { stringifyBigInts, u256ToBigInt } from "./utils/bigint.js";
+export type { RetryOptions } from "./utils/retry.js";
 
 // Signing builders (for advanced / ChipiPay integrations)
 export {

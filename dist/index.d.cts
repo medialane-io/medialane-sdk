@@ -29,6 +29,12 @@ declare const SUPPORTED_NETWORKS: readonly ["mainnet", "sepolia"];
 type Network = (typeof SUPPORTED_NETWORKS)[number];
 declare const DEFAULT_RPC_URLS: Record<Network, string>;
 
+interface RetryOptions {
+    maxAttempts?: number;
+    baseDelayMs?: number;
+    maxDelayMs?: number;
+}
+
 declare const MedialaneConfigSchema: z.ZodObject<{
     network: z.ZodDefault<z.ZodEnum<["mainnet", "sepolia"]>>;
     rpcUrl: z.ZodOptional<z.ZodString>;
@@ -37,20 +43,43 @@ declare const MedialaneConfigSchema: z.ZodObject<{
     apiKey: z.ZodOptional<z.ZodString>;
     marketplaceContract: z.ZodOptional<z.ZodString>;
     collectionContract: z.ZodOptional<z.ZodString>;
+    retryOptions: z.ZodOptional<z.ZodObject<{
+        maxAttempts: z.ZodOptional<z.ZodNumber>;
+        baseDelayMs: z.ZodOptional<z.ZodNumber>;
+        maxDelayMs: z.ZodOptional<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        maxAttempts?: number | undefined;
+        baseDelayMs?: number | undefined;
+        maxDelayMs?: number | undefined;
+    }, {
+        maxAttempts?: number | undefined;
+        baseDelayMs?: number | undefined;
+        maxDelayMs?: number | undefined;
+    }>>;
 }, "strip", z.ZodTypeAny, {
     network: "mainnet" | "sepolia";
+    collectionContract?: string | undefined;
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
     apiKey?: string | undefined;
     marketplaceContract?: string | undefined;
-    collectionContract?: string | undefined;
+    retryOptions?: {
+        maxAttempts?: number | undefined;
+        baseDelayMs?: number | undefined;
+        maxDelayMs?: number | undefined;
+    } | undefined;
 }, {
+    collectionContract?: string | undefined;
     network?: "mainnet" | "sepolia" | undefined;
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
     apiKey?: string | undefined;
     marketplaceContract?: string | undefined;
-    collectionContract?: string | undefined;
+    retryOptions?: {
+        maxAttempts?: number | undefined;
+        baseDelayMs?: number | undefined;
+        maxDelayMs?: number | undefined;
+    } | undefined;
 }>;
 type MedialaneConfig = z.input<typeof MedialaneConfigSchema>;
 interface ResolvedConfig {
@@ -60,6 +89,7 @@ interface ResolvedConfig {
     apiKey: string | undefined;
     marketplaceContract: string;
     collectionContract: string;
+    retryOptions?: RetryOptions;
 }
 declare function resolveConfig(raw: MedialaneConfig): ResolvedConfig;
 
@@ -145,9 +175,12 @@ interface TxResult {
     txHash: string;
 }
 
+type MedialaneErrorCode = "TOKEN_NOT_FOUND" | "COLLECTION_NOT_FOUND" | "ORDER_NOT_FOUND" | "INTENT_NOT_FOUND" | "INTENT_EXPIRED" | "RATE_LIMITED" | "NETWORK_NOT_SUPPORTED" | "APPROVAL_FAILED" | "TRANSACTION_FAILED" | "INVALID_PARAMS" | "UNAUTHORIZED" | "UNKNOWN";
+
 declare class MedialaneError extends Error {
+    readonly code: MedialaneErrorCode;
     readonly cause?: unknown | undefined;
-    constructor(message: string, cause?: unknown | undefined);
+    constructor(message: string, code?: MedialaneErrorCode, cause?: unknown | undefined);
 }
 
 declare class MarketplaceModule {
@@ -165,6 +198,14 @@ declare class MarketplaceModule {
     buildCancellationTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 }
 
+type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
+interface ApiCollectionsQuery {
+    page?: number;
+    limit?: number;
+    isKnown?: boolean;
+    sort?: CollectionSort;
+    owner?: string;
+}
 type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
 type SortOrder = "price_asc" | "price_desc" | "recent";
 type ActivityType = "transfer" | "sale" | "listing" | "offer" | "cancelled";
@@ -494,12 +535,14 @@ interface CreateWebhookParams {
 
 declare class MedialaneApiError extends Error {
     readonly status: number;
+    readonly code: MedialaneErrorCode;
     constructor(status: number, message: string);
 }
 declare class ApiClient {
     private readonly baseUrl;
     private readonly baseHeaders;
-    constructor(baseUrl: string, apiKey?: string);
+    private readonly retryOptions;
+    constructor(baseUrl: string, apiKey?: string, retryOptions?: RetryOptions);
     private request;
     private get;
     private post;
@@ -512,7 +555,7 @@ declare class ApiClient {
     getToken(contract: string, tokenId: string, wait?: boolean): Promise<ApiResponse<ApiToken>>;
     getTokensByOwner(address: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
     getTokenHistory(contract: string, tokenId: string, page?: number, limit?: number): Promise<ApiResponse<ApiActivity[]>>;
-    getCollections(page?: number, limit?: number, isKnown?: boolean, sort?: "recent" | "supply" | "floor" | "volume" | "name"): Promise<ApiResponse<ApiCollection[]>>;
+    getCollections(page?: number, limit?: number, isKnown?: boolean, sort?: CollectionSort): Promise<ApiResponse<ApiCollection[]>>;
     getCollectionsByOwner(owner: string, page?: number, limit?: number): Promise<ApiResponse<ApiCollection[]>>;
     getCollection(contract: string): Promise<ApiResponse<ApiCollection>>;
     getCollectionTokens(contract: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
@@ -989,4 +1032,4 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiCollectionsQuery, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type CollectionSort, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

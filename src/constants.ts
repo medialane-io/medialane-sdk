@@ -4,6 +4,10 @@ export const MARKETPLACE_CONTRACT_MAINNET =
 export const COLLECTION_CONTRACT_MAINNET =
   "0x05e73b7be06d82beeb390a0e0d655f2c9e7cf519658e04f05d9c690ccc41da03";
 
+// Sepolia testnet contracts (empty = not yet deployed)
+export const MARKETPLACE_CONTRACT_SEPOLIA = "";
+export const COLLECTION_CONTRACT_SEPOLIA = "";
+
 export const INDEXER_START_BLOCK_MAINNET = 6204232;
 
 export const SUPPORTED_TOKENS = [

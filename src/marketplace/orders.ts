@@ -13,6 +13,7 @@ import {
 import { IPMarketplaceABI } from "../abis.js";
 import type { ResolvedConfig } from "../config.js";
 import { SUPPORTED_TOKENS, DEFAULT_CURRENCY } from "../constants.js";
+import type { MedialaneErrorCode } from "../types/errors.js";
 import type {
   CreateListingParams,
   MakeOfferParams,
@@ -34,6 +35,7 @@ import {
 export class MedialaneError extends Error {
   constructor(
     message: string,
+    public readonly code: MedialaneErrorCode = "UNKNOWN",
     public readonly cause?: unknown
   ) {
     super(message);
@@ -84,7 +86,7 @@ function resolveToken(currency: string) {
   const token = SUPPORTED_TOKENS.find(
     (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
   );
-  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`);
+  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
   return token;
 }
 
@@ -193,7 +195,7 @@ export async function createListing(
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to create listing", err);
+    throw new MedialaneError("Failed to create listing", "TRANSACTION_FAILED", err);
   }
 }
 
@@ -282,7 +284,7 @@ export async function makeOffer(
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to make offer", err);
+    throw new MedialaneError("Failed to make offer", "TRANSACTION_FAILED", err);
   }
 }
 
@@ -325,7 +327,7 @@ export async function fulfillOrder(
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to fulfill order", err);
+    throw new MedialaneError("Failed to fulfill order", "TRANSACTION_FAILED", err);
   }
 }
 
@@ -368,7 +370,7 @@ export async function cancelOrder(
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to cancel order", err);
+    throw new MedialaneError("Failed to cancel order", "TRANSACTION_FAILED", err);
   }
 }
 
@@ -404,7 +406,7 @@ export async function mint(
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to mint NFT", err);
+    throw new MedialaneError("Failed to mint NFT", "TRANSACTION_FAILED", err);
   }
 }
 
@@ -433,7 +435,7 @@ export async function createCollection(
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to create collection", err);
+    throw new MedialaneError("Failed to create collection", "TRANSACTION_FAILED", err);
   }
 }
 
@@ -447,7 +449,7 @@ export async function checkoutCart(
   items: CartItem[],
   config: ResolvedConfig
 ): Promise<TxResult> {
-  if (items.length === 0) throw new MedialaneError("Cart is empty");
+  if (items.length === 0) throw new MedialaneError("Cart is empty", "INVALID_PARAMS");
 
   const { contract, provider } = makeContract(config);
 
@@ -507,6 +509,6 @@ export async function checkoutCart(
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Cart checkout failed", err);
+    throw new MedialaneError("Cart checkout failed", "TRANSACTION_FAILED", err);
   }
 }

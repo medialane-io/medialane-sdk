@@ -8,6 +8,8 @@ var starknet = require('starknet');
 // src/constants.ts
 var MARKETPLACE_CONTRACT_MAINNET = "0x04299b51289aa700de4ce19cc77bcea8430bfd1aef04193efab09d60a3a7ee0f";
 var COLLECTION_CONTRACT_MAINNET = "0x05e73b7be06d82beeb390a0e0d655f2c9e7cf519658e04f05d9c690ccc41da03";
+var MARKETPLACE_CONTRACT_SEPOLIA = "";
+var COLLECTION_CONTRACT_SEPOLIA = "";
 var SUPPORTED_TOKENS = [
   {
     // Circle-native USDC on Starknet (canonical — preferred)
@@ -43,122 +45,6 @@ var DEFAULT_RPC_URLS = {
   mainnet: "https://rpc.starknet.lava.build",
   sepolia: "https://rpc.starknet-sepolia.lava.build"
 };
-
-// src/config.ts
-var MedialaneConfigSchema = zod.z.object({
-  network: zod.z.enum(SUPPORTED_NETWORKS).default("mainnet"),
-  rpcUrl: zod.z.string().url().optional(),
-  backendUrl: zod.z.string().url().optional(),
-  /** API key for authenticated /v1/* backend endpoints */
-  apiKey: zod.z.string().optional(),
-  marketplaceContract: zod.z.string().optional(),
-  collectionContract: zod.z.string().optional()
-});
-function resolveConfig(raw) {
-  const parsed = MedialaneConfigSchema.parse(raw);
-  return {
-    network: parsed.network,
-    rpcUrl: parsed.rpcUrl ?? DEFAULT_RPC_URLS[parsed.network],
-    backendUrl: parsed.backendUrl,
-    apiKey: parsed.apiKey,
-    marketplaceContract: parsed.marketplaceContract ?? MARKETPLACE_CONTRACT_MAINNET,
-    collectionContract: parsed.collectionContract ?? COLLECTION_CONTRACT_MAINNET
-  };
-}
-function buildOrderTypedData(message, chainId) {
-  return {
-    domain: {
-      name: "Medialane",
-      version: "1",
-      chainId,
-      revision: starknet.TypedDataRevision.ACTIVE
-    },
-    primaryType: "OrderParameters",
-    types: {
-      StarknetDomain: [
-        { name: "name", type: "shortstring" },
-        { name: "version", type: "shortstring" },
-        { name: "chainId", type: "shortstring" },
-        { name: "revision", type: "shortstring" }
-      ],
-      OrderParameters: [
-        { name: "offerer", type: "ContractAddress" },
-        { name: "offer", type: "OfferItem" },
-        { name: "consideration", type: "ConsiderationItem" },
-        { name: "start_time", type: "felt" },
-        { name: "end_time", type: "felt" },
-        { name: "salt", type: "felt" },
-        { name: "nonce", type: "felt" }
-      ],
-      OfferItem: [
-        { name: "item_type", type: "shortstring" },
-        { name: "token", type: "ContractAddress" },
-        { name: "identifier_or_criteria", type: "felt" },
-        { name: "start_amount", type: "felt" },
-        { name: "end_amount", type: "felt" }
-      ],
-      ConsiderationItem: [
-        { name: "item_type", type: "shortstring" },
-        { name: "token", type: "ContractAddress" },
-        { name: "identifier_or_criteria", type: "felt" },
-        { name: "start_amount", type: "felt" },
-        { name: "end_amount", type: "felt" },
-        { name: "recipient", type: "ContractAddress" }
-      ]
-    },
-    message
-  };
-}
-function buildFulfillmentTypedData(message, chainId) {
-  return {
-    domain: {
-      name: "Medialane",
-      version: "1",
-      chainId,
-      revision: starknet.TypedDataRevision.ACTIVE
-    },
-    primaryType: "OrderFulfillment",
-    types: {
-      StarknetDomain: [
-        { name: "name", type: "shortstring" },
-        { name: "version", type: "shortstring" },
-        { name: "chainId", type: "shortstring" },
-        { name: "revision", type: "shortstring" }
-      ],
-      OrderFulfillment: [
-        { name: "order_hash", type: "felt" },
-        { name: "fulfiller", type: "ContractAddress" },
-        { name: "nonce", type: "felt" }
-      ]
-    },
-    message
-  };
-}
-function buildCancellationTypedData(message, chainId) {
-  return {
-    domain: {
-      name: "Medialane",
-      version: "1",
-      chainId,
-      revision: starknet.TypedDataRevision.ACTIVE
-    },
-    primaryType: "OrderCancellation",
-    types: {
-      StarknetDomain: [
-        { name: "name", type: "shortstring" },
-        { name: "version", type: "shortstring" },
-        { name: "chainId", type: "shortstring" },
-        { name: "revision", type: "shortstring" }
-      ],
-      OrderCancellation: [
-        { name: "order_hash", type: "felt" },
-        { name: "offerer", type: "ContractAddress" },
-        { name: "nonce", type: "felt" }
-      ]
-    },
-    message
-  };
-}
 
 // src/abis.ts
 var IPMarketplaceABI = [
@@ -512,11 +398,106 @@ function getTokenBySymbol(symbol) {
   const upper = symbol.toUpperCase();
   return SUPPORTED_TOKENS.find((t) => t.symbol === upper);
 }
+function buildOrderTypedData(message, chainId) {
+  return {
+    domain: {
+      name: "Medialane",
+      version: "1",
+      chainId,
+      revision: starknet.TypedDataRevision.ACTIVE
+    },
+    primaryType: "OrderParameters",
+    types: {
+      StarknetDomain: [
+        { name: "name", type: "shortstring" },
+        { name: "version", type: "shortstring" },
+        { name: "chainId", type: "shortstring" },
+        { name: "revision", type: "shortstring" }
+      ],
+      OrderParameters: [
+        { name: "offerer", type: "ContractAddress" },
+        { name: "offer", type: "OfferItem" },
+        { name: "consideration", type: "ConsiderationItem" },
+        { name: "start_time", type: "felt" },
+        { name: "end_time", type: "felt" },
+        { name: "salt", type: "felt" },
+        { name: "nonce", type: "felt" }
+      ],
+      OfferItem: [
+        { name: "item_type", type: "shortstring" },
+        { name: "token", type: "ContractAddress" },
+        { name: "identifier_or_criteria", type: "felt" },
+        { name: "start_amount", type: "felt" },
+        { name: "end_amount", type: "felt" }
+      ],
+      ConsiderationItem: [
+        { name: "item_type", type: "shortstring" },
+        { name: "token", type: "ContractAddress" },
+        { name: "identifier_or_criteria", type: "felt" },
+        { name: "start_amount", type: "felt" },
+        { name: "end_amount", type: "felt" },
+        { name: "recipient", type: "ContractAddress" }
+      ]
+    },
+    message
+  };
+}
+function buildFulfillmentTypedData(message, chainId) {
+  return {
+    domain: {
+      name: "Medialane",
+      version: "1",
+      chainId,
+      revision: starknet.TypedDataRevision.ACTIVE
+    },
+    primaryType: "OrderFulfillment",
+    types: {
+      StarknetDomain: [
+        { name: "name", type: "shortstring" },
+        { name: "version", type: "shortstring" },
+        { name: "chainId", type: "shortstring" },
+        { name: "revision", type: "shortstring" }
+      ],
+      OrderFulfillment: [
+        { name: "order_hash", type: "felt" },
+        { name: "fulfiller", type: "ContractAddress" },
+        { name: "nonce", type: "felt" }
+      ]
+    },
+    message
+  };
+}
+function buildCancellationTypedData(message, chainId) {
+  return {
+    domain: {
+      name: "Medialane",
+      version: "1",
+      chainId,
+      revision: starknet.TypedDataRevision.ACTIVE
+    },
+    primaryType: "OrderCancellation",
+    types: {
+      StarknetDomain: [
+        { name: "name", type: "shortstring" },
+        { name: "version", type: "shortstring" },
+        { name: "chainId", type: "shortstring" },
+        { name: "revision", type: "shortstring" }
+      ],
+      OrderCancellation: [
+        { name: "order_hash", type: "felt" },
+        { name: "offerer", type: "ContractAddress" },
+        { name: "nonce", type: "felt" }
+      ]
+    },
+    message
+  };
+}
 
 // src/marketplace/orders.ts
 var MedialaneError = class extends Error {
-  constructor(message, cause) {
+  constructor(message, code = "UNKNOWN", cause) {
     super(message);
+    this.code = code;
     this.cause = cause;
     this.name = "MedialaneError";
   }
@@ -556,7 +537,7 @@ function resolveToken(currency) {
   const token = SUPPORTED_TOKENS.find(
     (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
   );
-  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`);
+  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
   return token;
 }
 async function createListing(account, params, config) {
@@ -640,7 +621,7 @@ async function createListing(account, params, config) {
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to create listing", err);
+    throw new MedialaneError("Failed to create listing", "TRANSACTION_FAILED", err);
   }
 }
 async function makeOffer(account, params, config) {
@@ -711,7 +692,7 @@ async function makeOffer(account, params, config) {
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to make offer", err);
+    throw new MedialaneError("Failed to make offer", "TRANSACTION_FAILED", err);
   }
 }
 async function fulfillOrder(account, params, config) {
@@ -739,7 +720,7 @@ async function fulfillOrder(account, params, config) {
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to fulfill order", err);
+    throw new MedialaneError("Failed to fulfill order", "TRANSACTION_FAILED", err);
   }
 }
 async function cancelOrder(account, params, config) {
@@ -767,7 +748,7 @@ async function cancelOrder(account, params, config) {
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to cancel order", err);
+    throw new MedialaneError("Failed to cancel order", "TRANSACTION_FAILED", err);
   }
 }
 function encodeByteArray(str) {
@@ -790,7 +771,7 @@ async function mint(account, params, config) {
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to mint NFT", err);
+    throw new MedialaneError("Failed to mint NFT", "TRANSACTION_FAILED", err);
   }
 }
 async function createCollection(account, params, config) {
@@ -807,11 +788,11 @@ async function createCollection(account, params, config) {
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Failed to create collection", err);
+    throw new MedialaneError("Failed to create collection", "TRANSACTION_FAILED", err);
   }
 }
 async function checkoutCart(account, items, config) {
-  if (items.length === 0) throw new MedialaneError("Cart is empty");
+  if (items.length === 0) throw new MedialaneError("Cart is empty", "INVALID_PARAMS");
   const { contract, provider } = makeContract(config);
   const tokenTotals = /* @__PURE__ */ new Map();
   for (const item of items) {
@@ -858,8 +839,47 @@ async function checkoutCart(account, items, config) {
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
-    throw new MedialaneError("Cart checkout failed", err);
+    throw new MedialaneError("Cart checkout failed", "TRANSACTION_FAILED", err);
   }
+}
+
+// src/config.ts
+var MedialaneConfigSchema = zod.z.object({
+  network: zod.z.enum(SUPPORTED_NETWORKS).default("mainnet"),
+  rpcUrl: zod.z.string().url().optional(),
+  backendUrl: zod.z.string().url().optional(),
+  /** API key for authenticated /v1/* backend endpoints */
+  apiKey: zod.z.string().optional(),
+  marketplaceContract: zod.z.string().optional(),
+  collectionContract: zod.z.string().optional(),
+  retryOptions: zod.z.object({
+    maxAttempts: zod.z.number().int().min(1).max(10).optional(),
+    baseDelayMs: zod.z.number().int().min(0).optional(),
+    maxDelayMs: zod.z.number().int().min(0).optional()
+  }).optional()
+});
+function resolveConfig(raw) {
+  const parsed = MedialaneConfigSchema.parse(raw);
+  const isMainnet = parsed.network === "mainnet";
+  const defaultMarketplace = isMainnet ? MARKETPLACE_CONTRACT_MAINNET : MARKETPLACE_CONTRACT_SEPOLIA;
+  const defaultCollection = isMainnet ? COLLECTION_CONTRACT_MAINNET : COLLECTION_CONTRACT_SEPOLIA;
+  const marketplaceContract = parsed.marketplaceContract ?? defaultMarketplace;
+  const collectionContract = parsed.collectionContract ?? defaultCollection;
+  if (!marketplaceContract || !collectionContract) {
+    throw new MedialaneError(
+      `Sepolia network is not yet supported: marketplace and collection contract addresses are not configured. Pass 'marketplaceContract' and 'collectionContract' explicitly in your MedialaneClient config.`,
+      "NETWORK_NOT_SUPPORTED"
+    );
+  }
+  return {
+    network: parsed.network,
+    rpcUrl: parsed.rpcUrl ?? DEFAULT_RPC_URLS[parsed.network],
+    backendUrl: parsed.backendUrl,
+    apiKey: parsed.apiKey,
+    marketplaceContract,
+    collectionContract,
+    retryOptions: parsed.retryOptions
+  };
 }
 
 // src/marketplace/index.ts
@@ -911,18 +931,60 @@ function shortenAddress(address, chars = 4) {
   return `${norm.slice(0, chars + 2)}...${norm.slice(-chars)}`;
 }
 
+// src/utils/retry.ts
+var DEFAULT_MAX_ATTEMPTS = 3;
+var DEFAULT_BASE_DELAY_MS = 300;
+var DEFAULT_MAX_DELAY_MS = 5e3;
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+async function withRetry(fn, opts) {
+  const maxAttempts = opts?.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+  const baseDelayMs = opts?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
+  const maxDelayMs = opts?.maxDelayMs ?? DEFAULT_MAX_DELAY_MS;
+  let lastError;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (err instanceof MedialaneApiError && err.status < 500) {
+        throw err;
+      }
+      const isRetryable = err instanceof MedialaneApiError && err.status >= 500 || err instanceof TypeError;
+      if (!isRetryable || attempt === maxAttempts - 1) {
+        throw err;
+      }
+      const jitter = Math.random() * baseDelayMs;
+      const delay = Math.min(baseDelayMs * Math.pow(2, attempt) + jitter, maxDelayMs);
+      await sleep(delay);
+    }
+  }
+  throw lastError;
+}
+
 // src/api/client.ts
+function deriveErrorCode(status) {
+  if (status === 404) return "TOKEN_NOT_FOUND";
+  if (status === 429) return "RATE_LIMITED";
+  if (status === 410) return "INTENT_EXPIRED";
+  if (status === 401 || status === 403) return "UNAUTHORIZED";
+  if (status === 400) return "INVALID_PARAMS";
+  return "UNKNOWN";
+}
 var MedialaneApiError = class extends Error {
   constructor(status, message) {
     super(message);
     this.status = status;
     this.name = "MedialaneApiError";
+    this.code = deriveErrorCode(status);
   }
 };
 var ApiClient = class {
-  constructor(baseUrl, apiKey) {
+  constructor(baseUrl, apiKey, retryOptions) {
     this.baseUrl = baseUrl;
     this.baseHeaders = apiKey ? { "x-api-key": apiKey } : {};
+    this.retryOptions = retryOptions;
   }
   async request(path, init) {
     const url = `${this.baseUrl.replace(/\/$/, "")}${path}`;
@@ -930,19 +992,23 @@ var ApiClient = class {
     if (!(init?.body instanceof FormData)) {
       headers["Content-Type"] = "application/json";
     }
-    const res = await fetch(url, {
-      ...init,
-      headers: { ...headers, ...init?.headers }
-    });
-    if (!res.ok) {
-      let message = res.statusText;
-      try {
-        const body = await res.json();
-        if (body.error) message = body.error;
-      } catch {
+    const res = await withRetry(async () => {
+      const response = await fetch(url, {
+        ...init,
+        headers: { ...headers, ...init?.headers }
+      });
+      if (!response.ok) {
+        const text = await response.text().catch(() => response.statusText);
+        let message = text;
+        try {
+          const body = JSON.parse(text);
+          if (body.error) message = body.error;
+        } catch {
+        }
+        throw new MedialaneApiError(response.status, message);
       }
-      throw new MedialaneApiError(res.status, message);
-    }
+      return response;
+    }, this.retryOptions);
     return res.json();
   }
   get(path) {
@@ -1128,7 +1194,7 @@ var MedialaneClient = class {
         }
       });
     } else {
-      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey);
+      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions);
     }
   }
   get network() {

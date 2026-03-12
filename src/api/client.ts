@@ -1,4 +1,6 @@
 import { normalizeAddress } from "../utils/address.js";
+import type { MedialaneErrorCode } from "../types/errors.js";
+import { withRetry, type RetryOptions } from "../utils/retry.js";
 import type {
   ApiOrder,
   ApiOrdersQuery,
@@ -25,26 +27,41 @@ import type {
   CreateMintIntentParams,
   CreateCollectionIntentParams,
   ApiResponse,
+  CollectionSort,
 } from "../types/api.js";
 
+function deriveErrorCode(status: number): MedialaneErrorCode {
+  if (status === 404) return "TOKEN_NOT_FOUND";
+  if (status === 429) return "RATE_LIMITED";
+  if (status === 410) return "INTENT_EXPIRED";
+  if (status === 401 || status === 403) return "UNAUTHORIZED";
+  if (status === 400) return "INVALID_PARAMS";
+  return "UNKNOWN";
+}
+
 export class MedialaneApiError extends Error {
+  readonly code: MedialaneErrorCode;
   constructor(
     public readonly status: number,
     message: string
   ) {
     super(message);
     this.name = "MedialaneApiError";
+    this.code = deriveErrorCode(status);
   }
 }
 
 export class ApiClient {
   private readonly baseHeaders: Record<string, string>;
+  private readonly retryOptions: RetryOptions | undefined;
 
   constructor(
     private readonly baseUrl: string,
-    apiKey?: string
+    apiKey?: string,
+    retryOptions?: RetryOptions
   ) {
     this.baseHeaders = apiKey ? { "x-api-key": apiKey } : {};
+    this.retryOptions = retryOptions;
   }
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -53,20 +70,24 @@ export class ApiClient {
     if (!(init?.body instanceof FormData)) {
       headers["Content-Type"] = "application/json";
     }
-    const res = await fetch(url, {
-      ...init,
-      headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
-    });
-    if (!res.ok) {
-      let message = res.statusText;
-      try {
-        const body = (await res.json()) as { error?: string };
-        if (body.error) message = body.error;
-      } catch {
-        // use statusText
+    const res = await withRetry(async () => {
+      const response = await fetch(url, {
+        ...init,
+        headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
+      });
+      if (!response.ok) {
+        const text = await response.text().catch(() => response.statusText);
+        let message = text;
+        try {
+          const body = JSON.parse(text) as { error?: string };
+          if (body.error) message = body.error;
+        } catch {
+          // use raw text
+        }
+        throw new MedialaneApiError(response.status, message);
       }
-      throw new MedialaneApiError(res.status, message);
-    }
+      return response;
+    }, this.retryOptions);
     return res.json() as Promise<T>;
   }
 
@@ -148,7 +169,7 @@ export class ApiClient {
     page = 1,
     limit = 20,
     isKnown?: boolean,
-    sort?: "recent" | "supply" | "floor" | "volume" | "name"
+    sort?: CollectionSort
   ): Promise<ApiResponse<ApiCollection[]>> {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (isKnown !== undefined) params.set("isKnown", String(isKnown));

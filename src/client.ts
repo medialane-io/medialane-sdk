@@ -30,7 +30,7 @@ export class MedialaneClient {
         },
       });
     } else {
-      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey);
+      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions);
     }
   }
 
