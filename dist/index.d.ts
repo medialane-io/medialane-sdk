@@ -361,6 +361,9 @@ interface ApiCollection {
     startBlock: string;
     metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
     isKnown: boolean;
+    source: "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME";
+    claimedBy: string | null;
+    profile?: ApiCollectionProfile | null;
     floorPrice: string | null;
     totalVolume: string | null;
     holderCount: number | null;
@@ -532,6 +535,50 @@ interface CreateWebhookParams {
     events: WebhookEventType[];
     label?: string;
 }
+interface ApiCollectionProfile {
+    contractAddress: string;
+    chain: string;
+    displayName: string | null;
+    description: string | null;
+    image: string | null;
+    bannerImage: string | null;
+    websiteUrl: string | null;
+    twitterUrl: string | null;
+    discordUrl: string | null;
+    telegramUrl: string | null;
+    updatedBy: string | null;
+    updatedAt: string;
+}
+interface ApiCreatorProfile {
+    walletAddress: string;
+    chain: string;
+    displayName: string | null;
+    bio: string | null;
+    avatarImage: string | null;
+    bannerImage: string | null;
+    websiteUrl: string | null;
+    twitterUrl: string | null;
+    discordUrl: string | null;
+    telegramUrl: string | null;
+    updatedAt: string;
+}
+interface ApiCollectionClaim {
+    id: string;
+    contractAddress: string;
+    chain: string;
+    claimantAddress: string | null;
+    status: "PENDING" | "AUTO_APPROVED" | "APPROVED" | "REJECTED";
+    verificationMethod: "ONCHAIN" | "SIGNATURE" | "MANUAL";
+    createdAt: string;
+}
+interface ApiAdminCollectionClaim extends ApiCollectionClaim {
+    claimantEmail: string | null;
+    notes: string | null;
+    adminNotes: string | null;
+    reviewedBy: string | null;
+    reviewedAt: string | null;
+    updatedAt: string;
+}
 
 declare class MedialaneApiError extends Error {
     readonly status: number;
@@ -590,6 +637,36 @@ declare class ApiClient {
         id: string;
         status: string;
     }>>;
+    /**
+     * Path 1: On-chain auto claim. Sends both x-api-key (tenant auth) and
+     * Authorization: Bearer (Clerk JWT) simultaneously.
+     */
+    claimCollection(contractAddress: string, walletAddress: string, clerkToken: string): Promise<{
+        verified: boolean;
+        collection?: ApiCollection;
+        reason?: string;
+    }>;
+    /**
+     * Path 3: Manual off-chain claim request (email-based).
+     */
+    requestCollectionClaim(params: {
+        contractAddress: string;
+        walletAddress?: string;
+        email: string;
+        notes?: string;
+    }): Promise<{
+        claim: ApiCollectionClaim;
+    }>;
+    getCollectionProfile(contractAddress: string): Promise<ApiCollectionProfile | null>;
+    /**
+     * Update collection profile. Requires Clerk JWT for ownership check.
+     */
+    updateCollectionProfile(contractAddress: string, data: Partial<Omit<ApiCollectionProfile, "contractAddress" | "chain" | "updatedBy" | "updatedAt">>, clerkToken: string): Promise<ApiCollectionProfile>;
+    getCreatorProfile(walletAddress: string): Promise<ApiCreatorProfile | null>;
+    /**
+     * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
+     */
+    updateCreatorProfile(walletAddress: string, data: Partial<Omit<ApiCreatorProfile, "walletAddress" | "chain" | "updatedAt">>, clerkToken: string): Promise<ApiCreatorProfile>;
 }
 
 declare class MedialaneClient {
@@ -1032,4 +1109,4 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, ApiClient, type ApiCollection, type ApiCollectionsQuery, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type CollectionSort, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type CollectionSort, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

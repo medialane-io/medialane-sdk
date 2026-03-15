@@ -187,6 +187,9 @@ export interface ApiCollection {
   startBlock: string;
   metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
   isKnown: boolean;
+  source: "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME";
+  claimedBy: string | null;
+  profile?: ApiCollectionProfile | null;
   floorPrice: string | null;
   totalVolume: string | null;
   holderCount: number | null;
@@ -392,4 +395,56 @@ export interface CreateWebhookParams {
   url: string;
   events: WebhookEventType[];
   label?: string;
+}
+
+// ─── Collection & Creator Profiles ────────────────────────────────────────────
+
+export interface ApiCollectionProfile {
+  contractAddress: string;
+  chain: string;
+  displayName: string | null;
+  description: string | null;
+  image: string | null;
+  bannerImage: string | null;
+  websiteUrl: string | null;
+  twitterUrl: string | null;
+  discordUrl: string | null;
+  telegramUrl: string | null;
+  updatedBy: string | null;
+  updatedAt: string;
+}
+
+export interface ApiCreatorProfile {
+  walletAddress: string;
+  chain: string;
+  displayName: string | null;
+  bio: string | null;
+  avatarImage: string | null;
+  bannerImage: string | null;
+  websiteUrl: string | null;
+  twitterUrl: string | null;
+  discordUrl: string | null;
+  telegramUrl: string | null;
+  updatedAt: string;
+}
+
+// ─── Collection Claims ─────────────────────────────────────────────────────────
+
+export interface ApiCollectionClaim {
+  id: string;
+  contractAddress: string;
+  chain: string;
+  claimantAddress: string | null;
+  status: "PENDING" | "AUTO_APPROVED" | "APPROVED" | "REJECTED";
+  verificationMethod: "ONCHAIN" | "SIGNATURE" | "MANUAL";
+  createdAt: string;
+}
+
+export interface ApiAdminCollectionClaim extends ApiCollectionClaim {
+  claimantEmail: string | null;
+  notes: string | null;
+  adminNotes: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  updatedAt: string;
 }

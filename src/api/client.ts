@@ -6,6 +6,9 @@ import type {
   ApiOrdersQuery,
   ApiToken,
   ApiCollection,
+  ApiCollectionProfile,
+  ApiCreatorProfile,
+  ApiCollectionClaim,
   ApiActivity,
   ApiActivitiesQuery,
   ApiSearchResult,
@@ -328,5 +331,104 @@ export class ApiClient {
     return this.del<ApiResponse<{ id: string; status: string }>>(
       `/v1/portal/webhooks/${id}`
     );
+  }
+
+  // ─── Collection Claims ──────────────────────────────────────────────────────
+
+  /**
+   * Path 1: On-chain auto claim. Sends both x-api-key (tenant auth) and
+   * Authorization: Bearer (Clerk JWT) simultaneously.
+   */
+  async claimCollection(
+    contractAddress: string,
+    walletAddress: string,
+    clerkToken: string
+  ): Promise<{ verified: boolean; collection?: ApiCollection; reason?: string }> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/claim`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${clerkToken}`,
+      },
+      body: JSON.stringify({ contractAddress, walletAddress }),
+    });
+    return res.json();
+  }
+
+  /**
+   * Path 3: Manual off-chain claim request (email-based).
+   */
+  requestCollectionClaim(params: {
+    contractAddress: string;
+    walletAddress?: string;
+    email: string;
+    notes?: string;
+  }): Promise<{ claim: ApiCollectionClaim }> {
+    return this.request("/v1/collections/claim/request", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  // ─── Collection Profiles ────────────────────────────────────────────────────
+
+  async getCollectionProfile(contractAddress: string): Promise<ApiCollectionProfile | null> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    if (res.status === 404) return null;
+    return res.json();
+  }
+
+  /**
+   * Update collection profile. Requires Clerk JWT for ownership check.
+   */
+  async updateCollectionProfile(
+    contractAddress: string,
+    data: Partial<Omit<ApiCollectionProfile, "contractAddress" | "chain" | "updatedBy" | "updatedAt">>,
+    clerkToken: string
+  ): Promise<ApiCollectionProfile> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${clerkToken}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  }
+
+  // ─── Creator Profiles ───────────────────────────────────────────────────────
+
+  async getCreatorProfile(walletAddress: string): Promise<ApiCreatorProfile | null> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    if (res.status === 404) return null;
+    return res.json();
+  }
+
+  /**
+   * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
+   */
+  async updateCreatorProfile(
+    walletAddress: string,
+    data: Partial<Omit<ApiCreatorProfile, "walletAddress" | "chain" | "updatedAt">>,
+    clerkToken: string
+  ): Promise<ApiCreatorProfile> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${clerkToken}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return res.json();
   }
 }

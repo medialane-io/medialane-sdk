@@ -1174,6 +1174,79 @@ var ApiClient = class {
       `/v1/portal/webhooks/${id}`
     );
   }
+  // ─── Collection Claims ──────────────────────────────────────────────────────
+  /**
+   * Path 1: On-chain auto claim. Sends both x-api-key (tenant auth) and
+   * Authorization: Bearer (Clerk JWT) simultaneously.
+   */
+  async claimCollection(contractAddress, walletAddress, clerkToken) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/claim`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${clerkToken}`
+      },
+      body: JSON.stringify({ contractAddress, walletAddress })
+    });
+    return res.json();
+  }
+  /**
+   * Path 3: Manual off-chain claim request (email-based).
+   */
+  requestCollectionClaim(params) {
+    return this.request("/v1/collections/claim/request", {
+      method: "POST",
+      body: JSON.stringify(params)
+    });
+  }
+  // ─── Collection Profiles ────────────────────────────────────────────────────
+  async getCollectionProfile(contractAddress) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    if (res.status === 404) return null;
+    return res.json();
+  }
+  /**
+   * Update collection profile. Requires Clerk JWT for ownership check.
+   */
+  async updateCollectionProfile(contractAddress, data, clerkToken) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${clerkToken}`
+      },
+      body: JSON.stringify(data)
+    });
+    return res.json();
+  }
+  // ─── Creator Profiles ───────────────────────────────────────────────────────
+  async getCreatorProfile(walletAddress) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    if (res.status === 404) return null;
+    return res.json();
+  }
+  /**
+   * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
+   */
+  async updateCreatorProfile(walletAddress, data, clerkToken) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${clerkToken}`
+      },
+      body: JSON.stringify(data)
+    });
+    return res.json();
+  }
 };
 
 // src/client.ts
