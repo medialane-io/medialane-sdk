@@ -413,6 +413,21 @@ Built with:
 
 ## Changelog
 
+### v0.4.1
+- **Collection claims** — `claimCollection(contractAddress, walletAddress, clerkToken)` for on-chain ownership verification; `requestCollectionClaim({ contractAddress, walletAddress?, email, notes? })` for manual review
+- **Collection profiles** — `getCollectionProfile(contractAddress)` and `updateCollectionProfile(contractAddress, data, clerkToken)` for enriched display metadata (displayName, description, image, bannerImage, social links)
+- **Creator profiles** — `getCreatorProfile(walletAddress)` and `updateCreatorProfile(walletAddress, data, clerkToken)` for creator display metadata
+- **New types** — `ApiCollectionClaim`, `ApiAdminCollectionClaim`, `ApiCollectionProfile`, `ApiCreatorProfile`
+- **`ApiCollection`** extended with `source` (`"MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME"`) and `claimedBy: string | null`
+- `profile?: ApiCollectionProfile | null` optionally embedded on `ApiCollection` when `?include=profile`
+
+### v0.4.0
+- **Typed error codes** — `MedialaneError` and `MedialaneApiError` now expose a `.code: MedialaneErrorCode` property (`"TOKEN_NOT_FOUND"` | `"RATE_LIMITED"` | `"INTENT_EXPIRED"` | `"UNAUTHORIZED"` | `"INVALID_PARAMS"` | `"NETWORK_NOT_SUPPORTED"` | `"UNKNOWN"`)
+- **Automatic retry** — all API requests retry up to 3 times with exponential backoff (300ms base, 5s cap); 4xx errors are not retried. Configure via `retryOptions` in `MedialaneConfig`
+- **`RetryOptions`** type exported from index
+- **`CollectionSort`** named union type exported (`"recent" | "supply" | "floor" | "volume" | "name"`)
+- **Sepolia guard** — constructing a client with `network: "sepolia"` and no explicit contract addresses now throws `NETWORK_NOT_SUPPORTED` immediately
+
 ### v0.3.3
 - `getCollections(page?, limit?, isKnown?, sort?)` — added `sort` parameter: `"recent"` (default) | `"supply"` | `"floor"` | `"volume"` | `"name"`
 - Default sort changed from `totalSupply DESC` to `createdAt DESC` (newest first) — matches backend default
@@ -421,15 +436,12 @@ Built with:
 - `ApiCollection.collectionId: string | null` — on-chain registry numeric ID (decimal string). Required for `createMintIntent`. Populated for collections indexed after 2026-03-09.
 
 ### v0.3.0
-- `normalizeAddress()` now applied internally before all API calls — callers no longer need to normalize Starknet addresses before passing them to SDK methods
-- `getCollectionsByOwner(owner)` — fetch collections by wallet address via API
-
-### v0.2.8
-- `ApiCollection.owner: string | null`
-- `ApiClient.getCollectionsByOwner(owner)`
+- `normalizeAddress()` applied internally before all API calls — callers no longer need to normalize Starknet addresses
+- `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
+- `getCollectionsByOwner(owner)` — fetch collections by wallet address via `GET /v1/collections?owner=`
 
 ### v0.2.6
-- `ApiOrder.token: ApiOrderTokenMeta | null` — token name/image/description on orders (batchTokenMeta)
+- `ApiOrder.token: ApiOrderTokenMeta | null` — token name/image/description embedded on orders (batchTokenMeta); no per-row `getToken` calls needed
 
 ### v0.2.0
 - `IpAttribute` and `IpNftMetadata` interfaces for IP metadata

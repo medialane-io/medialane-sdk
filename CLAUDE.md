@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.3.3",
+  "version": "0.4.1",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -174,6 +174,39 @@ client.api.createWebhook(params)             // PREMIUM; secret returned ONCE
 client.api.deleteWebhook(id)                 // → DISABLED
 ```
 
+**Claims (v0.4.1)**
+```ts
+// Path 1: on-chain ownership check. Requires Clerk JWT + tenant API key.
+client.api.claimCollection(contractAddress, walletAddress, clerkToken)
+// → { verified: boolean; collection?: ApiCollection; reason?: string }
+
+// Path 3: manual review request (no auth required).
+client.api.requestCollectionClaim({ contractAddress, walletAddress?, email, notes? })
+// → { claim: ApiCollectionClaim }
+```
+
+**Collection Profiles (v0.4.1)**
+```ts
+client.api.getCollectionProfile(contractAddress)
+// → ApiCollectionProfile | null
+
+client.api.updateCollectionProfile(contractAddress, data, clerkToken)
+// data: Partial<Omit<ApiCollectionProfile, "contractAddress"|"chain"|"updatedBy"|"updatedAt">>
+// Requires Clerk JWT — only the claimedBy wallet may update
+// → ApiCollectionProfile
+```
+
+**Creator Profiles (v0.4.1)**
+```ts
+client.api.getCreatorProfile(walletAddress)
+// → ApiCreatorProfile | null
+
+client.api.updateCreatorProfile(walletAddress, data, clerkToken)
+// data: Partial<Omit<ApiCreatorProfile, "walletAddress"|"chain"|"updatedAt">>
+// Requires Clerk JWT — wallet must match authenticated user
+// → ApiCreatorProfile
+```
+
 ---
 
 ## Constants (`src/constants.ts`)
@@ -213,18 +246,28 @@ DEFAULT_RPC_URLS = {
 **v0.2.7 — Collection image in intent:**
 - `CreateCollectionIntentParams.image?: string` — optional IPFS URI stored in intent typedData
 
-**v0.2.8 — Collection owner:**
+**v0.3.0 — Internal address normalization + collection owner:**
+- `normalizeAddress()` now applied internally before every URL construction in `ApiClient` — callers no longer need to normalize addresses themselves
+- Affected methods: `getTokensByOwner`, `getOrdersByUser`, `getActivitiesByAddress`, `getActiveOrdersForToken`, `getCollection`, `getCollectionTokens`, `getCollectionsByOwner`, and `offerer` filter in `getOrders`
 - `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
 - `ApiClient.getCollectionsByOwner(owner: string)` — fetches `GET /v1/collections?owner=address`
 
-**v0.3.0 — Internal address normalization:**
-- `normalizeAddress()` now applied internally before every URL construction in `ApiClient` — callers no longer need to normalize addresses themselves
-- Affected methods: `getTokensByOwner`, `getOrdersByUser`, `getActivitiesByAddress`, `getActiveOrdersForToken`, `getCollection`, `getCollectionTokens`, `getCollectionsByOwner`, and `offerer` filter in `getOrders`
+**v0.4.1 — Collection claims + profiles:**
+- `claimCollection(contractAddress, walletAddress, clerkToken)` — on-chain ownership auto-claim
+- `requestCollectionClaim(params)` — manual email-based claim request
+- `getCollectionProfile / updateCollectionProfile` — enriched collection display metadata
+- `getCreatorProfile / updateCreatorProfile` — creator display metadata
+- New types: `ApiCollectionClaim`, `ApiAdminCollectionClaim`, `ApiCollectionProfile`, `ApiCreatorProfile`
+- `ApiCollection` extended: `source` (enum) + `claimedBy: string | null` + optional `profile`
+
+**v0.4.0 — Typed errors + retry:**
+- `MedialaneError.code` and `MedialaneApiError.code` — typed `MedialaneErrorCode` union
+- Automatic exponential-backoff retry on all API requests (3 attempts, 4xx not retried)
+- `RetryOptions` and `CollectionSort` exported from index
+- Sepolia guard — throws `NETWORK_NOT_SUPPORTED` at construction if no contracts configured
 
 **v0.3.3 — Collections sort:**
 - `getCollections(page?, limit?, isKnown?, sort?)` — added `sort` param: `"recent"` (default, `createdAt DESC`) | `"supply"` | `"floor"` | `"volume"` | `"name"`
-- Build: `bun install && bun x tsup` (v0.3.3 committed to git; npm publish pending — `bun publish` requires `npm adduser` on the publishing machine)
-- **Note**: `medialane-io` uses a direct `fetch` in `useCollections` hook (bypasses SDK client) so the sort param works without needing a published SDK update
 
 **v0.3.1 — Collection on-chain ID:**
 - `ApiCollection.collectionId: string | null` — the on-chain numeric registry ID (decimal string, e.g. `"1"`). Required by `createMintIntent`. Populated for collections indexed after the 2026-03-09 backend migration; null for older collections until re-indexed.
