@@ -28,7 +28,8 @@ export { IPMarketplaceABI } from "./abis.js";
 
 // Utils
 export { normalizeAddress, shortenAddress } from "./utils/address.js";
-export { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol } from "./utils/token.js";
+export { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol, getListableTokens } from "./utils/token.js";
+export type { SupportedToken } from "./utils/token.js";
 export { stringifyBigInts, u256ToBigInt } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
 

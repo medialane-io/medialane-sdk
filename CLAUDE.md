@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -55,7 +55,7 @@ src/
   utils/
     address.ts       ← normalizeAddress()
     bigint.ts        ← stringifyBigInts()
-    token.ts         ← parseAmount(), formatAmount()
+    token.ts         ← parseAmount(), formatAmount(), getListableTokens()
 ```
 
 ---
@@ -212,7 +212,7 @@ client.api.updateCreatorProfile(walletAddress, data, clerkToken)
 ## Constants (`src/constants.ts`)
 
 ```ts
-MARKETPLACE_CONTRACT_MAINNET = "0x059deafbbafbf7051c315cf75a94b03c5547892bc0c6dfa36d7ac7290d4cc33a"
+MARKETPLACE_CONTRACT_MAINNET = "0x04299b51289aa700de4ce19cc77bcea8430bfd1aef04193efab09d60a3a7ee0f"
 COLLECTION_CONTRACT_MAINNET  = "0x05e73b7be06d82beeb390a0e0d655f2c9e7cf519658e04f05d9c690ccc41da03"
 INDEXER_START_BLOCK_MAINNET  = 6204232
 
@@ -222,15 +222,15 @@ DEFAULT_RPC_URLS = {
 }
 ```
 
-**SUPPORTED_TOKENS** (5 tokens — matches backend as of v0.2.0):
+**SUPPORTED_TOKENS** (5 tokens — v0.4.2):
 
-| Symbol | Type | Address | Decimals |
-|---|---|---|---|
-| USDC | Circle-native (canonical) | `0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb` | 6 |
-| USDC.e | Bridged (Starkgate) | `0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8` | 6 |
-| USDT | Tether | `0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8` | 6 |
-| ETH | Ether | `0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7` | 18 |
-| STRK | Starknet native | `0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d` | 18 |
+| Symbol | Address | Decimals | Listable |
+|--------|---------|----------|----------|
+| USDC | `0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb` | 6 | ✓ |
+| USDT | `0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8` | 6 | ✓ |
+| ETH | `0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7` | 18 | ✓ |
+| STRK | `0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d` | 18 | ✓ |
+| WBTC | `0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac` | 8 | ✓ |
 
 **IP Metadata Types** (added v0.2.0 — `src/types/api.ts`):
 

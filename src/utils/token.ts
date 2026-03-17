@@ -41,3 +41,11 @@ export function getTokenBySymbol(symbol: string): SupportedToken | undefined {
   const upper = symbol.toUpperCase();
   return SUPPORTED_TOKENS.find((t) => t.symbol === upper);
 }
+
+/**
+ * Return all tokens available for use in listing and offer dialogs.
+ * Tokens with listable: false appear only as marketplace filter chips.
+ */
+export function getListableTokens(): ReadonlyArray<SupportedToken> {
+  return SUPPORTED_TOKENS.filter((t) => t.listable);
+}

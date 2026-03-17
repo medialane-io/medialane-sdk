@@ -7,22 +7,27 @@ declare const SUPPORTED_TOKENS: readonly [{
     readonly symbol: "USDC";
     readonly address: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb";
     readonly decimals: 6;
-}, {
-    readonly symbol: "USDC.e";
-    readonly address: "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8";
-    readonly decimals: 6;
+    readonly listable: true;
 }, {
     readonly symbol: "USDT";
     readonly address: "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8";
     readonly decimals: 6;
+    readonly listable: true;
 }, {
     readonly symbol: "ETH";
     readonly address: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
     readonly decimals: 18;
+    readonly listable: true;
 }, {
     readonly symbol: "STRK";
     readonly address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
     readonly decimals: 18;
+    readonly listable: true;
+}, {
+    readonly symbol: "WBTC";
+    readonly address: "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac";
+    readonly decimals: 8;
+    readonly listable: true;
 }];
 type SupportedTokenSymbol = (typeof SUPPORTED_TOKENS)[number]["symbol"];
 declare const SUPPORTED_NETWORKS: readonly ["mainnet", "sepolia"];
@@ -1083,6 +1088,11 @@ declare function getTokenByAddress(address: string): SupportedToken | undefined;
  * Find a supported token by its symbol (case-insensitive).
  */
 declare function getTokenBySymbol(symbol: string): SupportedToken | undefined;
+/**
+ * Return all tokens available for use in listing and offer dialogs.
+ * Tokens with listable: false appear only as marketplace filter chips.
+ */
+declare function getListableTokens(): ReadonlyArray<SupportedToken>;
 
 /**
  * Recursively convert all BigInt values to their decimal string representations.
@@ -1109,4 +1119,4 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type CollectionSort, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type CollectionSort, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
