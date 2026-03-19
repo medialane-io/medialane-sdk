@@ -411,6 +411,14 @@ export class ApiClient {
     return res.json();
   }
 
+  /** Resolve a username slug to a creator profile (public). */
+  async getCreatorByUsername(username: string): Promise<ApiCreatorProfile | null> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/by-username/${encodeURIComponent(username.toLowerCase().trim())}`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    if (res.status === 404) return null;
+    return res.json();
+  }
+
   /**
    * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
    */

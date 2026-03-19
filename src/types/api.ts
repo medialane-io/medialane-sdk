@@ -417,6 +417,7 @@ export interface ApiCollectionProfile {
 export interface ApiCreatorProfile {
   walletAddress: string;
   chain: string;
+  username: string | null;
   displayName: string | null;
   bio: string | null;
   avatarImage: string | null;
