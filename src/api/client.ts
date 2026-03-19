@@ -8,6 +8,7 @@ import type {
   ApiCollection,
   ApiCollectionProfile,
   ApiCreatorProfile,
+  ApiCreatorListResult,
   ApiCollectionClaim,
   ApiActivity,
   ApiActivitiesQuery,
@@ -403,6 +404,17 @@ export class ApiClient {
   }
 
   // ─── Creator Profiles ───────────────────────────────────────────────────────
+
+  /** List all creators with an approved username. */
+  async getCreators(opts: { search?: string; page?: number; limit?: number } = {}): Promise<ApiCreatorListResult> {
+    const params = new URLSearchParams();
+    if (opts.search) params.set("search", opts.search);
+    if (opts.page)  params.set("page",  String(opts.page));
+    if (opts.limit) params.set("limit", String(opts.limit));
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators?${params}`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    return res.json();
+  }
 
   async getCreatorProfile(walletAddress: string): Promise<ApiCreatorProfile | null> {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;

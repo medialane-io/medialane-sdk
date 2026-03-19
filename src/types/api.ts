@@ -429,6 +429,13 @@ export interface ApiCreatorProfile {
   updatedAt: string;
 }
 
+export interface ApiCreatorListResult {
+  creators: ApiCreatorProfile[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 // ─── Collection Claims ─────────────────────────────────────────────────────────
 
 export interface ApiCollectionClaim {
