@@ -251,9 +251,18 @@ export interface ApiSearchCollectionResult {
   holderCount: number | null;
 }
 
+export interface ApiSearchCreatorResult {
+  walletAddress: string;
+  username: string | null;
+  displayName: string | null;
+  bio: string | null;
+  avatarImage: string | null;
+}
+
 export interface ApiSearchResult {
   tokens: ApiSearchTokenResult[];
   collections: ApiSearchCollectionResult[];
+  creators: ApiSearchCreatorResult[];
 }
 
 // ─── Intents ──────────────────────────────────────────────────────────────────
