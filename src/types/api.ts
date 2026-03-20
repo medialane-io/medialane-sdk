@@ -1,3 +1,17 @@
+export type IPType =
+  | "Audio"
+  | "Art"
+  | "Documents"
+  | "NFT"
+  | "Video"
+  | "Photography"
+  | "Patents"
+  | "Posts"
+  | "Publications"
+  | "RWA"
+  | "Software"
+  | "Custom";
+
 export type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 
 export interface ApiCollectionsQuery {
