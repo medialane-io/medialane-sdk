@@ -10,6 +10,7 @@ import type {
   ApiCreatorProfile,
   ApiCreatorListResult,
   ApiCollectionClaim,
+  ApiUserWallet,
   ApiActivity,
   ApiActivitiesQuery,
   ApiSearchResult,
@@ -449,6 +450,39 @@ export class ApiClient {
       },
       body: JSON.stringify(data),
     });
+    return res.json();
+  }
+
+  // ─── User Wallet ─────────────────────────────────────────────────────────────
+
+  /**
+   * Upsert the authenticated user's wallet address in the backend DB.
+   * Call after onboarding when ChipiPay confirms the wallet address.
+   * Requires Clerk JWT; no tenant API key needed.
+   */
+  async upsertMyWallet(clerkToken: string): Promise<ApiUserWallet> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/users/me`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${clerkToken}`,
+      },
+    });
+    return res.json();
+  }
+
+  /**
+   * Get the authenticated user's stored wallet address from the backend DB.
+   * Returns null if the user has not completed onboarding yet.
+   * Requires Clerk JWT; no tenant API key needed.
+   */
+  async getMyWallet(clerkToken: string): Promise<ApiUserWallet | null> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/users/me`;
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${clerkToken}` },
+    });
+    if (res.status === 404) return null;
     return res.json();
   }
 }

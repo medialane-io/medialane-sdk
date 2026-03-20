@@ -445,6 +445,12 @@ export interface ApiCreatorListResult {
   limit: number;
 }
 
+// ─── User Wallet ───────────────────────────────────────────────────────────────
+
+export interface ApiUserWallet {
+  walletAddress: string;
+}
+
 // ─── Collection Claims ─────────────────────────────────────────────────────────
 
 export interface ApiCollectionClaim {

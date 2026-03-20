@@ -1234,8 +1234,25 @@ var ApiClient = class {
     return res.json();
   }
   // ─── Creator Profiles ───────────────────────────────────────────────────────
+  /** List all creators with an approved username. */
+  async getCreators(opts = {}) {
+    const params = new URLSearchParams();
+    if (opts.search) params.set("search", opts.search);
+    if (opts.page) params.set("page", String(opts.page));
+    if (opts.limit) params.set("limit", String(opts.limit));
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators?${params}`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    return res.json();
+  }
   async getCreatorProfile(walletAddress) {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    if (res.status === 404) return null;
+    return res.json();
+  }
+  /** Resolve a username slug to a creator profile (public). */
+  async getCreatorByUsername(username) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/by-username/${encodeURIComponent(username.toLowerCase().trim())}`;
     const res = await fetch(url, { headers: this.baseHeaders });
     if (res.status === 404) return null;
     return res.json();
@@ -1254,6 +1271,36 @@ var ApiClient = class {
       },
       body: JSON.stringify(data)
     });
+    return res.json();
+  }
+  // ─── User Wallet ─────────────────────────────────────────────────────────────
+  /**
+   * Upsert the authenticated user's wallet address in the backend DB.
+   * Call after onboarding when ChipiPay confirms the wallet address.
+   * Requires Clerk JWT; no tenant API key needed.
+   */
+  async upsertMyWallet(clerkToken) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/users/me`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${clerkToken}`
+      }
+    });
+    return res.json();
+  }
+  /**
+   * Get the authenticated user's stored wallet address from the backend DB.
+   * Returns null if the user has not completed onboarding yet.
+   * Requires Clerk JWT; no tenant API key needed.
+   */
+  async getMyWallet(clerkToken) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/users/me`;
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${clerkToken}` }
+    });
+    if (res.status === 404) return null;
     return res.json();
   }
 };
