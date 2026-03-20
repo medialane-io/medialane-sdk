@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.4.2",
+  "version": "0.4.7",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -251,6 +251,21 @@ DEFAULT_RPC_URLS = {
 - Affected methods: `getTokensByOwner`, `getOrdersByUser`, `getActivitiesByAddress`, `getActiveOrdersForToken`, `getCollection`, `getCollectionTokens`, `getCollectionsByOwner`, and `offerer` filter in `getOrders`
 - `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
 - `ApiClient.getCollectionsByOwner(owner: string)` — fetches `GET /v1/collections?owner=address`
+
+**v0.4.7 — IPType union:**
+- `IPType` union exported: `"Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom"`
+
+**v0.4.6 — ChipiPay wallet fallback:**
+- `ApiUserWallet` type + `upsertMyWallet(clerkToken)` / `getMyWallet(clerkToken)` — `POST/GET /v1/users/me`
+
+**v0.4.5 — Creators in search:**
+- `ApiSearchCreatorResult` type + `ApiSearchResult.creators` field
+
+**v0.4.4 — Creator listing:**
+- `ApiCreatorListResult` type + `getCreators(opts?)` — `GET /v1/creators`
+
+**v0.4.3 — Creator username:**
+- `ApiCreatorProfile.username: string | null` + `getCreatorByUsername(username)` — `GET /v1/creators/by-username/:username`
 
 **v0.4.1 — Collection claims + profiles:**
 - `claimCollection(contractAddress, walletAddress, clerkToken)` — on-chain ownership auto-claim

@@ -2,6 +2,46 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.4.7] — 2026-03-20
+
+### Added
+- `IPType` union type exported: `"Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom"` — the 12 canonical IP types supported on Medialane
+
+---
+
+## [0.4.6] — 2026-03-20
+
+### Added
+- `ApiUserWallet` type: `{ walletAddress: string; createdAt: string }`
+- `ApiClient.upsertMyWallet(clerkToken)` — `POST /v1/users/me` — registers or updates the ChipiPay wallet for the authenticated user. Used as fallback during wallet setup when the main ChipiPay endpoint is unavailable
+- `ApiClient.getMyWallet(clerkToken)` — `GET /v1/users/me` — returns `ApiUserWallet | null` (null on 404)
+
+---
+
+## [0.4.5] — 2026-03-19
+
+### Added
+- `ApiSearchCreatorResult` type — `{ walletAddress, username, displayName, image, bio }`
+- `ApiSearchResult.creators: ApiSearchCreatorResult[]` — creator profiles included in search results
+
+---
+
+## [0.4.4] — 2026-03-19
+
+### Added
+- `ApiCreatorListResult` type — `{ creators: ApiCreatorProfile[]; total: number; page: number; limit: number }`
+- `ApiClient.getCreators(opts?)` — `GET /v1/creators` with optional `search`, `page`, `limit` params
+
+---
+
+## [0.4.3] — 2026-03-19
+
+### Added
+- `ApiCreatorProfile.username: string | null` — optional slug field on creator profiles
+- `ApiClient.getCreatorByUsername(username)` — `GET /v1/creators/by-username/:username` — resolves username slug to creator profile
+
+---
+
 ## [0.4.2] — 2026-03-17
 
 ### Added

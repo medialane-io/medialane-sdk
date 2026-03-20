@@ -199,6 +199,7 @@ const tokens = await client.api.getCollectionTokens(contract);
 const results = await client.api.search("landscape painting", 10);
 // results.data.tokens — matching tokens
 // results.data.collections — matching collections
+// results.data.creators — matching creator profiles (v0.4.5)
 ```
 
 ### Activities
@@ -281,7 +282,7 @@ const metadata: IpNftMetadata = {
   image: "ipfs://...",
   external_url: "https://medialane.io",
   attributes: [
-    { trait_type: "IP Type",        value: "Music" },
+    { trait_type: "IP Type",        value: "Audio" },
     { trait_type: "License",        value: "CC BY-NC-SA" },
     { trait_type: "Commercial Use", value: "No" },
     { trait_type: "Derivatives",    value: "Share-Alike" },
@@ -413,6 +414,21 @@ Built with:
 ---
 
 ## Changelog
+
+### v0.4.7
+- **`IPType`** union type exported — `"Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom"`
+
+### v0.4.6
+- **`ApiUserWallet`** type + `upsertMyWallet(clerkToken)` / `getMyWallet(clerkToken)` for ChipiPay wallet registration fallback (`POST/GET /v1/users/me`)
+
+### v0.4.5
+- **`ApiSearchCreatorResult`** type + `ApiSearchResult.creators` — creator profiles now included in search results
+
+### v0.4.4
+- **`ApiCreatorListResult`** + `getCreators(opts?)` — list creators with search/pagination via `GET /v1/creators`
+
+### v0.4.3
+- **`ApiCreatorProfile.username`** field + `getCreatorByUsername(username)` — resolve username slug to creator profile
 
 ### v0.4.2
 - **WBTC** added to `SUPPORTED_TOKENS` (`0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac`, 8 decimals)
