@@ -13,6 +13,7 @@ import type {
   ApiUserWallet,
   ApiActivity,
   ApiActivitiesQuery,
+  ApiComment,
   ApiSearchResult,
   ApiIntent,
   ApiIntentCreated,
@@ -219,6 +220,22 @@ export class ApiClient {
   ): Promise<ApiResponse<ApiActivity[]>> {
     return this.get<ApiResponse<ApiActivity[]>>(
       `/v1/activities/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+    );
+  }
+
+  // ─── Comments ──────────────────────────────────────────────────────────────
+
+  getTokenComments(
+    contract: string,
+    tokenId: string,
+    opts: { page?: number; limit?: number } = {}
+  ): Promise<ApiResponse<ApiComment[]>> {
+    const params = new URLSearchParams();
+    if (opts.page !== undefined) params.set("page", String(opts.page));
+    if (opts.limit !== undefined) params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return this.get<ApiResponse<ApiComment[]>>(
+      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/comments${qs ? `?${qs}` : ""}`
     );
   }
 

@@ -245,6 +245,20 @@ export interface ApiActivitiesQuery {
   limit?: number;
 }
 
+// ─── Comments ─────────────────────────────────────────────────────────────────
+
+export interface ApiComment {
+  id: string;
+  chain: string;           // "starknet"
+  contractAddress: string; // normalized 0x-padded Starknet address
+  tokenId: string;
+  author: string;          // normalized 0x-padded Starknet address
+  content: string;         // sanitized plain text
+  txHash: string | null;
+  blockNumber: string;     // BigInt serialized as string
+  postedAt: string;        // ISO 8601 derived from blockTimestamp — use for display
+}
+
 // ─── Search ───────────────────────────────────────────────────────────────────
 
 export interface ApiSearchTokenResult {
