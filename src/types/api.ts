@@ -22,10 +22,10 @@ export interface ApiCollectionsQuery {
   owner?: string;
 }
 
-export type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
+export type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED" | "COUNTER_OFFERED";
 export type SortOrder = "price_asc" | "price_desc" | "recent";
 export type ActivityType = "transfer" | "sale" | "listing" | "offer" | "cancelled";
-export type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION";
+export type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION" | "COUNTER_OFFER";
 export type IntentStatus = "PENDING" | "SIGNED" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 export type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANCELLED" | "TRANSFER";
 export type WebhookStatus = "ACTIVE" | "DISABLED";
@@ -110,6 +110,10 @@ export interface ApiOrder {
   updatedAt: string;
   /** Embedded token metadata (name/image/description). Null when not yet indexed. */
   token: ApiOrderTokenMeta | null;
+  /** Set when this is a counter-offer listing — points to the original buyer bid. */
+  parentOrderHash?: string | null;
+  /** Optional seller message accompanying a counter-offer. */
+  counterOfferMessage?: string | null;
 }
 
 // ─── IP / IPFS Metadata types ──────────────────────────────────────────────────
@@ -306,6 +310,10 @@ export interface ApiIntent {
   signature: string[];
   txHash: string | null;
   orderHash: string | null;
+  /** Set on COUNTER_OFFER intents — the original bid order hash being countered. */
+  parentOrderHash?: string | null;
+  /** Optional seller message on counter-offer intents. */
+  counterOfferMessage?: string | null;
   expiresAt: string;
   createdAt: string;
   updatedAt: string;
@@ -370,6 +378,125 @@ export interface CreateCollectionIntentParams {
   baseUri?: string;
   /** Optional: override the default collection contract address */
   collectionContract?: string;
+}
+
+export interface CreateCounterOfferIntentParams {
+  /** Wallet address of the NFT owner making the counter-offer. */
+  sellerAddress: string;
+  /** Order hash of the original buyer bid being countered. */
+  originalOrderHash: string;
+  /** Counter price as a raw wei integer string (not human-readable). */
+  counterPrice: string;
+  /** Duration in seconds the counter-offer will be valid (3600–2592000). */
+  durationSeconds: number;
+  /** Optional message from the seller to the buyer. Max 500 chars. */
+  message?: string;
+}
+
+export interface ApiCounterOffersQuery {
+  /** Original bid order hash — returns the counter-offer for this specific bid. */
+  originalOrderHash?: string;
+  /** Seller address — returns all counter-offers sent by this seller. */
+  sellerAddress?: string;
+  page?: number;
+  limit?: number;
+}
+
+// ─── Remix Licensing ──────────────────────────────────────────────────────────
+
+export const OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"] as const;
+export type OpenLicense = (typeof OPEN_LICENSES)[number];
+
+export type RemixOfferStatus =
+  | "PENDING"
+  | "AUTO_PENDING"
+  | "APPROVED"
+  | "COMPLETED"
+  | "REJECTED"
+  | "EXPIRED"
+  | "SELF_MINTED";
+
+export interface ApiRemixOffer {
+  id: string;
+  status: RemixOfferStatus;
+  originalContract: string;
+  originalTokenId: string;
+  creatorAddress: string;
+  requesterAddress: string | null;
+  message?: string | null;
+  /** Visible only to creator and requester */
+  proposedPrice?: string;
+  /** Visible only to creator and requester */
+  proposedCurrency?: string;
+  licenseType: string;
+  commercial: boolean;
+  derivatives: boolean;
+  royaltyPct: number | null;
+  approvedCollection: string | null;
+  remixContract: string | null;
+  remixTokenId: string | null;
+  orderHash: string | null;
+  createdAt: string;
+  expiresAt: string;
+  updatedAt: string;
+}
+
+/** Public remix record — price/currency omitted for non-participants */
+export interface ApiPublicRemix {
+  id: string;
+  remixContract: string | null;
+  remixTokenId: string | null;
+  licenseType: string;
+  commercial: boolean;
+  derivatives: boolean;
+  createdAt: string;
+}
+
+export interface CreateRemixOfferParams {
+  originalContract: string;
+  originalTokenId: string;
+  licenseType: string;
+  commercial: boolean;
+  derivatives: boolean;
+  royaltyPct?: number;
+  proposedPrice?: string;
+  proposedCurrency?: string;
+  message?: string;
+  /** Offer validity in days (server default applies if omitted) */
+  expiresInDays?: number;
+}
+
+export interface AutoRemixOfferParams {
+  originalContract: string;
+  originalTokenId: string;
+  licenseType: string;
+}
+
+export interface ConfirmSelfRemixParams {
+  originalContract: string;
+  originalTokenId: string;
+  remixContract: string;
+  remixTokenId: string;
+  /** On-chain transaction hash of the mint tx */
+  txHash?: string;
+  licenseType: string;
+  commercial: boolean;
+  derivatives: boolean;
+  royaltyPct?: number;
+}
+
+export interface ConfirmRemixOfferParams {
+  approvedCollection: string;
+  remixContract: string;
+  remixTokenId: string;
+  orderHash?: string;
+}
+
+export interface ApiRemixOffersQuery {
+  /** "creator" = offers where you are the original creator; "requester" = offers you made */
+  role: "creator" | "requester";
+  page?: number;
+  limit?: number;
 }
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────

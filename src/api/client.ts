@@ -4,6 +4,7 @@ import { withRetry, type RetryOptions } from "../utils/retry.js";
 import type {
   ApiOrder,
   ApiOrdersQuery,
+  ApiCounterOffersQuery,
   ApiToken,
   ApiCollection,
   ApiCollectionProfile,
@@ -14,6 +15,9 @@ import type {
   ApiActivity,
   ApiActivitiesQuery,
   ApiComment,
+  ApiRemixOffer,
+  ApiRemixOffersQuery,
+  ApiPublicRemix,
   ApiSearchResult,
   ApiIntent,
   ApiIntentCreated,
@@ -32,6 +36,11 @@ import type {
   CancelOrderIntentParams,
   CreateMintIntentParams,
   CreateCollectionIntentParams,
+  CreateCounterOfferIntentParams,
+  CreateRemixOfferParams,
+  AutoRemixOfferParams,
+  ConfirmSelfRemixParams,
+  ConfirmRemixOfferParams,
   ApiResponse,
   CollectionSort,
 } from "../types/api.js";
@@ -290,6 +299,36 @@ export class ApiClient {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-collection", params);
   }
 
+  /**
+   * Create a counter-offer intent. The seller proposes a new price in response
+   * to a buyer's active bid. clerkToken is optional — the endpoint authenticates
+   * via the tenant API key; pass a Clerk JWT only if your backend requires it.
+   */
+  createCounterOfferIntent(
+    params: CreateCounterOfferIntentParams,
+    clerkToken?: string
+  ): Promise<ApiResponse<ApiIntentCreated>> {
+    const extraHeaders: Record<string, string> = clerkToken ? { "Authorization": `Bearer ${clerkToken}` } : {};
+    return this.request<ApiResponse<ApiIntentCreated>>("/v1/intents/counter-offer", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: extraHeaders,
+    });
+  }
+
+  /**
+   * Fetch counter-offers. Pass `originalOrderHash` (buyer view) or
+   * `sellerAddress` (seller view) — at least one is required.
+   */
+  getCounterOffers(query: ApiCounterOffersQuery): Promise<ApiResponse<ApiOrder[]>> {
+    const params = new URLSearchParams();
+    if (query.originalOrderHash) params.set("originalOrderHash", query.originalOrderHash);
+    if (query.sellerAddress) params.set("sellerAddress", query.sellerAddress);
+    if (query.page !== undefined) params.set("page", String(query.page));
+    if (query.limit !== undefined) params.set("limit", String(query.limit));
+    return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/counter-offers?${params}`);
+  }
+
   // ─── Metadata ──────────────────────────────────────────────────────────────
 
   getMetadataSignedUrl(): Promise<ApiResponse<ApiMetadataSignedUrl>> {
@@ -501,5 +540,122 @@ export class ApiClient {
     });
     if (res.status === 404) return null;
     return res.json();
+  }
+
+  // ─── Remix Licensing ─────────────────────────────────────────────────────────
+
+  /**
+   * Get public remixes of a token (open to everyone).
+   */
+  getTokenRemixes(
+    contract: string,
+    tokenId: string,
+    opts: { page?: number; limit?: number } = {}
+  ): Promise<ApiResponse<ApiPublicRemix[]>> {
+    const params = new URLSearchParams();
+    if (opts.page !== undefined) params.set("page", String(opts.page));
+    if (opts.limit !== undefined) params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return this.get<ApiResponse<ApiPublicRemix[]>>(
+      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/remixes${qs ? `?${qs}` : ""}`
+    );
+  }
+
+  /**
+   * Submit a custom remix offer for a token. Requires Clerk JWT.
+   */
+  submitRemixOffer(
+    params: CreateRemixOfferParams,
+    clerkToken: string
+  ): Promise<ApiResponse<ApiRemixOffer>> {
+    return this.request<ApiResponse<ApiRemixOffer>>("/v1/remix-offers", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: { "Authorization": `Bearer ${clerkToken}` },
+    });
+  }
+
+  /**
+   * Submit an auto remix offer for a token with an open license. Requires Clerk JWT.
+   */
+  submitAutoRemixOffer(
+    params: AutoRemixOfferParams,
+    clerkToken: string
+  ): Promise<ApiResponse<ApiRemixOffer>> {
+    return this.request<ApiResponse<ApiRemixOffer>>("/v1/remix-offers/auto", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: { "Authorization": `Bearer ${clerkToken}` },
+    });
+  }
+
+  /**
+   * Record a self-remix (owner remixing their own token). Requires Clerk JWT.
+   */
+  confirmSelfRemix(
+    params: ConfirmSelfRemixParams,
+    clerkToken: string
+  ): Promise<ApiResponse<ApiRemixOffer>> {
+    return this.request<ApiResponse<ApiRemixOffer>>("/v1/remix-offers/self/confirm", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: { "Authorization": `Bearer ${clerkToken}` },
+    });
+  }
+
+  /**
+   * List remix offers by role. Requires Clerk JWT.
+   * role="creator" — offers where you are the original creator.
+   * role="requester" — offers you made.
+   */
+  async getRemixOffers(
+    query: ApiRemixOffersQuery,
+    clerkToken: string
+  ): Promise<ApiResponse<ApiRemixOffer[]>> {
+    const params = new URLSearchParams({ role: query.role });
+    if (query.page !== undefined) params.set("page", String(query.page));
+    if (query.limit !== undefined) params.set("limit", String(query.limit));
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/remix-offers?${params}`;
+    const res = await fetch(url, {
+      headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` },
+    });
+    return res.json();
+  }
+
+  /**
+   * Get a single remix offer. Clerk JWT optional (price/currency hidden for non-participants).
+   */
+  async getRemixOffer(id: string, clerkToken?: string): Promise<ApiResponse<ApiRemixOffer>> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/remix-offers/${id}`;
+    const headers: Record<string, string> = { ...this.baseHeaders };
+    if (clerkToken) headers["Authorization"] = `Bearer ${clerkToken}`;
+    const res = await fetch(url, { headers });
+    return res.json();
+  }
+
+  /**
+   * Creator approves a remix offer (authorises the requester to mint). Requires Clerk JWT.
+   */
+  confirmRemixOffer(
+    id: string,
+    params: ConfirmRemixOfferParams,
+    clerkToken: string
+  ): Promise<ApiResponse<ApiRemixOffer>> {
+    return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/confirm`, {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: { "Authorization": `Bearer ${clerkToken}` },
+    });
+  }
+
+  /**
+   * Creator rejects a remix offer. Requires Clerk JWT.
+   */
+  rejectRemixOffer(id: string, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>> {
+    return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/reject`, {
+      method: "POST",
+      body: JSON.stringify({}),
+      headers: { "Authorization": `Bearer ${clerkToken}` },
+    });
   }
 }

@@ -1105,6 +1105,16 @@ var ApiClient = class {
       `/v1/activities/${normalizeAddress(address)}?page=${page}&limit=${limit}`
     );
   }
+  // ─── Comments ──────────────────────────────────────────────────────────────
+  getTokenComments(contract, tokenId, opts = {}) {
+    const params = new URLSearchParams();
+    if (opts.page !== void 0) params.set("page", String(opts.page));
+    if (opts.limit !== void 0) params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return this.get(
+      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/comments${qs ? `?${qs}` : ""}`
+    );
+  }
   // ─── Search ────────────────────────────────────────────────────────────────
   search(q, limit = 10) {
     const params = new URLSearchParams({ q, limit: String(limit) });
@@ -1136,6 +1146,31 @@ var ApiClient = class {
   }
   createCollectionIntent(params) {
     return this.post("/v1/intents/create-collection", params);
+  }
+  /**
+   * Create a counter-offer intent. The seller proposes a new price in response
+   * to a buyer's active bid. clerkToken is optional — the endpoint authenticates
+   * via the tenant API key; pass a Clerk JWT only if your backend requires it.
+   */
+  createCounterOfferIntent(params, clerkToken) {
+    const extraHeaders = clerkToken ? { "Authorization": `Bearer ${clerkToken}` } : {};
+    return this.request("/v1/intents/counter-offer", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: extraHeaders
+    });
+  }
+  /**
+   * Fetch counter-offers. Pass `originalOrderHash` (buyer view) or
+   * `sellerAddress` (seller view) — at least one is required.
+   */
+  getCounterOffers(query) {
+    const params = new URLSearchParams();
+    if (query.originalOrderHash) params.set("originalOrderHash", query.originalOrderHash);
+    if (query.sellerAddress) params.set("sellerAddress", query.sellerAddress);
+    if (query.page !== void 0) params.set("page", String(query.page));
+    if (query.limit !== void 0) params.set("limit", String(query.limit));
+    return this.get(`/v1/orders/counter-offers?${params}`);
   }
   // ─── Metadata ──────────────────────────────────────────────────────────────
   getMetadataSignedUrl() {
@@ -1303,6 +1338,94 @@ var ApiClient = class {
     if (res.status === 404) return null;
     return res.json();
   }
+  // ─── Remix Licensing ─────────────────────────────────────────────────────────
+  /**
+   * Get public remixes of a token (open to everyone).
+   */
+  getTokenRemixes(contract, tokenId, opts = {}) {
+    const params = new URLSearchParams();
+    if (opts.page !== void 0) params.set("page", String(opts.page));
+    if (opts.limit !== void 0) params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return this.get(
+      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/remixes${qs ? `?${qs}` : ""}`
+    );
+  }
+  /**
+   * Submit a custom remix offer for a token. Requires Clerk JWT.
+   */
+  submitRemixOffer(params, clerkToken) {
+    return this.request("/v1/remix-offers", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: { "Authorization": `Bearer ${clerkToken}` }
+    });
+  }
+  /**
+   * Submit an auto remix offer for a token with an open license. Requires Clerk JWT.
+   */
+  submitAutoRemixOffer(params, clerkToken) {
+    return this.request("/v1/remix-offers/auto", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: { "Authorization": `Bearer ${clerkToken}` }
+    });
+  }
+  /**
+   * Record a self-remix (owner remixing their own token). Requires Clerk JWT.
+   */
+  confirmSelfRemix(params, clerkToken) {
+    return this.request("/v1/remix-offers/self/confirm", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: { "Authorization": `Bearer ${clerkToken}` }
+    });
+  }
+  /**
+   * List remix offers by role. Requires Clerk JWT.
+   * role="creator" — offers where you are the original creator.
+   * role="requester" — offers you made.
+   */
+  async getRemixOffers(query, clerkToken) {
+    const params = new URLSearchParams({ role: query.role });
+    if (query.page !== void 0) params.set("page", String(query.page));
+    if (query.limit !== void 0) params.set("limit", String(query.limit));
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/remix-offers?${params}`;
+    const res = await fetch(url, {
+      headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` }
+    });
+    return res.json();
+  }
+  /**
+   * Get a single remix offer. Clerk JWT optional (price/currency hidden for non-participants).
+   */
+  async getRemixOffer(id, clerkToken) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/remix-offers/${id}`;
+    const headers = { ...this.baseHeaders };
+    if (clerkToken) headers["Authorization"] = `Bearer ${clerkToken}`;
+    const res = await fetch(url, { headers });
+    return res.json();
+  }
+  /**
+   * Creator approves a remix offer (authorises the requester to mint). Requires Clerk JWT.
+   */
+  confirmRemixOffer(id, params, clerkToken) {
+    return this.request(`/v1/remix-offers/${id}/confirm`, {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: { "Authorization": `Bearer ${clerkToken}` }
+    });
+  }
+  /**
+   * Creator rejects a remix offer. Requires Clerk JWT.
+   */
+  rejectRemixOffer(id, clerkToken) {
+    return this.request(`/v1/remix-offers/${id}/reject`, {
+      method: "POST",
+      body: JSON.stringify({}),
+      headers: { "Authorization": `Bearer ${clerkToken}` }
+    });
+  }
 };
 
 // src/client.ts
@@ -1335,6 +1458,9 @@ var MedialaneClient = class {
   }
 };
 
+// src/types/api.ts
+var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
+
 exports.ApiClient = ApiClient;
 exports.COLLECTION_CONTRACT_MAINNET = COLLECTION_CONTRACT_MAINNET;
 exports.DEFAULT_RPC_URLS = DEFAULT_RPC_URLS;
@@ -1344,6 +1470,7 @@ exports.MarketplaceModule = MarketplaceModule;
 exports.MedialaneApiError = MedialaneApiError;
 exports.MedialaneClient = MedialaneClient;
 exports.MedialaneError = MedialaneError;
+exports.OPEN_LICENSES = OPEN_LICENSES;
 exports.SUPPORTED_NETWORKS = SUPPORTED_NETWORKS;
 exports.SUPPORTED_TOKENS = SUPPORTED_TOKENS;
 exports.buildCancellationTypedData = buildCancellationTypedData;

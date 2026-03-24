@@ -212,10 +212,10 @@ interface ApiCollectionsQuery {
     sort?: CollectionSort;
     owner?: string;
 }
-type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
+type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED" | "COUNTER_OFFERED";
 type SortOrder = "price_asc" | "price_desc" | "recent";
 type ActivityType = "transfer" | "sale" | "listing" | "offer" | "cancelled";
-type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION";
+type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION" | "COUNTER_OFFER";
 type IntentStatus = "PENDING" | "SIGNED" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANCELLED" | "TRANSFER";
 type WebhookStatus = "ACTIVE" | "DISABLED";
@@ -287,6 +287,10 @@ interface ApiOrder {
     updatedAt: string;
     /** Embedded token metadata (name/image/description). Null when not yet indexed. */
     token: ApiOrderTokenMeta | null;
+    /** Set when this is a counter-offer listing — points to the original buyer bid. */
+    parentOrderHash?: string | null;
+    /** Optional seller message accompanying a counter-offer. */
+    counterOfferMessage?: string | null;
 }
 /**
  * A single OpenSea-compatible ERC-721 attribute.
@@ -403,6 +407,17 @@ interface ApiActivitiesQuery {
     page?: number;
     limit?: number;
 }
+interface ApiComment {
+    id: string;
+    chain: string;
+    contractAddress: string;
+    tokenId: string;
+    author: string;
+    content: string;
+    txHash: string | null;
+    blockNumber: string;
+    postedAt: string;
+}
 interface ApiSearchTokenResult {
     contractAddress: string;
     tokenId: string;
@@ -442,6 +457,10 @@ interface ApiIntent {
     signature: string[];
     txHash: string | null;
     orderHash: string | null;
+    /** Set on COUNTER_OFFER intents — the original bid order hash being countered. */
+    parentOrderHash?: string | null;
+    /** Optional seller message on counter-offer intents. */
+    counterOfferMessage?: string | null;
     expiresAt: string;
     createdAt: string;
     updatedAt: string;
@@ -499,6 +518,105 @@ interface CreateCollectionIntentParams {
     baseUri?: string;
     /** Optional: override the default collection contract address */
     collectionContract?: string;
+}
+interface CreateCounterOfferIntentParams {
+    /** Wallet address of the NFT owner making the counter-offer. */
+    sellerAddress: string;
+    /** Order hash of the original buyer bid being countered. */
+    originalOrderHash: string;
+    /** Counter price as a raw wei integer string (not human-readable). */
+    counterPrice: string;
+    /** Duration in seconds the counter-offer will be valid (3600–2592000). */
+    durationSeconds: number;
+    /** Optional message from the seller to the buyer. Max 500 chars. */
+    message?: string;
+}
+interface ApiCounterOffersQuery {
+    /** Original bid order hash — returns the counter-offer for this specific bid. */
+    originalOrderHash?: string;
+    /** Seller address — returns all counter-offers sent by this seller. */
+    sellerAddress?: string;
+    page?: number;
+    limit?: number;
+}
+declare const OPEN_LICENSES: readonly ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
+type OpenLicense = (typeof OPEN_LICENSES)[number];
+type RemixOfferStatus = "PENDING" | "AUTO_PENDING" | "APPROVED" | "COMPLETED" | "REJECTED" | "EXPIRED" | "SELF_MINTED";
+interface ApiRemixOffer {
+    id: string;
+    status: RemixOfferStatus;
+    originalContract: string;
+    originalTokenId: string;
+    creatorAddress: string;
+    requesterAddress: string | null;
+    message?: string | null;
+    /** Visible only to creator and requester */
+    proposedPrice?: string;
+    /** Visible only to creator and requester */
+    proposedCurrency?: string;
+    licenseType: string;
+    commercial: boolean;
+    derivatives: boolean;
+    royaltyPct: number | null;
+    approvedCollection: string | null;
+    remixContract: string | null;
+    remixTokenId: string | null;
+    orderHash: string | null;
+    createdAt: string;
+    expiresAt: string;
+    updatedAt: string;
+}
+/** Public remix record — price/currency omitted for non-participants */
+interface ApiPublicRemix {
+    id: string;
+    remixContract: string | null;
+    remixTokenId: string | null;
+    licenseType: string;
+    commercial: boolean;
+    derivatives: boolean;
+    createdAt: string;
+}
+interface CreateRemixOfferParams {
+    originalContract: string;
+    originalTokenId: string;
+    licenseType: string;
+    commercial: boolean;
+    derivatives: boolean;
+    royaltyPct?: number;
+    proposedPrice?: string;
+    proposedCurrency?: string;
+    message?: string;
+    /** Offer validity in days (server default applies if omitted) */
+    expiresInDays?: number;
+}
+interface AutoRemixOfferParams {
+    originalContract: string;
+    originalTokenId: string;
+    licenseType: string;
+}
+interface ConfirmSelfRemixParams {
+    originalContract: string;
+    originalTokenId: string;
+    remixContract: string;
+    remixTokenId: string;
+    /** On-chain transaction hash of the mint tx */
+    txHash?: string;
+    licenseType: string;
+    commercial: boolean;
+    derivatives: boolean;
+    royaltyPct?: number;
+}
+interface ConfirmRemixOfferParams {
+    approvedCollection: string;
+    remixContract: string;
+    remixTokenId: string;
+    orderHash?: string;
+}
+interface ApiRemixOffersQuery {
+    /** "creator" = offers where you are the original creator; "requester" = offers you made */
+    role: "creator" | "requester";
+    page?: number;
+    limit?: number;
 }
 interface ApiMetadataSignedUrl {
     url: string;
@@ -632,6 +750,10 @@ declare class ApiClient {
     getCollectionTokens(contract: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
     getActivities(query?: ApiActivitiesQuery): Promise<ApiResponse<ApiActivity[]>>;
     getActivitiesByAddress(address: string, page?: number, limit?: number): Promise<ApiResponse<ApiActivity[]>>;
+    getTokenComments(contract: string, tokenId: string, opts?: {
+        page?: number;
+        limit?: number;
+    }): Promise<ApiResponse<ApiComment[]>>;
     search(q: string, limit?: number): Promise<ApiResponse<ApiSearchResult> & {
         query: string;
     }>;
@@ -643,6 +765,17 @@ declare class ApiClient {
     submitIntentSignature(id: string, signature: string[]): Promise<ApiResponse<ApiIntent>>;
     createMintIntent(params: CreateMintIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
     createCollectionIntent(params: CreateCollectionIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
+    /**
+     * Create a counter-offer intent. The seller proposes a new price in response
+     * to a buyer's active bid. clerkToken is optional — the endpoint authenticates
+     * via the tenant API key; pass a Clerk JWT only if your backend requires it.
+     */
+    createCounterOfferIntent(params: CreateCounterOfferIntentParams, clerkToken?: string): Promise<ApiResponse<ApiIntentCreated>>;
+    /**
+     * Fetch counter-offers. Pass `originalOrderHash` (buyer view) or
+     * `sellerAddress` (seller view) — at least one is required.
+     */
+    getCounterOffers(query: ApiCounterOffersQuery): Promise<ApiResponse<ApiOrder[]>>;
     getMetadataSignedUrl(): Promise<ApiResponse<ApiMetadataSignedUrl>>;
     uploadMetadata(metadata: Record<string, unknown>): Promise<ApiResponse<ApiMetadataUpload>>;
     resolveMetadata(uri: string): Promise<ApiResponse<unknown>>;
@@ -711,6 +844,43 @@ declare class ApiClient {
      * Requires Clerk JWT; no tenant API key needed.
      */
     getMyWallet(clerkToken: string): Promise<ApiUserWallet | null>;
+    /**
+     * Get public remixes of a token (open to everyone).
+     */
+    getTokenRemixes(contract: string, tokenId: string, opts?: {
+        page?: number;
+        limit?: number;
+    }): Promise<ApiResponse<ApiPublicRemix[]>>;
+    /**
+     * Submit a custom remix offer for a token. Requires Clerk JWT.
+     */
+    submitRemixOffer(params: CreateRemixOfferParams, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>>;
+    /**
+     * Submit an auto remix offer for a token with an open license. Requires Clerk JWT.
+     */
+    submitAutoRemixOffer(params: AutoRemixOfferParams, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>>;
+    /**
+     * Record a self-remix (owner remixing their own token). Requires Clerk JWT.
+     */
+    confirmSelfRemix(params: ConfirmSelfRemixParams, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>>;
+    /**
+     * List remix offers by role. Requires Clerk JWT.
+     * role="creator" — offers where you are the original creator.
+     * role="requester" — offers you made.
+     */
+    getRemixOffers(query: ApiRemixOffersQuery, clerkToken: string): Promise<ApiResponse<ApiRemixOffer[]>>;
+    /**
+     * Get a single remix offer. Clerk JWT optional (price/currency hidden for non-participants).
+     */
+    getRemixOffer(id: string, clerkToken?: string): Promise<ApiResponse<ApiRemixOffer>>;
+    /**
+     * Creator approves a remix offer (authorises the requester to mint). Requires Clerk JWT.
+     */
+    confirmRemixOffer(id: string, params: ConfirmRemixOfferParams, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>>;
+    /**
+     * Creator rejects a remix offer. Requires Clerk JWT.
+     */
+    rejectRemixOffer(id: string, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>>;
 }
 
 declare class MedialaneClient {
@@ -1158,4 +1328,4 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type CollectionSort, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, type OfferItem, type Order, type OrderParameters, type OrderStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
