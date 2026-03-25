@@ -291,6 +291,10 @@ export class ApiClient {
     return this.patch<ApiResponse<ApiIntent>>(`/v1/intents/${id}/signature`, { signature });
   }
 
+  confirmIntent(id: string, txHash: string): Promise<ApiResponse<ApiIntent>> {
+    return this.patch<ApiResponse<ApiIntent>>(`/v1/intents/${id}/confirm`, { txHash });
+  }
+
   createMintIntent(params: CreateMintIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/mint", params);
   }
