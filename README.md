@@ -415,6 +415,35 @@ Built with:
 
 ## Changelog
 
+### v0.5.5
+- **`extendRemixOffer(id, days, clerkToken)`** — requester extends expiry of a PENDING/AUTO_PENDING remix offer by 1–30 days (`POST /v1/remix-offers/:id/extend`)
+- **`ApiRemixOfferPrice`** type — `{ raw, formatted, currency, decimals }` replaces flat `proposedPrice`/`proposedCurrency` fields on `ApiRemixOffer.price` (visible to participants only)
+
+### v0.5.4
+- **`ApiRemixOffer.price`** shape introduced — backend now serializes price as a structured object (`raw`, `formatted`, `currency`, `decimals`) instead of raw wei strings
+
+### v0.5.3
+- **`getTokenComments(contract, tokenId, opts?)`** — fetch on-chain NFT comments for a token (`GET /v1/tokens/:contract/:tokenId/comments`)
+- **`ApiComment`** type — `{ id, author, content, txHash, blockNumber, blockTimestamp, isHidden, createdAt }`
+
+### v0.5.0
+- **Counter-offer support** — `createCounterOfferIntent(params, clerkToken)`, `getCounterOffers(query)`, `ApiCounterOffersQuery`, `CreateCounterOfferIntentParams`
+- **`OrderStatus`** extended with `"COUNTER_OFFERED"`; **`IntentType`** with `"COUNTER_OFFER"`
+- **`ApiOrder`** extended: `parentOrderHash?: string | null`, `counterOfferMessage?: string | null`
+- **Remix licensing** — full set of remix offer methods and types:
+  - `submitRemixOffer(params, clerkToken)` — custom offer
+  - `submitAutoRemixOffer(params, clerkToken)` — auto offer for open-license tokens
+  - `confirmSelfRemix(params, clerkToken)` — record owner self-remix
+  - `getRemixOffers(query, clerkToken)` — list by role
+  - `getRemixOffer(id, clerkToken?)` — single offer
+  - `confirmRemixOffer(id, params, clerkToken)` — creator approves
+  - `rejectRemixOffer(id, clerkToken)` — creator rejects
+  - `getTokenRemixes(contract, tokenId, opts?)` — public remix list
+- **New types** — `RemixOfferStatus`, `ApiRemixOffer`, `ApiPublicRemix`, `OPEN_LICENSES`, `OpenLicense`, `CreateRemixOfferParams`, `AutoRemixOfferParams`, `ConfirmSelfRemixParams`, `ConfirmRemixOfferParams`, `ApiRemixOffersQuery`
+
+### v0.4.8
+- **`ApiComment`** type + **`getTokenComments`** (patch release, backported into v0.5.3)
+
 ### v0.4.7
 - **`IPType`** union type exported — `"Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom"`
 
