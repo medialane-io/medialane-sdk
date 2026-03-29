@@ -662,4 +662,16 @@ export class ApiClient {
       headers: { "Authorization": `Bearer ${clerkToken}` },
     });
   }
+
+  /**
+   * Requester extends the expiry of a pending remix offer by 1–30 days.
+   * Requires Clerk JWT.
+   */
+  extendRemixOffer(id: string, days: number, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>> {
+    return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/extend`, {
+      method: "POST",
+      body: JSON.stringify({ days }),
+      headers: { "Authorization": `Bearer ${clerkToken}` },
+    });
+  }
 }

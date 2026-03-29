@@ -416,6 +416,13 @@ export type RemixOfferStatus =
   | "EXPIRED"
   | "SELF_MINTED";
 
+export interface ApiRemixOfferPrice {
+  raw: string;
+  formatted: string;
+  currency: string;
+  decimals: number;
+}
+
 export interface ApiRemixOffer {
   id: string;
   status: RemixOfferStatus;
@@ -424,10 +431,8 @@ export interface ApiRemixOffer {
   creatorAddress: string;
   requesterAddress: string | null;
   message?: string | null;
-  /** Visible only to creator and requester */
-  proposedPrice?: string;
-  /** Visible only to creator and requester */
-  proposedCurrency?: string;
+  /** Visible only to creator and requester — includes formatted price */
+  price?: ApiRemixOfferPrice;
   licenseType: string;
   commercial: boolean;
   derivatives: boolean;
