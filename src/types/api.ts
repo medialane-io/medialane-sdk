@@ -579,6 +579,7 @@ export interface ApiCollectionProfile {
   twitterUrl: string | null;
   discordUrl: string | null;
   telegramUrl: string | null;
+  hasGatedContent: boolean;
   updatedBy: string | null;
   updatedAt: string;
 }

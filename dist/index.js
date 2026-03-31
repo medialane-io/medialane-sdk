@@ -1139,6 +1139,9 @@ var ApiClient = class {
   submitIntentSignature(id, signature) {
     return this.patch(`/v1/intents/${id}/signature`, { signature });
   }
+  confirmIntent(id, txHash) {
+    return this.patch(`/v1/intents/${id}/confirm`, { txHash });
+  }
   createMintIntent(params) {
     return this.post("/v1/intents/mint", params);
   }
@@ -1421,6 +1424,17 @@ var ApiClient = class {
     return this.request(`/v1/remix-offers/${id}/reject`, {
       method: "POST",
       body: JSON.stringify({}),
+      headers: { "Authorization": `Bearer ${clerkToken}` }
+    });
+  }
+  /**
+   * Requester extends the expiry of a pending remix offer by 1–30 days.
+   * Requires Clerk JWT.
+   */
+  extendRemixOffer(id, days, clerkToken) {
+    return this.request(`/v1/remix-offers/${id}/extend`, {
+      method: "POST",
+      body: JSON.stringify({ days }),
       headers: { "Authorization": `Bearer ${clerkToken}` }
     });
   }
