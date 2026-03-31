@@ -580,6 +580,7 @@ export interface ApiCollectionProfile {
   discordUrl: string | null;
   telegramUrl: string | null;
   hasGatedContent: boolean;
+  gatedContentTitle: string | null;
   updatedBy: string | null;
   updatedAt: string;
 }
