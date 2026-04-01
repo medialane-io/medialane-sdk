@@ -33,6 +33,8 @@ type SupportedTokenSymbol = (typeof SUPPORTED_TOKENS)[number]["symbol"];
 declare const SUPPORTED_NETWORKS: readonly ["mainnet", "sepolia"];
 type Network = (typeof SUPPORTED_NETWORKS)[number];
 declare const DEFAULT_RPC_URLS: Record<Network, string>;
+declare const POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
+declare const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 
 interface RetryOptions {
     maxAttempts?: number;
@@ -205,12 +207,14 @@ declare class MarketplaceModule {
 
 type IPType = "Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom";
 type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
+type CollectionSource = "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME" | "POP_PROTOCOL";
 interface ApiCollectionsQuery {
     page?: number;
     limit?: number;
     isKnown?: boolean;
     sort?: CollectionSort;
     owner?: string;
+    source?: CollectionSource;
 }
 type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED" | "COUNTER_OFFERED";
 type SortOrder = "price_asc" | "price_desc" | "recent";
@@ -371,7 +375,7 @@ interface ApiCollection {
     startBlock: string;
     metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
     isKnown: boolean;
-    source: "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME";
+    source: "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME" | "POP_PROTOCOL";
     claimedBy: string | null;
     profile?: ApiCollectionProfile | null;
     floorPrice: string | null;
@@ -542,6 +546,12 @@ interface ApiCounterOffersQuery {
 declare const OPEN_LICENSES: readonly ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
 type OpenLicense = (typeof OPEN_LICENSES)[number];
 type RemixOfferStatus = "PENDING" | "AUTO_PENDING" | "APPROVED" | "COMPLETED" | "REJECTED" | "EXPIRED" | "SELF_MINTED";
+interface ApiRemixOfferPrice {
+    raw: string;
+    formatted: string;
+    currency: string;
+    decimals: number;
+}
 interface ApiRemixOffer {
     id: string;
     status: RemixOfferStatus;
@@ -550,10 +560,8 @@ interface ApiRemixOffer {
     creatorAddress: string;
     requesterAddress: string | null;
     message?: string | null;
-    /** Visible only to creator and requester */
-    proposedPrice?: string;
-    /** Visible only to creator and requester */
-    proposedCurrency?: string;
+    /** Visible only to creator and requester — includes formatted price */
+    price?: ApiRemixOfferPrice;
     licenseType: string;
     commercial: boolean;
     derivatives: boolean;
@@ -678,6 +686,8 @@ interface ApiCollectionProfile {
     twitterUrl: string | null;
     discordUrl: string | null;
     telegramUrl: string | null;
+    hasGatedContent: boolean;
+    gatedContentTitle: string | null;
     updatedBy: string | null;
     updatedAt: string;
 }
@@ -721,6 +731,15 @@ interface ApiAdminCollectionClaim extends ApiCollectionClaim {
     reviewedAt: string | null;
     updatedAt: string;
 }
+interface PopClaimStatus {
+    isEligible: boolean;
+    hasClaimed: boolean;
+    tokenId: string | null;
+}
+interface PopBatchEligibilityItem extends PopClaimStatus {
+    wallet: string;
+}
+type PopEventType = "Conference" | "Bootcamp" | "Workshop" | "Hackathon" | "Meetup" | "Course" | "Other";
 
 declare class MedialaneApiError extends Error {
     readonly status: number;
@@ -744,7 +763,7 @@ declare class ApiClient {
     getToken(contract: string, tokenId: string, wait?: boolean): Promise<ApiResponse<ApiToken>>;
     getTokensByOwner(address: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
     getTokenHistory(contract: string, tokenId: string, page?: number, limit?: number): Promise<ApiResponse<ApiActivity[]>>;
-    getCollections(page?: number, limit?: number, isKnown?: boolean, sort?: CollectionSort): Promise<ApiResponse<ApiCollection[]>>;
+    getCollections(page?: number, limit?: number, isKnown?: boolean, sort?: CollectionSort, source?: CollectionSource): Promise<ApiResponse<ApiCollection[]>>;
     getCollectionsByOwner(owner: string, page?: number, limit?: number): Promise<ApiResponse<ApiCollection[]>>;
     getCollection(contract: string): Promise<ApiResponse<ApiCollection>>;
     getCollectionTokens(contract: string, page?: number, limit?: number): Promise<ApiResponse<ApiToken[]>>;
@@ -763,6 +782,7 @@ declare class ApiClient {
     createCancelIntent(params: CancelOrderIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
     getIntent(id: string): Promise<ApiResponse<ApiIntent>>;
     submitIntentSignature(id: string, signature: string[]): Promise<ApiResponse<ApiIntent>>;
+    confirmIntent(id: string, txHash: string): Promise<ApiResponse<ApiIntent>>;
     createMintIntent(params: CreateMintIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
     createCollectionIntent(params: CreateCollectionIntentParams): Promise<ApiResponse<ApiIntentCreated>>;
     /**
@@ -819,6 +839,11 @@ declare class ApiClient {
      * Update collection profile. Requires Clerk JWT for ownership check.
      */
     updateCollectionProfile(contractAddress: string, data: Partial<Omit<ApiCollectionProfile, "contractAddress" | "chain" | "updatedBy" | "updatedAt">>, clerkToken: string): Promise<ApiCollectionProfile>;
+    getGatedContent(contractAddress: string, clerkToken: string): Promise<{
+        title: string;
+        url: string;
+        type: string;
+    } | null>;
     /** List all creators with an approved username. */
     getCreators(opts?: {
         search?: string;
@@ -881,6 +906,58 @@ declare class ApiClient {
      * Creator rejects a remix offer. Requires Clerk JWT.
      */
     rejectRemixOffer(id: string, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>>;
+    /**
+     * Requester extends the expiry of a pending remix offer by 1–30 days.
+     * Requires Clerk JWT.
+     */
+    extendRemixOffer(id: string, days: number, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>>;
+    getPopCollections(opts?: {
+        page?: number;
+        limit?: number;
+        sort?: CollectionSort;
+    }): Promise<ApiResponse<ApiCollection[]>>;
+    getPopEligibility(collection: string, wallet: string): Promise<PopClaimStatus>;
+    getPopEligibilityBatch(collection: string, wallets: string[]): Promise<PopBatchEligibilityItem[]>;
+}
+
+interface CreatePopCollectionParams {
+    name: string;
+    symbol: string;
+    baseUri: string;
+    claimEndTime: number;
+    eventType: PopEventType;
+}
+declare class PopService {
+    private readonly factoryAddress;
+    constructor(_config: ResolvedConfig);
+    claim(account: AccountInterface, collectionAddress: string): Promise<TxResult>;
+    adminMint(account: AccountInterface, params: {
+        collection: string;
+        recipient: string;
+        customUri?: string;
+    }): Promise<TxResult>;
+    addToAllowlist(account: AccountInterface, params: {
+        collection: string;
+        address: string;
+    }): Promise<TxResult>;
+    batchAddToAllowlist(account: AccountInterface, params: {
+        collection: string;
+        addresses: string[];
+    }): Promise<TxResult>;
+    removeFromAllowlist(account: AccountInterface, params: {
+        collection: string;
+        address: string;
+    }): Promise<TxResult>;
+    setTokenUri(account: AccountInterface, params: {
+        collection: string;
+        tokenId: string | bigint;
+        uri: string;
+    }): Promise<TxResult>;
+    setPaused(account: AccountInterface, params: {
+        collection: string;
+        paused: boolean;
+    }): Promise<TxResult>;
+    createCollection(account: AccountInterface, params: CreatePopCollectionParams): Promise<TxResult>;
 }
 
 declare class MedialaneClient {
@@ -891,6 +968,9 @@ declare class MedialaneClient {
      * Requires `backendUrl` in config; pass `apiKey` for authenticated routes.
      */
     readonly api: ApiClient;
+    readonly services: {
+        readonly pop: PopService;
+    };
     private readonly config;
     constructor(rawConfig?: MedialaneConfig);
     get network(): "mainnet" | "sepolia";
@@ -1267,6 +1347,202 @@ declare const IPMarketplaceABI: readonly [{
         readonly kind: "nested";
     }];
 }];
+declare const POPCollectionABI: readonly [{
+    readonly type: "struct";
+    readonly name: "core::byte_array::ByteArray";
+    readonly members: readonly [{
+        readonly name: "data";
+        readonly type: "core::array::Array::<core::felt252>";
+    }, {
+        readonly name: "pending_word";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "pending_word_len";
+        readonly type: "core::integer::u32";
+    }];
+}, {
+    readonly type: "function";
+    readonly name: "claim";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "admin_mint";
+    readonly inputs: readonly [{
+        readonly name: "recipient";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "custom_uri";
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "add_to_allowlist";
+    readonly inputs: readonly [{
+        readonly name: "address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "batch_add_to_allowlist";
+    readonly inputs: readonly [{
+        readonly name: "addresses";
+        readonly type: "core::array::Array::<core::starknet::contract_address::ContractAddress>";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "remove_from_allowlist";
+    readonly inputs: readonly [{
+        readonly name: "address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "set_token_uri";
+    readonly inputs: readonly [{
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
+    }, {
+        readonly name: "uri";
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "set_paused";
+    readonly inputs: readonly [{
+        readonly name: "paused";
+        readonly type: "core::bool";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "is_eligible";
+    readonly inputs: readonly [{
+        readonly name: "address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::bool";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "has_claimed";
+    readonly inputs: readonly [{
+        readonly name: "address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::bool";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "total_minted";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly type: "core::integer::u256";
+    }];
+    readonly state_mutability: "view";
+}];
+declare const POPFactoryABI: readonly [{
+    readonly type: "struct";
+    readonly name: "core::byte_array::ByteArray";
+    readonly members: readonly [{
+        readonly name: "data";
+        readonly type: "core::array::Array::<core::felt252>";
+    }, {
+        readonly name: "pending_word";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "pending_word_len";
+        readonly type: "core::integer::u32";
+    }];
+}, {
+    readonly type: "enum";
+    readonly name: "pop_protocol::types::EventType";
+    readonly variants: readonly [{
+        readonly name: "Conference";
+        readonly type: "()";
+    }, {
+        readonly name: "Bootcamp";
+        readonly type: "()";
+    }, {
+        readonly name: "Workshop";
+        readonly type: "()";
+    }, {
+        readonly name: "Hackathon";
+        readonly type: "()";
+    }, {
+        readonly name: "Meetup";
+        readonly type: "()";
+    }, {
+        readonly name: "Course";
+        readonly type: "()";
+    }, {
+        readonly name: "Other";
+        readonly type: "()";
+    }];
+}, {
+    readonly type: "function";
+    readonly name: "create_collection";
+    readonly inputs: readonly [{
+        readonly name: "name";
+        readonly type: "core::byte_array::ByteArray";
+    }, {
+        readonly name: "symbol";
+        readonly type: "core::byte_array::ByteArray";
+    }, {
+        readonly name: "base_uri";
+        readonly type: "core::byte_array::ByteArray";
+    }, {
+        readonly name: "claim_end_time";
+        readonly type: "core::integer::u64";
+    }, {
+        readonly name: "event_type";
+        readonly type: "pop_protocol::types::EventType";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "register_provider";
+    readonly inputs: readonly [{
+        readonly name: "provider";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "name";
+        readonly type: "core::byte_array::ByteArray";
+    }, {
+        readonly name: "website_url";
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "set_pop_collection_class_hash";
+    readonly inputs: readonly [{
+        readonly name: "new_class_hash";
+        readonly type: "core::starknet::class_hash::ClassHash";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}];
 
 /**
  * Normalize a Starknet address to a 0x-prefixed 64-character hex string.
@@ -1328,4 +1604,4 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type CollectionSort, type CollectionSource, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URLS, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

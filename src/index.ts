@@ -16,6 +16,8 @@ export type { MedialaneErrorCode } from "./types/errors.js";
 export {
   MARKETPLACE_CONTRACT_MAINNET,
   COLLECTION_CONTRACT_MAINNET,
+  POP_FACTORY_CONTRACT_MAINNET,
+  POP_COLLECTION_CLASS_HASH_MAINNET,
   SUPPORTED_TOKENS,
   SUPPORTED_NETWORKS,
   DEFAULT_RPC_URLS,
@@ -24,7 +26,11 @@ export {
 } from "./constants.js";
 
 // ABI
-export { IPMarketplaceABI } from "./abis.js";
+export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI } from "./abis.js";
+
+// Services
+export { PopService } from "./services/pop.js";
+export type { CreatePopCollectionParams } from "./services/pop.js";
 
 // Utils
 export { normalizeAddress, shortenAddress } from "./utils/address.js";

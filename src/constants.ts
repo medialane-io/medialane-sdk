@@ -61,3 +61,6 @@ export const DEFAULT_RPC_URLS: Record<Network, string> = {
   mainnet: "https://rpc.starknet.lava.build",
   sepolia: "https://rpc.starknet-sepolia.lava.build",
 };
+
+export const POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
+export const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";

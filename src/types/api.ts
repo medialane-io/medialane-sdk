@@ -14,12 +14,15 @@ export type IPType =
 
 export type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 
+export type CollectionSource = "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME" | "POP_PROTOCOL";
+
 export interface ApiCollectionsQuery {
   page?: number;
   limit?: number;
   isKnown?: boolean;
   sort?: CollectionSort;
   owner?: string;
+  source?: CollectionSource;
 }
 
 export type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED" | "COUNTER_OFFERED";
@@ -205,7 +208,7 @@ export interface ApiCollection {
   startBlock: string;
   metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
   isKnown: boolean;
-  source: "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME";
+  source: "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME" | "POP_PROTOCOL";
   claimedBy: string | null;
   profile?: ApiCollectionProfile | null;
   floorPrice: string | null;
@@ -579,6 +582,8 @@ export interface ApiCollectionProfile {
   twitterUrl: string | null;
   discordUrl: string | null;
   telegramUrl: string | null;
+  hasGatedContent: boolean;
+  gatedContentTitle: string | null;
   updatedBy: string | null;
   updatedAt: string;
 }
@@ -631,3 +636,24 @@ export interface ApiAdminCollectionClaim extends ApiCollectionClaim {
   reviewedAt: string | null;
   updatedAt: string;
 }
+
+// ─── POP Protocol ──────────────────────────────────────────────────────────────
+
+export interface PopClaimStatus {
+  isEligible: boolean;
+  hasClaimed: boolean;
+  tokenId: string | null;
+}
+
+export interface PopBatchEligibilityItem extends PopClaimStatus {
+  wallet: string;
+}
+
+export type PopEventType =
+  | "Conference"
+  | "Bootcamp"
+  | "Workshop"
+  | "Hackathon"
+  | "Meetup"
+  | "Course"
+  | "Other";

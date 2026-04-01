@@ -49,6 +49,8 @@ var DEFAULT_RPC_URLS = {
   mainnet: "https://rpc.starknet.lava.build",
   sepolia: "https://rpc.starknet-sepolia.lava.build"
 };
+var POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
+var POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 
 // src/abis.ts
 var IPMarketplaceABI = [
@@ -355,6 +357,148 @@ var IPMarketplaceABI = [
         kind: "nested"
       }
     ]
+  }
+];
+var POPCollectionABI = [
+  {
+    type: "struct",
+    name: "core::byte_array::ByteArray",
+    members: [
+      { name: "data", type: "core::array::Array::<core::felt252>" },
+      { name: "pending_word", type: "core::felt252" },
+      { name: "pending_word_len", type: "core::integer::u32" }
+    ]
+  },
+  {
+    type: "function",
+    name: "claim",
+    inputs: [],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "admin_mint",
+    inputs: [
+      { name: "recipient", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "custom_uri", type: "core::byte_array::ByteArray" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "add_to_allowlist",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "batch_add_to_allowlist",
+    inputs: [{ name: "addresses", type: "core::array::Array::<core::starknet::contract_address::ContractAddress>" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "remove_from_allowlist",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "set_token_uri",
+    inputs: [
+      { name: "token_id", type: "core::integer::u256" },
+      { name: "uri", type: "core::byte_array::ByteArray" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "set_paused",
+    inputs: [{ name: "paused", type: "core::bool" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "is_eligible",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "has_claimed",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "total_minted",
+    inputs: [],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view"
+  }
+];
+var POPFactoryABI = [
+  {
+    type: "struct",
+    name: "core::byte_array::ByteArray",
+    members: [
+      { name: "data", type: "core::array::Array::<core::felt252>" },
+      { name: "pending_word", type: "core::felt252" },
+      { name: "pending_word_len", type: "core::integer::u32" }
+    ]
+  },
+  {
+    type: "enum",
+    name: "pop_protocol::types::EventType",
+    variants: [
+      { name: "Conference", type: "()" },
+      { name: "Bootcamp", type: "()" },
+      { name: "Workshop", type: "()" },
+      { name: "Hackathon", type: "()" },
+      { name: "Meetup", type: "()" },
+      { name: "Course", type: "()" },
+      { name: "Other", type: "()" }
+    ]
+  },
+  {
+    type: "function",
+    name: "create_collection",
+    inputs: [
+      { name: "name", type: "core::byte_array::ByteArray" },
+      { name: "symbol", type: "core::byte_array::ByteArray" },
+      { name: "base_uri", type: "core::byte_array::ByteArray" },
+      { name: "claim_end_time", type: "core::integer::u64" },
+      { name: "event_type", type: "pop_protocol::types::EventType" }
+    ],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "register_provider",
+    inputs: [
+      { name: "provider", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "name", type: "core::byte_array::ByteArray" },
+      { name: "website_url", type: "core::byte_array::ByteArray" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "set_pop_collection_class_hash",
+    inputs: [{ name: "new_class_hash", type: "core::starknet::class_hash::ClassHash" }],
+    outputs: [],
+    state_mutability: "external"
   }
 ];
 
@@ -1073,10 +1217,11 @@ var ApiClient = class {
     );
   }
   // ─── Collections ───────────────────────────────────────────────────────────
-  getCollections(page = 1, limit = 20, isKnown, sort) {
+  getCollections(page = 1, limit = 20, isKnown, sort, source) {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (isKnown !== void 0) params.set("isKnown", String(isKnown));
     if (sort) params.set("sort", sort);
+    if (source) params.set("source", source);
     return this.get(`/v1/collections?${params}`);
   }
   getCollectionsByOwner(owner, page = 1, limit = 50) {
@@ -1140,6 +1285,9 @@ var ApiClient = class {
   }
   submitIntentSignature(id, signature) {
     return this.patch(`/v1/intents/${id}/signature`, { signature });
+  }
+  confirmIntent(id, txHash) {
+    return this.patch(`/v1/intents/${id}/confirm`, { txHash });
   }
   createMintIntent(params) {
     return this.post("/v1/intents/mint", params);
@@ -1266,6 +1414,14 @@ var ApiClient = class {
       },
       body: JSON.stringify(data)
     });
+    return res.json();
+  }
+  async getGatedContent(contractAddress, clerkToken) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/gated-content`;
+    const res = await fetch(url, {
+      headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` }
+    });
+    if (res.status === 403 || res.status === 404) return null;
     return res.json();
   }
   // ─── Creator Profiles ───────────────────────────────────────────────────────
@@ -1426,6 +1582,103 @@ var ApiClient = class {
       headers: { "Authorization": `Bearer ${clerkToken}` }
     });
   }
+  /**
+   * Requester extends the expiry of a pending remix offer by 1–30 days.
+   * Requires Clerk JWT.
+   */
+  extendRemixOffer(id, days, clerkToken) {
+    return this.request(`/v1/remix-offers/${id}/extend`, {
+      method: "POST",
+      body: JSON.stringify({ days }),
+      headers: { "Authorization": `Bearer ${clerkToken}` }
+    });
+  }
+  // ─── POP Protocol ──────────────────────────────────────────────────────────
+  getPopCollections(opts = {}) {
+    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, void 0, opts.sort, "POP_PROTOCOL");
+  }
+  async getPopEligibility(collection, wallet) {
+    const res = await this.get(
+      `/v1/pop/eligibility/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
+    );
+    return res.data;
+  }
+  async getPopEligibilityBatch(collection, wallets) {
+    const params = new URLSearchParams({ wallets: wallets.map(normalizeAddress).join(",") });
+    const res = await this.get(
+      `/v1/pop/eligibility/${normalizeAddress(collection)}?${params}`
+    );
+    return res.data;
+  }
+};
+var POP_FACTORY_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
+var PopService = class {
+  constructor(_config) {
+    this.factoryAddress = POP_FACTORY_MAINNET;
+  }
+  async claim(account, collectionAddress) {
+    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(collectionAddress), account);
+    const call = collection.populate("claim", []);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async adminMint(account, params) {
+    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
+    const call = collection.populate("admin_mint", [
+      params.recipient,
+      params.customUri ?? ""
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async addToAllowlist(account, params) {
+    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
+    const call = collection.populate("add_to_allowlist", [params.address]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async batchAddToAllowlist(account, params) {
+    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
+    const CHUNK = 200;
+    const calls = [];
+    for (let i = 0; i < params.addresses.length; i += CHUNK) {
+      const chunk = params.addresses.slice(i, i + CHUNK);
+      calls.push(collection.populate("batch_add_to_allowlist", [chunk]));
+    }
+    const res = await account.execute(calls);
+    return { txHash: res.transaction_hash };
+  }
+  async removeFromAllowlist(account, params) {
+    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
+    const call = collection.populate("remove_from_allowlist", [params.address]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async setTokenUri(account, params) {
+    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
+    const call = collection.populate("set_token_uri", [BigInt(params.tokenId), params.uri]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async setPaused(account, params) {
+    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
+    const call = collection.populate("set_paused", [params.paused]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async createCollection(account, params) {
+    const factory = new starknet.Contract(POPFactoryABI, this.factoryAddress, account);
+    const eventTypeVariant = { [params.eventType]: {} };
+    const call = factory.populate("create_collection", [
+      params.name,
+      params.symbol,
+      params.baseUri,
+      params.claimEndTime,
+      eventTypeVariant
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
 };
 
 // src/client.ts
@@ -1433,6 +1686,9 @@ var MedialaneClient = class {
   constructor(rawConfig = {}) {
     this.config = resolveConfig(rawConfig);
     this.marketplace = new MarketplaceModule(this.config);
+    this.services = {
+      pop: new PopService(this.config)
+    };
     if (!this.config.backendUrl) {
       this.api = new Proxy({}, {
         get(_target, prop) {
@@ -1471,6 +1727,11 @@ exports.MedialaneApiError = MedialaneApiError;
 exports.MedialaneClient = MedialaneClient;
 exports.MedialaneError = MedialaneError;
 exports.OPEN_LICENSES = OPEN_LICENSES;
+exports.POPCollectionABI = POPCollectionABI;
+exports.POPFactoryABI = POPFactoryABI;
+exports.POP_COLLECTION_CLASS_HASH_MAINNET = POP_COLLECTION_CLASS_HASH_MAINNET;
+exports.POP_FACTORY_CONTRACT_MAINNET = POP_FACTORY_CONTRACT_MAINNET;
+exports.PopService = PopService;
 exports.SUPPORTED_NETWORKS = SUPPORTED_NETWORKS;
 exports.SUPPORTED_TOKENS = SUPPORTED_TOKENS;
 exports.buildCancellationTypedData = buildCancellationTypedData;

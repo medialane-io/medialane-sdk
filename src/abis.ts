@@ -308,3 +308,147 @@ export const IPMarketplaceABI = [
     ],
   },
 ] as const;
+
+export const POPCollectionABI = [
+  {
+    type: "struct",
+    name: "core::byte_array::ByteArray",
+    members: [
+      { name: "data", type: "core::array::Array::<core::felt252>" },
+      { name: "pending_word", type: "core::felt252" },
+      { name: "pending_word_len", type: "core::integer::u32" },
+    ],
+  },
+  {
+    type: "function",
+    name: "claim",
+    inputs: [],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "admin_mint",
+    inputs: [
+      { name: "recipient", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "custom_uri", type: "core::byte_array::ByteArray" },
+    ],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "add_to_allowlist",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "batch_add_to_allowlist",
+    inputs: [{ name: "addresses", type: "core::array::Array::<core::starknet::contract_address::ContractAddress>" }],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "remove_from_allowlist",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "set_token_uri",
+    inputs: [
+      { name: "token_id", type: "core::integer::u256" },
+      { name: "uri", type: "core::byte_array::ByteArray" },
+    ],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "set_paused",
+    inputs: [{ name: "paused", type: "core::bool" }],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "is_eligible",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "has_claimed",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "total_minted",
+    inputs: [],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view",
+  },
+] as const;
+
+export const POPFactoryABI = [
+  {
+    type: "struct",
+    name: "core::byte_array::ByteArray",
+    members: [
+      { name: "data", type: "core::array::Array::<core::felt252>" },
+      { name: "pending_word", type: "core::felt252" },
+      { name: "pending_word_len", type: "core::integer::u32" },
+    ],
+  },
+  {
+    type: "enum",
+    name: "pop_protocol::types::EventType",
+    variants: [
+      { name: "Conference", type: "()" },
+      { name: "Bootcamp", type: "()" },
+      { name: "Workshop", type: "()" },
+      { name: "Hackathon", type: "()" },
+      { name: "Meetup", type: "()" },
+      { name: "Course", type: "()" },
+      { name: "Other", type: "()" },
+    ],
+  },
+  {
+    type: "function",
+    name: "create_collection",
+    inputs: [
+      { name: "name", type: "core::byte_array::ByteArray" },
+      { name: "symbol", type: "core::byte_array::ByteArray" },
+      { name: "base_uri", type: "core::byte_array::ByteArray" },
+      { name: "claim_end_time", type: "core::integer::u64" },
+      { name: "event_type", type: "pop_protocol::types::EventType" },
+    ],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "register_provider",
+    inputs: [
+      { name: "provider", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "name", type: "core::byte_array::ByteArray" },
+      { name: "website_url", type: "core::byte_array::ByteArray" },
+    ],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "set_pop_collection_class_hash",
+    inputs: [{ name: "new_class_hash", type: "core::starknet::class_hash::ClassHash" }],
+    outputs: [],
+    state_mutability: "external",
+  },
+] as const;

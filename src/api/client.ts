@@ -43,6 +43,9 @@ import type {
   ConfirmRemixOfferParams,
   ApiResponse,
   CollectionSort,
+  CollectionSource,
+  PopClaimStatus,
+  PopBatchEligibilityItem,
 } from "../types/api.js";
 
 function deriveErrorCode(status: number): MedialaneErrorCode {
@@ -184,11 +187,13 @@ export class ApiClient {
     page = 1,
     limit = 20,
     isKnown?: boolean,
-    sort?: CollectionSort
+    sort?: CollectionSort,
+    source?: CollectionSource
   ): Promise<ApiResponse<ApiCollection[]>> {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (isKnown !== undefined) params.set("isKnown", String(isKnown));
     if (sort) params.set("sort", sort);
+    if (source) params.set("source", source);
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
   }
 
@@ -464,6 +469,18 @@ export class ApiClient {
     return res.json();
   }
 
+  async getGatedContent(
+    contractAddress: string,
+    clerkToken: string
+  ): Promise<{ title: string; url: string; type: string } | null> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/gated-content`;
+    const res = await fetch(url, {
+      headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` },
+    });
+    if (res.status === 403 || res.status === 404) return null;
+    return res.json();
+  }
+
   // ─── Creator Profiles ───────────────────────────────────────────────────────
 
   /** List all creators with an approved username. */
@@ -673,5 +690,26 @@ export class ApiClient {
       body: JSON.stringify({ days }),
       headers: { "Authorization": `Bearer ${clerkToken}` },
     });
+  }
+
+  // ─── POP Protocol ──────────────────────────────────────────────────────────
+
+  getPopCollections(opts: { page?: number; limit?: number; sort?: CollectionSort } = {}): Promise<ApiResponse<ApiCollection[]>> {
+    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "POP_PROTOCOL");
+  }
+
+  async getPopEligibility(collection: string, wallet: string): Promise<PopClaimStatus> {
+    const res = await this.get<{ data: PopClaimStatus }>(
+      `/v1/pop/eligibility/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
+    );
+    return res.data;
+  }
+
+  async getPopEligibilityBatch(collection: string, wallets: string[]): Promise<PopBatchEligibilityItem[]> {
+    const params = new URLSearchParams({ wallets: wallets.map(normalizeAddress).join(",") });
+    const res = await this.get<{ data: PopBatchEligibilityItem[] }>(
+      `/v1/pop/eligibility/${normalizeAddress(collection)}?${params}`
+    );
+    return res.data;
   }
 }

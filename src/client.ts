@@ -1,6 +1,7 @@
 import { type MedialaneConfig, resolveConfig, type ResolvedConfig } from "./config.js";
 import { MarketplaceModule } from "./marketplace/index.js";
 import { ApiClient } from "./api/client.js";
+import { PopService } from "./services/pop.js";
 
 export class MedialaneClient {
   /** On-chain marketplace interactions (create listing, fulfill order, etc.) */
@@ -12,12 +13,20 @@ export class MedialaneClient {
    */
   readonly api: ApiClient;
 
+  readonly services: {
+    readonly pop: PopService;
+  };
+
   private readonly config: ResolvedConfig;
 
   constructor(rawConfig: MedialaneConfig = {}) {
     this.config = resolveConfig(rawConfig);
 
     this.marketplace = new MarketplaceModule(this.config);
+
+    this.services = {
+      pop: new PopService(this.config),
+    };
 
     if (!this.config.backendUrl) {
       this.api = new Proxy({} as ApiClient, {
