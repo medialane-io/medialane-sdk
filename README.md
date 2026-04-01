@@ -415,6 +415,10 @@ Built with:
 
 ## Changelog
 
+### v0.5.7
+- **`ApiCollectionProfile.hasGatedContent: boolean`** — whether the collection has token-gated content configured
+- **`ApiCollectionProfile.gatedContentTitle: string | null`** — public title of gated content (shown to all users; URL is accessible to holders only via the backend gated-content endpoint)
+
 ### v0.5.5
 - **`extendRemixOffer(id, days, clerkToken)`** — requester extends expiry of a PENDING/AUTO_PENDING remix offer by 1–30 days (`POST /v1/remix-offers/:id/extend`)
 - **`ApiRemixOfferPrice`** type — `{ raw, formatted, currency, decimals }` replaces flat `proposedPrice`/`proposedCurrency` fields on `ApiRemixOffer.price` (visible to participants only)

@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.4.7",
+  "version": "0.5.7",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -251,6 +251,10 @@ DEFAULT_RPC_URLS = {
 - Affected methods: `getTokensByOwner`, `getOrdersByUser`, `getActivitiesByAddress`, `getActiveOrdersForToken`, `getCollection`, `getCollectionTokens`, `getCollectionsByOwner`, and `offerer` filter in `getOrders`
 - `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
 - `ApiClient.getCollectionsByOwner(owner: string)` — fetches `GET /v1/collections?owner=address`
+
+**v0.5.7 — Gated content fields:**
+- `ApiCollectionProfile.hasGatedContent: boolean` — whether collection has gated content configured
+- `ApiCollectionProfile.gatedContentTitle: string | null` — public title of gated content (shown to all; URL is holder-only via `GET /v1/collections/:contract/gated-content`)
 
 **v0.4.7 — IPType union:**
 - `IPType` union exported: `"Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom"`
