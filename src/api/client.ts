@@ -46,6 +46,7 @@ import type {
   CollectionSource,
   PopClaimStatus,
   PopBatchEligibilityItem,
+  DropMintStatus,
 } from "../types/api.js";
 
 function deriveErrorCode(status: number): MedialaneErrorCode {
@@ -709,6 +710,19 @@ export class ApiClient {
     const params = new URLSearchParams({ wallets: wallets.map(normalizeAddress).join(",") });
     const res = await this.get<{ data: PopBatchEligibilityItem[] }>(
       `/v1/pop/eligibility/${normalizeAddress(collection)}?${params}`
+    );
+    return res.data;
+  }
+
+  // ─── Collection Drop ────────────────────────────────────────────────────────
+
+  getDropCollections(opts: { page?: number; limit?: number; sort?: CollectionSort } = {}): Promise<ApiResponse<ApiCollection[]>> {
+    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "COLLECTION_DROP");
+  }
+
+  async getDropMintStatus(collection: string, wallet: string): Promise<DropMintStatus> {
+    const res = await this.get<{ data: DropMintStatus }>(
+      `/v1/drop/mint-status/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
     );
     return res.data;
   }

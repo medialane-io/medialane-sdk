@@ -51,6 +51,8 @@ var DEFAULT_RPC_URLS = {
 };
 var POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
 var POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
+var DROP_FACTORY_CONTRACT_MAINNET = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
+var DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
 
 // src/abis.ts
 var IPMarketplaceABI = [
@@ -496,6 +498,262 @@ var POPFactoryABI = [
   {
     type: "function",
     name: "set_pop_collection_class_hash",
+    inputs: [{ name: "new_class_hash", type: "core::starknet::class_hash::ClassHash" }],
+    outputs: [],
+    state_mutability: "external"
+  }
+];
+var DropCollectionABI = [
+  {
+    type: "struct",
+    name: "core::byte_array::ByteArray",
+    members: [
+      { name: "data", type: "core::array::Array::<core::felt252>" },
+      { name: "pending_word", type: "core::felt252" },
+      { name: "pending_word_len", type: "core::integer::u32" }
+    ]
+  },
+  {
+    type: "struct",
+    name: "collection_drop::types::ClaimConditions",
+    members: [
+      { name: "start_time", type: "core::integer::u64" },
+      { name: "end_time", type: "core::integer::u64" },
+      { name: "price", type: "core::integer::u256" },
+      { name: "payment_token", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "max_quantity_per_wallet", type: "core::integer::u256" }
+    ]
+  },
+  {
+    type: "function",
+    name: "claim",
+    inputs: [{ name: "quantity", type: "core::integer::u256" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "admin_mint",
+    inputs: [
+      { name: "recipient", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "quantity", type: "core::integer::u256" },
+      { name: "custom_uri", type: "core::byte_array::ByteArray" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "set_claim_conditions",
+    inputs: [{ name: "conditions", type: "collection_drop::types::ClaimConditions" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "get_claim_conditions",
+    inputs: [],
+    outputs: [{ type: "collection_drop::types::ClaimConditions" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "set_allowlist_enabled",
+    inputs: [{ name: "enabled", type: "core::bool" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "is_allowlist_enabled",
+    inputs: [],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "add_to_allowlist",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "batch_add_to_allowlist",
+    inputs: [{ name: "addresses", type: "core::array::Array::<core::starknet::contract_address::ContractAddress>" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "remove_from_allowlist",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "is_allowlisted",
+    inputs: [{ name: "address", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "set_base_uri",
+    inputs: [{ name: "new_uri", type: "core::byte_array::ByteArray" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "set_token_uri",
+    inputs: [
+      { name: "token_id", type: "core::integer::u256" },
+      { name: "uri", type: "core::byte_array::ByteArray" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "set_paused",
+    inputs: [{ name: "paused", type: "core::bool" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "withdraw_payments",
+    inputs: [],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "get_drop_id",
+    inputs: [],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "get_max_supply",
+    inputs: [],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "total_minted",
+    inputs: [],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "remaining_supply",
+    inputs: [],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "minted_by_wallet",
+    inputs: [{ name: "wallet", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "is_paused",
+    inputs: [],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view"
+  }
+];
+var DropFactoryABI = [
+  {
+    type: "struct",
+    name: "core::byte_array::ByteArray",
+    members: [
+      { name: "data", type: "core::array::Array::<core::felt252>" },
+      { name: "pending_word", type: "core::felt252" },
+      { name: "pending_word_len", type: "core::integer::u32" }
+    ]
+  },
+  {
+    type: "struct",
+    name: "collection_drop::types::ClaimConditions",
+    members: [
+      { name: "start_time", type: "core::integer::u64" },
+      { name: "end_time", type: "core::integer::u64" },
+      { name: "price", type: "core::integer::u256" },
+      { name: "payment_token", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "max_quantity_per_wallet", type: "core::integer::u256" }
+    ]
+  },
+  {
+    type: "function",
+    name: "register_organizer",
+    inputs: [
+      { name: "organizer", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "name", type: "core::byte_array::ByteArray" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "revoke_organizer",
+    inputs: [{ name: "organizer", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "is_active_organizer",
+    inputs: [{ name: "organizer", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "create_drop",
+    inputs: [
+      { name: "name", type: "core::byte_array::ByteArray" },
+      { name: "symbol", type: "core::byte_array::ByteArray" },
+      { name: "base_uri", type: "core::byte_array::ByteArray" },
+      { name: "max_supply", type: "core::integer::u256" },
+      { name: "initial_conditions", type: "collection_drop::types::ClaimConditions" }
+    ],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "get_drop_address",
+    inputs: [{ name: "drop_id", type: "core::integer::u256" }],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "get_last_drop_id",
+    inputs: [],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "get_organizer_drop_count",
+    inputs: [{ name: "organizer", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [{ type: "core::integer::u32" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "set_drop_collection_class_hash",
     inputs: [{ name: "new_class_hash", type: "core::starknet::class_hash::ClassHash" }],
     outputs: [],
     state_mutability: "external"
@@ -1610,21 +1868,31 @@ var ApiClient = class {
     );
     return res.data;
   }
+  // ─── Collection Drop ────────────────────────────────────────────────────────
+  getDropCollections(opts = {}) {
+    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, void 0, opts.sort, "COLLECTION_DROP");
+  }
+  async getDropMintStatus(collection, wallet) {
+    const res = await this.get(
+      `/v1/drop/mint-status/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
+    );
+    return res.data;
+  }
 };
-var POP_FACTORY_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
 var PopService = class {
   constructor(_config) {
-    this.factoryAddress = POP_FACTORY_MAINNET;
+    this.factoryAddress = POP_FACTORY_CONTRACT_MAINNET;
+  }
+  _collection(address, account) {
+    return new starknet.Contract(POPCollectionABI, normalizeAddress(address), account);
   }
   async claim(account, collectionAddress) {
-    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(collectionAddress), account);
-    const call = collection.populate("claim", []);
+    const call = this._collection(collectionAddress, account).populate("claim", []);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
   async adminMint(account, params) {
-    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
-    const call = collection.populate("admin_mint", [
+    const call = this._collection(params.collection, account).populate("admin_mint", [
       params.recipient,
       params.customUri ?? ""
     ]);
@@ -1632,49 +1900,126 @@ var PopService = class {
     return { txHash: res.transaction_hash };
   }
   async addToAllowlist(account, params) {
-    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
-    const call = collection.populate("add_to_allowlist", [params.address]);
+    const call = this._collection(params.collection, account).populate("add_to_allowlist", [params.address]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
   async batchAddToAllowlist(account, params) {
-    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
+    const collection = this._collection(params.collection, account);
     const CHUNK = 200;
     const calls = [];
     for (let i = 0; i < params.addresses.length; i += CHUNK) {
-      const chunk = params.addresses.slice(i, i + CHUNK);
-      calls.push(collection.populate("batch_add_to_allowlist", [chunk]));
+      calls.push(collection.populate("batch_add_to_allowlist", [params.addresses.slice(i, i + CHUNK)]));
     }
     const res = await account.execute(calls);
     return { txHash: res.transaction_hash };
   }
   async removeFromAllowlist(account, params) {
-    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
-    const call = collection.populate("remove_from_allowlist", [params.address]);
+    const call = this._collection(params.collection, account).populate("remove_from_allowlist", [params.address]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
   async setTokenUri(account, params) {
-    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
-    const call = collection.populate("set_token_uri", [BigInt(params.tokenId), params.uri]);
+    const call = this._collection(params.collection, account).populate("set_token_uri", [
+      BigInt(params.tokenId),
+      params.uri
+    ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
   async setPaused(account, params) {
-    const collection = new starknet.Contract(POPCollectionABI, normalizeAddress(params.collection), account);
-    const call = collection.populate("set_paused", [params.paused]);
+    const call = this._collection(params.collection, account).populate("set_paused", [params.paused]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
   async createCollection(account, params) {
     const factory = new starknet.Contract(POPFactoryABI, this.factoryAddress, account);
-    const eventTypeVariant = { [params.eventType]: {} };
     const call = factory.populate("create_collection", [
       params.name,
       params.symbol,
       params.baseUri,
       params.claimEndTime,
-      eventTypeVariant
+      { [params.eventType]: {} }
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+};
+function toContractConditions(c) {
+  return {
+    start_time: c.startTime,
+    end_time: c.endTime,
+    price: BigInt(c.price),
+    payment_token: c.paymentToken,
+    max_quantity_per_wallet: BigInt(c.maxQuantityPerWallet)
+  };
+}
+var DropService = class {
+  constructor(_config) {
+    this.factoryAddress = DROP_FACTORY_CONTRACT_MAINNET;
+  }
+  _collection(address, account) {
+    return new starknet.Contract(DropCollectionABI, normalizeAddress(address), account);
+  }
+  async claim(account, collectionAddress, quantity = 1) {
+    const call = this._collection(collectionAddress, account).populate("claim", [BigInt(quantity)]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async adminMint(account, params) {
+    const call = this._collection(params.collection, account).populate("admin_mint", [
+      params.recipient,
+      BigInt(params.quantity ?? 1),
+      params.customUri ?? ""
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async setClaimConditions(account, params) {
+    const call = this._collection(params.collection, account).populate("set_claim_conditions", [
+      toContractConditions(params.conditions)
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async setAllowlistEnabled(account, params) {
+    const call = this._collection(params.collection, account).populate("set_allowlist_enabled", [params.enabled]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async addToAllowlist(account, params) {
+    const call = this._collection(params.collection, account).populate("add_to_allowlist", [params.address]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async batchAddToAllowlist(account, params) {
+    const collection = this._collection(params.collection, account);
+    const CHUNK = 200;
+    const calls = [];
+    for (let i = 0; i < params.addresses.length; i += CHUNK) {
+      calls.push(collection.populate("batch_add_to_allowlist", [params.addresses.slice(i, i + CHUNK)]));
+    }
+    const res = await account.execute(calls);
+    return { txHash: res.transaction_hash };
+  }
+  async setPaused(account, params) {
+    const call = this._collection(params.collection, account).populate("set_paused", [params.paused]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async withdrawPayments(account, params) {
+    const call = this._collection(params.collection, account).populate("withdraw_payments", []);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  async createDrop(account, params) {
+    const factory = new starknet.Contract(DropFactoryABI, this.factoryAddress, account);
+    const call = factory.populate("create_drop", [
+      params.name,
+      params.symbol,
+      params.baseUri,
+      BigInt(params.maxSupply),
+      toContractConditions(params.initialConditions)
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
@@ -1687,7 +2032,8 @@ var MedialaneClient = class {
     this.config = resolveConfig(rawConfig);
     this.marketplace = new MarketplaceModule(this.config);
     this.services = {
-      pop: new PopService(this.config)
+      pop: new PopService(this.config),
+      drop: new DropService(this.config)
     };
     if (!this.config.backendUrl) {
       this.api = new Proxy({}, {
@@ -1720,6 +2066,11 @@ var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
 exports.ApiClient = ApiClient;
 exports.COLLECTION_CONTRACT_MAINNET = COLLECTION_CONTRACT_MAINNET;
 exports.DEFAULT_RPC_URLS = DEFAULT_RPC_URLS;
+exports.DROP_COLLECTION_CLASS_HASH_MAINNET = DROP_COLLECTION_CLASS_HASH_MAINNET;
+exports.DROP_FACTORY_CONTRACT_MAINNET = DROP_FACTORY_CONTRACT_MAINNET;
+exports.DropCollectionABI = DropCollectionABI;
+exports.DropFactoryABI = DropFactoryABI;
+exports.DropService = DropService;
 exports.IPMarketplaceABI = IPMarketplaceABI;
 exports.MARKETPLACE_CONTRACT_MAINNET = MARKETPLACE_CONTRACT_MAINNET;
 exports.MarketplaceModule = MarketplaceModule;

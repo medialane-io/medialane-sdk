@@ -18,6 +18,8 @@ export {
   COLLECTION_CONTRACT_MAINNET,
   POP_FACTORY_CONTRACT_MAINNET,
   POP_COLLECTION_CLASS_HASH_MAINNET,
+  DROP_FACTORY_CONTRACT_MAINNET,
+  DROP_COLLECTION_CLASS_HASH_MAINNET,
   SUPPORTED_TOKENS,
   SUPPORTED_NETWORKS,
   DEFAULT_RPC_URLS,
@@ -26,11 +28,11 @@ export {
 } from "./constants.js";
 
 // ABI
-export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI } from "./abis.js";
+export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI } from "./abis.js";
 
 // Services
 export { PopService } from "./services/pop.js";
-export type { CreatePopCollectionParams } from "./services/pop.js";
+export { DropService } from "./services/drop.js";
 
 // Utils
 export { normalizeAddress, shortenAddress } from "./utils/address.js";

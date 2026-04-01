@@ -14,7 +14,7 @@ export type IPType =
 
 export type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 
-export type CollectionSource = "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME" | "POP_PROTOCOL";
+export type CollectionSource = "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME" | "POP_PROTOCOL" | "COLLECTION_DROP";
 
 export interface ApiCollectionsQuery {
   page?: number;
@@ -208,7 +208,7 @@ export interface ApiCollection {
   startBlock: string;
   metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
   isKnown: boolean;
-  source: "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME" | "POP_PROTOCOL";
+  source: CollectionSource;
   claimedBy: string | null;
   profile?: ApiCollectionProfile | null;
   floorPrice: string | null;
@@ -657,3 +657,10 @@ export type PopEventType =
   | "Meetup"
   | "Course"
   | "Other";
+
+// ─── Collection Drop ───────────────────────────────────────────────────────────
+
+export interface DropMintStatus {
+  mintedByWallet: number;
+  totalMinted: number;
+}

@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.5.7",
+  "version": "0.6.1",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -48,6 +48,9 @@ src/
     index.ts         ← MarketplaceModule (wraps orders.ts functions)
     orders.ts        ← createListing, makeOffer, fulfillOrder, cancelOrder, checkoutCart
     signing.ts       ← SNIP-12 typed data builders
+  services/
+    pop.ts           ← PopService (POP Protocol on-chain interactions)
+    drop.ts          ← DropService (Collection Drop on-chain interactions)
   types/
     api.ts           ← API response types (ApiOrder, ApiToken, etc.)
     index.ts
@@ -207,14 +210,49 @@ client.api.updateCreatorProfile(walletAddress, data, clerkToken)
 // → ApiCreatorProfile
 ```
 
+**Collection Drop (v0.6.1)**
+```ts
+client.api.getDropCollections(opts?)             // { page?, limit?, sort? } → ApiCollection[]
+client.api.getDropMintStatus(collection, wallet) // → { mintedByWallet, totalMinted }
+```
+
+**POP Protocol (v0.6.0)**
+```ts
+client.api.getPopCollections(opts?)              // { page?, limit?, sort? } → ApiCollection[]
+client.api.getPopEligibility(collection, wallet) // → { isEligible, hasClaimed, tokenId }
+client.api.getPopEligibilityBatch(collection, wallets) // wallets: string[] (max 100)
+```
+
+### client.services.drop (`DropService`)
+
+On-chain Collection Drop interactions. All require a starknet.js `AccountInterface`.
+
+| Method | Description |
+|---|---|
+| `claim(account, collectionAddress, quantity?)` | Public mint. `quantity` defaults to 1 |
+| `adminMint(account, params)` | Bypass conditions — gift/reserve. `params: { collection, recipient, quantity?, customUri? }` |
+| `setClaimConditions(account, params)` | Update phase config. `params: { collection, conditions: ClaimConditions }` |
+| `setAllowlistEnabled(account, params)` | Toggle allowlist gate. `params: { collection, enabled }` |
+| `addToAllowlist(account, params)` | Add single wallet. `params: { collection, address }` |
+| `batchAddToAllowlist(account, params)` | Add up to 200 wallets per tx. `params: { collection, addresses }` |
+| `setPaused(account, params)` | Pause/unpause minting. `params: { collection, paused }` |
+| `withdrawPayments(account, params)` | Withdraw ERC-20 proceeds to organizer. `params: { collection }` |
+| `createDrop(account, params)` | Deploy new DropCollection via factory. `params: CreateDropParams` |
+
+`ClaimConditions`: `{ startTime, endTime, price, paymentToken, maxQuantityPerWallet }` — set `price=0` for free mints, `endTime=0` for no expiry.
+
 ---
 
 ## Constants (`src/constants.ts`)
 
 ```ts
-MARKETPLACE_CONTRACT_MAINNET = "0x04299b51289aa700de4ce19cc77bcea8430bfd1aef04193efab09d60a3a7ee0f"
-COLLECTION_CONTRACT_MAINNET  = "0x05e73b7be06d82beeb390a0e0d655f2c9e7cf519658e04f05d9c690ccc41da03"
-INDEXER_START_BLOCK_MAINNET  = 6204232
+MARKETPLACE_CONTRACT_MAINNET        = "0x04299b51289aa700de4ce19cc77bcea8430bfd1aef04193efab09d60a3a7ee0f"
+COLLECTION_CONTRACT_MAINNET         = "0x05e73b7be06d82beeb390a0e0d655f2c9e7cf519658e04f05d9c690ccc41da03"
+POP_FACTORY_CONTRACT_MAINNET        = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111"
+POP_COLLECTION_CLASS_HASH_MAINNET   = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f"
+DROP_FACTORY_CONTRACT_MAINNET       = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800"
+DROP_COLLECTION_CLASS_HASH_MAINNET  = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282"
+INDEXER_START_BLOCK_MAINNET         = 6204232
 
 DEFAULT_RPC_URLS = {
   mainnet: "https://rpc.starknet.lava.build",
@@ -251,6 +289,15 @@ DEFAULT_RPC_URLS = {
 - Affected methods: `getTokensByOwner`, `getOrdersByUser`, `getActivitiesByAddress`, `getActiveOrdersForToken`, `getCollection`, `getCollectionTokens`, `getCollectionsByOwner`, and `offerer` filter in `getOrders`
 - `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
 - `ApiClient.getCollectionsByOwner(owner: string)` — fetches `GET /v1/collections?owner=address`
+
+**v0.6.1 — Collection Drop:**
+- `CollectionSource` union extended with `"COLLECTION_DROP"`
+- `DropMintStatus` type: `{ mintedByWallet: number; totalMinted: number }`
+- `DropService` (`client.services.drop`) — on-chain interactions: `claim`, `adminMint`, `setClaimConditions`, `setAllowlistEnabled`, `addToAllowlist`, `batchAddToAllowlist`, `setPaused`, `withdrawPayments`, `createDrop`
+- `ClaimConditions` and `CreateDropParams` types exported
+- `client.api.getDropCollections(opts?)` and `client.api.getDropMintStatus(collection, wallet)`
+- `DropCollectionABI` and `DropFactoryABI` exported
+- `DROP_FACTORY_CONTRACT_MAINNET` and `DROP_COLLECTION_CLASS_HASH_MAINNET` constants exported
 
 **v0.5.7 — Gated content fields:**
 - `ApiCollectionProfile.hasGatedContent: boolean` — whether collection has gated content configured

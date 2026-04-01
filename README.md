@@ -415,6 +415,21 @@ Built with:
 
 ## Changelog
 
+### v0.6.1
+- **Collection Drop** — new `DropService` (`client.services.drop`) with full on-chain drop management: `claim`, `adminMint`, `setClaimConditions`, `setAllowlistEnabled`, `addToAllowlist`, `batchAddToAllowlist`, `setPaused`, `withdrawPayments`, `createDrop`
+- **`client.api.getDropCollections(opts?)`** — list all `COLLECTION_DROP` collections
+- **`client.api.getDropMintStatus(collection, wallet)`** — returns `{ mintedByWallet, totalMinted }`
+- **`DropMintStatus`**, **`ClaimConditions`**, **`CreateDropParams`** types exported
+- **`DropCollectionABI`** and **`DropFactoryABI`** exported from `@medialane/sdk`
+- **`DROP_FACTORY_CONTRACT_MAINNET`** and **`DROP_COLLECTION_CLASS_HASH_MAINNET`** constants exported
+- **`CollectionSource`** union extended with `"COLLECTION_DROP"`
+
+### v0.6.0
+- **POP Protocol** — `PopService` (`client.services.pop`): `claim`, `adminMint`, `addToAllowlist`, `batchAddToAllowlist`, `removeFromAllowlist`, `setTokenUri`, `setPaused`, `createCollection`
+- **`client.api.getPopCollections(opts?)`** and **`client.api.getPopEligibility(collection, wallet)`**
+- **`POPCollectionABI`** and **`POPFactoryABI`** exported
+- **`POP_FACTORY_CONTRACT_MAINNET`** and **`POP_COLLECTION_CLASS_HASH_MAINNET`** constants exported
+
 ### v0.5.7
 - **`ApiCollectionProfile.hasGatedContent: boolean`** — whether the collection has token-gated content configured
 - **`ApiCollectionProfile.gatedContentTitle: string | null`** — public title of gated content (shown to all users; URL is accessible to holders only via the backend gated-content endpoint)
