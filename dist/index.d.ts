@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { AccountInterface, constants, TypedData } from 'starknet';
 
-declare const MARKETPLACE_CONTRACT_MAINNET = "0x04299b51289aa700de4ce19cc77bcea8430bfd1aef04193efab09d60a3a7ee0f";
+declare const MARKETPLACE_CONTRACT_MAINNET = "0x0234f4e8838801ebf01d7f4166d42aed9a55bc67c1301162decf9e2040e05f16";
 declare const COLLECTION_CONTRACT_MAINNET = "0x05e73b7be06d82beeb390a0e0d655f2c9e7cf519658e04f05d9c690ccc41da03";
 declare const SUPPORTED_TOKENS: readonly [{
     readonly symbol: "USDC";
