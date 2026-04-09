@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.6.1",
+  "version": "0.6.5",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -289,6 +289,12 @@ DEFAULT_RPC_URLS = {
 - Affected methods: `getTokensByOwner`, `getOrdersByUser`, `getActivitiesByAddress`, `getActiveOrdersForToken`, `getCollection`, `getCollectionTokens`, `getCollectionsByOwner`, and `offerer` filter in `getOrders`
 - `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
 - `ApiClient.getCollectionsByOwner(owner: string)` — fetches `GET /v1/collections?owner=address`
+
+**v0.6.5 — ERC-1155 support:**
+- `ApiTokenBalance` type — `{ owner: string; amount: string }` — one entry per holder per token ID
+- `ApiToken.balances: ApiTokenBalance[] | null` — populated on single-token fetches; null on list responses
+- `ApiToken.owner: string | null` — **deprecated**, always null post-migration; use `balances`
+- `ApiCollection.standard: "ERC721" | "ERC1155" | "UNKNOWN"` — detected via ERC-165 `supportsInterface` at collection index time
 
 **v0.6.1 — Collection Drop:**
 - `CollectionSource` union extended with `"COLLECTION_DROP"`

@@ -11,7 +11,7 @@ The Medialane SDK provides a unified interface for interacting with the Medialan
 ## Features
 
 **On-Chain Operations**
-- Create listings (ERC-721 for sale)
+- Create listings (ERC-721 / ERC-1155 for sale)
 - Make offers (bid with ERC-20)
 - Fulfill orders (purchase NFTs)
 - Cancel active orders
@@ -19,7 +19,7 @@ The Medialane SDK provides a unified interface for interacting with the Medialan
 - Built-in approval checking
 - SNIP-12 typed data signing
 - Mint IP NFTs into any collection
-- Deploy new ERC-721 collections
+- Deploy new ERC-721 or ERC-1155 collections
 
 **REST API Client**
 - Query orders, tokens, collections, and activities
@@ -27,6 +27,7 @@ The Medialane SDK provides a unified interface for interacting with the Medialan
 - Intent-based transaction orchestration
 - Upload metadata and files to IPFS (Pinata)
 - Tenant portal: API keys, webhooks, usage
+- ERC-1155 multi-holder ownership via `token.balances`
 
 **IP Metadata Types**
 - `IpAttribute` — typed OpenSea ERC-721 attribute
@@ -177,6 +178,32 @@ const token = await client.api.getToken(contract, tokenId);
 const tokens = await client.api.getTokensByOwner(address);
 const history = await client.api.getTokenHistory(contract, tokenId);
 ```
+
+### ERC-1155 Ownership
+
+For ERC-1155 tokens, a single token ID can be held by many wallets simultaneously. Use `token.balances` instead of `token.owner`:
+
+```typescript
+import type { ApiTokenBalance } from "@medialane/sdk";
+
+const { data: token } = await client.api.getToken(contract, tokenId);
+
+// Check if a wallet owns any quantity of this token
+const isOwner = token.balances?.some(
+  (b: ApiTokenBalance) => b.owner.toLowerCase() === wallet.toLowerCase() && BigInt(b.amount) > 0n
+) ?? (token.owner?.toLowerCase() === wallet.toLowerCase());
+
+// How many copies does a wallet hold?
+const balance = token.balances?.find((b) => b.owner.toLowerCase() === wallet.toLowerCase());
+console.log(`${wallet} holds ${balance?.amount ?? "0"} copies`);
+
+// All current holders
+token.balances?.forEach((b: ApiTokenBalance) => {
+  console.log(`${b.owner}: ${b.amount}`);
+});
+```
+
+`token.owner` is deprecated and always `null` post-migration. `token.balances` is only populated on single-token fetches (`getToken`) — it is `null` on list responses.
 
 ### Query Collections
 
@@ -414,6 +441,13 @@ Built with:
 ---
 
 ## Changelog
+
+### v0.6.5
+- **ERC-1155 support** — `ApiToken.balances: ApiTokenBalance[] | null` replaces the single `owner` field for ownership checks
+- **`ApiTokenBalance`** type — `{ owner: string; amount: string }` — each entry represents one holder and their quantity
+- **`ApiToken.owner`** deprecated — always `null` after the ERC-1155 migration; use `balances` instead
+- **`ApiCollection.standard`** — `"ERC721" | "ERC1155" | "UNKNOWN"` detected via ERC-165 `supportsInterface`
+- **`totalSupply` fix** — ERC-1155 collections now report `SUM(holder amounts)` instead of distinct token ID count
 
 ### v0.6.1
 - **Collection Drop** — new `DropService` (`client.services.drop`) with full on-chain drop management: `claim`, `adminMint`, `setClaimConditions`, `setAllowlistEnabled`, `addToAllowlist`, `batchAddToAllowlist`, `setPaused`, `withdrawPayments`, `createDrop`
