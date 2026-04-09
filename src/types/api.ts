@@ -179,15 +179,25 @@ export interface ApiTokenMetadata {
   author: string | null;
 }
 
+/** Per-holder balance entry. Present for ERC-1155 (multi-holder); single entry for ERC-721. */
+export interface ApiTokenBalance {
+  owner: string;
+  /** Quantity held. Always "1" for ERC-721. */
+  amount: string;
+}
+
 export interface ApiToken {
   id: string;
   chain: string;
   contractAddress: string;
   tokenId: string;
-  owner: string;
+  /** @deprecated Use `balances` for ownership checks — always null after ERC-1155 migration. */
+  owner: string | null;
   tokenUri: string | null;
   metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
   metadata: ApiTokenMetadata;
+  /** Current holders with amounts. Only present on single-token fetches; null on list responses. */
+  balances: ApiTokenBalance[] | null;
   activeOrders: ApiOrder[];
   createdAt: string;
   updatedAt: string;
@@ -207,6 +217,8 @@ export interface ApiCollection {
   owner: string | null;
   startBlock: string;
   metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
+  /** Token standard detected via ERC-165. */
+  standard: "ERC721" | "ERC1155" | "UNKNOWN";
   isKnown: boolean;
   source: CollectionSource;
   claimedBy: string | null;
