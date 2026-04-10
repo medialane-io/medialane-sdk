@@ -28,7 +28,7 @@ export {
 } from "./constants.js";
 
 // ABI
-export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI } from "./abis.js";
+export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, CollectionRegistryABI } from "./abis.js";
 
 // Services
 export { PopService } from "./services/pop.js";

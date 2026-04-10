@@ -757,6 +757,43 @@ var DropFactoryABI = [
     state_mutability: "external"
   }
 ];
+var CollectionRegistryABI = [
+  {
+    type: "struct",
+    name: "core::byte_array::ByteArray",
+    members: [
+      { name: "data", type: "core::array::Array::<core::felt252>" },
+      { name: "pending_word", type: "core::felt252" },
+      { name: "pending_word_len", type: "core::integer::u32" }
+    ]
+  },
+  {
+    type: "struct",
+    name: "ip_collection_erc_721::types::Collection",
+    members: [
+      { name: "name", type: "core::byte_array::ByteArray" },
+      { name: "symbol", type: "core::byte_array::ByteArray" },
+      { name: "base_uri", type: "core::byte_array::ByteArray" },
+      { name: "owner", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "ip_nft", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "is_active", type: "core::bool" }
+    ]
+  },
+  {
+    type: "function",
+    name: "list_user_collections",
+    inputs: [{ name: "user", type: "core::starknet::contract_address::ContractAddress" }],
+    outputs: [{ type: "core::array::Span::<core::integer::u256>" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "get_collection",
+    inputs: [{ name: "collection_id", type: "core::integer::u256" }],
+    outputs: [{ type: "ip_collection_erc_721::types::Collection" }],
+    state_mutability: "view"
+  }
+];
 
 // src/utils/bigint.ts
 function stringifyBigInts(obj) {
@@ -2061,6 +2098,6 @@ var MedialaneClient = class {
 // src/types/api.ts
 var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
 
-export { ApiClient, COLLECTION_CONTRACT_MAINNET, DEFAULT_RPC_URLS, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, IPMarketplaceABI, MARKETPLACE_CONTRACT_MAINNET, MarketplaceModule, MedialaneApiError, MedialaneClient, MedialaneError, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { ApiClient, COLLECTION_CONTRACT_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URLS, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, IPMarketplaceABI, MARKETPLACE_CONTRACT_MAINNET, MarketplaceModule, MedialaneApiError, MedialaneClient, MedialaneError, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map
