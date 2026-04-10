@@ -442,6 +442,12 @@ Built with:
 
 ## Changelog
 
+### v0.6.7
+- **`CollectionRegistryABI`** exported from `@medialane/sdk` — minimal ABI covering `list_user_collections` and `get_collection` on the collection registry contract. Eliminates duplicated inline ABI definitions in consuming apps.
+
+### v0.6.6
+- **`COLLECTION_CONTRACT_MAINNET`** updated to audited v2 contract address `0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b`
+
 ### v0.6.5
 - **ERC-1155 support** — `ApiToken.balances: ApiTokenBalance[] | null` replaces the single `owner` field for ownership checks
 - **`ApiTokenBalance`** type — `{ owner: string; amount: string }` — each entry represents one holder and their quantity

@@ -2,6 +2,118 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.6.7] — 2026-04-10
+
+### Added
+- `CollectionRegistryABI` exported from `@medialane/sdk` — minimal ABI covering `list_user_collections` and `get_collection` on the collection registry contract (`0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b`). Consumers no longer need to maintain an inline copy.
+
+---
+
+## [0.6.6] — 2026-04-10
+
+### Changed
+- `COLLECTION_CONTRACT_MAINNET` updated to audited v2 address `0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b`
+
+---
+
+## [0.6.5] — 2026-03-29
+
+### Added
+- `ApiTokenBalance` type — `{ owner: string; amount: string }` — one entry per holder per token ID for ERC-1155
+- `ApiToken.balances: ApiTokenBalance[] | null` — populated on single-token fetches; null on list responses
+- `ApiCollection.standard: "ERC721" | "ERC1155" | "UNKNOWN"` — detected via ERC-165 `supportsInterface` at collection index time
+
+### Changed
+- `ApiToken.owner` deprecated — always `null` after the ERC-1155 migration; use `balances` for ownership checks
+
+---
+
+## [0.6.4] — 2026-03-29
+
+### Changed
+- `MARKETPLACE_CONTRACT_MAINNET` updated to audited v2 address `0x0234f4e8838801ebf01d7f4166d42aed9a55bc67c1301162decf9e2040e05f16`
+
+---
+
+## [0.6.3] — 2026-03-28
+
+### Added
+- `DropFactoryABI` and `POPFactoryABI` exported from `@medialane/sdk`
+- `DROP_FACTORY_CONTRACT_MAINNET`, `DROP_COLLECTION_CLASS_HASH_MAINNET`, `POP_FACTORY_CONTRACT_MAINNET`, `POP_COLLECTION_CLASS_HASH_MAINNET` constants exported
+
+---
+
+## [0.6.1] — 2026-03-28
+
+### Added
+- `DropService` (`client.services.drop`) — full on-chain Collection Drop management: `claim`, `adminMint`, `setClaimConditions`, `setAllowlistEnabled`, `addToAllowlist`, `batchAddToAllowlist`, `setPaused`, `withdrawPayments`, `createDrop`
+- `client.api.getDropCollections(opts?)` — list all `COLLECTION_DROP` collections
+- `client.api.getDropMintStatus(collection, wallet)` — returns `{ mintedByWallet, totalMinted }`
+- `DropMintStatus`, `ClaimConditions`, `CreateDropParams` types exported
+- `DropCollectionABI` and `DropFactoryABI` exported
+- `CollectionSource` union extended with `"COLLECTION_DROP"`
+
+---
+
+## [0.6.0] — 2026-03-25
+
+### Added
+- `PopService` (`client.services.pop`) — POP Protocol on-chain operations: `claim`, `adminMint`, `addToAllowlist`, `batchAddToAllowlist`, `removeFromAllowlist`, `setTokenUri`, `setPaused`, `createCollection`
+- `client.api.getPopCollections(opts?)` and `client.api.getPopEligibility(collection, wallet)`
+- `client.api.getPopEligibilityBatch(collection, wallets)` — batch eligibility check (max 100 wallets)
+- `POPCollectionABI` and `POPFactoryABI` exported
+
+---
+
+## [0.5.7] — 2026-03-22
+
+### Added
+- `ApiCollectionProfile.hasGatedContent: boolean` — whether collection has token-gated content configured
+- `ApiCollectionProfile.gatedContentTitle: string | null` — public title of gated content (URL is holder-only via backend)
+
+---
+
+## [0.5.5] — 2026-03-21
+
+### Added
+- `extendRemixOffer(id, days, clerkToken)` — extend expiry of a PENDING/AUTO_PENDING remix offer by 1–30 days
+- `ApiRemixOfferPrice` type — `{ raw, formatted, currency, decimals }` structured price object on `ApiRemixOffer.price`
+
+---
+
+## [0.5.4] — 2026-03-21
+
+### Changed
+- `ApiRemixOffer.price` now serialized as a structured object (`{ raw, formatted, currency, decimals }`) instead of raw wei strings
+
+---
+
+## [0.5.3] — 2026-03-21
+
+### Added
+- `getTokenComments(contract, tokenId, opts?)` — fetch on-chain NFT comments (`GET /v1/tokens/:contract/:tokenId/comments`)
+- `ApiComment` type — `{ id, author, content, txHash, blockNumber, blockTimestamp, isHidden, createdAt }`
+
+---
+
+## [0.5.0] — 2026-03-21
+
+### Added
+- Counter-offer support: `createCounterOfferIntent(params, clerkToken)`, `getCounterOffers(query)`, `ApiCounterOffersQuery`, `CreateCounterOfferIntentParams`
+- `OrderStatus` extended with `"COUNTER_OFFERED"`; `IntentType` with `"COUNTER_OFFER"`
+- `ApiOrder` extended: `parentOrderHash?: string | null`, `counterOfferMessage?: string | null`
+- Full remix licensing methods: `submitRemixOffer`, `submitAutoRemixOffer`, `confirmSelfRemix`, `getRemixOffers`, `getRemixOffer`, `confirmRemixOffer`, `rejectRemixOffer`, `getTokenRemixes`
+- New types: `RemixOfferStatus`, `ApiRemixOffer`, `ApiPublicRemix`, `OPEN_LICENSES`, `OpenLicense`, `CreateRemixOfferParams`, `AutoRemixOfferParams`, `ConfirmSelfRemixParams`, `ConfirmRemixOfferParams`, `ApiRemixOffersQuery`
+
+---
+
+## [0.4.8] — 2026-03-20
+
+### Added
+- `ApiComment` type + `getTokenComments(contract, tokenId, opts?)` (patch release; backported into v0.5.3)
+
+---
+
 ## [0.4.7] — 2026-03-20
 
 ### Added
