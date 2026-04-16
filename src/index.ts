@@ -6,6 +6,7 @@ export { type MedialaneConfig, type ResolvedConfig, resolveConfig } from "./conf
 
 // Modules
 export { MarketplaceModule, MedialaneError } from "./marketplace/index.js";
+export { Medialane1155Module } from "./marketplace1155/index.js";
 export { ApiClient, MedialaneApiError } from "./api/client.js";
 
 // Types
@@ -15,6 +16,7 @@ export type { MedialaneErrorCode } from "./types/errors.js";
 // Constants
 export {
   MARKETPLACE_CONTRACT_MAINNET,
+  MARKETPLACE_1155_CONTRACT_MAINNET,
   COLLECTION_CONTRACT_MAINNET,
   POP_FACTORY_CONTRACT_MAINNET,
   POP_COLLECTION_CLASS_HASH_MAINNET,
@@ -22,13 +24,13 @@ export {
   DROP_COLLECTION_CLASS_HASH_MAINNET,
   SUPPORTED_TOKENS,
   SUPPORTED_NETWORKS,
-  DEFAULT_RPC_URLS,
+  DEFAULT_RPC_URL,
   type Network,
   type SupportedTokenSymbol,
 } from "./constants.js";
 
 // ABI
-export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, CollectionRegistryABI } from "./abis.js";
+export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, CollectionRegistryABI, Medialane1155ABI } from "./abis.js";
 
 // Services
 export { PopService } from "./services/pop.js";
@@ -47,3 +49,8 @@ export {
   buildFulfillmentTypedData,
   buildCancellationTypedData,
 } from "./marketplace/signing.js";
+export {
+  build1155OrderTypedData,
+  build1155FulfillmentTypedData,
+  build1155CancellationTypedData,
+} from "./marketplace1155/signing.js";

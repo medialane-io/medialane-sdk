@@ -349,6 +349,8 @@ export interface CreateListingIntentParams {
   price: string;
   endTime: number;
   salt?: string;
+  /** Number of units to list — required for ERC-1155, omit for ERC-721. */
+  amount?: string;
 }
 
 export interface MakeOfferIntentParams {

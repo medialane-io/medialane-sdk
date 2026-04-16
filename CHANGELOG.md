@@ -2,6 +2,32 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.6.9] — 2026-04-16
+
+### Added
+- `CreateListingIntentParams.amount?: string` — optional quantity field for ERC-1155 multi-unit listings. Pass the number of units to list; omit for ERC-721 (single-unit).
+
+---
+
+## [0.6.8] — 2026-04-16
+
+### Added
+- `Medialane1155Module` — dedicated on-chain module for the ERC-1155 marketplace (`Medialane1155` contract, `0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123`). Accessible via `client.marketplace1155`.
+  - `createListing(account, params)` — signs `OrderParameters` via SNIP-12 and calls `register_order`. Automatically grants `set_approval_for_all` if not already approved.
+  - `fulfillOrder(account, params)` — signs `OrderFulfillment`, approves ERC-20 payment, then calls `fulfill_order` atomically. ERC-2981 royalties are handled by the contract.
+  - `cancelOrder(account, params)` — signs `OrderCancellation` and calls `cancel_order`.
+  - `buildListingTypedData` / `buildFulfillmentTypedData` / `buildCancellationTypedData` — SNIP-12 typed data builders for ChipiPay and custom signing flows.
+- `Medialane1155ABI` — exported ABI for the ERC-1155 marketplace contract.
+- `MARKETPLACE_1155_CONTRACT_MAINNET` — exported contract address constant.
+- `build1155OrderTypedData`, `build1155FulfillmentTypedData`, `build1155CancellationTypedData` — exported signing helpers.
+- `CreateListing1155Params`, `FulfillOrder1155Params`, `CancelOrder1155Params` — TypeScript param types.
+
+### Changed
+- `MedialaneConfig` and `ResolvedConfig` now include `marketplace1155Contract` (optional, defaults to mainnet address).
+- Network support simplified to mainnet only — Sepolia references removed throughout.
+
+---
+
 ## [0.6.7] — 2026-04-10
 
 ### Added

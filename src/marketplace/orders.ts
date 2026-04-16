@@ -49,10 +49,8 @@ function toSignatureArray(sig: unknown): string[] {
   return [s.r.toString(), s.s.toString()];
 }
 
-function getChainId(config: ResolvedConfig): constants.StarknetChainId {
-  return config.network === "mainnet"
-    ? constants.StarknetChainId.SN_MAIN
-    : constants.StarknetChainId.SN_SEPOLIA;
+function getChainId(_config: ResolvedConfig): constants.StarknetChainId {
+  return constants.StarknetChainId.SN_MAIN;
 }
 
 const _contractCache = new WeakMap<ResolvedConfig, { contract: Contract; provider: RpcProvider }>();

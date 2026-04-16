@@ -751,3 +751,814 @@ export const CollectionRegistryABI = [
     state_mutability: "view",
   },
 ] as const;
+
+// ─── Medialane1155 ABI ───────────────────────────────────────────────────────
+// Auto-generated from on-chain ABI at contract:
+// 0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123
+// Deployed 2026-04-15
+
+export const Medialane1155ABI = [
+  {
+    "type": "impl",
+    "name": "UpgradeableImpl",
+    "interface_name": "openzeppelin_upgrades::interface::IUpgradeable"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_upgrades::interface::IUpgradeable",
+    "items": [
+      {
+        "type": "function",
+        "name": "upgrade",
+        "inputs": [
+          {
+            "name": "new_class_hash",
+            "type": "core::starknet::class_hash::ClassHash"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "Medialane1155Impl",
+    "interface_name": "medialane_erc1155::core::interface::IMedialane1155"
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::OrderParameters",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "nft_contract",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "token_id",
+        "type": "core::felt252"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252"
+      },
+      {
+        "name": "payment_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "price_per_unit",
+        "type": "core::felt252"
+      },
+      {
+        "name": "start_time",
+        "type": "core::felt252"
+      },
+      {
+        "name": "end_time",
+        "type": "core::felt252"
+      },
+      {
+        "name": "salt",
+        "type": "core::felt252"
+      },
+      {
+        "name": "nonce",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::Order",
+    "members": [
+      {
+        "name": "parameters",
+        "type": "medialane_erc1155::core::types::OrderParameters"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::OrderFulfillment",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252"
+      },
+      {
+        "name": "fulfiller",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "nonce",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::FulfillmentRequest",
+    "members": [
+      {
+        "name": "fulfillment",
+        "type": "medialane_erc1155::core::types::OrderFulfillment"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::OrderCancellation",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "nonce",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::CancelRequest",
+    "members": [
+      {
+        "name": "cancelation",
+        "type": "medialane_erc1155::core::types::OrderCancellation"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "medialane_erc1155::core::types::OrderStatus",
+    "variants": [
+      {
+        "name": "None",
+        "type": "()"
+      },
+      {
+        "name": "Created",
+        "type": "()"
+      },
+      {
+        "name": "Filled",
+        "type": "()"
+      },
+      {
+        "name": "Cancelled",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "core::option::Option::<core::starknet::contract_address::ContractAddress>",
+    "variants": [
+      {
+        "name": "Some",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "None",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::OrderDetails",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "nft_contract",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "token_id",
+        "type": "core::felt252"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252"
+      },
+      {
+        "name": "payment_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "price_per_unit",
+        "type": "core::felt252"
+      },
+      {
+        "name": "start_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "end_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "order_status",
+        "type": "medialane_erc1155::core::types::OrderStatus"
+      },
+      {
+        "name": "fulfiller",
+        "type": "core::option::Option::<core::starknet::contract_address::ContractAddress>"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "medialane_erc1155::core::interface::IMedialane1155",
+    "items": [
+      {
+        "type": "function",
+        "name": "register_order",
+        "inputs": [
+          {
+            "name": "order",
+            "type": "medialane_erc1155::core::types::Order"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "fulfill_order",
+        "inputs": [
+          {
+            "name": "fulfillment_request",
+            "type": "medialane_erc1155::core::types::FulfillmentRequest"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "cancel_order",
+        "inputs": [
+          {
+            "name": "cancel_request",
+            "type": "medialane_erc1155::core::types::CancelRequest"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_order_details",
+        "inputs": [
+          {
+            "name": "order_hash",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "medialane_erc1155::core::types::OrderDetails"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_order_hash",
+        "inputs": [
+          {
+            "name": "parameters",
+            "type": "medialane_erc1155::core::types::OrderParameters"
+          },
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_native_token",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "NoncesImpl",
+    "interface_name": "openzeppelin_utils::cryptography::interface::INonces"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_utils::cryptography::interface::INonces",
+    "items": [
+      {
+        "type": "function",
+        "name": "nonces",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "SRC5Impl",
+    "interface_name": "openzeppelin_introspection::interface::ISRC5"
+  },
+  {
+    "type": "enum",
+    "name": "core::bool",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_introspection::interface::ISRC5",
+    "items": [
+      {
+        "type": "function",
+        "name": "supports_interface",
+        "inputs": [
+          {
+            "name": "interface_id",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "AccessControlImpl",
+    "interface_name": "openzeppelin_access::accesscontrol::interface::IAccessControl"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_access::accesscontrol::interface::IAccessControl",
+    "items": [
+      {
+        "type": "function",
+        "name": "has_role",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          },
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_role_admin",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "grant_role",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          },
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "revoke_role",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          },
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "renounce_role",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          },
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "type": "constructor",
+    "name": "constructor",
+    "inputs": [
+      {
+        "name": "manager",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "native_token_address",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_erc1155::core::events::OrderCreated",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "nft_contract",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "token_id",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "price_per_unit",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "payment_token",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_erc1155::core::events::OrderFulfilled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "fulfiller",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "royalty_receiver",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "royalty_amount",
+        "type": "core::integer::u256",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_erc1155::core::events::OrderCancelled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event",
+    "kind": "enum",
+    "variants": []
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Upgraded",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "class_hash",
+        "type": "core::starknet::class_hash::ClassHash",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "Upgraded",
+        "type": "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Upgraded",
+        "kind": "nested"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_introspection::src5::SRC5Component::Event",
+    "kind": "enum",
+    "variants": []
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGranted",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "account",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "sender",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGrantedWithDelay",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "account",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "sender",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "delay",
+        "type": "core::integer::u64",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleRevoked",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "account",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "sender",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleAdminChanged",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "previous_admin_role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "new_admin_role",
+        "type": "core::felt252",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "RoleGranted",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGranted",
+        "kind": "nested"
+      },
+      {
+        "name": "RoleGrantedWithDelay",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGrantedWithDelay",
+        "kind": "nested"
+      },
+      {
+        "name": "RoleRevoked",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleRevoked",
+        "kind": "nested"
+      },
+      {
+        "name": "RoleAdminChanged",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleAdminChanged",
+        "kind": "nested"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_erc1155::core::medialane::Medialane1155::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "OrderCreated",
+        "type": "medialane_erc1155::core::events::OrderCreated",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderFulfilled",
+        "type": "medialane_erc1155::core::events::OrderFulfilled",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderCancelled",
+        "type": "medialane_erc1155::core::events::OrderCancelled",
+        "kind": "nested"
+      },
+      {
+        "name": "NoncesEvent",
+        "type": "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event",
+        "kind": "flat"
+      },
+      {
+        "name": "UpgradeableEvent",
+        "type": "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Event",
+        "kind": "flat"
+      },
+      {
+        "name": "SRC5Event",
+        "type": "openzeppelin_introspection::src5::SRC5Component::Event",
+        "kind": "flat"
+      },
+      {
+        "name": "AccessControlEvent",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::Event",
+        "kind": "flat"
+      }
+    ]
+  }
+] as const;

@@ -1,6 +1,10 @@
 export const MARKETPLACE_CONTRACT_MAINNET =
   "0x0234f4e8838801ebf01d7f4166d42aed9a55bc67c1301162decf9e2040e05f16";
 
+/** Medialane1155 — dedicated ERC-1155 marketplace. Deployed 2026-04-15. */
+export const MARKETPLACE_1155_CONTRACT_MAINNET =
+  "0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123";
+
 export const COLLECTION_CONTRACT_MAINNET =
   "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
 
@@ -9,10 +13,6 @@ export const DROP_FACTORY_CONTRACT_MAINNET =
 
 export const POP_FACTORY_CONTRACT_MAINNET =
   "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
-
-// Sepolia testnet contracts (empty = not yet deployed)
-export const MARKETPLACE_CONTRACT_SEPOLIA = "";
-export const COLLECTION_CONTRACT_SEPOLIA = "";
 
 export const INDEXER_START_BLOCK_MAINNET = 6204232;
 
@@ -60,13 +60,10 @@ export type SupportedTokenSymbol = (typeof SUPPORTED_TOKENS)[number]["symbol"];
 /** Default currency for listings and offers — Circle-native USDC on Starknet. */
 export const DEFAULT_CURRENCY: SupportedTokenSymbol = "USDC";
 
-export const SUPPORTED_NETWORKS = ["mainnet", "sepolia"] as const;
+export const SUPPORTED_NETWORKS = ["mainnet"] as const;
 export type Network = (typeof SUPPORTED_NETWORKS)[number];
 
-export const DEFAULT_RPC_URLS: Record<Network, string> = {
-  mainnet: "https://rpc.starknet.lava.build",
-  sepolia: "https://rpc.starknet-sepolia.lava.build",
-};
+export const DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 
 export const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 

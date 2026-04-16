@@ -1,12 +1,16 @@
 import { type MedialaneConfig, resolveConfig, type ResolvedConfig } from "./config.js";
 import { MarketplaceModule } from "./marketplace/index.js";
+import { Medialane1155Module } from "./marketplace1155/index.js";
 import { ApiClient } from "./api/client.js";
 import { PopService } from "./services/pop.js";
 import { DropService } from "./services/drop.js";
 
 export class MedialaneClient {
-  /** On-chain marketplace interactions (create listing, fulfill order, etc.) */
+  /** On-chain marketplace interactions for ERC-721 assets (create listing, fulfill order, etc.) */
   readonly marketplace: MarketplaceModule;
+
+  /** On-chain marketplace interactions for ERC-1155 assets (Medialane1155 contract). */
+  readonly marketplace1155: Medialane1155Module;
 
   /**
    * Off-chain API client — covers all /v1/* backend endpoints.
@@ -25,6 +29,7 @@ export class MedialaneClient {
     this.config = resolveConfig(rawConfig);
 
     this.marketplace = new MarketplaceModule(this.config);
+    this.marketplace1155 = new Medialane1155Module(this.config);
 
     this.services = {
       pop: new PopService(this.config),

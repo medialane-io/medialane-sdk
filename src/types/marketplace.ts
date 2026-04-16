@@ -94,3 +94,34 @@ export interface CreateCollectionParams {
 export interface TxResult {
   txHash: string;
 }
+
+// ─── ERC-1155 Marketplace (Medialane1155) ─────────────────────────────────────
+
+export interface CreateListing1155Params {
+  /** ERC-1155 contract address */
+  nftContract: string;
+  /** Token type ID */
+  tokenId: string;
+  /** Number of tokens to sell */
+  amount: string;
+  /** Human-readable price per token (e.g. "1.5") */
+  pricePerUnit: string;
+  /** Currency symbol or token address. Defaults to "USDC". */
+  currency?: string;
+  /** How long the listing is valid, in seconds */
+  durationSeconds: number;
+}
+
+export interface FulfillOrder1155Params {
+  /** On-chain order hash */
+  orderHash: string;
+  /** ERC-20 payment token address (from order details) */
+  paymentToken: string;
+  /** Total price in raw token units (pricePerUnit × amount, as string) */
+  totalPrice: string;
+}
+
+export interface CancelOrder1155Params {
+  /** On-chain order hash */
+  orderHash: string;
+}

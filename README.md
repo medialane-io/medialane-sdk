@@ -64,10 +64,10 @@ yarn add @medialane/sdk starknet
 import { MedialaneClient } from "@medialane/sdk";
 
 const client = new MedialaneClient({
-  network: "mainnet",                              // "mainnet" | "sepolia"
-  rpcUrl: "https://rpc.starknet.lava.build", // optional; defaults to Lava
-  backendUrl: "https://medialane-backend-production.up.railway.app",        // required for .api methods
-  apiKey: "ml_live_...",                          // from Medialane Portal
+  network: "mainnet",                                                         // mainnet only
+  rpcUrl: "https://rpc.starknet.lava.build",                                  // optional; defaults to Lava
+  backendUrl: "https://medialane-backend-production.up.railway.app",          // required for .api methods
+  apiKey: "ml_live_...",                                                       // from Medialane Portal
 });
 ```
 
@@ -77,7 +77,11 @@ const client = new MedialaneClient({
 
 All methods require a `starknet.js` `AccountInterface`. Nonce management, SNIP-12 signing, and `waitForTransaction` are handled automatically.
 
-### Create a Listing
+Two marketplace modules are available:
+- `client.marketplace` — ERC-721 marketplace (`Medialane` contract)
+- `client.marketplace1155` — ERC-1155 marketplace (`Medialane1155` contract, deployed 2026-04-15)
+
+### Create a Listing (ERC-721)
 
 ```typescript
 import { Account } from "starknet";
@@ -149,6 +153,59 @@ const result = await client.marketplace.createCollection(account, {
   symbol: "MCW",
   baseUri: "",
 });
+```
+
+---
+
+## ERC-1155 Marketplace (Medialane1155)
+
+For IP assets from ERC-1155 collections (e.g. IP-Programmable-ERC1155-Collections). Contract: `0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123`.
+
+### Create an ERC-1155 Listing
+
+```typescript
+const result = await client.marketplace1155.createListing(account, {
+  nftContract: "0x...",    // ERC-1155 collection address
+  tokenId: "1",
+  amount: "10",             // number of tokens to sell
+  pricePerUnit: "1",        // human-readable price per token (e.g. "1" USDC)
+  currency: "USDC",
+  durationSeconds: 86400 * 30,
+});
+```
+
+`set_approval_for_all` is granted automatically if not already in place.
+
+### Fulfill an ERC-1155 Order
+
+```typescript
+// Fetch order details first to get paymentToken and totalPrice
+const details = await client.api.getOrder(orderHash);
+
+const result = await client.marketplace1155.fulfillOrder(account, {
+  orderHash: "0x...",
+  paymentToken: "0x033068...",  // from order details
+  totalPrice: "10000000",       // pricePerUnit × amount in raw token units
+});
+```
+
+ERC-2981 royalties are automatically deducted by the contract at fulfillment.
+
+### Cancel an ERC-1155 Order
+
+```typescript
+const result = await client.marketplace1155.cancelOrder(account, {
+  orderHash: "0x...",
+});
+```
+
+### SNIP-12 Typed Data Builders (ChipiPay / custom flows)
+
+```typescript
+import { build1155OrderTypedData, build1155FulfillmentTypedData, build1155CancellationTypedData } from "@medialane/sdk";
+import { constants } from "starknet";
+
+const typedData = build1155OrderTypedData(orderParams, constants.StarknetChainId.SN_MAIN);
 ```
 
 ---

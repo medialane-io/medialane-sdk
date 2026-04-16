@@ -7,11 +7,10 @@ var starknet = require('starknet');
 
 // src/constants.ts
 var MARKETPLACE_CONTRACT_MAINNET = "0x0234f4e8838801ebf01d7f4166d42aed9a55bc67c1301162decf9e2040e05f16";
+var MARKETPLACE_1155_CONTRACT_MAINNET = "0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123";
 var COLLECTION_CONTRACT_MAINNET = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
 var DROP_FACTORY_CONTRACT_MAINNET = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
 var POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
-var MARKETPLACE_CONTRACT_SEPOLIA = "";
-var COLLECTION_CONTRACT_SEPOLIA = "";
 var SUPPORTED_TOKENS = [
   {
     // Circle-native USDC on Starknet (canonical)
@@ -46,13 +45,133 @@ var SUPPORTED_TOKENS = [
   }
 ];
 var DEFAULT_CURRENCY = "USDC";
-var SUPPORTED_NETWORKS = ["mainnet", "sepolia"];
-var DEFAULT_RPC_URLS = {
-  mainnet: "https://rpc.starknet.lava.build",
-  sepolia: "https://rpc.starknet-sepolia.lava.build"
-};
+var SUPPORTED_NETWORKS = ["mainnet"];
+var DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 var POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 var DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
+
+// src/config.ts
+var MedialaneConfigSchema = zod.z.object({
+  network: zod.z.enum(SUPPORTED_NETWORKS).default("mainnet"),
+  rpcUrl: zod.z.string().url().optional(),
+  backendUrl: zod.z.string().url().optional(),
+  apiKey: zod.z.string().optional(),
+  marketplaceContract: zod.z.string().optional(),
+  marketplace1155Contract: zod.z.string().optional(),
+  collectionContract: zod.z.string().optional(),
+  retryOptions: zod.z.object({
+    maxAttempts: zod.z.number().int().min(1).max(10).optional(),
+    baseDelayMs: zod.z.number().int().min(0).optional(),
+    maxDelayMs: zod.z.number().int().min(0).optional()
+  }).optional()
+});
+function resolveConfig(raw) {
+  const parsed = MedialaneConfigSchema.parse(raw);
+  return {
+    network: parsed.network,
+    rpcUrl: parsed.rpcUrl ?? DEFAULT_RPC_URL,
+    backendUrl: parsed.backendUrl,
+    apiKey: parsed.apiKey,
+    marketplaceContract: parsed.marketplaceContract ?? MARKETPLACE_CONTRACT_MAINNET,
+    marketplace1155Contract: parsed.marketplace1155Contract ?? MARKETPLACE_1155_CONTRACT_MAINNET,
+    collectionContract: parsed.collectionContract ?? COLLECTION_CONTRACT_MAINNET,
+    retryOptions: parsed.retryOptions
+  };
+}
+function buildOrderTypedData(message, chainId) {
+  return {
+    domain: {
+      name: "Medialane",
+      version: "1",
+      chainId,
+      revision: starknet.TypedDataRevision.ACTIVE
+    },
+    primaryType: "OrderParameters",
+    types: {
+      StarknetDomain: [
+        { name: "name", type: "shortstring" },
+        { name: "version", type: "shortstring" },
+        { name: "chainId", type: "shortstring" },
+        { name: "revision", type: "shortstring" }
+      ],
+      OrderParameters: [
+        { name: "offerer", type: "ContractAddress" },
+        { name: "offer", type: "OfferItem" },
+        { name: "consideration", type: "ConsiderationItem" },
+        { name: "start_time", type: "felt" },
+        { name: "end_time", type: "felt" },
+        { name: "salt", type: "felt" },
+        { name: "nonce", type: "felt" }
+      ],
+      OfferItem: [
+        { name: "item_type", type: "shortstring" },
+        { name: "token", type: "ContractAddress" },
+        { name: "identifier_or_criteria", type: "felt" },
+        { name: "start_amount", type: "felt" },
+        { name: "end_amount", type: "felt" }
+      ],
+      ConsiderationItem: [
+        { name: "item_type", type: "shortstring" },
+        { name: "token", type: "ContractAddress" },
+        { name: "identifier_or_criteria", type: "felt" },
+        { name: "start_amount", type: "felt" },
+        { name: "end_amount", type: "felt" },
+        { name: "recipient", type: "ContractAddress" }
+      ]
+    },
+    message
+  };
+}
+function buildFulfillmentTypedData(message, chainId) {
+  return {
+    domain: {
+      name: "Medialane",
+      version: "1",
+      chainId,
+      revision: starknet.TypedDataRevision.ACTIVE
+    },
+    primaryType: "OrderFulfillment",
+    types: {
+      StarknetDomain: [
+        { name: "name", type: "shortstring" },
+        { name: "version", type: "shortstring" },
+        { name: "chainId", type: "shortstring" },
+        { name: "revision", type: "shortstring" }
+      ],
+      OrderFulfillment: [
+        { name: "order_hash", type: "felt" },
+        { name: "fulfiller", type: "ContractAddress" },
+        { name: "nonce", type: "felt" }
+      ]
+    },
+    message
+  };
+}
+function buildCancellationTypedData(message, chainId) {
+  return {
+    domain: {
+      name: "Medialane",
+      version: "1",
+      chainId,
+      revision: starknet.TypedDataRevision.ACTIVE
+    },
+    primaryType: "OrderCancellation",
+    types: {
+      StarknetDomain: [
+        { name: "name", type: "shortstring" },
+        { name: "version", type: "shortstring" },
+        { name: "chainId", type: "shortstring" },
+        { name: "revision", type: "shortstring" }
+      ],
+      OrderCancellation: [
+        { name: "order_hash", type: "felt" },
+        { name: "offerer", type: "ContractAddress" },
+        { name: "nonce", type: "felt" }
+      ]
+    },
+    message
+  };
+}
 
 // src/abis.ts
 var IPMarketplaceABI = [
@@ -796,6 +915,811 @@ var CollectionRegistryABI = [
     state_mutability: "view"
   }
 ];
+var Medialane1155ABI = [
+  {
+    "type": "impl",
+    "name": "UpgradeableImpl",
+    "interface_name": "openzeppelin_upgrades::interface::IUpgradeable"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_upgrades::interface::IUpgradeable",
+    "items": [
+      {
+        "type": "function",
+        "name": "upgrade",
+        "inputs": [
+          {
+            "name": "new_class_hash",
+            "type": "core::starknet::class_hash::ClassHash"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "Medialane1155Impl",
+    "interface_name": "medialane_erc1155::core::interface::IMedialane1155"
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::OrderParameters",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "nft_contract",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "token_id",
+        "type": "core::felt252"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252"
+      },
+      {
+        "name": "payment_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "price_per_unit",
+        "type": "core::felt252"
+      },
+      {
+        "name": "start_time",
+        "type": "core::felt252"
+      },
+      {
+        "name": "end_time",
+        "type": "core::felt252"
+      },
+      {
+        "name": "salt",
+        "type": "core::felt252"
+      },
+      {
+        "name": "nonce",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::Order",
+    "members": [
+      {
+        "name": "parameters",
+        "type": "medialane_erc1155::core::types::OrderParameters"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::OrderFulfillment",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252"
+      },
+      {
+        "name": "fulfiller",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "nonce",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::FulfillmentRequest",
+    "members": [
+      {
+        "name": "fulfillment",
+        "type": "medialane_erc1155::core::types::OrderFulfillment"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::OrderCancellation",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "nonce",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::CancelRequest",
+    "members": [
+      {
+        "name": "cancelation",
+        "type": "medialane_erc1155::core::types::OrderCancellation"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "medialane_erc1155::core::types::OrderStatus",
+    "variants": [
+      {
+        "name": "None",
+        "type": "()"
+      },
+      {
+        "name": "Created",
+        "type": "()"
+      },
+      {
+        "name": "Filled",
+        "type": "()"
+      },
+      {
+        "name": "Cancelled",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "core::option::Option::<core::starknet::contract_address::ContractAddress>",
+    "variants": [
+      {
+        "name": "Some",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "None",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_erc1155::core::types::OrderDetails",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "nft_contract",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "token_id",
+        "type": "core::felt252"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252"
+      },
+      {
+        "name": "payment_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "price_per_unit",
+        "type": "core::felt252"
+      },
+      {
+        "name": "start_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "end_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "order_status",
+        "type": "medialane_erc1155::core::types::OrderStatus"
+      },
+      {
+        "name": "fulfiller",
+        "type": "core::option::Option::<core::starknet::contract_address::ContractAddress>"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "medialane_erc1155::core::interface::IMedialane1155",
+    "items": [
+      {
+        "type": "function",
+        "name": "register_order",
+        "inputs": [
+          {
+            "name": "order",
+            "type": "medialane_erc1155::core::types::Order"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "fulfill_order",
+        "inputs": [
+          {
+            "name": "fulfillment_request",
+            "type": "medialane_erc1155::core::types::FulfillmentRequest"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "cancel_order",
+        "inputs": [
+          {
+            "name": "cancel_request",
+            "type": "medialane_erc1155::core::types::CancelRequest"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_order_details",
+        "inputs": [
+          {
+            "name": "order_hash",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "medialane_erc1155::core::types::OrderDetails"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_order_hash",
+        "inputs": [
+          {
+            "name": "parameters",
+            "type": "medialane_erc1155::core::types::OrderParameters"
+          },
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_native_token",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "NoncesImpl",
+    "interface_name": "openzeppelin_utils::cryptography::interface::INonces"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_utils::cryptography::interface::INonces",
+    "items": [
+      {
+        "type": "function",
+        "name": "nonces",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "SRC5Impl",
+    "interface_name": "openzeppelin_introspection::interface::ISRC5"
+  },
+  {
+    "type": "enum",
+    "name": "core::bool",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_introspection::interface::ISRC5",
+    "items": [
+      {
+        "type": "function",
+        "name": "supports_interface",
+        "inputs": [
+          {
+            "name": "interface_id",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "AccessControlImpl",
+    "interface_name": "openzeppelin_access::accesscontrol::interface::IAccessControl"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_access::accesscontrol::interface::IAccessControl",
+    "items": [
+      {
+        "type": "function",
+        "name": "has_role",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          },
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_role_admin",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "grant_role",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          },
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "revoke_role",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          },
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "renounce_role",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          },
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "type": "constructor",
+    "name": "constructor",
+    "inputs": [
+      {
+        "name": "manager",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "native_token_address",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_erc1155::core::events::OrderCreated",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "nft_contract",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "token_id",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "price_per_unit",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "payment_token",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_erc1155::core::events::OrderFulfilled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "fulfiller",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "royalty_receiver",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "royalty_amount",
+        "type": "core::integer::u256",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_erc1155::core::events::OrderCancelled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event",
+    "kind": "enum",
+    "variants": []
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Upgraded",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "class_hash",
+        "type": "core::starknet::class_hash::ClassHash",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "Upgraded",
+        "type": "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Upgraded",
+        "kind": "nested"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_introspection::src5::SRC5Component::Event",
+    "kind": "enum",
+    "variants": []
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGranted",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "account",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "sender",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGrantedWithDelay",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "account",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "sender",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "delay",
+        "type": "core::integer::u64",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleRevoked",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "account",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "sender",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleAdminChanged",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "previous_admin_role",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "new_admin_role",
+        "type": "core::felt252",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "RoleGranted",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGranted",
+        "kind": "nested"
+      },
+      {
+        "name": "RoleGrantedWithDelay",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGrantedWithDelay",
+        "kind": "nested"
+      },
+      {
+        "name": "RoleRevoked",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleRevoked",
+        "kind": "nested"
+      },
+      {
+        "name": "RoleAdminChanged",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleAdminChanged",
+        "kind": "nested"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_erc1155::core::medialane::Medialane1155::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "OrderCreated",
+        "type": "medialane_erc1155::core::events::OrderCreated",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderFulfilled",
+        "type": "medialane_erc1155::core::events::OrderFulfilled",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderCancelled",
+        "type": "medialane_erc1155::core::events::OrderCancelled",
+        "kind": "nested"
+      },
+      {
+        "name": "NoncesEvent",
+        "type": "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event",
+        "kind": "flat"
+      },
+      {
+        "name": "UpgradeableEvent",
+        "type": "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Event",
+        "kind": "flat"
+      },
+      {
+        "name": "SRC5Event",
+        "type": "openzeppelin_introspection::src5::SRC5Component::Event",
+        "kind": "flat"
+      },
+      {
+        "name": "AccessControlEvent",
+        "type": "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::Event",
+        "kind": "flat"
+      }
+    ]
+  }
+];
 
 // src/utils/bigint.ts
 function stringifyBigInts(obj) {
@@ -844,100 +1768,6 @@ function getTokenBySymbol(symbol) {
 function getListableTokens() {
   return SUPPORTED_TOKENS.filter((t) => t.listable);
 }
-function buildOrderTypedData(message, chainId) {
-  return {
-    domain: {
-      name: "Medialane",
-      version: "1",
-      chainId,
-      revision: starknet.TypedDataRevision.ACTIVE
-    },
-    primaryType: "OrderParameters",
-    types: {
-      StarknetDomain: [
-        { name: "name", type: "shortstring" },
-        { name: "version", type: "shortstring" },
-        { name: "chainId", type: "shortstring" },
-        { name: "revision", type: "shortstring" }
-      ],
-      OrderParameters: [
-        { name: "offerer", type: "ContractAddress" },
-        { name: "offer", type: "OfferItem" },
-        { name: "consideration", type: "ConsiderationItem" },
-        { name: "start_time", type: "felt" },
-        { name: "end_time", type: "felt" },
-        { name: "salt", type: "felt" },
-        { name: "nonce", type: "felt" }
-      ],
-      OfferItem: [
-        { name: "item_type", type: "shortstring" },
-        { name: "token", type: "ContractAddress" },
-        { name: "identifier_or_criteria", type: "felt" },
-        { name: "start_amount", type: "felt" },
-        { name: "end_amount", type: "felt" }
-      ],
-      ConsiderationItem: [
-        { name: "item_type", type: "shortstring" },
-        { name: "token", type: "ContractAddress" },
-        { name: "identifier_or_criteria", type: "felt" },
-        { name: "start_amount", type: "felt" },
-        { name: "end_amount", type: "felt" },
-        { name: "recipient", type: "ContractAddress" }
-      ]
-    },
-    message
-  };
-}
-function buildFulfillmentTypedData(message, chainId) {
-  return {
-    domain: {
-      name: "Medialane",
-      version: "1",
-      chainId,
-      revision: starknet.TypedDataRevision.ACTIVE
-    },
-    primaryType: "OrderFulfillment",
-    types: {
-      StarknetDomain: [
-        { name: "name", type: "shortstring" },
-        { name: "version", type: "shortstring" },
-        { name: "chainId", type: "shortstring" },
-        { name: "revision", type: "shortstring" }
-      ],
-      OrderFulfillment: [
-        { name: "order_hash", type: "felt" },
-        { name: "fulfiller", type: "ContractAddress" },
-        { name: "nonce", type: "felt" }
-      ]
-    },
-    message
-  };
-}
-function buildCancellationTypedData(message, chainId) {
-  return {
-    domain: {
-      name: "Medialane",
-      version: "1",
-      chainId,
-      revision: starknet.TypedDataRevision.ACTIVE
-    },
-    primaryType: "OrderCancellation",
-    types: {
-      StarknetDomain: [
-        { name: "name", type: "shortstring" },
-        { name: "version", type: "shortstring" },
-        { name: "chainId", type: "shortstring" },
-        { name: "revision", type: "shortstring" }
-      ],
-      OrderCancellation: [
-        { name: "order_hash", type: "felt" },
-        { name: "offerer", type: "ContractAddress" },
-        { name: "nonce", type: "felt" }
-      ]
-    },
-    message
-  };
-}
 
 // src/marketplace/orders.ts
 var MedialaneError = class extends Error {
@@ -953,8 +1783,8 @@ function toSignatureArray(sig) {
   const s = sig;
   return [s.r.toString(), s.s.toString()];
 }
-function getChainId(config) {
-  return config.network === "mainnet" ? starknet.constants.StarknetChainId.SN_MAIN : starknet.constants.StarknetChainId.SN_SEPOLIA;
+function getChainId(_config) {
+  return starknet.constants.StarknetChainId.SN_MAIN;
 }
 var _contractCache = /* @__PURE__ */ new WeakMap();
 var _providerCache = /* @__PURE__ */ new WeakMap();
@@ -1020,7 +1850,7 @@ async function createListing(account, params, config) {
     salt,
     nonce: currentNonce.toString()
   };
-  const chainId = getChainId(config);
+  const chainId = getChainId();
   const typedData = stringifyBigInts(buildOrderTypedData(orderParams, chainId));
   const signature = await account.signMessage(typedData);
   const signatureArray = toSignatureArray(signature);
@@ -1104,7 +1934,7 @@ async function makeOffer(account, params, config) {
     salt,
     nonce: currentNonce.toString()
   };
-  const chainId = getChainId(config);
+  const chainId = getChainId();
   const typedData = stringifyBigInts(buildOrderTypedData(orderParams, chainId));
   const signature = await account.signMessage(typedData);
   const signatureArray = toSignatureArray(signature);
@@ -1145,7 +1975,7 @@ async function fulfillOrder(account, params, config) {
   const { orderHash } = params;
   const { contract, provider } = makeContract(config);
   const currentNonce = await contract.nonces(account.address);
-  const chainId = getChainId(config);
+  const chainId = getChainId();
   const fulfillmentParams = {
     order_hash: orderHash,
     fulfiller: account.address,
@@ -1173,7 +2003,7 @@ async function cancelOrder(account, params, config) {
   const { orderHash } = params;
   const { contract, provider } = makeContract(config);
   const currentNonce = await contract.nonces(account.address);
-  const chainId = getChainId(config);
+  const chainId = getChainId();
   const cancelParams = {
     order_hash: orderHash,
     offerer: account.address,
@@ -1259,7 +2089,7 @@ async function checkoutCart(account, items, config) {
   });
   const currentNonce = await contract.nonces(account.address);
   const baseNonce = BigInt(currentNonce.toString());
-  const chainId = getChainId(config);
+  const chainId = getChainId();
   const fulfillCalls = [];
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -1287,45 +2117,6 @@ async function checkoutCart(account, items, config) {
   } catch (err) {
     throw new MedialaneError("Cart checkout failed", "TRANSACTION_FAILED", err);
   }
-}
-
-// src/config.ts
-var MedialaneConfigSchema = zod.z.object({
-  network: zod.z.enum(SUPPORTED_NETWORKS).default("mainnet"),
-  rpcUrl: zod.z.string().url().optional(),
-  backendUrl: zod.z.string().url().optional(),
-  /** API key for authenticated /v1/* backend endpoints */
-  apiKey: zod.z.string().optional(),
-  marketplaceContract: zod.z.string().optional(),
-  collectionContract: zod.z.string().optional(),
-  retryOptions: zod.z.object({
-    maxAttempts: zod.z.number().int().min(1).max(10).optional(),
-    baseDelayMs: zod.z.number().int().min(0).optional(),
-    maxDelayMs: zod.z.number().int().min(0).optional()
-  }).optional()
-});
-function resolveConfig(raw) {
-  const parsed = MedialaneConfigSchema.parse(raw);
-  const isMainnet = parsed.network === "mainnet";
-  const defaultMarketplace = isMainnet ? MARKETPLACE_CONTRACT_MAINNET : MARKETPLACE_CONTRACT_SEPOLIA;
-  const defaultCollection = isMainnet ? COLLECTION_CONTRACT_MAINNET : COLLECTION_CONTRACT_SEPOLIA;
-  const marketplaceContract = parsed.marketplaceContract ?? defaultMarketplace;
-  const collectionContract = parsed.collectionContract ?? defaultCollection;
-  if (!marketplaceContract || !collectionContract) {
-    throw new MedialaneError(
-      `Sepolia network is not yet supported: marketplace and collection contract addresses are not configured. Pass 'marketplaceContract' and 'collectionContract' explicitly in your MedialaneClient config.`,
-      "NETWORK_NOT_SUPPORTED"
-    );
-  }
-  return {
-    network: parsed.network,
-    rpcUrl: parsed.rpcUrl ?? DEFAULT_RPC_URLS[parsed.network],
-    backendUrl: parsed.backendUrl,
-    apiKey: parsed.apiKey,
-    marketplaceContract,
-    collectionContract,
-    retryOptions: parsed.retryOptions
-  };
 }
 
 // src/marketplace/index.ts
@@ -1364,6 +2155,284 @@ var MarketplaceModule = class {
   }
   buildCancellationTypedData(params, chainId) {
     return buildCancellationTypedData(params, chainId);
+  }
+};
+var STARKNET_DOMAIN = [
+  { name: "name", type: "shortstring" },
+  { name: "version", type: "shortstring" },
+  { name: "chainId", type: "shortstring" },
+  { name: "revision", type: "shortstring" }
+];
+function domain1155(chainId) {
+  return {
+    name: "Medialane1155",
+    version: "1",
+    chainId,
+    revision: starknet.TypedDataRevision.ACTIVE
+  };
+}
+function build1155OrderTypedData(message, chainId) {
+  return {
+    domain: domain1155(chainId),
+    primaryType: "OrderParameters",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderParameters: [
+        { name: "offerer", type: "ContractAddress" },
+        { name: "nft_contract", type: "ContractAddress" },
+        { name: "token_id", type: "felt" },
+        { name: "amount", type: "felt" },
+        { name: "payment_token", type: "ContractAddress" },
+        { name: "price_per_unit", type: "felt" },
+        { name: "start_time", type: "felt" },
+        { name: "end_time", type: "felt" },
+        { name: "salt", type: "felt" },
+        { name: "nonce", type: "felt" }
+      ]
+    },
+    message
+  };
+}
+function build1155FulfillmentTypedData(message, chainId) {
+  return {
+    domain: domain1155(chainId),
+    primaryType: "OrderFulfillment",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderFulfillment: [
+        { name: "order_hash", type: "felt" },
+        { name: "fulfiller", type: "ContractAddress" },
+        { name: "nonce", type: "felt" }
+      ]
+    },
+    message
+  };
+}
+function build1155CancellationTypedData(message, chainId) {
+  return {
+    domain: domain1155(chainId),
+    primaryType: "OrderCancellation",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderCancellation: [
+        { name: "order_hash", type: "felt" },
+        { name: "offerer", type: "ContractAddress" },
+        { name: "nonce", type: "felt" }
+      ]
+    },
+    message
+  };
+}
+function toSignatureArray2(sig) {
+  if (Array.isArray(sig)) return sig;
+  const s = sig;
+  return [s.r.toString(), s.s.toString()];
+}
+function getChainId2(_config) {
+  return starknet.constants.StarknetChainId.SN_MAIN;
+}
+var _providerCache2 = /* @__PURE__ */ new WeakMap();
+var _contractCache2 = /* @__PURE__ */ new WeakMap();
+function getProvider2(config) {
+  let p = _providerCache2.get(config);
+  if (!p) {
+    p = new starknet.RpcProvider({ nodeUrl: config.rpcUrl });
+    _providerCache2.set(config, p);
+  }
+  return p;
+}
+function getContract(config) {
+  let c = _contractCache2.get(config);
+  if (!c) {
+    const provider = getProvider2(config);
+    c = new starknet.Contract(
+      Medialane1155ABI,
+      config.marketplace1155Contract,
+      provider
+    );
+    _contractCache2.set(config, c);
+  }
+  return c;
+}
+function resolveToken2(currency) {
+  const token = SUPPORTED_TOKENS.find(
+    (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
+  );
+  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
+  return token;
+}
+async function createListing1155(account, params, config) {
+  const {
+    nftContract,
+    tokenId,
+    amount,
+    pricePerUnit,
+    currency = DEFAULT_CURRENCY,
+    durationSeconds
+  } = params;
+  const contract = getContract(config);
+  const provider = getProvider2(config);
+  const token = resolveToken2(currency);
+  const priceWei = parseAmount(pricePerUnit, token.decimals);
+  const now = Math.floor(Date.now() / 1e3);
+  const endTime = now + durationSeconds;
+  const saltBytes = new Uint8Array(4);
+  crypto.getRandomValues(saltBytes);
+  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
+  const currentNonce = await contract.nonces(account.address);
+  const chainId = getChainId2();
+  const orderParams = {
+    offerer: account.address,
+    nft_contract: nftContract,
+    token_id: tokenId,
+    amount,
+    payment_token: token.address,
+    price_per_unit: priceWei,
+    start_time: now.toString(),
+    end_time: endTime.toString(),
+    salt,
+    nonce: currentNonce.toString()
+  };
+  const typedData = stringifyBigInts(
+    build1155OrderTypedData(orderParams, chainId)
+  );
+  const signature = await account.signMessage(typedData);
+  const signatureArray = toSignatureArray2(signature);
+  const orderPayload = stringifyBigInts({
+    parameters: orderParams,
+    signature: signatureArray
+  });
+  let isApproved = false;
+  try {
+    const result = await provider.callContract({
+      contractAddress: nftContract,
+      entrypoint: "is_approved_for_all",
+      calldata: [account.address, config.marketplace1155Contract]
+    });
+    isApproved = BigInt(result[0]) === 1n;
+  } catch {
+  }
+  const registerCall = contract.populate("register_order", [orderPayload]);
+  const calls = isApproved ? [registerCall] : [
+    {
+      contractAddress: nftContract,
+      entrypoint: "set_approval_for_all",
+      calldata: [config.marketplace1155Contract, "1"]
+    },
+    registerCall
+  ];
+  try {
+    const tx = await account.execute(calls);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to create ERC-1155 listing", "TRANSACTION_FAILED", err);
+  }
+}
+async function fulfillOrder1155(account, params, config) {
+  const { orderHash, paymentToken, totalPrice } = params;
+  const contract = getContract(config);
+  const provider = getProvider2(config);
+  const chainId = getChainId2();
+  const currentNonce = await contract.nonces(account.address);
+  const fulfillmentParams = {
+    order_hash: orderHash,
+    fulfiller: account.address,
+    nonce: currentNonce.toString()
+  };
+  const typedData = stringifyBigInts(
+    build1155FulfillmentTypedData(fulfillmentParams, chainId)
+  );
+  const signature = await account.signMessage(typedData);
+  const signatureArray = toSignatureArray2(signature);
+  const fulfillPayload = stringifyBigInts({
+    fulfillment: fulfillmentParams,
+    signature: signatureArray
+  });
+  const totalPriceU256 = starknet.cairo.uint256(totalPrice);
+  const approveCall = {
+    contractAddress: paymentToken,
+    entrypoint: "approve",
+    calldata: [
+      config.marketplace1155Contract,
+      totalPriceU256.low.toString(),
+      totalPriceU256.high.toString()
+    ]
+  };
+  const fulfillCall = contract.populate("fulfill_order", [fulfillPayload]);
+  try {
+    const tx = await account.execute([approveCall, fulfillCall]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to fulfill ERC-1155 order", "TRANSACTION_FAILED", err);
+  }
+}
+async function cancelOrder1155(account, params, config) {
+  const { orderHash } = params;
+  const contract = getContract(config);
+  const provider = getProvider2(config);
+  const chainId = getChainId2();
+  const currentNonce = await contract.nonces(account.address);
+  const cancelParams = {
+    order_hash: orderHash,
+    offerer: account.address,
+    nonce: currentNonce.toString()
+  };
+  const typedData = stringifyBigInts(
+    build1155CancellationTypedData(cancelParams, chainId)
+  );
+  const signature = await account.signMessage(typedData);
+  const signatureArray = toSignatureArray2(signature);
+  const cancelPayload = stringifyBigInts({
+    cancelation: cancelParams,
+    signature: signatureArray
+  });
+  const cancelCall = contract.populate("cancel_order", [cancelPayload]);
+  try {
+    const tx = await account.execute(cancelCall);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to cancel ERC-1155 order", "TRANSACTION_FAILED", err);
+  }
+}
+
+// src/marketplace1155/index.ts
+var Medialane1155Module = class {
+  constructor(config) {
+    this.config = config;
+  }
+  // ─── Writes ───────────────────────────────────────────────────────────────
+  /**
+   * Create an ERC-1155 sell listing.
+   * Optionally grants `set_approval_for_all` if not already approved.
+   */
+  createListing(account, params) {
+    return createListing1155(account, params, this.config);
+  }
+  /**
+   * Fulfill (buy) an ERC-1155 listing.
+   * Approves the payment token then calls `fulfill_order` atomically.
+   */
+  fulfillOrder(account, params) {
+    return fulfillOrder1155(account, params, this.config);
+  }
+  /**
+   * Cancel an ERC-1155 listing (offerer only).
+   */
+  cancelOrder(account, params) {
+    return cancelOrder1155(account, params, this.config);
+  }
+  // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
+  buildListingTypedData(params, chainId) {
+    return build1155OrderTypedData(params, chainId);
+  }
+  buildFulfillmentTypedData(params, chainId) {
+    return build1155FulfillmentTypedData(params, chainId);
+  }
+  buildCancellationTypedData(params, chainId) {
+    return build1155CancellationTypedData(params, chainId);
   }
 };
 
@@ -2068,6 +3137,7 @@ var MedialaneClient = class {
   constructor(rawConfig = {}) {
     this.config = resolveConfig(rawConfig);
     this.marketplace = new MarketplaceModule(this.config);
+    this.marketplace1155 = new Medialane1155Module(this.config);
     this.services = {
       pop: new PopService(this.config),
       drop: new DropService(this.config)
@@ -2103,15 +3173,18 @@ var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
 exports.ApiClient = ApiClient;
 exports.COLLECTION_CONTRACT_MAINNET = COLLECTION_CONTRACT_MAINNET;
 exports.CollectionRegistryABI = CollectionRegistryABI;
-exports.DEFAULT_RPC_URLS = DEFAULT_RPC_URLS;
+exports.DEFAULT_RPC_URL = DEFAULT_RPC_URL;
 exports.DROP_COLLECTION_CLASS_HASH_MAINNET = DROP_COLLECTION_CLASS_HASH_MAINNET;
 exports.DROP_FACTORY_CONTRACT_MAINNET = DROP_FACTORY_CONTRACT_MAINNET;
 exports.DropCollectionABI = DropCollectionABI;
 exports.DropFactoryABI = DropFactoryABI;
 exports.DropService = DropService;
 exports.IPMarketplaceABI = IPMarketplaceABI;
+exports.MARKETPLACE_1155_CONTRACT_MAINNET = MARKETPLACE_1155_CONTRACT_MAINNET;
 exports.MARKETPLACE_CONTRACT_MAINNET = MARKETPLACE_CONTRACT_MAINNET;
 exports.MarketplaceModule = MarketplaceModule;
+exports.Medialane1155ABI = Medialane1155ABI;
+exports.Medialane1155Module = Medialane1155Module;
 exports.MedialaneApiError = MedialaneApiError;
 exports.MedialaneClient = MedialaneClient;
 exports.MedialaneError = MedialaneError;
@@ -2123,6 +3196,9 @@ exports.POP_FACTORY_CONTRACT_MAINNET = POP_FACTORY_CONTRACT_MAINNET;
 exports.PopService = PopService;
 exports.SUPPORTED_NETWORKS = SUPPORTED_NETWORKS;
 exports.SUPPORTED_TOKENS = SUPPORTED_TOKENS;
+exports.build1155CancellationTypedData = build1155CancellationTypedData;
+exports.build1155FulfillmentTypedData = build1155FulfillmentTypedData;
+exports.build1155OrderTypedData = build1155OrderTypedData;
 exports.buildCancellationTypedData = buildCancellationTypedData;
 exports.buildFulfillmentTypedData = buildFulfillmentTypedData;
 exports.buildOrderTypedData = buildOrderTypedData;

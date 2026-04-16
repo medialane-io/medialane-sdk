@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { AccountInterface, constants, TypedData } from 'starknet';
 
 declare const MARKETPLACE_CONTRACT_MAINNET = "0x0234f4e8838801ebf01d7f4166d42aed9a55bc67c1301162decf9e2040e05f16";
+/** Medialane1155 — dedicated ERC-1155 marketplace. Deployed 2026-04-15. */
+declare const MARKETPLACE_1155_CONTRACT_MAINNET = "0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123";
 declare const COLLECTION_CONTRACT_MAINNET = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
 declare const DROP_FACTORY_CONTRACT_MAINNET = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
 declare const POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
@@ -32,9 +34,9 @@ declare const SUPPORTED_TOKENS: readonly [{
     readonly listable: true;
 }];
 type SupportedTokenSymbol = (typeof SUPPORTED_TOKENS)[number]["symbol"];
-declare const SUPPORTED_NETWORKS: readonly ["mainnet", "sepolia"];
+declare const SUPPORTED_NETWORKS: readonly ["mainnet"];
 type Network = (typeof SUPPORTED_NETWORKS)[number];
-declare const DEFAULT_RPC_URLS: Record<Network, string>;
+declare const DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 declare const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 declare const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
 
@@ -45,12 +47,12 @@ interface RetryOptions {
 }
 
 declare const MedialaneConfigSchema: z.ZodObject<{
-    network: z.ZodDefault<z.ZodEnum<["mainnet", "sepolia"]>>;
+    network: z.ZodDefault<z.ZodEnum<["mainnet"]>>;
     rpcUrl: z.ZodOptional<z.ZodString>;
     backendUrl: z.ZodOptional<z.ZodString>;
-    /** API key for authenticated /v1/* backend endpoints */
     apiKey: z.ZodOptional<z.ZodString>;
     marketplaceContract: z.ZodOptional<z.ZodString>;
+    marketplace1155Contract: z.ZodOptional<z.ZodString>;
     collectionContract: z.ZodOptional<z.ZodString>;
     retryOptions: z.ZodOptional<z.ZodObject<{
         maxAttempts: z.ZodOptional<z.ZodNumber>;
@@ -66,24 +68,26 @@ declare const MedialaneConfigSchema: z.ZodObject<{
         maxDelayMs?: number | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
-    network: "mainnet" | "sepolia";
-    collectionContract?: string | undefined;
+    network: "mainnet";
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
     apiKey?: string | undefined;
     marketplaceContract?: string | undefined;
+    marketplace1155Contract?: string | undefined;
+    collectionContract?: string | undefined;
     retryOptions?: {
         maxAttempts?: number | undefined;
         baseDelayMs?: number | undefined;
         maxDelayMs?: number | undefined;
     } | undefined;
 }, {
-    collectionContract?: string | undefined;
-    network?: "mainnet" | "sepolia" | undefined;
+    network?: "mainnet" | undefined;
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
     apiKey?: string | undefined;
     marketplaceContract?: string | undefined;
+    marketplace1155Contract?: string | undefined;
+    collectionContract?: string | undefined;
     retryOptions?: {
         maxAttempts?: number | undefined;
         baseDelayMs?: number | undefined;
@@ -97,6 +101,7 @@ interface ResolvedConfig {
     backendUrl: string | undefined;
     apiKey: string | undefined;
     marketplaceContract: string;
+    marketplace1155Contract: string;
     collectionContract: string;
     retryOptions?: RetryOptions;
 }
@@ -183,6 +188,32 @@ interface CreateCollectionParams {
 interface TxResult {
     txHash: string;
 }
+interface CreateListing1155Params {
+    /** ERC-1155 contract address */
+    nftContract: string;
+    /** Token type ID */
+    tokenId: string;
+    /** Number of tokens to sell */
+    amount: string;
+    /** Human-readable price per token (e.g. "1.5") */
+    pricePerUnit: string;
+    /** Currency symbol or token address. Defaults to "USDC". */
+    currency?: string;
+    /** How long the listing is valid, in seconds */
+    durationSeconds: number;
+}
+interface FulfillOrder1155Params {
+    /** On-chain order hash */
+    orderHash: string;
+    /** ERC-20 payment token address (from order details) */
+    paymentToken: string;
+    /** Total price in raw token units (pricePerUnit × amount, as string) */
+    totalPrice: string;
+}
+interface CancelOrder1155Params {
+    /** On-chain order hash */
+    orderHash: string;
+}
 
 type MedialaneErrorCode = "TOKEN_NOT_FOUND" | "COLLECTION_NOT_FOUND" | "ORDER_NOT_FOUND" | "INTENT_NOT_FOUND" | "INTENT_EXPIRED" | "RATE_LIMITED" | "NETWORK_NOT_SUPPORTED" | "APPROVAL_FAILED" | "TRANSACTION_FAILED" | "INVALID_PARAMS" | "UNAUTHORIZED" | "UNKNOWN";
 
@@ -202,6 +233,28 @@ declare class MarketplaceModule {
     checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult>;
     mint(account: AccountInterface, params: MintParams): Promise<TxResult>;
     createCollection(account: AccountInterface, params: CreateCollectionParams): Promise<TxResult>;
+    buildListingTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
+    buildFulfillmentTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
+    buildCancellationTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
+}
+
+declare class Medialane1155Module {
+    private readonly config;
+    constructor(config: ResolvedConfig);
+    /**
+     * Create an ERC-1155 sell listing.
+     * Optionally grants `set_approval_for_all` if not already approved.
+     */
+    createListing(account: AccountInterface, params: CreateListing1155Params): Promise<TxResult>;
+    /**
+     * Fulfill (buy) an ERC-1155 listing.
+     * Approves the payment token then calls `fulfill_order` atomically.
+     */
+    fulfillOrder(account: AccountInterface, params: FulfillOrder1155Params): Promise<TxResult>;
+    /**
+     * Cancel an ERC-1155 listing (offerer only).
+     */
+    cancelOrder(account: AccountInterface, params: CancelOrder1155Params): Promise<TxResult>;
     buildListingTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
     buildFulfillmentTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
     buildCancellationTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
@@ -496,6 +549,8 @@ interface CreateListingIntentParams {
     price: string;
     endTime: number;
     salt?: string;
+    /** Number of units to list — required for ERC-1155, omit for ERC-721. */
+    amount?: string;
 }
 interface MakeOfferIntentParams {
     offerer: string;
@@ -1042,8 +1097,10 @@ declare class DropService {
 }
 
 declare class MedialaneClient {
-    /** On-chain marketplace interactions (create listing, fulfill order, etc.) */
+    /** On-chain marketplace interactions for ERC-721 assets (create listing, fulfill order, etc.) */
     readonly marketplace: MarketplaceModule;
+    /** On-chain marketplace interactions for ERC-1155 assets (Medialane1155 contract). */
+    readonly marketplace1155: Medialane1155Module;
     /**
      * Off-chain API client — covers all /v1/* backend endpoints.
      * Requires `backendUrl` in config; pass `apiKey` for authenticated routes.
@@ -1055,7 +1112,7 @@ declare class MedialaneClient {
     };
     private readonly config;
     constructor(rawConfig?: MedialaneConfig);
-    get network(): "mainnet" | "sepolia";
+    get network(): "mainnet";
     get rpcUrl(): string;
     get marketplaceContract(): string;
 }
@@ -2026,6 +2083,604 @@ declare const CollectionRegistryABI: readonly [{
     }];
     readonly state_mutability: "view";
 }];
+declare const Medialane1155ABI: readonly [{
+    readonly type: "impl";
+    readonly name: "UpgradeableImpl";
+    readonly interface_name: "openzeppelin_upgrades::interface::IUpgradeable";
+}, {
+    readonly type: "interface";
+    readonly name: "openzeppelin_upgrades::interface::IUpgradeable";
+    readonly items: readonly [{
+        readonly type: "function";
+        readonly name: "upgrade";
+        readonly inputs: readonly [{
+            readonly name: "new_class_hash";
+            readonly type: "core::starknet::class_hash::ClassHash";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
+    }];
+}, {
+    readonly type: "impl";
+    readonly name: "Medialane1155Impl";
+    readonly interface_name: "medialane_erc1155::core::interface::IMedialane1155";
+}, {
+    readonly type: "struct";
+    readonly name: "medialane_erc1155::core::types::OrderParameters";
+    readonly members: readonly [{
+        readonly name: "offerer";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "nft_contract";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "token_id";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "amount";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "payment_token";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "price_per_unit";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "start_time";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "end_time";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "salt";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "nonce";
+        readonly type: "core::felt252";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "medialane_erc1155::core::types::Order";
+    readonly members: readonly [{
+        readonly name: "parameters";
+        readonly type: "medialane_erc1155::core::types::OrderParameters";
+    }, {
+        readonly name: "signature";
+        readonly type: "core::array::Array::<core::felt252>";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "medialane_erc1155::core::types::OrderFulfillment";
+    readonly members: readonly [{
+        readonly name: "order_hash";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "fulfiller";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "nonce";
+        readonly type: "core::felt252";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "medialane_erc1155::core::types::FulfillmentRequest";
+    readonly members: readonly [{
+        readonly name: "fulfillment";
+        readonly type: "medialane_erc1155::core::types::OrderFulfillment";
+    }, {
+        readonly name: "signature";
+        readonly type: "core::array::Array::<core::felt252>";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "medialane_erc1155::core::types::OrderCancellation";
+    readonly members: readonly [{
+        readonly name: "order_hash";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "offerer";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "nonce";
+        readonly type: "core::felt252";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "medialane_erc1155::core::types::CancelRequest";
+    readonly members: readonly [{
+        readonly name: "cancelation";
+        readonly type: "medialane_erc1155::core::types::OrderCancellation";
+    }, {
+        readonly name: "signature";
+        readonly type: "core::array::Array::<core::felt252>";
+    }];
+}, {
+    readonly type: "enum";
+    readonly name: "medialane_erc1155::core::types::OrderStatus";
+    readonly variants: readonly [{
+        readonly name: "None";
+        readonly type: "()";
+    }, {
+        readonly name: "Created";
+        readonly type: "()";
+    }, {
+        readonly name: "Filled";
+        readonly type: "()";
+    }, {
+        readonly name: "Cancelled";
+        readonly type: "()";
+    }];
+}, {
+    readonly type: "enum";
+    readonly name: "core::option::Option::<core::starknet::contract_address::ContractAddress>";
+    readonly variants: readonly [{
+        readonly name: "Some";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "None";
+        readonly type: "()";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "medialane_erc1155::core::types::OrderDetails";
+    readonly members: readonly [{
+        readonly name: "offerer";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "nft_contract";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "token_id";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "amount";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "payment_token";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "price_per_unit";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "start_time";
+        readonly type: "core::integer::u64";
+    }, {
+        readonly name: "end_time";
+        readonly type: "core::integer::u64";
+    }, {
+        readonly name: "order_status";
+        readonly type: "medialane_erc1155::core::types::OrderStatus";
+    }, {
+        readonly name: "fulfiller";
+        readonly type: "core::option::Option::<core::starknet::contract_address::ContractAddress>";
+    }];
+}, {
+    readonly type: "interface";
+    readonly name: "medialane_erc1155::core::interface::IMedialane1155";
+    readonly items: readonly [{
+        readonly type: "function";
+        readonly name: "register_order";
+        readonly inputs: readonly [{
+            readonly name: "order";
+            readonly type: "medialane_erc1155::core::types::Order";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "fulfill_order";
+        readonly inputs: readonly [{
+            readonly name: "fulfillment_request";
+            readonly type: "medialane_erc1155::core::types::FulfillmentRequest";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "cancel_order";
+        readonly inputs: readonly [{
+            readonly name: "cancel_request";
+            readonly type: "medialane_erc1155::core::types::CancelRequest";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "get_order_details";
+        readonly inputs: readonly [{
+            readonly name: "order_hash";
+            readonly type: "core::felt252";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "medialane_erc1155::core::types::OrderDetails";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "get_order_hash";
+        readonly inputs: readonly [{
+            readonly name: "parameters";
+            readonly type: "medialane_erc1155::core::types::OrderParameters";
+        }, {
+            readonly name: "signer";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::felt252";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "get_native_token";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly state_mutability: "view";
+    }];
+}, {
+    readonly type: "impl";
+    readonly name: "NoncesImpl";
+    readonly interface_name: "openzeppelin_utils::cryptography::interface::INonces";
+}, {
+    readonly type: "interface";
+    readonly name: "openzeppelin_utils::cryptography::interface::INonces";
+    readonly items: readonly [{
+        readonly type: "function";
+        readonly name: "nonces";
+        readonly inputs: readonly [{
+            readonly name: "owner";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::felt252";
+        }];
+        readonly state_mutability: "view";
+    }];
+}, {
+    readonly type: "impl";
+    readonly name: "SRC5Impl";
+    readonly interface_name: "openzeppelin_introspection::interface::ISRC5";
+}, {
+    readonly type: "enum";
+    readonly name: "core::bool";
+    readonly variants: readonly [{
+        readonly name: "False";
+        readonly type: "()";
+    }, {
+        readonly name: "True";
+        readonly type: "()";
+    }];
+}, {
+    readonly type: "interface";
+    readonly name: "openzeppelin_introspection::interface::ISRC5";
+    readonly items: readonly [{
+        readonly type: "function";
+        readonly name: "supports_interface";
+        readonly inputs: readonly [{
+            readonly name: "interface_id";
+            readonly type: "core::felt252";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::bool";
+        }];
+        readonly state_mutability: "view";
+    }];
+}, {
+    readonly type: "impl";
+    readonly name: "AccessControlImpl";
+    readonly interface_name: "openzeppelin_access::accesscontrol::interface::IAccessControl";
+}, {
+    readonly type: "interface";
+    readonly name: "openzeppelin_access::accesscontrol::interface::IAccessControl";
+    readonly items: readonly [{
+        readonly type: "function";
+        readonly name: "has_role";
+        readonly inputs: readonly [{
+            readonly name: "role";
+            readonly type: "core::felt252";
+        }, {
+            readonly name: "account";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::bool";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "get_role_admin";
+        readonly inputs: readonly [{
+            readonly name: "role";
+            readonly type: "core::felt252";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::felt252";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "grant_role";
+        readonly inputs: readonly [{
+            readonly name: "role";
+            readonly type: "core::felt252";
+        }, {
+            readonly name: "account";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "revoke_role";
+        readonly inputs: readonly [{
+            readonly name: "role";
+            readonly type: "core::felt252";
+        }, {
+            readonly name: "account";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "renounce_role";
+        readonly inputs: readonly [{
+            readonly name: "role";
+            readonly type: "core::felt252";
+        }, {
+            readonly name: "account";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
+    }];
+}, {
+    readonly type: "constructor";
+    readonly name: "constructor";
+    readonly inputs: readonly [{
+        readonly name: "manager";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "native_token_address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "medialane_erc1155::core::events::OrderCreated";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "order_hash";
+        readonly type: "core::felt252";
+        readonly kind: "key";
+    }, {
+        readonly name: "offerer";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "key";
+    }, {
+        readonly name: "nft_contract";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }, {
+        readonly name: "token_id";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "amount";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "price_per_unit";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "payment_token";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "core::integer::u256";
+    readonly members: readonly [{
+        readonly name: "low";
+        readonly type: "core::integer::u128";
+    }, {
+        readonly name: "high";
+        readonly type: "core::integer::u128";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "medialane_erc1155::core::events::OrderFulfilled";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "order_hash";
+        readonly type: "core::felt252";
+        readonly kind: "key";
+    }, {
+        readonly name: "offerer";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "key";
+    }, {
+        readonly name: "fulfiller";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "key";
+    }, {
+        readonly name: "royalty_receiver";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }, {
+        readonly name: "royalty_amount";
+        readonly type: "core::integer::u256";
+        readonly kind: "data";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "medialane_erc1155::core::events::OrderCancelled";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "order_hash";
+        readonly type: "core::felt252";
+        readonly kind: "key";
+    }, {
+        readonly name: "offerer";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "key";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event";
+    readonly kind: "enum";
+    readonly variants: readonly [];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Upgraded";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "class_hash";
+        readonly type: "core::starknet::class_hash::ClassHash";
+        readonly kind: "data";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Event";
+    readonly kind: "enum";
+    readonly variants: readonly [{
+        readonly name: "Upgraded";
+        readonly type: "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Upgraded";
+        readonly kind: "nested";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_introspection::src5::SRC5Component::Event";
+    readonly kind: "enum";
+    readonly variants: readonly [];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGranted";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "role";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "account";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }, {
+        readonly name: "sender";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGrantedWithDelay";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "role";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "account";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }, {
+        readonly name: "sender";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }, {
+        readonly name: "delay";
+        readonly type: "core::integer::u64";
+        readonly kind: "data";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleRevoked";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "role";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "account";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }, {
+        readonly name: "sender";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleAdminChanged";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "role";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "previous_admin_role";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "new_admin_role";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::Event";
+    readonly kind: "enum";
+    readonly variants: readonly [{
+        readonly name: "RoleGranted";
+        readonly type: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGranted";
+        readonly kind: "nested";
+    }, {
+        readonly name: "RoleGrantedWithDelay";
+        readonly type: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleGrantedWithDelay";
+        readonly kind: "nested";
+    }, {
+        readonly name: "RoleRevoked";
+        readonly type: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleRevoked";
+        readonly kind: "nested";
+    }, {
+        readonly name: "RoleAdminChanged";
+        readonly type: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::RoleAdminChanged";
+        readonly kind: "nested";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "medialane_erc1155::core::medialane::Medialane1155::Event";
+    readonly kind: "enum";
+    readonly variants: readonly [{
+        readonly name: "OrderCreated";
+        readonly type: "medialane_erc1155::core::events::OrderCreated";
+        readonly kind: "nested";
+    }, {
+        readonly name: "OrderFulfilled";
+        readonly type: "medialane_erc1155::core::events::OrderFulfilled";
+        readonly kind: "nested";
+    }, {
+        readonly name: "OrderCancelled";
+        readonly type: "medialane_erc1155::core::events::OrderCancelled";
+        readonly kind: "nested";
+    }, {
+        readonly name: "NoncesEvent";
+        readonly type: "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event";
+        readonly kind: "flat";
+    }, {
+        readonly name: "UpgradeableEvent";
+        readonly type: "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Event";
+        readonly kind: "flat";
+    }, {
+        readonly name: "SRC5Event";
+        readonly type: "openzeppelin_introspection::src5::SRC5Component::Event";
+        readonly kind: "flat";
+    }, {
+        readonly name: "AccessControlEvent";
+        readonly type: "openzeppelin_access::accesscontrol::accesscontrol::AccessControlComponent::Event";
+        readonly kind: "flat";
+    }];
+}];
 
 /**
  * Normalize a Starknet address to a 0x-prefixed 64-character hex string.
@@ -2087,4 +2742,21 @@ declare function buildFulfillmentTypedData(message: Record<string, unknown>, cha
  */
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, COLLECTION_CONTRACT_MAINNET, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type CollectionSource, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URLS, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+/**
+ * Build SNIP-12 typed data for signing an ERC-1155 OrderParameters struct.
+ *
+ * Differs from the ERC-721 Medialane signing:
+ * - Domain name is "Medialane1155"
+ * - OrderParameters is flat (no nested OfferItem / ConsiderationItem structs)
+ */
+declare function build1155OrderTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
+/**
+ * Build SNIP-12 typed data for signing an ERC-1155 OrderFulfillment struct.
+ */
+declare function build1155FulfillmentTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
+/**
+ * Build SNIP-12 typed data for signing an ERC-1155 OrderCancellation struct.
+ */
+declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
+
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, COLLECTION_CONTRACT_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type CollectionSource, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
