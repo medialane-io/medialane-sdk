@@ -47,6 +47,8 @@ var SUPPORTED_NETWORKS = ["mainnet"];
 var DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 var POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 var DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
+var ERC1155_FACTORY_CONTRACT_MAINNET = "0x0459a9a3c04be5d884a038744f977dff019897264d4a281f9e0f87af417b3bec";
+var ERC1155_COLLECTION_CLASS_HASH_MAINNET = "0x02da5e81be7a1ca493b9441522c450f8ff4c54b14ec16a0c2349f5e6e6fdc5d7";
 
 // src/config.ts
 var MedialaneConfigSchema = z.object({
@@ -1718,6 +1720,126 @@ var Medialane1155ABI = [
     ]
   }
 ];
+var IPCollection1155FactoryABI = [
+  {
+    type: "function",
+    name: "collection_class_hash",
+    inputs: [],
+    outputs: [{ type: "core::starknet::class_hash::ClassHash" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "deploy_collection",
+    inputs: [
+      { name: "name", type: "core::byte_array::ByteArray" },
+      { name: "symbol", type: "core::byte_array::ByteArray" }
+    ],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "owner",
+    inputs: [],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "view"
+  }
+];
+var IPCollection1155ABI = [
+  {
+    type: "function",
+    name: "mint_item",
+    inputs: [
+      { name: "to", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "token_id", type: "core::integer::u256" },
+      { name: "value", type: "core::integer::u256" },
+      { name: "token_uri", type: "core::byte_array::ByteArray" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "batch_mint_item",
+    inputs: [
+      { name: "to", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "token_ids", type: "core::array::Span::<core::integer::u256>" },
+      { name: "values", type: "core::array::Span::<core::integer::u256>" },
+      { name: "token_uris", type: "core::array::Array::<core::byte_array::ByteArray>" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "uri",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "get_collection_creator",
+    inputs: [],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "get_token_creator",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "owner",
+    inputs: [],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "balance_of",
+    inputs: [
+      { name: "account", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "token_id", type: "core::integer::u256" }
+    ],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "set_approval_for_all",
+    inputs: [
+      { name: "operator", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "approved", type: "core::bool" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "is_approved_for_all",
+    inputs: [
+      { name: "owner", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "operator", type: "core::starknet::contract_address::ContractAddress" }
+    ],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "set_royalty",
+    inputs: [
+      { name: "receiver", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "fee_numerator", type: "core::integer::u128" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  }
+];
 
 // src/utils/bigint.ts
 function stringifyBigInts(obj) {
@@ -3167,7 +3289,100 @@ var MedialaneClient = class {
 
 // src/types/api.ts
 var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
+var ERC1155CollectionService = class {
+  constructor(_config) {
+    this.factoryAddress = ERC1155_FACTORY_CONTRACT_MAINNET;
+  }
+  _factory(account) {
+    return new Contract(
+      IPCollection1155FactoryABI,
+      normalizeAddress(this.factoryAddress),
+      account
+    );
+  }
+  _collection(address, account) {
+    return new Contract(
+      IPCollection1155ABI,
+      normalizeAddress(address),
+      account
+    );
+  }
+  /**
+   * Deploy a new ERC-1155 IP collection.
+   * Caller becomes the collection owner and can mint items.
+   * Returns the transaction hash; the deployed collection address is emitted
+   * in the `CollectionDeployed` event of the factory.
+   */
+  async deployCollection(account, params) {
+    const factory = this._factory(account);
+    const call = factory.populate("deploy_collection", [params.name, params.symbol]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /**
+   * Mint a single token into an existing ERC-1155 collection.
+   * Caller must be the collection owner.
+   * The `tokenUri` is immutable — validated and stored on the first mint only.
+   */
+  async mintItem(account, params) {
+    const collection = this._collection(params.collection, account);
+    const call = collection.populate("mint_item", [
+      params.to,
+      BigInt(params.tokenId),
+      BigInt(params.value),
+      params.tokenUri
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /**
+   * Batch-mint multiple token IDs into an existing ERC-1155 collection.
+   * All items go to the same `to` address.
+   * Caller must be the collection owner.
+   */
+  async batchMintItem(account, params) {
+    const collection = this._collection(params.collection, account);
+    const tokenIds = params.items.map((i) => BigInt(i.tokenId));
+    const values = params.items.map((i) => BigInt(i.value));
+    const tokenUris = params.items.map((i) => i.tokenUri);
+    const call = collection.populate("batch_mint_item", [
+      params.to,
+      tokenIds,
+      values,
+      tokenUris
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /**
+   * Set ERC-2981 royalties for the collection.
+   * `feeNumerator` is out of 10 000 (e.g. 500 = 5%).
+   * Caller must be the collection owner.
+   */
+  async setRoyalty(account, params) {
+    const collection = this._collection(params.collection, account);
+    const call = collection.populate("set_royalty", [
+      params.receiver,
+      BigInt(params.feeNumerator)
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /**
+   * Approve the Medialane1155 marketplace (or any operator) to transfer
+   * all tokens on behalf of `account`. Required before listing.
+   */
+  async setApprovalForAll(account, params) {
+    const collection = this._collection(params.collection, account);
+    const call = collection.populate("set_approval_for_all", [
+      params.operator,
+      params.approved
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+};
 
-export { ApiClient, COLLECTION_CONTRACT_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, IPMarketplaceABI, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { ApiClient, COLLECTION_CONTRACT_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPMarketplaceABI, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

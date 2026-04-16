@@ -39,6 +39,10 @@ type Network = (typeof SUPPORTED_NETWORKS)[number];
 declare const DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 declare const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 declare const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
+/** IP-Programmable-ERC1155-Collections factory. Deployed 2026-04-15. */
+declare const ERC1155_FACTORY_CONTRACT_MAINNET = "0x0459a9a3c04be5d884a038744f977dff019897264d4a281f9e0f87af417b3bec";
+/** Class hash of the IPCollection ERC-1155 implementation. Deployed 2026-04-15. */
+declare const ERC1155_COLLECTION_CLASS_HASH_MAINNET = "0x02da5e81be7a1ca493b9441522c450f8ff4c54b14ec16a0c2349f5e6e6fdc5d7";
 
 interface RetryOptions {
     maxAttempts?: number;
@@ -2681,6 +2685,241 @@ declare const Medialane1155ABI: readonly [{
         readonly kind: "flat";
     }];
 }];
+declare const IPCollection1155FactoryABI: readonly [{
+    readonly type: "function";
+    readonly name: "collection_class_hash";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly type: "core::starknet::class_hash::ClassHash";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "deploy_collection";
+    readonly inputs: readonly [{
+        readonly name: "name";
+        readonly type: "core::byte_array::ByteArray";
+    }, {
+        readonly name: "symbol";
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "owner";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly state_mutability: "view";
+}];
+declare const IPCollection1155ABI: readonly [{
+    readonly type: "function";
+    readonly name: "mint_item";
+    readonly inputs: readonly [{
+        readonly name: "to";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
+    }, {
+        readonly name: "value";
+        readonly type: "core::integer::u256";
+    }, {
+        readonly name: "token_uri";
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "batch_mint_item";
+    readonly inputs: readonly [{
+        readonly name: "to";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "token_ids";
+        readonly type: "core::array::Span::<core::integer::u256>";
+    }, {
+        readonly name: "values";
+        readonly type: "core::array::Span::<core::integer::u256>";
+    }, {
+        readonly name: "token_uris";
+        readonly type: "core::array::Array::<core::byte_array::ByteArray>";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "uri";
+    readonly inputs: readonly [{
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "get_collection_creator";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "get_token_creator";
+    readonly inputs: readonly [{
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "owner";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "balance_of";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::integer::u256";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "set_approval_for_all";
+    readonly inputs: readonly [{
+        readonly name: "operator";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "approved";
+        readonly type: "core::bool";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "is_approved_for_all";
+    readonly inputs: readonly [{
+        readonly name: "owner";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "operator";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::bool";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "set_royalty";
+    readonly inputs: readonly [{
+        readonly name: "receiver";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "fee_numerator";
+        readonly type: "core::integer::u128";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}];
+
+interface DeployCollectionParams {
+    /** Human-readable collection name (e.g. "My IP Collection") */
+    name: string;
+    /** Short ticker symbol (e.g. "MIP") */
+    symbol: string;
+}
+interface MintItemParams {
+    /** ERC-1155 collection contract address */
+    collection: string;
+    /** Recipient wallet address */
+    to: string;
+    /** Token ID (u256 — use a numeric string or bigint) */
+    tokenId: bigint | string;
+    /** Number of copies to mint */
+    value: bigint | string;
+    /**
+     * Metadata URI — must start with `ipfs://` or `ar://`.
+     * Immutable: validated and stored on first mint of each token_id.
+     */
+    tokenUri: string;
+}
+interface BatchMintItemParams {
+    /** ERC-1155 collection contract address */
+    collection: string;
+    /** Recipient wallet address */
+    to: string;
+    items: Array<{
+        tokenId: bigint | string;
+        value: bigint | string;
+        tokenUri: string;
+    }>;
+}
+declare class ERC1155CollectionService {
+    private readonly factoryAddress;
+    constructor(_config: ResolvedConfig);
+    private _factory;
+    private _collection;
+    /**
+     * Deploy a new ERC-1155 IP collection.
+     * Caller becomes the collection owner and can mint items.
+     * Returns the transaction hash; the deployed collection address is emitted
+     * in the `CollectionDeployed` event of the factory.
+     */
+    deployCollection(account: AccountInterface, params: DeployCollectionParams): Promise<TxResult>;
+    /**
+     * Mint a single token into an existing ERC-1155 collection.
+     * Caller must be the collection owner.
+     * The `tokenUri` is immutable — validated and stored on the first mint only.
+     */
+    mintItem(account: AccountInterface, params: MintItemParams): Promise<TxResult>;
+    /**
+     * Batch-mint multiple token IDs into an existing ERC-1155 collection.
+     * All items go to the same `to` address.
+     * Caller must be the collection owner.
+     */
+    batchMintItem(account: AccountInterface, params: BatchMintItemParams): Promise<TxResult>;
+    /**
+     * Set ERC-2981 royalties for the collection.
+     * `feeNumerator` is out of 10 000 (e.g. 500 = 5%).
+     * Caller must be the collection owner.
+     */
+    setRoyalty(account: AccountInterface, params: {
+        collection: string;
+        receiver: string;
+        feeNumerator: number;
+    }): Promise<TxResult>;
+    /**
+     * Approve the Medialane1155 marketplace (or any operator) to transfer
+     * all tokens on behalf of `account`. Required before listing.
+     */
+    setApprovalForAll(account: AccountInterface, params: {
+        collection: string;
+        operator: string;
+        approved: boolean;
+    }): Promise<TxResult>;
+}
 
 /**
  * Normalize a Starknet address to a 0x-prefixed 64-character hex string.
@@ -2759,4 +2998,4 @@ declare function build1155FulfillmentTypedData(message: Record<string, unknown>,
  */
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, COLLECTION_CONTRACT_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type CollectionSource, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintParams, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, COLLECTION_CONTRACT_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type CollectionSource, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPCollection1155ABI, IPCollection1155FactoryABI, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_CONTRACT_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

@@ -1562,3 +1562,132 @@ export const Medialane1155ABI = [
     ]
   }
 ] as const;
+
+// ─── ERC-1155 IP Collection Factory ────────────────────────────────────────────
+// Deployed on Starknet mainnet at:
+// 0x0459a9a3c04be5d884a038744f977dff019897264d4a281f9e0f87af417b3bec
+
+export const IPCollection1155FactoryABI = [
+  {
+    type: "function",
+    name: "collection_class_hash",
+    inputs: [],
+    outputs: [{ type: "core::starknet::class_hash::ClassHash" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "deploy_collection",
+    inputs: [
+      { name: "name", type: "core::byte_array::ByteArray" },
+      { name: "symbol", type: "core::byte_array::ByteArray" },
+    ],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "owner",
+    inputs: [],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "view",
+  },
+] as const;
+
+// ─── ERC-1155 IP Collection (per-collection) ───────────────────────────────────
+// Class hash: 0x02da5e81be7a1ca493b9441522c450f8ff4c54b14ec16a0c2349f5e6e6fdc5d7
+
+export const IPCollection1155ABI = [
+  {
+    type: "function",
+    name: "mint_item",
+    inputs: [
+      { name: "to", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "token_id", type: "core::integer::u256" },
+      { name: "value", type: "core::integer::u256" },
+      { name: "token_uri", type: "core::byte_array::ByteArray" },
+    ],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "batch_mint_item",
+    inputs: [
+      { name: "to", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "token_ids", type: "core::array::Span::<core::integer::u256>" },
+      { name: "values", type: "core::array::Span::<core::integer::u256>" },
+      { name: "token_uris", type: "core::array::Array::<core::byte_array::ByteArray>" },
+    ],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "uri",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "get_collection_creator",
+    inputs: [],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "get_token_creator",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "owner",
+    inputs: [],
+    outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "balance_of",
+    inputs: [
+      { name: "account", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "token_id", type: "core::integer::u256" },
+    ],
+    outputs: [{ type: "core::integer::u256" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "set_approval_for_all",
+    inputs: [
+      { name: "operator", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "approved", type: "core::bool" },
+    ],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "is_approved_for_all",
+    inputs: [
+      { name: "owner", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "operator", type: "core::starknet::contract_address::ContractAddress" },
+    ],
+    outputs: [{ type: "core::bool" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "set_royalty",
+    inputs: [
+      { name: "receiver", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "fee_numerator", type: "core::integer::u128" },
+    ],
+    outputs: [],
+    state_mutability: "external",
+  },
+] as const;

@@ -22,6 +22,8 @@ export {
   POP_COLLECTION_CLASS_HASH_MAINNET,
   DROP_FACTORY_CONTRACT_MAINNET,
   DROP_COLLECTION_CLASS_HASH_MAINNET,
+  ERC1155_FACTORY_CONTRACT_MAINNET,
+  ERC1155_COLLECTION_CLASS_HASH_MAINNET,
   SUPPORTED_TOKENS,
   SUPPORTED_NETWORKS,
   DEFAULT_RPC_URL,
@@ -30,11 +32,17 @@ export {
 } from "./constants.js";
 
 // ABI
-export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, CollectionRegistryABI, Medialane1155ABI } from "./abis.js";
+export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, CollectionRegistryABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI } from "./abis.js";
 
 // Services
 export { PopService } from "./services/pop.js";
 export { DropService } from "./services/drop.js";
+export { ERC1155CollectionService } from "./services/erc1155collection.js";
+export type {
+  DeployCollectionParams,
+  MintItemParams,
+  BatchMintItemParams,
+} from "./services/erc1155collection.js";
 
 // Utils
 export { normalizeAddress, shortenAddress } from "./utils/address.js";
