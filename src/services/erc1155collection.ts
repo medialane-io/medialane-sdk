@@ -10,6 +10,12 @@ export interface DeployCollectionParams {
   name: string;
   /** Short ticker symbol (e.g. "MIP") */
   symbol: string;
+  /**
+   * Collection-level metadata URI (e.g. "ipfs://Qm…/collection.json").
+   * Should point to a JSON containing `name`, `description`, `image`, and `external_link`.
+   * Stored on-chain at deploy time. Pass an empty string if not available.
+   */
+  baseUri: string;
 }
 
 export interface MintItemParams {
@@ -74,7 +80,7 @@ export class ERC1155CollectionService {
     params: DeployCollectionParams
   ): Promise<TxResult> {
     const factory = this._factory(account);
-    const call = factory.populate("deploy_collection", [params.name, params.symbol]);
+    const call = factory.populate("deploy_collection", [params.name, params.symbol, params.baseUri]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
@@ -123,16 +129,34 @@ export class ERC1155CollectionService {
   }
 
   /**
-   * Set ERC-2981 royalties for the collection.
+   * Set the default ERC-2981 royalty for the entire collection.
    * `feeNumerator` is out of 10 000 (e.g. 500 = 5%).
    * Caller must be the collection owner.
    */
-  async setRoyalty(
+  async setDefaultRoyalty(
     account: AccountInterface,
     params: { collection: string; receiver: string; feeNumerator: number }
   ): Promise<TxResult> {
     const collection = this._collection(params.collection, account);
-    const call = collection.populate("set_royalty", [
+    const call = collection.populate("set_default_royalty", [
+      params.receiver,
+      BigInt(params.feeNumerator),
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+
+  /**
+   * Set a per-token ERC-2981 royalty override.
+   * `feeNumerator` is out of 10 000. Caller must be the collection owner.
+   */
+  async setTokenRoyalty(
+    account: AccountInterface,
+    params: { collection: string; tokenId: bigint | string; receiver: string; feeNumerator: number }
+  ): Promise<TxResult> {
+    const collection = this._collection(params.collection, account);
+    const call = collection.populate("set_token_royalty", [
+      BigInt(params.tokenId),
       params.receiver,
       BigInt(params.feeNumerator),
     ]);

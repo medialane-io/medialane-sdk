@@ -1563,9 +1563,10 @@ export const Medialane1155ABI = [
   }
 ] as const;
 
-// ─── ERC-1155 IP Collection Factory ────────────────────────────────────────────
+// ─── ERC-1155 IP Collection Factory (v2) ───────────────────────────────────────
 // Deployed on Starknet mainnet at:
-// 0x0459a9a3c04be5d884a038744f977dff019897264d4a281f9e0f87af417b3bec
+// 0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6
+// v2 adds base_uri as third argument to deploy_collection.
 
 export const IPCollection1155FactoryABI = [
   {
@@ -1581,8 +1582,16 @@ export const IPCollection1155FactoryABI = [
     inputs: [
       { name: "name", type: "core::byte_array::ByteArray" },
       { name: "symbol", type: "core::byte_array::ByteArray" },
+      { name: "base_uri", type: "core::byte_array::ByteArray" },
     ],
     outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "update_collection_class_hash",
+    inputs: [{ name: "new_class_hash", type: "core::starknet::class_hash::ClassHash" }],
+    outputs: [],
     state_mutability: "external",
   },
   {
@@ -1594,10 +1603,41 @@ export const IPCollection1155FactoryABI = [
   },
 ] as const;
 
-// ─── ERC-1155 IP Collection (per-collection) ───────────────────────────────────
-// Class hash: 0x02da5e81be7a1ca493b9441522c450f8ff4c54b14ec16a0c2349f5e6e6fdc5d7
+// ─── ERC-1155 IP Collection (per-collection, v2) ───────────────────────────────
+// Class hash: 0x39a85126c6627db263617e5bce2bb72e49d2bb1f20961efc8b8954665bcfd25
+// v2 adds name(), symbol(), base_uri() view functions and requires value > 0 on mint.
 
 export const IPCollection1155ABI = [
+  // ── Metadata views ──────────────────────────────────────────────────────────
+  {
+    type: "function",
+    name: "name",
+    inputs: [],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "symbol",
+    inputs: [],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "base_uri",
+    inputs: [],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "uri",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view",
+  },
+  // ── Minting ─────────────────────────────────────────────────────────────────
   {
     type: "function",
     name: "mint_item",
@@ -1622,13 +1662,7 @@ export const IPCollection1155ABI = [
     outputs: [],
     state_mutability: "external",
   },
-  {
-    type: "function",
-    name: "uri",
-    inputs: [{ name: "token_id", type: "core::integer::u256" }],
-    outputs: [{ type: "core::byte_array::ByteArray" }],
-    state_mutability: "view",
-  },
+  // ── Provenance queries ───────────────────────────────────────────────────────
   {
     type: "function",
     name: "get_collection_creator",
@@ -1645,11 +1679,20 @@ export const IPCollection1155ABI = [
   },
   {
     type: "function",
+    name: "get_token_registered_at",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
+    outputs: [{ type: "core::integer::u64" }],
+    state_mutability: "view",
+  },
+  // ── Ownership ────────────────────────────────────────────────────────────────
+  {
+    type: "function",
     name: "owner",
     inputs: [],
     outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
     state_mutability: "view",
   },
+  // ── ERC-1155 standard ────────────────────────────────────────────────────────
   {
     type: "function",
     name: "balance_of",
@@ -1680,13 +1723,52 @@ export const IPCollection1155ABI = [
     outputs: [{ type: "core::bool" }],
     state_mutability: "view",
   },
+  // ── ERC-2981 royalties ───────────────────────────────────────────────────────
   {
     type: "function",
-    name: "set_royalty",
+    name: "royalty_info",
+    inputs: [
+      { name: "token_id", type: "core::integer::u256" },
+      { name: "sale_price", type: "core::integer::u256" },
+    ],
+    outputs: [
+      { type: "core::starknet::contract_address::ContractAddress" },
+      { type: "core::integer::u256" },
+    ],
+    state_mutability: "view",
+  },
+  {
+    type: "function",
+    name: "set_default_royalty",
     inputs: [
       { name: "receiver", type: "core::starknet::contract_address::ContractAddress" },
       { name: "fee_numerator", type: "core::integer::u128" },
     ],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "set_token_royalty",
+    inputs: [
+      { name: "token_id", type: "core::integer::u256" },
+      { name: "receiver", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "fee_numerator", type: "core::integer::u128" },
+    ],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "delete_default_royalty",
+    inputs: [],
+    outputs: [],
+    state_mutability: "external",
+  },
+  {
+    type: "function",
+    name: "reset_token_royalty",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
     outputs: [],
     state_mutability: "external",
   },
