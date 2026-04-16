@@ -69,10 +69,10 @@ export const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea1
 
 export const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
 
-/** IP-Programmable-ERC1155-Collections factory. Deployed 2026-04-15. */
+/** IP-Programmable-ERC1155-Collections factory. Redeployed 2026-04-16 (v2 — adds base_uri). */
 export const ERC1155_FACTORY_CONTRACT_MAINNET =
-  "0x0459a9a3c04be5d884a038744f977dff019897264d4a281f9e0f87af417b3bec";
+  "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6";
 
-/** Class hash of the IPCollection ERC-1155 implementation. Deployed 2026-04-15. */
+/** Class hash of the IPCollection ERC-1155 implementation. Redeployed 2026-04-16 (v2). */
 export const ERC1155_COLLECTION_CLASS_HASH_MAINNET =
-  "0x02da5e81be7a1ca493b9441522c450f8ff4c54b14ec16a0c2349f5e6e6fdc5d7";
+  "0x39a85126c6627db263617e5bce2bb72e49d2bb1f20961efc8b8954665bcfd25";
