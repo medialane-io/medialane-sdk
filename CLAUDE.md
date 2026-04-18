@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.6.5",
+  "version": "0.7.1",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -145,7 +145,8 @@ client.api.search(q, limit?)
 
 **Intents**
 ```ts
-client.api.createListingIntent(params)   // { nftContract, tokenId, currency, price, offerer, endTime, salt? }
+client.api.createListingIntent(params)   // { nftContract, tokenId, currency, price, offerer, endTime, salt?, amount? }
+                                          // amount: number of units (ERC-1155 only; omit for ERC-721)
 client.api.createOfferIntent(params)     // same params as listing
 client.api.createFulfillIntent(params)   // { fulfiller, orderHash }
 client.api.createCancelIntent(params)    // { offerer, orderHash }
@@ -155,6 +156,7 @@ client.api.createCollectionIntent(params) // { owner, name, symbol, baseUri, ima
                                           // image: ipfs:// URI stored in intent typedData, recovered at collection index time
 client.api.getIntent(id)
 client.api.submitIntentSignature(id, signature)  // signature: string[] — NOT for MINT/CREATE_COLLECTION
+client.api.confirmIntent(id, txHash)             // PATCH /:id/confirm — triggers backend receipt verification; poll getIntent() for CONFIRMED/FAILED
 ```
 
 **Metadata**
@@ -223,6 +225,34 @@ client.api.getPopEligibility(collection, wallet) // → { isEligible, hasClaimed
 client.api.getPopEligibilityBatch(collection, wallets) // wallets: string[] (max 100)
 ```
 
+### client.marketplace1155 (`Medialane1155Module`) — added v0.6.8
+
+On-chain ERC-1155 marketplace operations against the Medialane1155 contract (`0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123`). All require a starknet.js `AccountInterface`.
+
+| Method | Description |
+|---|---|
+| `createListing(account, params)` | Signs `OrderParameters` (SNIP-12) + calls `register_order`. Auto-grants `set_approval_for_all` if needed. |
+| `fulfillOrder(account, params)` | Signs `OrderFulfillment`, approves ERC-20 payment, calls `fulfill_order`. |
+| `cancelOrder(account, params)` | Signs `OrderCancellation`, calls `cancel_order`. |
+| `buildListingTypedData(params, chainId)` | Returns SNIP-12 typed data (for ChipiPay/custom flows). |
+| `buildFulfillmentTypedData(params, chainId)` | Returns SNIP-12 fulfillment typed data. |
+| `buildCancellationTypedData(params, chainId)` | Returns SNIP-12 cancellation typed data. |
+
+SNIP-12 domain: `{ name: "Medialane1155", version: "1", revision: "1" }`. Fields `token_id`, `amount`, `price_per_unit` are **felt252** (not u256) — see backend CLAUDE.md for why this matters.
+
+### client.services.erc1155Collection (`ERC1155CollectionService`) — added v0.7.0
+
+On-chain ERC-1155 collection operations (deploy, mint, royalties). All require a starknet.js `AccountInterface`.
+
+| Method | Description |
+|---|---|
+| `deployCollection(account, params)` | Deploy new ERC-1155 collection via factory. `params: DeployCollectionParams` (`{ name, symbol, baseUri }`) |
+| `mintItem(account, params)` | Mint single token. `params: { collection, tokenId, recipient, amount, tokenUri? }` |
+| `batchMintItem(account, params)` | Batch mint. `params: { collection, tokenIds, recipients, amounts, tokenUris? }` |
+| `setDefaultRoyalty(account, params)` | Set collection-level ERC-2981 royalty. `params: { collection, receiver, feeBasisPoints }` |
+| `setTokenRoyalty(account, params)` | Set per-token royalty. `params: { collection, tokenId, receiver, feeBasisPoints }` |
+| `setApprovalForAll(account, params)` | Approve operator for all tokens. `params: { collection, operator, approved }` |
+
 ### client.services.drop (`DropService`)
 
 On-chain Collection Drop interactions. All require a starknet.js `AccountInterface`.
@@ -246,13 +276,16 @@ On-chain Collection Drop interactions. All require a starknet.js `AccountInterfa
 ## Constants (`src/constants.ts`)
 
 ```ts
-MARKETPLACE_CONTRACT_MAINNET        = "0x04299b51289aa700de4ce19cc77bcea8430bfd1aef04193efab09d60a3a7ee0f"
-COLLECTION_CONTRACT_MAINNET         = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b"
-POP_FACTORY_CONTRACT_MAINNET        = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111"
-POP_COLLECTION_CLASS_HASH_MAINNET   = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f"
-DROP_FACTORY_CONTRACT_MAINNET       = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800"
-DROP_COLLECTION_CLASS_HASH_MAINNET  = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282"
-INDEXER_START_BLOCK_MAINNET         = 6204232
+MARKETPLACE_CONTRACT_MAINNET              = "0x0234f4e8838801ebf01d7f4166d42aed9a55bc67c1301162decf9e2040e05f16"  // v2
+MARKETPLACE_1155_CONTRACT_MAINNET         = "0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123"  // Medialane1155
+COLLECTION_CONTRACT_MAINNET               = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b"  // v2
+ERC1155_FACTORY_CONTRACT_MAINNET          = "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6"
+ERC1155_COLLECTION_CLASS_HASH_MAINNET     = (see src/constants.ts)
+POP_FACTORY_CONTRACT_MAINNET              = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111"
+POP_COLLECTION_CLASS_HASH_MAINNET         = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f"
+DROP_FACTORY_CONTRACT_MAINNET             = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800"
+DROP_COLLECTION_CLASS_HASH_MAINNET        = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282"
+INDEXER_START_BLOCK_MAINNET               = 6204232
 
 DEFAULT_RPC_URLS = {
   mainnet: "https://rpc.starknet.lava.build",
@@ -289,6 +322,33 @@ DEFAULT_RPC_URLS = {
 - Affected methods: `getTokensByOwner`, `getOrdersByUser`, `getActivitiesByAddress`, `getActiveOrdersForToken`, `getCollection`, `getCollectionTokens`, `getCollectionsByOwner`, and `offerer` filter in `getOrders`
 - `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
 - `ApiClient.getCollectionsByOwner(owner: string)` — fetches `GET /v1/collections?owner=address`
+
+**v0.7.1 — ERC-1155 v2 ABIs:**
+- `IPCollection1155FactoryABI`: added `base_uri` input to `deploy_collection`, added `update_collection_class_hash`
+- `IPCollection1155ABI`: added `name()`, `symbol()`, `base_uri()`, `get_token_registered_at()`; replaced `set_royalty` with full ERC-2981 functions (`set_default_royalty`, `set_token_royalty`, `delete_default_royalty`, `reset_token_royalty`)
+- `DeployCollectionParams.baseUri` field added; `deployCollection()` passes it as third factory arg
+- `setRoyalty()` removed — use `setDefaultRoyalty()` / `setTokenRoyalty()` instead
+
+**v0.7.0 — ERC-1155 collection service:**
+- `ERC1155CollectionService` (`client.services.erc1155Collection`) — `deployCollection`, `mintItem`, `batchMintItem`, `setDefaultRoyalty`, `setTokenRoyalty`, `setApprovalForAll`
+- `IPCollection1155FactoryABI` + `IPCollection1155ABI` exported
+- `ERC1155_FACTORY_CONTRACT_MAINNET` + `ERC1155_COLLECTION_CLASS_HASH_MAINNET` constants exported
+
+**v0.6.9 — ERC-1155 listing amount:**
+- `CreateListingIntentParams.amount?: string` — number of units to list; omit for ERC-721
+
+**v0.6.8 — Medialane1155Module:**
+- `Medialane1155Module` (`client.marketplace1155`) — `createListing`, `fulfillOrder`, `cancelOrder` for ERC-1155 marketplace
+- `build1155OrderTypedData`, `build1155FulfillmentTypedData`, `build1155CancellationTypedData` signing helpers exported
+- `CreateListing1155Params`, `FulfillOrder1155Params`, `CancelOrder1155Params` types exported
+- `Medialane1155ABI` + `MARKETPLACE_1155_CONTRACT_MAINNET` exported
+- Sepolia network support removed
+
+**v0.6.7 — CollectionRegistryABI:**
+- `CollectionRegistryABI` exported — covers `list_user_collections` + `get_collection`
+
+**v0.6.6 — COLLECTION_CONTRACT updated:**
+- `COLLECTION_CONTRACT_MAINNET` updated to audited v2 address `0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b`
 
 **v0.6.5 — ERC-1155 support:**
 - `ApiTokenBalance` type — `{ owner: string; amount: string }` — one entry per holder per token ID
