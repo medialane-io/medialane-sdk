@@ -47,8 +47,8 @@ var SUPPORTED_NETWORKS = ["mainnet"];
 var DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 var POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 var DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
-var ERC1155_FACTORY_CONTRACT_MAINNET = "0x0459a9a3c04be5d884a038744f977dff019897264d4a281f9e0f87af417b3bec";
-var ERC1155_COLLECTION_CLASS_HASH_MAINNET = "0x02da5e81be7a1ca493b9441522c450f8ff4c54b14ec16a0c2349f5e6e6fdc5d7";
+var ERC1155_FACTORY_CONTRACT_MAINNET = "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6";
+var ERC1155_COLLECTION_CLASS_HASH_MAINNET = "0x39a85126c6627db263617e5bce2bb72e49d2bb1f20961efc8b8954665bcfd25";
 
 // src/config.ts
 var MedialaneConfigSchema = z.object({
@@ -1733,9 +1733,17 @@ var IPCollection1155FactoryABI = [
     name: "deploy_collection",
     inputs: [
       { name: "name", type: "core::byte_array::ByteArray" },
-      { name: "symbol", type: "core::byte_array::ByteArray" }
+      { name: "symbol", type: "core::byte_array::ByteArray" },
+      { name: "base_uri", type: "core::byte_array::ByteArray" }
     ],
     outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "update_collection_class_hash",
+    inputs: [{ name: "new_class_hash", type: "core::starknet::class_hash::ClassHash" }],
+    outputs: [],
     state_mutability: "external"
   },
   {
@@ -1747,6 +1755,36 @@ var IPCollection1155FactoryABI = [
   }
 ];
 var IPCollection1155ABI = [
+  // ── Metadata views ──────────────────────────────────────────────────────────
+  {
+    type: "function",
+    name: "name",
+    inputs: [],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "symbol",
+    inputs: [],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "base_uri",
+    inputs: [],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "uri",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
+    outputs: [{ type: "core::byte_array::ByteArray" }],
+    state_mutability: "view"
+  },
+  // ── Minting ─────────────────────────────────────────────────────────────────
   {
     type: "function",
     name: "mint_item",
@@ -1771,13 +1809,7 @@ var IPCollection1155ABI = [
     outputs: [],
     state_mutability: "external"
   },
-  {
-    type: "function",
-    name: "uri",
-    inputs: [{ name: "token_id", type: "core::integer::u256" }],
-    outputs: [{ type: "core::byte_array::ByteArray" }],
-    state_mutability: "view"
-  },
+  // ── Provenance queries ───────────────────────────────────────────────────────
   {
     type: "function",
     name: "get_collection_creator",
@@ -1794,11 +1826,20 @@ var IPCollection1155ABI = [
   },
   {
     type: "function",
+    name: "get_token_registered_at",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
+    outputs: [{ type: "core::integer::u64" }],
+    state_mutability: "view"
+  },
+  // ── Ownership ────────────────────────────────────────────────────────────────
+  {
+    type: "function",
     name: "owner",
     inputs: [],
     outputs: [{ type: "core::starknet::contract_address::ContractAddress" }],
     state_mutability: "view"
   },
+  // ── ERC-1155 standard ────────────────────────────────────────────────────────
   {
     type: "function",
     name: "balance_of",
@@ -1829,13 +1870,52 @@ var IPCollection1155ABI = [
     outputs: [{ type: "core::bool" }],
     state_mutability: "view"
   },
+  // ── ERC-2981 royalties ───────────────────────────────────────────────────────
   {
     type: "function",
-    name: "set_royalty",
+    name: "royalty_info",
+    inputs: [
+      { name: "token_id", type: "core::integer::u256" },
+      { name: "sale_price", type: "core::integer::u256" }
+    ],
+    outputs: [
+      { type: "core::starknet::contract_address::ContractAddress" },
+      { type: "core::integer::u256" }
+    ],
+    state_mutability: "view"
+  },
+  {
+    type: "function",
+    name: "set_default_royalty",
     inputs: [
       { name: "receiver", type: "core::starknet::contract_address::ContractAddress" },
       { name: "fee_numerator", type: "core::integer::u128" }
     ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "set_token_royalty",
+    inputs: [
+      { name: "token_id", type: "core::integer::u256" },
+      { name: "receiver", type: "core::starknet::contract_address::ContractAddress" },
+      { name: "fee_numerator", type: "core::integer::u128" }
+    ],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "delete_default_royalty",
+    inputs: [],
+    outputs: [],
+    state_mutability: "external"
+  },
+  {
+    type: "function",
+    name: "reset_token_royalty",
+    inputs: [{ name: "token_id", type: "core::integer::u256" }],
     outputs: [],
     state_mutability: "external"
   }
@@ -3315,7 +3395,7 @@ var ERC1155CollectionService = class {
    */
   async deployCollection(account, params) {
     const factory = this._factory(account);
-    const call = factory.populate("deploy_collection", [params.name, params.symbol]);
+    const call = factory.populate("deploy_collection", [params.name, params.symbol, params.baseUri]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
@@ -3355,13 +3435,27 @@ var ERC1155CollectionService = class {
     return { txHash: res.transaction_hash };
   }
   /**
-   * Set ERC-2981 royalties for the collection.
+   * Set the default ERC-2981 royalty for the entire collection.
    * `feeNumerator` is out of 10 000 (e.g. 500 = 5%).
    * Caller must be the collection owner.
    */
-  async setRoyalty(account, params) {
+  async setDefaultRoyalty(account, params) {
     const collection = this._collection(params.collection, account);
-    const call = collection.populate("set_royalty", [
+    const call = collection.populate("set_default_royalty", [
+      params.receiver,
+      BigInt(params.feeNumerator)
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /**
+   * Set a per-token ERC-2981 royalty override.
+   * `feeNumerator` is out of 10 000. Caller must be the collection owner.
+   */
+  async setTokenRoyalty(account, params) {
+    const collection = this._collection(params.collection, account);
+    const call = collection.populate("set_token_royalty", [
+      BigInt(params.tokenId),
       params.receiver,
       BigInt(params.feeNumerator)
     ]);

@@ -39,10 +39,10 @@ type Network = (typeof SUPPORTED_NETWORKS)[number];
 declare const DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 declare const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 declare const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
-/** IP-Programmable-ERC1155-Collections factory. Deployed 2026-04-15. */
-declare const ERC1155_FACTORY_CONTRACT_MAINNET = "0x0459a9a3c04be5d884a038744f977dff019897264d4a281f9e0f87af417b3bec";
-/** Class hash of the IPCollection ERC-1155 implementation. Deployed 2026-04-15. */
-declare const ERC1155_COLLECTION_CLASS_HASH_MAINNET = "0x02da5e81be7a1ca493b9441522c450f8ff4c54b14ec16a0c2349f5e6e6fdc5d7";
+/** IP-Programmable-ERC1155-Collections factory. Redeployed 2026-04-16 (v2 — adds base_uri). */
+declare const ERC1155_FACTORY_CONTRACT_MAINNET = "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6";
+/** Class hash of the IPCollection ERC-1155 implementation. Redeployed 2026-04-16 (v2). */
+declare const ERC1155_COLLECTION_CLASS_HASH_MAINNET = "0x39a85126c6627db263617e5bce2bb72e49d2bb1f20961efc8b8954665bcfd25";
 
 interface RetryOptions {
     maxAttempts?: number;
@@ -2702,10 +2702,22 @@ declare const IPCollection1155FactoryABI: readonly [{
     }, {
         readonly name: "symbol";
         readonly type: "core::byte_array::ByteArray";
+    }, {
+        readonly name: "base_uri";
+        readonly type: "core::byte_array::ByteArray";
     }];
     readonly outputs: readonly [{
         readonly type: "core::starknet::contract_address::ContractAddress";
     }];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "update_collection_class_hash";
+    readonly inputs: readonly [{
+        readonly name: "new_class_hash";
+        readonly type: "core::starknet::class_hash::ClassHash";
+    }];
+    readonly outputs: readonly [];
     readonly state_mutability: "external";
 }, {
     readonly type: "function";
@@ -2717,6 +2729,41 @@ declare const IPCollection1155FactoryABI: readonly [{
     readonly state_mutability: "view";
 }];
 declare const IPCollection1155ABI: readonly [{
+    readonly type: "function";
+    readonly name: "name";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "symbol";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "base_uri";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "uri";
+    readonly inputs: readonly [{
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::byte_array::ByteArray";
+    }];
+    readonly state_mutability: "view";
+}, {
     readonly type: "function";
     readonly name: "mint_item";
     readonly inputs: readonly [{
@@ -2754,17 +2801,6 @@ declare const IPCollection1155ABI: readonly [{
     readonly state_mutability: "external";
 }, {
     readonly type: "function";
-    readonly name: "uri";
-    readonly inputs: readonly [{
-        readonly name: "token_id";
-        readonly type: "core::integer::u256";
-    }];
-    readonly outputs: readonly [{
-        readonly type: "core::byte_array::ByteArray";
-    }];
-    readonly state_mutability: "view";
-}, {
-    readonly type: "function";
     readonly name: "get_collection_creator";
     readonly inputs: readonly [];
     readonly outputs: readonly [{
@@ -2780,6 +2816,17 @@ declare const IPCollection1155ABI: readonly [{
     }];
     readonly outputs: readonly [{
         readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "get_token_registered_at";
+    readonly inputs: readonly [{
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::integer::u64";
     }];
     readonly state_mutability: "view";
 }, {
@@ -2832,13 +2879,59 @@ declare const IPCollection1155ABI: readonly [{
     readonly state_mutability: "view";
 }, {
     readonly type: "function";
-    readonly name: "set_royalty";
+    readonly name: "royalty_info";
+    readonly inputs: readonly [{
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
+    }, {
+        readonly name: "sale_price";
+        readonly type: "core::integer::u256";
+    }];
+    readonly outputs: readonly [{
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly type: "core::integer::u256";
+    }];
+    readonly state_mutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "set_default_royalty";
     readonly inputs: readonly [{
         readonly name: "receiver";
         readonly type: "core::starknet::contract_address::ContractAddress";
     }, {
         readonly name: "fee_numerator";
         readonly type: "core::integer::u128";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "set_token_royalty";
+    readonly inputs: readonly [{
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
+    }, {
+        readonly name: "receiver";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "fee_numerator";
+        readonly type: "core::integer::u128";
+    }];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "delete_default_royalty";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [];
+    readonly state_mutability: "external";
+}, {
+    readonly type: "function";
+    readonly name: "reset_token_royalty";
+    readonly inputs: readonly [{
+        readonly name: "token_id";
+        readonly type: "core::integer::u256";
     }];
     readonly outputs: readonly [];
     readonly state_mutability: "external";
@@ -2849,6 +2942,12 @@ interface DeployCollectionParams {
     name: string;
     /** Short ticker symbol (e.g. "MIP") */
     symbol: string;
+    /**
+     * Collection-level metadata URI (e.g. "ipfs://Qm…/collection.json").
+     * Should point to a JSON containing `name`, `description`, `image`, and `external_link`.
+     * Stored on-chain at deploy time. Pass an empty string if not available.
+     */
+    baseUri: string;
 }
 interface MintItemParams {
     /** ERC-1155 collection contract address */
@@ -2901,12 +3000,22 @@ declare class ERC1155CollectionService {
      */
     batchMintItem(account: AccountInterface, params: BatchMintItemParams): Promise<TxResult>;
     /**
-     * Set ERC-2981 royalties for the collection.
+     * Set the default ERC-2981 royalty for the entire collection.
      * `feeNumerator` is out of 10 000 (e.g. 500 = 5%).
      * Caller must be the collection owner.
      */
-    setRoyalty(account: AccountInterface, params: {
+    setDefaultRoyalty(account: AccountInterface, params: {
         collection: string;
+        receiver: string;
+        feeNumerator: number;
+    }): Promise<TxResult>;
+    /**
+     * Set a per-token ERC-2981 royalty override.
+     * `feeNumerator` is out of 10 000. Caller must be the collection owner.
+     */
+    setTokenRoyalty(account: AccountInterface, params: {
+        collection: string;
+        tokenId: bigint | string;
         receiver: string;
         feeNumerator: number;
     }): Promise<TxResult>;
