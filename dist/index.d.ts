@@ -423,6 +423,8 @@ interface ApiToken {
     owner: string | null;
     tokenUri: string | null;
     metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
+    /** Token standard derived from the parent collection. Use this to determine ERC-721 vs ERC-1155 behavior. */
+    standard: "ERC721" | "ERC1155" | "UNKNOWN";
     metadata: ApiTokenMetadata;
     /** Current holders with amounts. Only present on single-token fetches; null on list responses. */
     balances: ApiTokenBalance[] | null;
