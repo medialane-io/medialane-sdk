@@ -366,11 +366,15 @@ export interface MakeOfferIntentParams {
 export interface FulfillOrderIntentParams {
   fulfiller: string;
   orderHash: string;
+  /** Caller hint — "ERC1155" forces 1155 routing even if the order isn't in the DB yet */
+  tokenStandard?: string;
 }
 
 export interface CancelOrderIntentParams {
   offerer: string;
   orderHash: string;
+  /** Caller hint — "ERC1155" forces 1155 routing even if the order isn't in the DB yet */
+  tokenStandard?: string;
 }
 
 export interface CreateMintIntentParams {

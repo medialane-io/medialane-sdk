@@ -568,10 +568,14 @@ interface MakeOfferIntentParams {
 interface FulfillOrderIntentParams {
     fulfiller: string;
     orderHash: string;
+    /** Caller hint — "ERC1155" forces 1155 routing even if the order isn't in the DB yet */
+    tokenStandard?: string;
 }
 interface CancelOrderIntentParams {
     offerer: string;
     orderHash: string;
+    /** Caller hint — "ERC1155" forces 1155 routing even if the order isn't in the DB yet */
+    tokenStandard?: string;
 }
 interface CreateMintIntentParams {
     /** Collection owner wallet address — must be the collection owner on-chain */
