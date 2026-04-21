@@ -3,7 +3,7 @@ import { AccountInterface, constants, TypedData } from 'starknet';
 
 declare const MARKETPLACE_CONTRACT_MAINNET = "0x0234f4e8838801ebf01d7f4166d42aed9a55bc67c1301162decf9e2040e05f16";
 /** Medialane1155 — dedicated ERC-1155 marketplace. Deployed 2026-04-15. */
-declare const MARKETPLACE_1155_CONTRACT_MAINNET = "0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123";
+declare const MARKETPLACE_1155_CONTRACT_MAINNET = "0x03aab04e806542cd88bfd0c5bb2a37334fd742d477a2e0f97af09aa4a36137ca";
 declare const COLLECTION_CONTRACT_MAINNET = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
 declare const DROP_FACTORY_CONTRACT_MAINNET = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
 declare const POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
@@ -346,6 +346,8 @@ interface ApiOrder {
     price: ApiOrderPrice;
     txHash: ApiOrderTxHash;
     createdBlockNumber: string;
+    /** ERC-1155 only: units still available after the last partial fill. Null for ERC-721 or unfilled orders. */
+    remainingAmount: string | null;
     createdAt: string;
     updatedAt: string;
     /** Embedded token metadata (name/image/description). Null when not yet indexed. */
@@ -572,6 +574,8 @@ interface FulfillOrderIntentParams {
     orderHash: string;
     /** Caller hint — "ERC1155" forces 1155 routing even if the order isn't in the DB yet */
     tokenStandard?: string;
+    /** ERC-1155 only: units to purchase (1 ≤ quantity ≤ remaining_amount). Defaults to 1. */
+    quantity?: string;
 }
 interface CancelOrderIntentParams {
     offerer: string;

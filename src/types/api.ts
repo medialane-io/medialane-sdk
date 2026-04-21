@@ -109,6 +109,8 @@ export interface ApiOrder {
   price: ApiOrderPrice;
   txHash: ApiOrderTxHash;
   createdBlockNumber: string;
+  /** ERC-1155 only: units still available after the last partial fill. Null for ERC-721 or unfilled orders. */
+  remainingAmount: string | null;
   createdAt: string;
   updatedAt: string;
   /** Embedded token metadata (name/image/description). Null when not yet indexed. */
@@ -370,6 +372,8 @@ export interface FulfillOrderIntentParams {
   orderHash: string;
   /** Caller hint — "ERC1155" forces 1155 routing even if the order isn't in the DB yet */
   tokenStandard?: string;
+  /** ERC-1155 only: units to purchase (1 ≤ quantity ≤ remaining_amount). Defaults to 1. */
+  quantity?: string;
 }
 
 export interface CancelOrderIntentParams {
