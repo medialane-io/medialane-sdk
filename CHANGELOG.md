@@ -2,6 +2,26 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.7.6] — 2026-04-21
+
+### Changed
+- `MARKETPLACE_1155_CONTRACT_MAINNET` updated to `0x03aab04e806542cd88bfd0c5bb2a37334fd742d477a2e0f97af09aa4a36137ca` (Medialane1155 v2 — partial fills)
+- `build1155FulfillmentTypedData`: `OrderFulfillment` type now includes `quantity: felt` between `fulfiller` and `nonce` — **required by v2 contract**. Signatures built without this field are rejected on-chain.
+- `FulfillOrder1155Params.quantity?: string` — units to purchase (1 ≤ quantity ≤ remaining). Defaults to `"1"`.
+- `fulfillOrder1155`: `quantity` included in `fulfillmentParams` and typed data.
+
+### Added
+- `ApiOrder.remainingAmount: string | null` — units still available for ERC-1155 partial-fill orders.
+
+---
+
+## [0.7.5] — 2026-04-20
+
+### Added
+- `ApiToken.standard: "ERC721" | "ERC1155" | "UNKNOWN" | null` — token standard on all token API responses.
+
+---
+
 ## [0.6.9] — 2026-04-16
 
 ### Added
