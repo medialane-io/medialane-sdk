@@ -117,8 +117,10 @@ export interface FulfillOrder1155Params {
   orderHash: string;
   /** ERC-20 payment token address (from order details) */
   paymentToken: string;
-  /** Total price in raw token units (pricePerUnit × amount, as string) */
+  /** Total price in raw token units (pricePerUnit × quantity, as string) */
   totalPrice: string;
+  /** Number of units to purchase (1 ≤ quantity ≤ remaining_amount). Defaults to 1. */
+  quantity?: string;
 }
 
 export interface CancelOrder1155Params {

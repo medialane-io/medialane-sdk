@@ -180,7 +180,7 @@ export async function fulfillOrder1155(
   params: FulfillOrder1155Params,
   config: ResolvedConfig
 ): Promise<TxResult> {
-  const { orderHash, paymentToken, totalPrice } = params;
+  const { orderHash, paymentToken, totalPrice, quantity = "1" } = params;
 
   const contract = getContract(config);
   const provider = getProvider(config);
@@ -191,6 +191,7 @@ export async function fulfillOrder1155(
   const fulfillmentParams = {
     order_hash: orderHash,
     fulfiller: account.address,
+    quantity,
     nonce: currentNonce.toString(),
   };
 

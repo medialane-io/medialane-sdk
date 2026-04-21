@@ -2402,6 +2402,7 @@ function build1155FulfillmentTypedData(message, chainId) {
       OrderFulfillment: [
         { name: "order_hash", type: "felt" },
         { name: "fulfiller", type: "ContractAddress" },
+        { name: "quantity", type: "felt" },
         { name: "nonce", type: "felt" }
       ]
     },
@@ -2530,7 +2531,7 @@ async function createListing1155(account, params, config) {
   }
 }
 async function fulfillOrder1155(account, params, config) {
-  const { orderHash, paymentToken, totalPrice } = params;
+  const { orderHash, paymentToken, totalPrice, quantity = "1" } = params;
   const contract = getContract(config);
   const provider = getProvider2(config);
   const chainId = getChainId2();
@@ -2538,6 +2539,7 @@ async function fulfillOrder1155(account, params, config) {
   const fulfillmentParams = {
     order_hash: orderHash,
     fulfiller: account.address,
+    quantity,
     nonce: currentNonce.toString()
   };
   const typedData = stringifyBigInts(

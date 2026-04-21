@@ -64,6 +64,7 @@ export function build1155FulfillmentTypedData(
       OrderFulfillment: [
         { name: "order_hash", type: "felt" },
         { name: "fulfiller", type: "ContractAddress" },
+        { name: "quantity", type: "felt" },
         { name: "nonce", type: "felt" },
       ],
     },
