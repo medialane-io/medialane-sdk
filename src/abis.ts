@@ -754,8 +754,7 @@ export const CollectionRegistryABI = [
 
 // ─── Medialane1155 ABI ───────────────────────────────────────────────────────
 // Auto-generated from on-chain ABI at contract:
-// 0x03aab04e806542cd88bfd0c5bb2a37334fd742d477a2e0f97af09aa4a36137ca
-// Deployed 2026-04-20
+// 0x035836932ba1d219e00b8e42cd9a433fb2b211a08edcaa8bae40232f335f777d
 
 export const Medialane1155ABI = [
   {

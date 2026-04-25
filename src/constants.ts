@@ -1,9 +1,10 @@
+/** Medialane ERC-721 marketplace — immutable, no admin key. */
 export const MARKETPLACE_CONTRACT_MAINNET =
-  "0x0234f4e8838801ebf01d7f4166d42aed9a55bc67c1301162decf9e2040e05f16";
+  "0x004387e58d469f19332dd5d20846b10339ddc49ef208025ec7d5bef294a8daf3";
 
-/** Medialane1155 — dedicated ERC-1155 marketplace. Deployed 2026-04-15. */
+/** Medialane1155 — dedicated ERC-1155 marketplace, immutable, no admin key. */
 export const MARKETPLACE_1155_CONTRACT_MAINNET =
-  "0x03aab04e806542cd88bfd0c5bb2a37334fd742d477a2e0f97af09aa4a36137ca";
+  "0x035836932ba1d219e00b8e42cd9a433fb2b211a08edcaa8bae40232f335f777d";
 
 export const COLLECTION_CONTRACT_MAINNET =
   "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
@@ -14,7 +15,11 @@ export const DROP_FACTORY_CONTRACT_MAINNET =
 export const POP_FACTORY_CONTRACT_MAINNET =
   "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
 
-export const INDEXER_START_BLOCK_MAINNET = 6204232;
+/** NFTComments on-chain comment system — immutable, no admin key. */
+export const NFTCOMMENTS_CONTRACT_MAINNET =
+  "0x024f97eb5abe659fb650bf162b5fc16501f8f3863a7369901ce6099462e62799";
+
+export const INDEXER_START_BLOCK_MAINNET = 9130000;
 
 export const SUPPORTED_TOKENS = [
   {
