@@ -159,7 +159,7 @@ const result = await client.marketplace.createCollection(account, {
 
 ## ERC-1155 Marketplace (Medialane1155)
 
-For IP assets from ERC-1155 collections (e.g. IP-Programmable-ERC1155-Collections). Contract: `0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123`.
+For IP assets from ERC-1155 collections (e.g. IP-Programmable-ERC1155-Collections). Contract: `0x035836932ba1d219e00b8e42cd9a433fb2b211a08edcaa8bae40232f335f777d`.
 
 ### Create an ERC-1155 Listing
 

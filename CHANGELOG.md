@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.8.0] — 2026-04-25
+
+### Changed
+- `MARKETPLACE_CONTRACT_MAINNET` updated to `0x004387e58d469f19332dd5d20846b10339ddc49ef208025ec7d5bef294a8daf3` (Medialane ERC-721 v3 — immutable, no admin keys)
+- `MARKETPLACE_1155_CONTRACT_MAINNET` updated to `0x035836932ba1d219e00b8e42cd9a433fb2b211a08edcaa8bae40232f335f777d` (Medialane1155 v3 — immutable, no admin keys)
+
+### Added
+- `NFTCOMMENTS_CONTRACT_MAINNET` exported from `src/constants.ts` — `0x024f97eb5abe659fb650bf162b5fc16501f8f3863a7369901ce6099462e62799`
+
+---
+
 ## [0.7.6] — 2026-04-21
 
 ### Changed

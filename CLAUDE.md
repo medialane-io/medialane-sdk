@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -227,7 +227,7 @@ client.api.getPopEligibilityBatch(collection, wallets) // wallets: string[] (max
 
 ### client.marketplace1155 (`Medialane1155Module`) — added v0.6.8
 
-On-chain ERC-1155 marketplace operations against the Medialane1155 contract (`0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123`). All require a starknet.js `AccountInterface`.
+On-chain ERC-1155 marketplace operations against the Medialane1155 contract (`0x035836932ba1d219e00b8e42cd9a433fb2b211a08edcaa8bae40232f335f777d`). All require a starknet.js `AccountInterface`.
 
 | Method | Description |
 |---|---|
@@ -276,8 +276,8 @@ On-chain Collection Drop interactions. All require a starknet.js `AccountInterfa
 ## Constants (`src/constants.ts`)
 
 ```ts
-MARKETPLACE_CONTRACT_MAINNET              = "0x0234f4e8838801ebf01d7f4166d42aed9a55bc67c1301162decf9e2040e05f16"  // v2
-MARKETPLACE_1155_CONTRACT_MAINNET         = "0x042005e9b85536072bfa260b95aa6aaef07f48e622031657384d2375195d7123"  // Medialane1155
+MARKETPLACE_CONTRACT_MAINNET              = "0x004387e58d469f19332dd5d20846b10339ddc49ef208025ec7d5bef294a8daf3"  // current
+MARKETPLACE_1155_CONTRACT_MAINNET         = "0x035836932ba1d219e00b8e42cd9a433fb2b211a08edcaa8bae40232f335f777d"  // Medialane1155 current
 COLLECTION_CONTRACT_MAINNET               = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b"  // v2
 ERC1155_FACTORY_CONTRACT_MAINNET          = "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6"
 ERC1155_COLLECTION_CLASS_HASH_MAINNET     = (see src/constants.ts)
@@ -285,7 +285,7 @@ POP_FACTORY_CONTRACT_MAINNET              = "0x00b32c34b427d8f346b5843ada6a37bd3
 POP_COLLECTION_CLASS_HASH_MAINNET         = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f"
 DROP_FACTORY_CONTRACT_MAINNET             = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800"
 DROP_COLLECTION_CLASS_HASH_MAINNET        = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282"
-INDEXER_START_BLOCK_MAINNET               = 6204232
+INDEXER_START_BLOCK_MAINNET               = 9130000
 
 DEFAULT_RPC_URLS = {
   mainnet: "https://rpc.starknet.lava.build",
