@@ -458,8 +458,12 @@ try {
 | `rpcUrl` | `string` | Lava public endpoint | JSON-RPC URL |
 | `backendUrl` | `string` | — | Medialane API base URL (required for `.api.*`) |
 | `apiKey` | `string` | — | API key from [Medialane Portal](https://medialane.xyz) |
-| `marketplaceContract` | `string` | Mainnet default | Marketplace contract override |
-| `collectionContract` | `string` | Mainnet default | Collection registry override |
+| `marketplace721Contract` | `string` | Mainnet default | ERC-721 marketplace protocol override |
+| `marketplaceContract` | `string` | Mainnet default | Legacy alias for `marketplace721Contract` |
+| `marketplace1155Contract` | `string` | Mainnet default | ERC-1155 marketplace protocol override |
+| `collection721Contract` | `string` | Mainnet default | ERC-721 mint / collection registry override |
+| `collectionContract` | `string` | Mainnet default | Legacy alias for `collection721Contract` |
+| `collection1155Contract` | `string` | Mainnet default | ERC-1155 mint / collection factory override |
 
 ---
 

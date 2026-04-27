@@ -2,10 +2,16 @@ import { z } from 'zod';
 import { AccountInterface, constants, TypedData } from 'starknet';
 
 /** Medialane Protocol ERC-721 marketplace — immutable, no admin key. */
+declare const MARKETPLACE_721_CONTRACT_MAINNET = "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6";
+/** @deprecated Use MARKETPLACE_721_CONTRACT_MAINNET. */
 declare const MARKETPLACE_CONTRACT_MAINNET = "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6";
 /** Class hash of the Medialane Protocol ERC-721 marketplace implementation. */
+declare const MARKETPLACE_721_CLASS_HASH_MAINNET = "0x03dff4f34b976207246207954263be9a28b51390321702443291088dcdf4b2e6";
+/** @deprecated Use MARKETPLACE_721_CLASS_HASH_MAINNET. */
 declare const MARKETPLACE_CLASS_HASH_MAINNET = "0x03dff4f34b976207246207954263be9a28b51390321702443291088dcdf4b2e6";
 /** First mainnet block for the current Medialane Protocol ERC-721 deployment. */
+declare const MARKETPLACE_721_START_BLOCK_MAINNET = 9196722;
+/** @deprecated Use MARKETPLACE_721_START_BLOCK_MAINNET. */
 declare const MARKETPLACE_START_BLOCK_MAINNET = 9196722;
 /** Medialane Protocol ERC-1155 marketplace — immutable, no admin key. */
 declare const MARKETPLACE_1155_CONTRACT_MAINNET = "0x04a0a65bd13e1ec9a2ce92c36115578486331e941b395f97d49fe488baac8309";
@@ -13,6 +19,8 @@ declare const MARKETPLACE_1155_CONTRACT_MAINNET = "0x04a0a65bd13e1ec9a2ce92c3611
 declare const MARKETPLACE_1155_CLASS_HASH_MAINNET = "0x03e1b84f1058dd5c9c766634e638d02756b59910080492983a5168c99856efd0";
 /** First mainnet block for the current Medialane Protocol ERC-1155 deployment. */
 declare const MARKETPLACE_1155_START_BLOCK_MAINNET = 9197091;
+declare const COLLECTION_721_CONTRACT_MAINNET = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
+/** @deprecated Use COLLECTION_721_CONTRACT_MAINNET. */
 declare const COLLECTION_CONTRACT_MAINNET = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
 declare const DROP_FACTORY_CONTRACT_MAINNET = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
 declare const POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
@@ -53,8 +61,12 @@ declare const DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 declare const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 declare const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
 /** IP-Programmable-ERC1155-Collections factory. Redeployed 2026-04-16 (v2 — adds base_uri). */
+declare const COLLECTION_1155_CONTRACT_MAINNET = "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6";
+/** @deprecated Use COLLECTION_1155_CONTRACT_MAINNET. */
 declare const ERC1155_FACTORY_CONTRACT_MAINNET = "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6";
 /** Class hash of the IPCollection ERC-1155 implementation. Redeployed 2026-04-16 (v2). */
+declare const COLLECTION_1155_CLASS_HASH_MAINNET = "0x39a85126c6627db263617e5bce2bb72e49d2bb1f20961efc8b8954665bcfd25";
+/** @deprecated Use COLLECTION_1155_CLASS_HASH_MAINNET. */
 declare const ERC1155_COLLECTION_CLASS_HASH_MAINNET = "0x39a85126c6627db263617e5bce2bb72e49d2bb1f20961efc8b8954665bcfd25";
 
 interface RetryOptions {
@@ -68,9 +80,12 @@ declare const MedialaneConfigSchema: z.ZodObject<{
     rpcUrl: z.ZodOptional<z.ZodString>;
     backendUrl: z.ZodOptional<z.ZodString>;
     apiKey: z.ZodOptional<z.ZodString>;
+    marketplace721Contract: z.ZodOptional<z.ZodString>;
     marketplaceContract: z.ZodOptional<z.ZodString>;
     marketplace1155Contract: z.ZodOptional<z.ZodString>;
+    collection721Contract: z.ZodOptional<z.ZodString>;
     collectionContract: z.ZodOptional<z.ZodString>;
+    collection1155Contract: z.ZodOptional<z.ZodString>;
     retryOptions: z.ZodOptional<z.ZodObject<{
         maxAttempts: z.ZodOptional<z.ZodNumber>;
         baseDelayMs: z.ZodOptional<z.ZodNumber>;
@@ -89,9 +104,12 @@ declare const MedialaneConfigSchema: z.ZodObject<{
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
     apiKey?: string | undefined;
+    marketplace721Contract?: string | undefined;
     marketplaceContract?: string | undefined;
     marketplace1155Contract?: string | undefined;
+    collection721Contract?: string | undefined;
     collectionContract?: string | undefined;
+    collection1155Contract?: string | undefined;
     retryOptions?: {
         maxAttempts?: number | undefined;
         baseDelayMs?: number | undefined;
@@ -102,9 +120,12 @@ declare const MedialaneConfigSchema: z.ZodObject<{
     rpcUrl?: string | undefined;
     backendUrl?: string | undefined;
     apiKey?: string | undefined;
+    marketplace721Contract?: string | undefined;
     marketplaceContract?: string | undefined;
     marketplace1155Contract?: string | undefined;
+    collection721Contract?: string | undefined;
     collectionContract?: string | undefined;
+    collection1155Contract?: string | undefined;
     retryOptions?: {
         maxAttempts?: number | undefined;
         baseDelayMs?: number | undefined;
@@ -117,9 +138,12 @@ interface ResolvedConfig {
     rpcUrl: string;
     backendUrl: string | undefined;
     apiKey: string | undefined;
+    marketplace721Contract: string;
     marketplaceContract: string;
     marketplace1155Contract: string;
+    collection721Contract: string;
     collectionContract: string;
+    collection1155Contract: string;
     retryOptions?: RetryOptions;
 }
 declare function resolveConfig(raw: MedialaneConfig): ResolvedConfig;
@@ -3002,7 +3026,7 @@ interface BatchMintItemParams {
 }
 declare class ERC1155CollectionService {
     private readonly factoryAddress;
-    constructor(_config: ResolvedConfig);
+    constructor(config: ResolvedConfig);
     private _factory;
     private _collection;
     /**
@@ -3132,4 +3156,4 @@ declare function build1155FulfillmentTypedData(message: Record<string, unknown>,
  */
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, COLLECTION_CONTRACT_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type CollectionSource, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, INDEXER_START_BLOCK_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_CLASS_HASH_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MARKETPLACE_START_BLOCK_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_CONTRACT_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type CollectionSource, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, INDEXER_START_BLOCK_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MARKETPLACE_CLASS_HASH_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MARKETPLACE_START_BLOCK_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

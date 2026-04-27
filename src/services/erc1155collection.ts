@@ -2,7 +2,7 @@ import { Contract, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import { normalizeAddress } from "../utils/address.js";
 import { IPCollection1155FactoryABI, IPCollection1155ABI } from "../abis.js";
-import { ERC1155_FACTORY_CONTRACT_MAINNET } from "../constants.js";
+import { COLLECTION_1155_CONTRACT_MAINNET } from "../constants.js";
 import type { TxResult } from "../types/marketplace.js";
 
 export interface DeployCollectionParams {
@@ -49,8 +49,8 @@ export interface BatchMintItemParams {
 export class ERC1155CollectionService {
   private readonly factoryAddress: string;
 
-  constructor(_config: ResolvedConfig) {
-    this.factoryAddress = ERC1155_FACTORY_CONTRACT_MAINNET;
+  constructor(config: ResolvedConfig) {
+    this.factoryAddress = config.collection1155Contract ?? COLLECTION_1155_CONTRACT_MAINNET;
   }
 
   private _factory(account: AccountInterface) {
