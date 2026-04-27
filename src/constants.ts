@@ -1,10 +1,24 @@
-/** Medialane ERC-721 marketplace — immutable, no admin key. */
+/** Medialane Protocol ERC-721 marketplace — immutable, no admin key. */
 export const MARKETPLACE_CONTRACT_MAINNET =
-  "0x004387e58d469f19332dd5d20846b10339ddc49ef208025ec7d5bef294a8daf3";
+  "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6";
 
-/** Medialane1155 — dedicated ERC-1155 marketplace, immutable, no admin key. */
+/** Class hash of the Medialane Protocol ERC-721 marketplace implementation. */
+export const MARKETPLACE_CLASS_HASH_MAINNET =
+  "0x03dff4f34b976207246207954263be9a28b51390321702443291088dcdf4b2e6";
+
+/** First mainnet block for the current Medialane Protocol ERC-721 deployment. */
+export const MARKETPLACE_START_BLOCK_MAINNET = 9196722;
+
+/** Medialane Protocol ERC-1155 marketplace — immutable, no admin key. */
 export const MARKETPLACE_1155_CONTRACT_MAINNET =
-  "0x035836932ba1d219e00b8e42cd9a433fb2b211a08edcaa8bae40232f335f777d";
+  "0x04a0a65bd13e1ec9a2ce92c36115578486331e941b395f97d49fe488baac8309";
+
+/** Class hash of the Medialane Protocol ERC-1155 marketplace implementation. */
+export const MARKETPLACE_1155_CLASS_HASH_MAINNET =
+  "0x03e1b84f1058dd5c9c766634e638d02756b59910080492983a5168c99856efd0";
+
+/** First mainnet block for the current Medialane Protocol ERC-1155 deployment. */
+export const MARKETPLACE_1155_START_BLOCK_MAINNET = 9197091;
 
 export const COLLECTION_CONTRACT_MAINNET =
   "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
@@ -19,7 +33,8 @@ export const POP_FACTORY_CONTRACT_MAINNET =
 export const NFTCOMMENTS_CONTRACT_MAINNET =
   "0x024f97eb5abe659fb650bf162b5fc16501f8f3863a7369901ce6099462e62799";
 
-export const INDEXER_START_BLOCK_MAINNET = 9130000;
+/** Earliest block required to index the current mainnet protocol deployments. */
+export const INDEXER_START_BLOCK_MAINNET = MARKETPLACE_START_BLOCK_MAINNET;
 
 export const SUPPORTED_TOKENS = [
   {

@@ -5,7 +5,6 @@ import {
   Contract,
   RpcProvider,
   cairo,
-  num,
   constants,
 } from "starknet";
 import { Medialane1155ABI } from "../abis.js";
