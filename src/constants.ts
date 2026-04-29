@@ -20,14 +20,14 @@ export const MARKETPLACE_START_BLOCK_MAINNET = MARKETPLACE_721_START_BLOCK_MAINN
 
 /** Medialane Protocol ERC-1155 marketplace — immutable, no admin key. */
 export const MARKETPLACE_1155_CONTRACT_MAINNET =
-  "0x04a0a65bd13e1ec9a2ce92c36115578486331e941b395f97d49fe488baac8309";
+  "0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99";
 
 /** Class hash of the Medialane Protocol ERC-1155 marketplace implementation. */
 export const MARKETPLACE_1155_CLASS_HASH_MAINNET =
-  "0x03e1b84f1058dd5c9c766634e638d02756b59910080492983a5168c99856efd0";
+  "0x01b674aad934be85abc7c1970265cbf7e9bc7d586a90f0a67112c201636dbdd3";
 
 /** First mainnet block for the current Medialane Protocol ERC-1155 deployment. */
-export const MARKETPLACE_1155_START_BLOCK_MAINNET = 9197091;
+export const MARKETPLACE_1155_START_BLOCK_MAINNET = 9260304;
 
 export const COLLECTION_721_CONTRACT_MAINNET =
   "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";

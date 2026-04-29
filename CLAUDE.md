@@ -227,7 +227,7 @@ client.api.getPopEligibilityBatch(collection, wallets) // wallets: string[] (max
 
 ### client.marketplace1155 (`Medialane1155Module`) — added v0.6.8
 
-On-chain ERC-1155 marketplace operations against the Medialane1155 contract (`0x035836932ba1d219e00b8e42cd9a433fb2b211a08edcaa8bae40232f335f777d`). All require a starknet.js `AccountInterface`.
+On-chain ERC-1155 marketplace operations against the Medialane1155V2 contract (`0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99`). All require a starknet.js `AccountInterface`.
 
 | Method | Description |
 |---|---|
@@ -238,7 +238,7 @@ On-chain ERC-1155 marketplace operations against the Medialane1155 contract (`0x
 | `buildFulfillmentTypedData(params, chainId)` | Returns SNIP-12 fulfillment typed data. |
 | `buildCancellationTypedData(params, chainId)` | Returns SNIP-12 cancellation typed data. |
 
-SNIP-12 domain: `{ name: "Medialane1155", version: "1", revision: "1" }`. Fields `token_id`, `amount`, `price_per_unit` are **felt252** (not u256) — see backend CLAUDE.md for why this matters.
+SNIP-12 domain: `{ name: "Medialane", version: "2", revision: "1" }`. V2 uses nested `OfferItem` and `ConsiderationItem` order data, matching the ERC-721 protocol shape while preserving ERC-1155 quantities.
 
 ### client.services.erc1155Collection (`ERC1155CollectionService`) — added v0.7.0
 
@@ -276,8 +276,8 @@ On-chain Collection Drop interactions. All require a starknet.js `AccountInterfa
 ## Constants (`src/constants.ts`)
 
 ```ts
-MARKETPLACE_CONTRACT_MAINNET              = "0x004387e58d469f19332dd5d20846b10339ddc49ef208025ec7d5bef294a8daf3"  // current
-MARKETPLACE_1155_CONTRACT_MAINNET         = "0x035836932ba1d219e00b8e42cd9a433fb2b211a08edcaa8bae40232f335f777d"  // Medialane1155 current
+MARKETPLACE_CONTRACT_MAINNET              = "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6"  // ERC-721 current
+MARKETPLACE_1155_CONTRACT_MAINNET         = "0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99"  // ERC-1155 current
 COLLECTION_CONTRACT_MAINNET               = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b"  // v2
 ERC1155_FACTORY_CONTRACT_MAINNET          = "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6"
 ERC1155_COLLECTION_CLASS_HASH_MAINNET     = (see src/constants.ts)

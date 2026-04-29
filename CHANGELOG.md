@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.8.3] — 2026-04-28
+
+### Changed
+- `MARKETPLACE_1155_CONTRACT_MAINNET` updated to `0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99` (Medialane1155V2 — immutable ERC-1155 marketplace with bid/listing parity).
+- `MARKETPLACE_1155_CLASS_HASH_MAINNET` updated to `0x01b674aad934be85abc7c1970265cbf7e9bc7d586a90f0a67112c201636dbdd3`.
+- ERC-1155 SNIP-12 order signing now uses the nested V2 `OrderParameters` shape and domain `{ name: "Medialane", version: "2", revision: "1" }`.
+
+### Added
+- `MakeOfferIntentParams.tokenStandard` and `MakeOfferIntentParams.quantity` for ERC-1155 offer intents through the backend orchestrator.
+
+---
+
 ## [0.8.0] — 2026-04-25
 
 ### Changed

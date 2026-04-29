@@ -108,11 +108,21 @@ export async function createListing1155(
 
   const orderParams = {
     offerer: account.address,
-    nft_contract: nftContract,
-    token_id: tokenId,
-    amount,
-    payment_token: token.address,
-    price_per_unit: priceWei,
+    offer: {
+      item_type: "ERC1155",
+      token: nftContract,
+      identifier_or_criteria: tokenId,
+      start_amount: amount,
+      end_amount: amount,
+    },
+    consideration: {
+      item_type: "ERC20",
+      token: token.address,
+      identifier_or_criteria: "0",
+      start_amount: priceWei,
+      end_amount: priceWei,
+      recipient: account.address,
+    },
     start_time: now.toString(),
     end_time: endTime.toString(),
     salt,

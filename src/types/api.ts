@@ -365,6 +365,10 @@ export interface MakeOfferIntentParams {
   price: string;
   endTime: number;
   salt?: string;
+  /** Caller hint — "ERC1155" creates the bid on the ERC-1155 marketplace. */
+  tokenStandard?: string;
+  /** ERC-1155 only: number of editions requested. Defaults to 1. */
+  quantity?: string;
 }
 
 export interface FulfillOrderIntentParams {

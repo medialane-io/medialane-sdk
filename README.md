@@ -79,7 +79,7 @@ All methods require a `starknet.js` `AccountInterface`. Nonce management, SNIP-1
 
 Two marketplace modules are available:
 - `client.marketplace` — ERC-721 marketplace (`Medialane` contract)
-- `client.marketplace1155` — ERC-1155 marketplace (`Medialane1155` contract, deployed 2026-04-15)
+- `client.marketplace1155` — ERC-1155 marketplace (`Medialane1155V2` contract, deployed 2026-04-28)
 
 ### Create a Listing (ERC-721)
 
@@ -159,7 +159,7 @@ const result = await client.marketplace.createCollection(account, {
 
 ## ERC-1155 Marketplace (Medialane1155)
 
-For IP assets from ERC-1155 collections (e.g. IP-Programmable-ERC1155-Collections). Contract: `0x04a0a65bd13e1ec9a2ce92c36115578486331e941b395f97d49fe488baac8309`.
+For IP assets from ERC-1155 collections (e.g. IP-Programmable-ERC1155-Collections). Contract: `0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99`.
 
 ### Create an ERC-1155 Listing
 

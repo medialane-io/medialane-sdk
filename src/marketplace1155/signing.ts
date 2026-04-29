@@ -9,8 +9,8 @@ const STARKNET_DOMAIN = [
 
 function domain1155(chainId: constants.StarknetChainId) {
   return {
-    name: "Medialane1155",
-    version: "1",
+    name: "Medialane",
+    version: "2",
     chainId,
     revision: TypedDataRevision.ACTIVE,
   };
@@ -19,9 +19,10 @@ function domain1155(chainId: constants.StarknetChainId) {
 /**
  * Build SNIP-12 typed data for signing an ERC-1155 OrderParameters struct.
  *
- * Differs from the ERC-721 Medialane signing:
- * - Domain name is "Medialane1155"
- * - OrderParameters is flat (no nested OfferItem / ConsiderationItem structs)
+ * Uses the ERC-1155 V2 marketplace shape:
+ * - Domain name is "Medialane"
+ * - Domain version is "2"
+ * - OrderParameters contains nested OfferItem and ConsiderationItem structs
  */
 export function build1155OrderTypedData(
   message: Record<string, unknown>,
@@ -32,13 +33,25 @@ export function build1155OrderTypedData(
     primaryType: "OrderParameters",
     types: {
       StarknetDomain: STARKNET_DOMAIN,
+      OfferItem: [
+        { name: "item_type", type: "shortstring" },
+        { name: "token", type: "ContractAddress" },
+        { name: "identifier_or_criteria", type: "felt" },
+        { name: "start_amount", type: "felt" },
+        { name: "end_amount", type: "felt" },
+      ],
+      ConsiderationItem: [
+        { name: "item_type", type: "shortstring" },
+        { name: "token", type: "ContractAddress" },
+        { name: "identifier_or_criteria", type: "felt" },
+        { name: "start_amount", type: "felt" },
+        { name: "end_amount", type: "felt" },
+        { name: "recipient", type: "ContractAddress" },
+      ],
       OrderParameters: [
         { name: "offerer", type: "ContractAddress" },
-        { name: "nft_contract", type: "ContractAddress" },
-        { name: "token_id", type: "felt" },
-        { name: "amount", type: "felt" },
-        { name: "payment_token", type: "ContractAddress" },
-        { name: "price_per_unit", type: "felt" },
+        { name: "offer", type: "OfferItem" },
+        { name: "consideration", type: "ConsiderationItem" },
         { name: "start_time", type: "felt" },
         { name: "end_time", type: "felt" },
         { name: "salt", type: "felt" },
