@@ -62,6 +62,7 @@ export { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol, getList
 export type { SupportedToken } from "./utils/token.js";
 export { stringifyBigInts, u256ToBigInt } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
+export { encodeByteArray } from "./utils/bytearray.js";
 
 // Signing builders (for advanced / ChipiPay integrations)
 export {

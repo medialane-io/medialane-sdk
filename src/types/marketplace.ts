@@ -59,6 +59,10 @@ export interface MakeOfferParams {
 
 export interface FulfillOrderParams {
   orderHash: string;
+  /** ERC-20 payment token address — the consideration token on the listing. */
+  paymentToken: string;
+  /** Total price in raw token units as a string (e.g. "1000000" for 1 USDC). */
+  totalPrice: string;
 }
 
 export interface CancelOrderParams {
@@ -73,6 +77,8 @@ export interface CartItem {
   considerationAmount: string;
   /** Human-readable identifier for the NFT (for logging) */
   offerIdentifier?: string;
+  /** ERC-1155 only: number of units to purchase per item (defaults to "1") */
+  quantity?: string;
 }
 
 export interface MintParams {
@@ -93,6 +99,16 @@ export interface CreateCollectionParams {
 
 export interface TxResult {
   txHash: string;
+}
+
+export interface OrderDetails {
+  offerer: string;
+  offer: OfferItem;
+  consideration: ConsiderationItem;
+  start_time: bigint;
+  end_time: bigint;
+  order_status: string;
+  fulfiller: string | null;
 }
 
 // ─── ERC-1155 Marketplace (Medialane1155) ─────────────────────────────────────
@@ -126,4 +142,19 @@ export interface FulfillOrder1155Params {
 export interface CancelOrder1155Params {
   /** On-chain order hash */
   orderHash: string;
+}
+
+export interface MakeOffer1155Params {
+  /** ERC-1155 contract address */
+  nftContract: string;
+  /** Token type ID */
+  tokenId: string;
+  /** Number of tokens requested */
+  amount: string;
+  /** Total offer price in human-readable units (e.g. "1.5") */
+  price: string;
+  /** Currency symbol or token address. Defaults to "USDC". */
+  currency?: string;
+  /** How long the offer is valid, in seconds */
+  durationSeconds: number;
 }

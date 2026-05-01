@@ -2,9 +2,12 @@ import { type AccountInterface, type TypedData, constants } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import type {
   CreateListing1155Params,
+  MakeOffer1155Params,
   FulfillOrder1155Params,
   CancelOrder1155Params,
+  CartItem,
   TxResult,
+  OrderDetails,
 } from "../types/marketplace.js";
 import {
   build1155OrderTypedData,
@@ -13,8 +16,12 @@ import {
 } from "./signing.js";
 import {
   createListing1155,
+  makeOffer1155,
   fulfillOrder1155,
   cancelOrder1155,
+  checkoutCart1155,
+  getOrderDetails1155,
+  getNonce1155,
 } from "./orders.js";
 
 export class Medialane1155Module {
@@ -31,6 +38,14 @@ export class Medialane1155Module {
   }
 
   /**
+   * Make an offer (bid) on an ERC-1155 token.
+   * Approves the ERC-20 spend then calls `register_order` atomically.
+   */
+  makeOffer(account: AccountInterface, params: MakeOffer1155Params): Promise<TxResult> {
+    return makeOffer1155(account, params, this.config);
+  }
+
+  /**
    * Fulfill (buy) an ERC-1155 listing.
    * Approves the payment token then calls `fulfill_order` atomically.
    */
@@ -43,6 +58,24 @@ export class Medialane1155Module {
    */
   cancelOrder(account: AccountInterface, params: CancelOrder1155Params): Promise<TxResult> {
     return cancelOrder1155(account, params, this.config);
+  }
+
+  /**
+   * Checkout a cart of ERC-1155 orders atomically.
+   * Signs one fulfillment per item (with quantity), sums ERC-20 approvals by token.
+   */
+  checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult> {
+    return checkoutCart1155(account, items, this.config);
+  }
+
+  // ─── View calls ───────────────────────────────────────────────────────────
+
+  getOrderDetails(orderHash: string): Promise<OrderDetails> {
+    return getOrderDetails1155(orderHash, this.config);
+  }
+
+  getNonce(address: string): Promise<bigint> {
+    return getNonce1155(address, this.config);
   }
 
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────

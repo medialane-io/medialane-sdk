@@ -3,19 +3,21 @@ import {
   type Abi,
   type TypedData,
   Contract,
-  RpcProvider,
   cairo,
-  constants,
+  shortString,
 } from "starknet";
 import { Medialane1155ABI } from "../abis.js";
 import type { ResolvedConfig } from "../config.js";
-import { SUPPORTED_TOKENS, DEFAULT_CURRENCY } from "../constants.js";
-import { MedialaneError } from "../marketplace/orders.js";
+import { DEFAULT_CURRENCY } from "../constants.js";
+import { MedialaneError } from "../marketplace/errors.js";
 import type {
   CreateListing1155Params,
+  MakeOffer1155Params,
   FulfillOrder1155Params,
   CancelOrder1155Params,
+  CartItem,
   TxResult,
+  OrderDetails,
 } from "../types/marketplace.js";
 import { stringifyBigInts } from "../utils/bigint.js";
 import { parseAmount } from "../utils/token.js";
@@ -24,28 +26,15 @@ import {
   build1155FulfillmentTypedData,
   build1155CancellationTypedData,
 } from "./signing.js";
+import {
+  toSignatureArray,
+  getChainId,
+  getProvider,
+  resolveToken,
+  START_TIME_BUFFER_SECS,
+} from "../marketplace/utils.js";
 
-function toSignatureArray(sig: unknown): string[] {
-  if (Array.isArray(sig)) return sig as string[];
-  const s = sig as { r: bigint | string; s: bigint | string };
-  return [s.r.toString(), s.s.toString()];
-}
-
-function getChainId(_config: ResolvedConfig): constants.StarknetChainId {
-  return constants.StarknetChainId.SN_MAIN;
-}
-
-const _providerCache = new WeakMap<ResolvedConfig, RpcProvider>();
 const _contractCache = new WeakMap<ResolvedConfig, Contract>();
-
-function getProvider(config: ResolvedConfig): RpcProvider {
-  let p = _providerCache.get(config);
-  if (!p) {
-    p = new RpcProvider({ nodeUrl: config.rpcUrl });
-    _providerCache.set(config, p);
-  }
-  return p;
-}
 
 function getContract(config: ResolvedConfig): Contract {
   let c = _contractCache.get(config);
@@ -59,14 +48,6 @@ function getContract(config: ResolvedConfig): Contract {
     _contractCache.set(config, c);
   }
   return c;
-}
-
-function resolveToken(currency: string) {
-  const token = SUPPORTED_TOKENS.find(
-    (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
-  );
-  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
-  return token;
 }
 
 /**
@@ -123,7 +104,7 @@ export async function createListing1155(
       end_amount: priceWei,
       recipient: account.address,
     },
-    start_time: now.toString(),
+    start_time: (now + START_TIME_BUFFER_SECS).toString(),
     end_time: endTime.toString(),
     salt,
     nonce: currentNonce.toString(),
@@ -136,8 +117,20 @@ export async function createListing1155(
   const signature = await account.signMessage(typedData);
   const signatureArray = toSignatureArray(signature);
 
+  // item_type must be shortString encoded for calldata (felt252), but left as plain
+  // string in orderParams used for SNIP-12 signing (typed data uses shortstring type).
   const orderPayload = stringifyBigInts({
-    parameters: orderParams,
+    parameters: {
+      ...orderParams,
+      offer: {
+        ...orderParams.offer,
+        item_type: shortString.encodeShortString(orderParams.offer.item_type),
+      },
+      consideration: {
+        ...orderParams.consideration,
+        item_type: shortString.encodeShortString(orderParams.consideration.item_type),
+      },
+    },
     signature: signatureArray,
   }) as Record<string, unknown>;
 
@@ -284,4 +277,202 @@ export async function cancelOrder1155(
   } catch (err) {
     throw new MedialaneError("Failed to cancel ERC-1155 order", "TRANSACTION_FAILED", err);
   }
+}
+
+/**
+ * Make an offer (bid) on an ERC-1155 token.
+ *
+ * The offerer offers ERC-20 and asks for the specified ERC-1155 amount.
+ * Signs `OrderParameters` off-chain via SNIP-12, approves the ERC-20 spend,
+ * then submits to `register_order`.
+ */
+export async function makeOffer1155(
+  account: AccountInterface,
+  params: MakeOffer1155Params,
+  config: ResolvedConfig
+): Promise<TxResult> {
+  const {
+    nftContract,
+    tokenId,
+    amount,
+    price,
+    currency = DEFAULT_CURRENCY,
+    durationSeconds,
+  } = params;
+
+  const contract = getContract(config);
+  const provider = getProvider(config);
+  const chainId = getChainId(config);
+
+  const token = resolveToken(currency);
+  const priceWei = parseAmount(price, token.decimals);
+
+  const now = Math.floor(Date.now() / 1000);
+  const endTime = now + durationSeconds;
+
+  const saltBytes = new Uint8Array(4);
+  crypto.getRandomValues(saltBytes);
+  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
+
+  const currentNonce = await contract.nonces(account.address);
+
+  const orderParams = {
+    offerer: account.address,
+    offer: {
+      item_type: "ERC20",
+      token: token.address,
+      identifier_or_criteria: "0",
+      start_amount: priceWei,
+      end_amount: priceWei,
+    },
+    consideration: {
+      item_type: "ERC1155",
+      token: nftContract,
+      identifier_or_criteria: tokenId,
+      start_amount: amount,
+      end_amount: amount,
+      recipient: account.address,
+    },
+    start_time: (now + START_TIME_BUFFER_SECS).toString(),
+    end_time: endTime.toString(),
+    salt,
+    nonce: currentNonce.toString(),
+  };
+
+  const typedData = stringifyBigInts(
+    build1155OrderTypedData(orderParams, chainId)
+  ) as TypedData;
+
+  const signature = await account.signMessage(typedData);
+  const signatureArray = toSignatureArray(signature);
+
+  const registerPayload = stringifyBigInts({
+    parameters: {
+      ...orderParams,
+      offer: {
+        ...orderParams.offer,
+        item_type: shortString.encodeShortString(orderParams.offer.item_type),
+      },
+      consideration: {
+        ...orderParams.consideration,
+        item_type: shortString.encodeShortString(orderParams.consideration.item_type),
+      },
+    },
+    signature: signatureArray,
+  }) as Record<string, unknown>;
+
+  const amountU256 = cairo.uint256(priceWei);
+  const approveCall = {
+    contractAddress: token.address,
+    entrypoint: "approve",
+    calldata: [
+      config.marketplace1155Contract,
+      amountU256.low.toString(),
+      amountU256.high.toString(),
+    ],
+  };
+
+  const registerCall = contract.populate("register_order", [registerPayload]);
+
+  try {
+    const tx = await account.execute([approveCall, registerCall]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to make ERC-1155 offer", "TRANSACTION_FAILED", err);
+  }
+}
+
+/**
+ * Checkout a cart of ERC-1155 orders in a single atomic multicall.
+ *
+ * Signs one `OrderFulfillment` per item (each includes a `quantity` field),
+ * groups ERC-20 approvals by token, then executes all calls atomically.
+ * Nonces are sequential: baseNonce + i per item.
+ */
+export async function checkoutCart1155(
+  account: AccountInterface,
+  items: CartItem[],
+  config: ResolvedConfig
+): Promise<TxResult> {
+  if (items.length === 0) throw new MedialaneError("Cart is empty", "INVALID_PARAMS");
+
+  const contract = getContract(config);
+  const provider = getProvider(config);
+
+  const tokenTotals = new Map<string, bigint>();
+  for (const item of items) {
+    const prev = tokenTotals.get(item.considerationToken) ?? 0n;
+    tokenTotals.set(item.considerationToken, prev + BigInt(item.considerationAmount));
+  }
+
+  const approveCalls = Array.from(tokenTotals.entries()).map(([tokenAddr, totalWei]) => {
+    const amount = cairo.uint256(totalWei.toString());
+    return {
+      contractAddress: tokenAddr,
+      entrypoint: "approve",
+      calldata: [
+        config.marketplace1155Contract,
+        amount.low.toString(),
+        amount.high.toString(),
+      ],
+    };
+  });
+
+  const currentNonce = await contract.nonces(account.address);
+  const baseNonce = BigInt(currentNonce.toString());
+  const chainId = getChainId(config);
+
+  const fulfillCalls = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const nonce = (baseNonce + BigInt(i)).toString();
+    const quantity = item.quantity ?? "1";
+
+    const fulfillmentParams = {
+      order_hash: item.orderHash,
+      fulfiller: account.address,
+      quantity,
+      nonce,
+    };
+
+    const typedData = stringifyBigInts(
+      build1155FulfillmentTypedData(fulfillmentParams, chainId)
+    ) as TypedData;
+
+    const signature = await account.signMessage(typedData);
+    const signatureArray = toSignatureArray(signature);
+
+    const fulfillPayload = stringifyBigInts({
+      fulfillment: fulfillmentParams,
+      signature: signatureArray,
+    }) as Record<string, unknown>;
+
+    fulfillCalls.push(contract.populate("fulfill_order", [fulfillPayload]));
+  }
+
+  try {
+    const tx = await account.execute([...approveCalls, ...fulfillCalls]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("ERC-1155 cart checkout failed", "TRANSACTION_FAILED", err);
+  }
+}
+
+export async function getOrderDetails1155(
+  orderHash: string,
+  config: ResolvedConfig
+): Promise<OrderDetails> {
+  const contract = getContract(config);
+  return contract.get_order_details(orderHash) as Promise<OrderDetails>;
+}
+
+export async function getNonce1155(
+  address: string,
+  config: ResolvedConfig
+): Promise<bigint> {
+  const contract = getContract(config);
+  return BigInt((await contract.nonces(address)).toString());
 }

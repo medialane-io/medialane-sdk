@@ -2,18 +2,14 @@ import {
   type AccountInterface,
   type Abi,
   Contract,
-  RpcProvider,
   cairo,
-  byteArray,
-  num,
   shortString,
-  constants,
   type TypedData,
 } from "starknet";
+import { encodeByteArray } from "../utils/bytearray.js";
 import { IPMarketplaceABI } from "../abis.js";
 import type { ResolvedConfig } from "../config.js";
-import { SUPPORTED_TOKENS, DEFAULT_CURRENCY } from "../constants.js";
-import type { MedialaneErrorCode } from "../types/errors.js";
+import { DEFAULT_CURRENCY } from "../constants.js";
 import type {
   CreateListingParams,
   MakeOfferParams,
@@ -23,6 +19,7 @@ import type {
   MintParams,
   CreateCollectionParams,
   TxResult,
+  OrderDetails,
 } from "../types/marketplace.js";
 import { stringifyBigInts } from "../utils/bigint.js";
 import { parseAmount } from "../utils/token.js";
@@ -31,61 +28,29 @@ import {
   buildFulfillmentTypedData,
   buildCancellationTypedData,
 } from "./signing.js";
+import { MedialaneError } from "./errors.js";
+import {
+  toSignatureArray,
+  getChainId,
+  getProvider,
+  resolveToken,
+  START_TIME_BUFFER_SECS,
+} from "./utils.js";
 
-export class MedialaneError extends Error {
-  constructor(
-    message: string,
-    public readonly code: MedialaneErrorCode = "UNKNOWN",
-    public readonly cause?: unknown
-  ) {
-    super(message);
-    this.name = "MedialaneError";
-  }
-}
+const _contractCache = new WeakMap<ResolvedConfig, { contract: Contract }>();
 
-function toSignatureArray(sig: unknown): string[] {
-  if (Array.isArray(sig)) return sig as string[];
-  const s = sig as { r: bigint | string; s: bigint | string };
-  return [s.r.toString(), s.s.toString()];
-}
-
-function getChainId(_config: ResolvedConfig): constants.StarknetChainId {
-  return constants.StarknetChainId.SN_MAIN;
-}
-
-const _contractCache = new WeakMap<ResolvedConfig, { contract: Contract; provider: RpcProvider }>();
-const _providerCache = new WeakMap<ResolvedConfig, RpcProvider>();
-
-function getProvider(config: ResolvedConfig): RpcProvider {
-  let provider = _providerCache.get(config);
-  if (!provider) {
-    provider = new RpcProvider({ nodeUrl: config.rpcUrl });
-    _providerCache.set(config, provider);
-  }
-  return provider;
-}
-
-function makeContract(config: ResolvedConfig): { contract: Contract; provider: RpcProvider } {
+function makeContract(config: ResolvedConfig): { contract: Contract; provider: ReturnType<typeof getProvider> } {
   const cached = _contractCache.get(config);
-  if (cached) return cached;
-
   const provider = getProvider(config);
+  if (cached) return { ...cached, provider };
+
   const contract = new Contract(
     IPMarketplaceABI as unknown as Abi,
     config.marketplaceContract,
     provider
   );
-  const result = { contract, provider };
-  _contractCache.set(config, result);
-  return result;
-}
-
-function resolveToken(currency: string) {
-  const token = SUPPORTED_TOKENS.find(
-    (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
-  );
-  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
-  return token;
+  _contractCache.set(config, { contract });
+  return { contract, provider };
 }
 
 
@@ -104,7 +69,7 @@ export async function createListing(
   const priceWei = parseAmount(price, token.decimals);
 
   const now = Math.floor(Date.now() / 1000);
-  const startTime = now + 300;
+  const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
   const saltBytes = new Uint8Array(4);
   crypto.getRandomValues(saltBytes);
@@ -212,7 +177,7 @@ export async function makeOffer(
   const priceWei = parseAmount(price, token.decimals);
 
   const now = Math.floor(Date.now() / 1000);
-  const startTime = now + 300;
+  const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
   const saltBytes = new Uint8Array(4);
   crypto.getRandomValues(saltBytes);
@@ -288,13 +253,14 @@ export async function makeOffer(
 
 /**
  * Fulfill (buy) a single order.
+ * Approves the payment token then calls fulfill_order atomically.
  */
 export async function fulfillOrder(
   account: AccountInterface,
   params: FulfillOrderParams,
   config: ResolvedConfig
 ): Promise<TxResult> {
-  const { orderHash } = params;
+  const { orderHash, paymentToken, totalPrice } = params;
   const { contract, provider } = makeContract(config);
 
   const currentNonce = await contract.nonces(account.address);
@@ -318,10 +284,21 @@ export async function fulfillOrder(
     signature: signatureArray,
   }) as Record<string, unknown>;
 
-  const call = contract.populate("fulfill_order", [fulfillPayload]);
+  const totalPriceU256 = cairo.uint256(totalPrice);
+  const approveCall = {
+    contractAddress: paymentToken,
+    entrypoint: "approve",
+    calldata: [
+      config.marketplaceContract,
+      totalPriceU256.low.toString(),
+      totalPriceU256.high.toString(),
+    ],
+  };
+
+  const fulfillCall = contract.populate("fulfill_order", [fulfillPayload]);
 
   try {
-    const tx = await account.execute(call);
+    const tx = await account.execute([approveCall, fulfillCall]);
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
@@ -372,16 +349,6 @@ export async function cancelOrder(
   }
 }
 
-/** Serialize a string as Cairo ByteArray calldata felts. */
-function encodeByteArray(str: string): string[] {
-  const ba = byteArray.byteArrayFromString(str);
-  return [
-    ba.data.length.toString(),
-    ...ba.data.map((d) => num.toHex(d)),
-    num.toHex(ba.pending_word),
-    ba.pending_word_len.toString(),
-  ];
-}
 
 /**
  * Mint an NFT into a Medialane collection.
@@ -479,6 +446,8 @@ export async function checkoutCart(
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
+    // Nonces are sequential (baseNonce + i) because all fulfill calls land in one atomic tx.
+    // The contract increments its nonce after each fulfill_order call within the multicall.
     const nonce = (baseNonce + BigInt(i)).toString();
 
     const fulfillmentParams = {
@@ -509,4 +478,20 @@ export async function checkoutCart(
   } catch (err) {
     throw new MedialaneError("Cart checkout failed", "TRANSACTION_FAILED", err);
   }
+}
+
+export async function getOrderDetails(
+  orderHash: string,
+  config: ResolvedConfig
+): Promise<OrderDetails> {
+  const { contract } = makeContract(config);
+  return contract.get_order_details(orderHash) as Promise<OrderDetails>;
+}
+
+export async function getNonce(
+  address: string,
+  config: ResolvedConfig
+): Promise<bigint> {
+  const { contract } = makeContract(config);
+  return BigInt((await contract.nonces(address)).toString());
 }
