@@ -417,7 +417,7 @@ export interface CreateCounterOfferIntentParams {
   /** Order hash of the original buyer bid being countered. */
   originalOrderHash: string;
   /** Counter price as a raw wei integer string (not human-readable). */
-  counterPrice: string;
+  priceRaw: string;
   /** Duration in seconds the counter-offer will be valid (3600–2592000). */
   durationSeconds: number;
   /** Optional message from the seller to the buyer. Max 500 chars. */
