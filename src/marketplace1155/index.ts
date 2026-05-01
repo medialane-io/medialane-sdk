@@ -5,6 +5,7 @@ import type {
   MakeOffer1155Params,
   FulfillOrder1155Params,
   CancelOrder1155Params,
+  CartItem,
   TxResult,
 } from "../types/marketplace.js";
 import {
@@ -17,6 +18,7 @@ import {
   makeOffer1155,
   fulfillOrder1155,
   cancelOrder1155,
+  checkoutCart1155,
 } from "./orders.js";
 
 export class Medialane1155Module {
@@ -53,6 +55,14 @@ export class Medialane1155Module {
    */
   cancelOrder(account: AccountInterface, params: CancelOrder1155Params): Promise<TxResult> {
     return cancelOrder1155(account, params, this.config);
+  }
+
+  /**
+   * Checkout a cart of ERC-1155 orders atomically.
+   * Signs one fulfillment per item (with quantity), sums ERC-20 approvals by token.
+   */
+  checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult> {
+    return checkoutCart1155(account, items, this.config);
   }
 
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────

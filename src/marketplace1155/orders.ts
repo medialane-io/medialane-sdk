@@ -14,6 +14,7 @@ import type {
   MakeOffer1155Params,
   FulfillOrder1155Params,
   CancelOrder1155Params,
+  CartItem,
   TxResult,
 } from "../types/marketplace.js";
 import { stringifyBigInts } from "../utils/bigint.js";
@@ -355,5 +356,83 @@ export async function makeOffer1155(
     return { txHash: tx.transaction_hash };
   } catch (err) {
     throw new MedialaneError("Failed to make ERC-1155 offer", "TRANSACTION_FAILED", err);
+  }
+}
+
+/**
+ * Checkout a cart of ERC-1155 orders in a single atomic multicall.
+ *
+ * Signs one `OrderFulfillment` per item (each includes a `quantity` field),
+ * groups ERC-20 approvals by token, then executes all calls atomically.
+ * Nonces are sequential: baseNonce + i per item.
+ */
+export async function checkoutCart1155(
+  account: AccountInterface,
+  items: CartItem[],
+  config: ResolvedConfig
+): Promise<TxResult> {
+  if (items.length === 0) throw new MedialaneError("Cart is empty", "INVALID_PARAMS");
+
+  const contract = getContract(config);
+  const provider = getProvider(config);
+
+  const tokenTotals = new Map<string, bigint>();
+  for (const item of items) {
+    const prev = tokenTotals.get(item.considerationToken) ?? 0n;
+    tokenTotals.set(item.considerationToken, prev + BigInt(item.considerationAmount));
+  }
+
+  const approveCalls = Array.from(tokenTotals.entries()).map(([tokenAddr, totalWei]) => {
+    const amount = cairo.uint256(totalWei.toString());
+    return {
+      contractAddress: tokenAddr,
+      entrypoint: "approve",
+      calldata: [
+        config.marketplace1155Contract,
+        amount.low.toString(),
+        amount.high.toString(),
+      ],
+    };
+  });
+
+  const currentNonce = await contract.nonces(account.address);
+  const baseNonce = BigInt(currentNonce.toString());
+  const chainId = getChainId(config);
+
+  const fulfillCalls = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const nonce = (baseNonce + BigInt(i)).toString();
+    const quantity = item.quantity ?? "1";
+
+    const fulfillmentParams = {
+      order_hash: item.orderHash,
+      fulfiller: account.address,
+      quantity,
+      nonce,
+    };
+
+    const typedData = stringifyBigInts(
+      build1155FulfillmentTypedData(fulfillmentParams, chainId)
+    ) as TypedData;
+
+    const signature = await account.signMessage(typedData);
+    const signatureArray = toSignatureArray(signature);
+
+    const fulfillPayload = stringifyBigInts({
+      fulfillment: fulfillmentParams,
+      signature: signatureArray,
+    }) as Record<string, unknown>;
+
+    fulfillCalls.push(contract.populate("fulfill_order", [fulfillPayload]));
+  }
+
+  try {
+    const tx = await account.execute([...approveCalls, ...fulfillCalls]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("ERC-1155 cart checkout failed", "TRANSACTION_FAILED", err);
   }
 }

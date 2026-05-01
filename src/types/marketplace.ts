@@ -77,6 +77,8 @@ export interface CartItem {
   considerationAmount: string;
   /** Human-readable identifier for the NFT (for logging) */
   offerIdentifier?: string;
+  /** ERC-1155 only: number of units to purchase per item (defaults to "1") */
+  quantity?: string;
 }
 
 export interface MintParams {
