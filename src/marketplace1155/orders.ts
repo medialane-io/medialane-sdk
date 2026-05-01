@@ -4,6 +4,7 @@ import {
   type TypedData,
   Contract,
   cairo,
+  shortString,
 } from "starknet";
 import { Medialane1155ABI } from "../abis.js";
 import type { ResolvedConfig } from "../config.js";
@@ -115,8 +116,20 @@ export async function createListing1155(
   const signature = await account.signMessage(typedData);
   const signatureArray = toSignatureArray(signature);
 
+  // item_type must be shortString encoded for calldata (felt252), but left as plain
+  // string in orderParams used for SNIP-12 signing (typed data uses shortstring type).
   const orderPayload = stringifyBigInts({
-    parameters: orderParams,
+    parameters: {
+      ...orderParams,
+      offer: {
+        ...orderParams.offer,
+        item_type: shortString.encodeShortString(orderParams.offer.item_type),
+      },
+      consideration: {
+        ...orderParams.consideration,
+        item_type: shortString.encodeShortString(orderParams.consideration.item_type),
+      },
+    },
     signature: signatureArray,
   }) as Record<string, unknown>;
 
@@ -333,7 +346,17 @@ export async function makeOffer1155(
   const signatureArray = toSignatureArray(signature);
 
   const registerPayload = stringifyBigInts({
-    parameters: orderParams,
+    parameters: {
+      ...orderParams,
+      offer: {
+        ...orderParams.offer,
+        item_type: shortString.encodeShortString(orderParams.offer.item_type),
+      },
+      consideration: {
+        ...orderParams.consideration,
+        item_type: shortString.encodeShortString(orderParams.consideration.item_type),
+      },
+    },
     signature: signatureArray,
   }) as Record<string, unknown>;
 
