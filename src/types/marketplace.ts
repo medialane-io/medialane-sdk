@@ -131,3 +131,18 @@ export interface CancelOrder1155Params {
   /** On-chain order hash */
   orderHash: string;
 }
+
+export interface MakeOffer1155Params {
+  /** ERC-1155 contract address */
+  nftContract: string;
+  /** Token type ID */
+  tokenId: string;
+  /** Number of tokens requested */
+  amount: string;
+  /** Total offer price in human-readable units (e.g. "1.5") */
+  price: string;
+  /** Currency symbol or token address. Defaults to "USDC". */
+  currency?: string;
+  /** How long the offer is valid, in seconds */
+  durationSeconds: number;
+}

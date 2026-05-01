@@ -11,6 +11,7 @@ import { DEFAULT_CURRENCY } from "../constants.js";
 import { MedialaneError } from "../marketplace/errors.js";
 import type {
   CreateListing1155Params,
+  MakeOffer1155Params,
   FulfillOrder1155Params,
   CancelOrder1155Params,
   TxResult,
@@ -260,5 +261,99 @@ export async function cancelOrder1155(
     return { txHash: tx.transaction_hash };
   } catch (err) {
     throw new MedialaneError("Failed to cancel ERC-1155 order", "TRANSACTION_FAILED", err);
+  }
+}
+
+/**
+ * Make an offer (bid) on an ERC-1155 token.
+ *
+ * The offerer offers ERC-20 and asks for the specified ERC-1155 amount.
+ * Signs `OrderParameters` off-chain via SNIP-12, approves the ERC-20 spend,
+ * then submits to `register_order`.
+ */
+export async function makeOffer1155(
+  account: AccountInterface,
+  params: MakeOffer1155Params,
+  config: ResolvedConfig
+): Promise<TxResult> {
+  const {
+    nftContract,
+    tokenId,
+    amount,
+    price,
+    currency = DEFAULT_CURRENCY,
+    durationSeconds,
+  } = params;
+
+  const contract = getContract(config);
+  const provider = getProvider(config);
+  const chainId = getChainId(config);
+
+  const token = resolveToken(currency);
+  const priceWei = parseAmount(price, token.decimals);
+
+  const now = Math.floor(Date.now() / 1000);
+  const endTime = now + durationSeconds;
+
+  const saltBytes = new Uint8Array(4);
+  crypto.getRandomValues(saltBytes);
+  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
+
+  const currentNonce = await contract.nonces(account.address);
+
+  const orderParams = {
+    offerer: account.address,
+    offer: {
+      item_type: "ERC20",
+      token: token.address,
+      identifier_or_criteria: "0",
+      start_amount: priceWei,
+      end_amount: priceWei,
+    },
+    consideration: {
+      item_type: "ERC1155",
+      token: nftContract,
+      identifier_or_criteria: tokenId,
+      start_amount: amount,
+      end_amount: amount,
+      recipient: account.address,
+    },
+    start_time: (now + START_TIME_BUFFER_SECS).toString(),
+    end_time: endTime.toString(),
+    salt,
+    nonce: currentNonce.toString(),
+  };
+
+  const typedData = stringifyBigInts(
+    build1155OrderTypedData(orderParams, chainId)
+  ) as TypedData;
+
+  const signature = await account.signMessage(typedData);
+  const signatureArray = toSignatureArray(signature);
+
+  const registerPayload = stringifyBigInts({
+    parameters: orderParams,
+    signature: signatureArray,
+  }) as Record<string, unknown>;
+
+  const amountU256 = cairo.uint256(priceWei);
+  const approveCall = {
+    contractAddress: token.address,
+    entrypoint: "approve",
+    calldata: [
+      config.marketplace1155Contract,
+      amountU256.low.toString(),
+      amountU256.high.toString(),
+    ],
+  };
+
+  const registerCall = contract.populate("register_order", [registerPayload]);
+
+  try {
+    const tx = await account.execute([approveCall, registerCall]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to make ERC-1155 offer", "TRANSACTION_FAILED", err);
   }
 }

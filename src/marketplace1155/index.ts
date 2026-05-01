@@ -2,6 +2,7 @@ import { type AccountInterface, type TypedData, constants } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import type {
   CreateListing1155Params,
+  MakeOffer1155Params,
   FulfillOrder1155Params,
   CancelOrder1155Params,
   TxResult,
@@ -13,6 +14,7 @@ import {
 } from "./signing.js";
 import {
   createListing1155,
+  makeOffer1155,
   fulfillOrder1155,
   cancelOrder1155,
 } from "./orders.js";
@@ -28,6 +30,14 @@ export class Medialane1155Module {
    */
   createListing(account: AccountInterface, params: CreateListing1155Params): Promise<TxResult> {
     return createListing1155(account, params, this.config);
+  }
+
+  /**
+   * Make an offer (bid) on an ERC-1155 token.
+   * Approves the ERC-20 spend then calls `register_order` atomically.
+   */
+  makeOffer(account: AccountInterface, params: MakeOffer1155Params): Promise<TxResult> {
+    return makeOffer1155(account, params, this.config);
   }
 
   /**
