@@ -27,7 +27,7 @@ export interface ApiCollectionsQuery {
 
 export type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED" | "COUNTER_OFFERED";
 export type SortOrder = "price_asc" | "price_desc" | "recent";
-export type ActivityType = "transfer" | "sale" | "listing" | "offer" | "cancelled";
+export type ActivityType = "mint" | "transfer" | "sale" | "listing" | "offer" | "cancelled";
 export type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION" | "COUNTER_OFFER";
 export type IntentStatus = "PENDING" | "SIGNED" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 export type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANCELLED" | "TRANSFER";
@@ -251,6 +251,8 @@ export interface ApiActivity {
   from?: string;
   to?: string;
   blockNumber?: string;
+  /** ERC-1155 quantity (transfer/mint rows). "1" for ERC-721. */
+  amount?: string;
   // Order fields
   orderHash?: string;
   nftContract?: string;
@@ -258,8 +260,12 @@ export interface ApiActivity {
   offerer?: string;
   fulfiller?: string | null;
   price?: ApiActivityPrice;
+  /** Token standard — present on order rows. */
+  tokenStandard?: "ERC721" | "ERC1155";
   txHash: string | null;
   timestamp: string;
+  /** Batch-enriched token metadata — avoids per-row fetches. */
+  token?: { name: string | null; image: string | null } | null;
 }
 
 export interface ApiActivitiesQuery {
