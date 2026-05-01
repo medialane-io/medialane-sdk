@@ -445,6 +445,8 @@ export async function checkoutCart(
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
+    // Nonces are sequential (baseNonce + i) because all fulfill calls land in one atomic tx.
+    // The contract increments its nonce after each fulfill_order call within the multicall.
     const nonce = (baseNonce + BigInt(i)).toString();
 
     const fulfillmentParams = {
