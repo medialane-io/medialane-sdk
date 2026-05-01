@@ -4,12 +4,11 @@ import {
   Contract,
   RpcProvider,
   cairo,
-  byteArray,
-  num,
   shortString,
   constants,
   type TypedData,
 } from "starknet";
+import { encodeByteArray } from "../utils/bytearray.js";
 import { IPMarketplaceABI } from "../abis.js";
 import type { ResolvedConfig } from "../config.js";
 import { SUPPORTED_TOKENS, DEFAULT_CURRENCY } from "../constants.js";
@@ -384,16 +383,6 @@ export async function cancelOrder(
   }
 }
 
-/** Serialize a string as Cairo ByteArray calldata felts. */
-function encodeByteArray(str: string): string[] {
-  const ba = byteArray.byteArrayFromString(str);
-  return [
-    ba.data.length.toString(),
-    ...ba.data.map((d) => num.toHex(d)),
-    num.toHex(ba.pending_word),
-    ba.pending_word_len.toString(),
-  ];
-}
 
 /**
  * Mint an NFT into a Medialane collection.
