@@ -19,6 +19,7 @@ import type {
   MintParams,
   CreateCollectionParams,
   TxResult,
+  OrderDetails,
 } from "../types/marketplace.js";
 import { stringifyBigInts } from "../utils/bigint.js";
 import { parseAmount } from "../utils/token.js";
@@ -477,4 +478,20 @@ export async function checkoutCart(
   } catch (err) {
     throw new MedialaneError("Cart checkout failed", "TRANSACTION_FAILED", err);
   }
+}
+
+export async function getOrderDetails(
+  orderHash: string,
+  config: ResolvedConfig
+): Promise<OrderDetails> {
+  const { contract } = makeContract(config);
+  return contract.get_order_details(orderHash) as Promise<OrderDetails>;
+}
+
+export async function getNonce(
+  address: string,
+  config: ResolvedConfig
+): Promise<bigint> {
+  const { contract } = makeContract(config);
+  return BigInt((await contract.nonces(address)).toString());
 }

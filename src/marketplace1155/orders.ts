@@ -17,6 +17,7 @@ import type {
   CancelOrder1155Params,
   CartItem,
   TxResult,
+  OrderDetails,
 } from "../types/marketplace.js";
 import { stringifyBigInts } from "../utils/bigint.js";
 import { parseAmount } from "../utils/token.js";
@@ -458,4 +459,20 @@ export async function checkoutCart1155(
   } catch (err) {
     throw new MedialaneError("ERC-1155 cart checkout failed", "TRANSACTION_FAILED", err);
   }
+}
+
+export async function getOrderDetails1155(
+  orderHash: string,
+  config: ResolvedConfig
+): Promise<OrderDetails> {
+  const contract = getContract(config);
+  return contract.get_order_details(orderHash) as Promise<OrderDetails>;
+}
+
+export async function getNonce1155(
+  address: string,
+  config: ResolvedConfig
+): Promise<bigint> {
+  const contract = getContract(config);
+  return BigInt((await contract.nonces(address)).toString());
 }

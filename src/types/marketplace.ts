@@ -101,6 +101,16 @@ export interface TxResult {
   txHash: string;
 }
 
+export interface OrderDetails {
+  offerer: string;
+  offer: OfferItem;
+  consideration: ConsiderationItem;
+  start_time: bigint;
+  end_time: bigint;
+  order_status: string;
+  fulfiller: string | null;
+}
+
 // ─── ERC-1155 Marketplace (Medialane1155) ─────────────────────────────────────
 
 export interface CreateListing1155Params {

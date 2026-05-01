@@ -7,6 +7,7 @@ import type {
   CancelOrder1155Params,
   CartItem,
   TxResult,
+  OrderDetails,
 } from "../types/marketplace.js";
 import {
   build1155OrderTypedData,
@@ -19,6 +20,8 @@ import {
   fulfillOrder1155,
   cancelOrder1155,
   checkoutCart1155,
+  getOrderDetails1155,
+  getNonce1155,
 } from "./orders.js";
 
 export class Medialane1155Module {
@@ -63,6 +66,16 @@ export class Medialane1155Module {
    */
   checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult> {
     return checkoutCart1155(account, items, this.config);
+  }
+
+  // ─── View calls ───────────────────────────────────────────────────────────
+
+  getOrderDetails(orderHash: string): Promise<OrderDetails> {
+    return getOrderDetails1155(orderHash, this.config);
+  }
+
+  getNonce(address: string): Promise<bigint> {
+    return getNonce1155(address, this.config);
   }
 
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────

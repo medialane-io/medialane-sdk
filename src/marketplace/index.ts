@@ -9,6 +9,7 @@ import type {
   MintParams,
   CreateCollectionParams,
   TxResult,
+  OrderDetails,
 } from "../types/marketplace.js";
 import {
   buildOrderTypedData,
@@ -23,6 +24,8 @@ import {
   checkoutCart,
   mint,
   createCollection,
+  getOrderDetails,
+  getNonce,
 } from "./orders.js";
 
 export { MedialaneError } from "./errors.js";
@@ -58,6 +61,16 @@ export class MarketplaceModule {
 
   createCollection(account: AccountInterface, params: CreateCollectionParams): Promise<TxResult> {
     return createCollection(account, params, this.config);
+  }
+
+  // ─── View calls ───────────────────────────────────────────────────────────
+
+  getOrderDetails(orderHash: string): Promise<OrderDetails> {
+    return getOrderDetails(orderHash, this.config);
+  }
+
+  getNonce(address: string): Promise<bigint> {
+    return getNonce(address, this.config);
   }
 
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
