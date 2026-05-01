@@ -123,7 +123,7 @@ export async function createListing1155(
       end_amount: priceWei,
       recipient: account.address,
     },
-    start_time: now.toString(),
+    start_time: (now + 30).toString(),
     end_time: endTime.toString(),
     salt,
     nonce: currentNonce.toString(),
