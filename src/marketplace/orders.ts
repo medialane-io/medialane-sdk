@@ -288,13 +288,14 @@ export async function makeOffer(
 
 /**
  * Fulfill (buy) a single order.
+ * Approves the payment token then calls fulfill_order atomically.
  */
 export async function fulfillOrder(
   account: AccountInterface,
   params: FulfillOrderParams,
   config: ResolvedConfig
 ): Promise<TxResult> {
-  const { orderHash } = params;
+  const { orderHash, paymentToken, totalPrice } = params;
   const { contract, provider } = makeContract(config);
 
   const currentNonce = await contract.nonces(account.address);
@@ -318,10 +319,21 @@ export async function fulfillOrder(
     signature: signatureArray,
   }) as Record<string, unknown>;
 
-  const call = contract.populate("fulfill_order", [fulfillPayload]);
+  const totalPriceU256 = cairo.uint256(totalPrice);
+  const approveCall = {
+    contractAddress: paymentToken,
+    entrypoint: "approve",
+    calldata: [
+      config.marketplaceContract,
+      totalPriceU256.low.toString(),
+      totalPriceU256.high.toString(),
+    ],
+  };
+
+  const fulfillCall = contract.populate("fulfill_order", [fulfillPayload]);
 
   try {
-    const tx = await account.execute(call);
+    const tx = await account.execute([approveCall, fulfillCall]);
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {

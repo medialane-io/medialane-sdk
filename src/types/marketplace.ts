@@ -59,6 +59,10 @@ export interface MakeOfferParams {
 
 export interface FulfillOrderParams {
   orderHash: string;
+  /** ERC-20 payment token address — the consideration token on the listing. */
+  paymentToken: string;
+  /** Total price in raw token units as a string (e.g. "1000000" for 1 USDC). */
+  totalPrice: string;
 }
 
 export interface CancelOrderParams {
