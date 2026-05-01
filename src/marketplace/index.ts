@@ -25,7 +25,7 @@ import {
   createCollection,
 } from "./orders.js";
 
-export { MedialaneError } from "./orders.js";
+export { MedialaneError } from "./errors.js";
 
 export class MarketplaceModule {
   constructor(private readonly config: ResolvedConfig) {}

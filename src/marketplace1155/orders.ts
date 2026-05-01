@@ -3,14 +3,12 @@ import {
   type Abi,
   type TypedData,
   Contract,
-  RpcProvider,
   cairo,
-  constants,
 } from "starknet";
 import { Medialane1155ABI } from "../abis.js";
 import type { ResolvedConfig } from "../config.js";
-import { SUPPORTED_TOKENS, DEFAULT_CURRENCY } from "../constants.js";
-import { MedialaneError } from "../marketplace/orders.js";
+import { DEFAULT_CURRENCY } from "../constants.js";
+import { MedialaneError } from "../marketplace/errors.js";
 import type {
   CreateListing1155Params,
   FulfillOrder1155Params,
@@ -24,28 +22,15 @@ import {
   build1155FulfillmentTypedData,
   build1155CancellationTypedData,
 } from "./signing.js";
+import {
+  toSignatureArray,
+  getChainId,
+  getProvider,
+  resolveToken,
+  START_TIME_BUFFER_SECS,
+} from "../marketplace/utils.js";
 
-function toSignatureArray(sig: unknown): string[] {
-  if (Array.isArray(sig)) return sig as string[];
-  const s = sig as { r: bigint | string; s: bigint | string };
-  return [s.r.toString(), s.s.toString()];
-}
-
-function getChainId(_config: ResolvedConfig): constants.StarknetChainId {
-  return constants.StarknetChainId.SN_MAIN;
-}
-
-const _providerCache = new WeakMap<ResolvedConfig, RpcProvider>();
 const _contractCache = new WeakMap<ResolvedConfig, Contract>();
-
-function getProvider(config: ResolvedConfig): RpcProvider {
-  let p = _providerCache.get(config);
-  if (!p) {
-    p = new RpcProvider({ nodeUrl: config.rpcUrl });
-    _providerCache.set(config, p);
-  }
-  return p;
-}
 
 function getContract(config: ResolvedConfig): Contract {
   let c = _contractCache.get(config);
@@ -59,14 +44,6 @@ function getContract(config: ResolvedConfig): Contract {
     _contractCache.set(config, c);
   }
   return c;
-}
-
-function resolveToken(currency: string) {
-  const token = SUPPORTED_TOKENS.find(
-    (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
-  );
-  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
-  return token;
 }
 
 /**
@@ -123,7 +100,7 @@ export async function createListing1155(
       end_amount: priceWei,
       recipient: account.address,
     },
-    start_time: (now + 30).toString(),
+    start_time: (now + START_TIME_BUFFER_SECS).toString(),
     end_time: endTime.toString(),
     salt,
     nonce: currentNonce.toString(),
