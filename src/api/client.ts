@@ -126,6 +126,24 @@ export class ApiClient {
     return this.request<T>(path, { method: "DELETE" });
   }
 
+  private async checkResponse<T>(
+    res: Response,
+    options?: { allow404?: boolean; allow403?: boolean }
+  ): Promise<T> {
+    if (options?.allow404 && res.status === 404) return null as T;
+    if (options?.allow403 && res.status === 403) return null as T;
+    if (!res.ok) {
+      const text = await res.text().catch(() => res.statusText);
+      let message = text;
+      try {
+        const body = JSON.parse(text) as { error?: string };
+        if (body.error) message = body.error;
+      } catch { /* use raw text */ }
+      throw new MedialaneApiError(res.status, message);
+    }
+    return res.json() as Promise<T>;
+  }
+
   // ─── Orders ────────────────────────────────────────────────────────────────
 
   getOrders(query: ApiOrdersQuery = {}): Promise<ApiResponse<ApiOrder[]>> {
@@ -422,7 +440,7 @@ export class ApiClient {
       },
       body: JSON.stringify({ contractAddress, walletAddress }),
     });
-    return res.json();
+    return this.checkResponse(res);
   }
 
   /**
@@ -445,8 +463,7 @@ export class ApiClient {
   async getCollectionProfile(contractAddress: string): Promise<ApiCollectionProfile | null> {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
-    if (res.status === 404) return null;
-    return res.json();
+    return this.checkResponse<ApiCollectionProfile>(res, { allow404: true });
   }
 
   /**
@@ -467,7 +484,7 @@ export class ApiClient {
       },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return this.checkResponse<ApiCollectionProfile>(res);
   }
 
   async getGatedContent(
@@ -478,8 +495,7 @@ export class ApiClient {
     const res = await fetch(url, {
       headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` },
     });
-    if (res.status === 403 || res.status === 404) return null;
-    return res.json();
+    return this.checkResponse<{ title: string; url: string; type: string }>(res, { allow404: true, allow403: true });
   }
 
   // ─── Creator Profiles ───────────────────────────────────────────────────────
@@ -492,22 +508,20 @@ export class ApiClient {
     if (opts.limit) params.set("limit", String(opts.limit));
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators?${params}`;
     const res = await fetch(url, { headers: this.baseHeaders });
-    return res.json();
+    return this.checkResponse<ApiCreatorListResult>(res);
   }
 
   async getCreatorProfile(walletAddress: string): Promise<ApiCreatorProfile | null> {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
-    if (res.status === 404) return null;
-    return res.json();
+    return this.checkResponse<ApiCreatorProfile>(res, { allow404: true });
   }
 
   /** Resolve a username slug to a creator profile (public). */
   async getCreatorByUsername(username: string): Promise<ApiCreatorProfile | null> {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/by-username/${encodeURIComponent(username.toLowerCase().trim())}`;
     const res = await fetch(url, { headers: this.baseHeaders });
-    if (res.status === 404) return null;
-    return res.json();
+    return this.checkResponse<ApiCreatorProfile>(res, { allow404: true });
   }
 
   /**
@@ -528,7 +542,7 @@ export class ApiClient {
       },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return this.checkResponse<ApiCreatorProfile>(res);
   }
 
   // ─── User Wallet ─────────────────────────────────────────────────────────────
@@ -547,7 +561,7 @@ export class ApiClient {
         "Authorization": `Bearer ${clerkToken}`,
       },
     });
-    return res.json();
+    return this.checkResponse<ApiUserWallet>(res);
   }
 
   /**
@@ -560,8 +574,7 @@ export class ApiClient {
     const res = await fetch(url, {
       headers: { "Authorization": `Bearer ${clerkToken}` },
     });
-    if (res.status === 404) return null;
-    return res.json();
+    return this.checkResponse<ApiUserWallet>(res, { allow404: true });
   }
 
   // ─── Remix Licensing ─────────────────────────────────────────────────────────
@@ -641,7 +654,7 @@ export class ApiClient {
     const res = await fetch(url, {
       headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` },
     });
-    return res.json();
+    return this.checkResponse<ApiResponse<ApiRemixOffer[]>>(res);
   }
 
   /**
@@ -652,7 +665,7 @@ export class ApiClient {
     const headers: Record<string, string> = { ...this.baseHeaders };
     if (clerkToken) headers["Authorization"] = `Bearer ${clerkToken}`;
     const res = await fetch(url, { headers });
-    return res.json();
+    return this.checkResponse<ApiResponse<ApiRemixOffer>>(res);
   }
 
   /**
