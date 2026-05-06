@@ -11,6 +11,7 @@ import type {
   ApiCreatorProfile,
   ApiCreatorListResult,
   ApiCollectionClaim,
+  ApiCollectionSlugClaim,
   ApiUserWallet,
   ApiActivity,
   ApiActivitiesQuery,
@@ -543,6 +544,51 @@ export class ApiClient {
       body: JSON.stringify(data),
     });
     return this.checkResponse<ApiCreatorProfile>(res);
+  }
+
+  // ─── Collection Slug Claims ───────────────────────────────────────────────────
+
+  /** Check if a collection slug is available (public, no auth). */
+  async checkCollectionSlugAvailability(slug: string): Promise<{ available: boolean; reason?: string }> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collection-slug-claims/check/${encodeURIComponent(slug.toLowerCase().trim())}`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    return this.checkResponse<{ available: boolean; reason?: string }>(res);
+  }
+
+  /** Submit a slug claim for a collection. Requires Clerk JWT — caller must be the collection owner. */
+  async submitCollectionSlugClaim(
+    contractAddress: string,
+    slug: string,
+    clerkToken: string,
+    notifyEmail?: string
+  ): Promise<{ claim: ApiCollectionSlugClaim }> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collection-slug-claims`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${clerkToken}`,
+      },
+      body: JSON.stringify({ contractAddress, slug, notifyEmail }),
+    });
+    return this.checkResponse<{ claim: ApiCollectionSlugClaim }>(res);
+  }
+
+  /** Returns all slug claims submitted by the authenticated wallet. Requires Clerk JWT. */
+  async getMyCollectionSlugClaims(clerkToken: string): Promise<{ claims: ApiCollectionSlugClaim[] }> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collection-slug-claims/me`;
+    const res = await fetch(url, {
+      headers: { ...this.baseHeaders, Authorization: `Bearer ${clerkToken}` },
+    });
+    return this.checkResponse<{ claims: ApiCollectionSlugClaim[] }>(res);
+  }
+
+  /** Resolve a collection slug to a full collection. Returns null if not found. */
+  async getCollectionBySlug(slug: string): Promise<ApiCollection | null> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/by-slug/${encodeURIComponent(slug.toLowerCase().trim())}`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    return this.checkResponse<ApiCollection>(res, { allow404: true });
   }
 
   // ─── User Wallet ─────────────────────────────────────────────────────────────

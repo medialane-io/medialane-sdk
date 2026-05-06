@@ -618,7 +618,22 @@ export interface ApiCollectionProfile {
   telegramUrl: string | null;
   hasGatedContent: boolean;
   gatedContentTitle: string | null;
+  slug: string | null;
   updatedBy: string | null;
+  updatedAt: string;
+}
+
+export interface ApiCollectionSlugClaim {
+  id: string;
+  slug: string;
+  contractAddress: string;
+  chain: string;
+  walletAddress: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  adminNotes: string | null;
+  notifyEmail: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
