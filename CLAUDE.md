@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -212,6 +212,23 @@ client.api.updateCreatorProfile(walletAddress, data, clerkToken)
 // → ApiCreatorProfile
 ```
 
+**Collection Slug Claims (v0.10.0)**
+```ts
+client.api.checkCollectionSlugAvailability(slug)
+// → { available: boolean; reason?: string } — public, no auth
+
+client.api.submitCollectionSlugClaim(contractAddress, slug, clerkToken, notifyEmail?)
+// Requires Clerk JWT — caller must be the collection owner (owner or claimedBy)
+// → { claim: ApiCollectionSlugClaim }
+
+client.api.getMyCollectionSlugClaims(clerkToken)
+// Requires Clerk JWT — returns all claims submitted by the authenticated wallet
+// → { claims: ApiCollectionSlugClaim[] }
+
+client.api.getCollectionBySlug(slug)
+// → ApiCollection | null — resolves vanity slug to full collection
+```
+
 **Collection Drop (v0.6.1)**
 ```ts
 client.api.getDropCollections(opts?)             // { page?, limit?, sort? } → ApiCollection[]
@@ -364,6 +381,14 @@ DEFAULT_RPC_URLS = {
 - `client.api.getDropCollections(opts?)` and `client.api.getDropMintStatus(collection, wallet)`
 - `DropCollectionABI` and `DropFactoryABI` exported
 - `DROP_FACTORY_CONTRACT_MAINNET` and `DROP_COLLECTION_CLASS_HASH_MAINNET` constants exported
+
+**v0.10.0 — Collection slug claims:**
+- `ApiCollectionProfile.slug: string | null` — approved vanity slug set by admin on claim approval
+- `ApiCollectionSlugClaim` type: `{ id, slug, contractAddress, chain, walletAddress, status: "PENDING"|"APPROVED"|"REJECTED", adminNotes, notifyEmail, reviewedAt, createdAt, updatedAt }`
+- `client.api.checkCollectionSlugAvailability(slug)` — public check → `{ available: boolean; reason?: string }`
+- `client.api.submitCollectionSlugClaim(contractAddress, slug, clerkToken, notifyEmail?)` — owner-only submit → `{ claim: ApiCollectionSlugClaim }`
+- `client.api.getMyCollectionSlugClaims(clerkToken)` — list caller's claims → `{ claims: ApiCollectionSlugClaim[] }`
+- `client.api.getCollectionBySlug(slug)` — resolve vanity slug to full collection → `ApiCollection | null`
 
 **v0.5.7 — Gated content fields:**
 - `ApiCollectionProfile.hasGatedContent: boolean` — whether collection has gated content configured
