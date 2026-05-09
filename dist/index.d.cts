@@ -199,6 +199,10 @@ interface MakeOfferParams {
 }
 interface FulfillOrderParams {
     orderHash: string;
+    /** ERC-20 payment token address — the consideration token on the listing. */
+    paymentToken: string;
+    /** Total price in raw token units as a string (e.g. "1000000" for 1 USDC). */
+    totalPrice: string;
 }
 interface CancelOrderParams {
     orderHash: string;
@@ -211,6 +215,8 @@ interface CartItem {
     considerationAmount: string;
     /** Human-readable identifier for the NFT (for logging) */
     offerIdentifier?: string;
+    /** ERC-1155 only: number of units to purchase per item (defaults to "1") */
+    quantity?: string;
 }
 interface MintParams {
     collectionId: string;
@@ -228,6 +234,15 @@ interface CreateCollectionParams {
 }
 interface TxResult {
     txHash: string;
+}
+interface OrderDetails {
+    offerer: string;
+    offer: OfferItem;
+    consideration: ConsiderationItem;
+    start_time: bigint;
+    end_time: bigint;
+    order_status: string;
+    fulfiller: string | null;
 }
 interface CreateListing1155Params {
     /** ERC-1155 contract address */
@@ -257,6 +272,20 @@ interface CancelOrder1155Params {
     /** On-chain order hash */
     orderHash: string;
 }
+interface MakeOffer1155Params {
+    /** ERC-1155 contract address */
+    nftContract: string;
+    /** Token type ID */
+    tokenId: string;
+    /** Number of tokens requested */
+    amount: string;
+    /** Total offer price in human-readable units (e.g. "1.5") */
+    price: string;
+    /** Currency symbol or token address. Defaults to "USDC". */
+    currency?: string;
+    /** How long the offer is valid, in seconds */
+    durationSeconds: number;
+}
 
 type MedialaneErrorCode = "TOKEN_NOT_FOUND" | "COLLECTION_NOT_FOUND" | "ORDER_NOT_FOUND" | "INTENT_NOT_FOUND" | "INTENT_EXPIRED" | "RATE_LIMITED" | "NETWORK_NOT_SUPPORTED" | "APPROVAL_FAILED" | "TRANSACTION_FAILED" | "INVALID_PARAMS" | "UNAUTHORIZED" | "UNKNOWN";
 
@@ -276,6 +305,8 @@ declare class MarketplaceModule {
     checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult>;
     mint(account: AccountInterface, params: MintParams): Promise<TxResult>;
     createCollection(account: AccountInterface, params: CreateCollectionParams): Promise<TxResult>;
+    getOrderDetails(orderHash: string): Promise<OrderDetails>;
+    getNonce(address: string): Promise<bigint>;
     buildListingTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
     buildFulfillmentTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
     buildCancellationTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
@@ -290,6 +321,11 @@ declare class Medialane1155Module {
      */
     createListing(account: AccountInterface, params: CreateListing1155Params): Promise<TxResult>;
     /**
+     * Make an offer (bid) on an ERC-1155 token.
+     * Approves the ERC-20 spend then calls `register_order` atomically.
+     */
+    makeOffer(account: AccountInterface, params: MakeOffer1155Params): Promise<TxResult>;
+    /**
      * Fulfill (buy) an ERC-1155 listing.
      * Approves the payment token then calls `fulfill_order` atomically.
      */
@@ -298,6 +334,13 @@ declare class Medialane1155Module {
      * Cancel an ERC-1155 listing (offerer only).
      */
     cancelOrder(account: AccountInterface, params: CancelOrder1155Params): Promise<TxResult>;
+    /**
+     * Checkout a cart of ERC-1155 orders atomically.
+     * Signs one fulfillment per item (with quantity), sums ERC-20 approvals by token.
+     */
+    checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult>;
+    getOrderDetails(orderHash: string): Promise<OrderDetails>;
+    getNonce(address: string): Promise<bigint>;
     buildListingTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
     buildFulfillmentTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
     buildCancellationTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
@@ -316,7 +359,7 @@ interface ApiCollectionsQuery {
 }
 type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED" | "COUNTER_OFFERED";
 type SortOrder = "price_asc" | "price_desc" | "recent";
-type ActivityType = "transfer" | "sale" | "listing" | "offer" | "cancelled";
+type ActivityType = "mint" | "transfer" | "sale" | "listing" | "offer" | "cancelled";
 type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION" | "COUNTER_OFFER";
 type IntentStatus = "PENDING" | "SIGNED" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANCELLED" | "TRANSFER";
@@ -510,14 +553,23 @@ interface ApiActivity {
     from?: string;
     to?: string;
     blockNumber?: string;
+    /** ERC-1155 quantity (transfer/mint rows). "1" for ERC-721. */
+    amount?: string;
     orderHash?: string;
     nftContract?: string;
     nftTokenId?: string;
     offerer?: string;
     fulfiller?: string | null;
     price?: ApiActivityPrice;
+    /** Token standard — present on order rows. */
+    tokenStandard?: "ERC721" | "ERC1155";
     txHash: string | null;
     timestamp: string;
+    /** Batch-enriched token metadata — avoids per-row fetches. */
+    token?: {
+        name: string | null;
+        image: string | null;
+    } | null;
 }
 interface ApiActivitiesQuery {
     type?: ActivityType;
@@ -654,7 +706,7 @@ interface CreateCounterOfferIntentParams {
     /** Order hash of the original buyer bid being countered. */
     originalOrderHash: string;
     /** Counter price as a raw wei integer string (not human-readable). */
-    counterPrice: string;
+    priceRaw: string;
     /** Duration in seconds the counter-offer will be valid (3600–2592000). */
     durationSeconds: number;
     /** Optional message from the seller to the buyer. Max 500 chars. */
@@ -813,7 +865,21 @@ interface ApiCollectionProfile {
     telegramUrl: string | null;
     hasGatedContent: boolean;
     gatedContentTitle: string | null;
+    slug: string | null;
     updatedBy: string | null;
+    updatedAt: string;
+}
+interface ApiCollectionSlugClaim {
+    id: string;
+    slug: string;
+    contractAddress: string;
+    chain: string;
+    walletAddress: string;
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    adminNotes: string | null;
+    notifyEmail: string | null;
+    reviewedAt: string | null;
+    createdAt: string;
     updatedAt: string;
 }
 interface ApiCreatorProfile {
@@ -885,6 +951,7 @@ declare class ApiClient {
     private post;
     private patch;
     private del;
+    private checkResponse;
     getOrders(query?: ApiOrdersQuery): Promise<ApiResponse<ApiOrder[]>>;
     getOrder(orderHash: string): Promise<ApiResponse<ApiOrder>>;
     getActiveOrdersForToken(contract: string, tokenId: string): Promise<ApiResponse<ApiOrder[]>>;
@@ -986,6 +1053,21 @@ declare class ApiClient {
      * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
      */
     updateCreatorProfile(walletAddress: string, data: Partial<Omit<ApiCreatorProfile, "walletAddress" | "chain" | "updatedAt">>, clerkToken: string): Promise<ApiCreatorProfile>;
+    /** Check if a collection slug is available (public, no auth). */
+    checkCollectionSlugAvailability(slug: string): Promise<{
+        available: boolean;
+        reason?: string;
+    }>;
+    /** Submit a slug claim for a collection. Requires Clerk JWT — caller must be the collection owner. */
+    submitCollectionSlugClaim(contractAddress: string, slug: string, clerkToken: string, notifyEmail?: string): Promise<{
+        claim: ApiCollectionSlugClaim;
+    }>;
+    /** Returns all slug claims submitted by the authenticated wallet. Requires Clerk JWT. */
+    getMyCollectionSlugClaims(clerkToken: string): Promise<{
+        claims: ApiCollectionSlugClaim[];
+    }>;
+    /** Resolve a collection slug to a full collection. Returns null if not found. */
+    getCollectionBySlug(slug: string): Promise<ApiCollection | null>;
     /**
      * Upsert the authenticated user's wallet address in the backend DB.
      * Call after onboarding when ChipiPay confirms the wallet address.
@@ -1153,6 +1235,99 @@ declare class DropService {
     createDrop(account: AccountInterface, params: CreateDropParams): Promise<TxResult>;
 }
 
+interface DeployCollectionParams {
+    /** Human-readable collection name (e.g. "My IP Collection") */
+    name: string;
+    /** Short ticker symbol (e.g. "MIP") */
+    symbol: string;
+    /**
+     * Collection-level metadata URI (e.g. "ipfs://Qm…/collection.json").
+     * Should point to a JSON containing `name`, `description`, `image`, and `external_link`.
+     * Stored on-chain at deploy time. Pass an empty string if not available.
+     */
+    baseUri: string;
+}
+interface MintItemParams {
+    /** ERC-1155 collection contract address */
+    collection: string;
+    /** Recipient wallet address */
+    to: string;
+    /** Token ID (u256 — use a numeric string or bigint) */
+    tokenId: bigint | string;
+    /** Number of copies to mint */
+    value: bigint | string;
+    /**
+     * Metadata URI — must start with `ipfs://` or `ar://`.
+     * Immutable: validated and stored on first mint of each token_id.
+     */
+    tokenUri: string;
+}
+interface BatchMintItemParams {
+    /** ERC-1155 collection contract address */
+    collection: string;
+    /** Recipient wallet address */
+    to: string;
+    items: Array<{
+        tokenId: bigint | string;
+        value: bigint | string;
+        tokenUri: string;
+    }>;
+}
+declare class ERC1155CollectionService {
+    private readonly factoryAddress;
+    constructor(config: ResolvedConfig);
+    private _factory;
+    private _collection;
+    /**
+     * Deploy a new ERC-1155 IP collection.
+     * Caller becomes the collection owner and can mint items.
+     * Returns the transaction hash; the deployed collection address is emitted
+     * in the `CollectionDeployed` event of the factory.
+     */
+    deployCollection(account: AccountInterface, params: DeployCollectionParams): Promise<TxResult>;
+    /**
+     * Mint a single token into an existing ERC-1155 collection.
+     * Caller must be the collection owner.
+     * The `tokenUri` is immutable — validated and stored on the first mint only.
+     */
+    mintItem(account: AccountInterface, params: MintItemParams): Promise<TxResult>;
+    /**
+     * Batch-mint multiple token IDs into an existing ERC-1155 collection.
+     * All items go to the same `to` address.
+     * Caller must be the collection owner.
+     */
+    batchMintItem(account: AccountInterface, params: BatchMintItemParams): Promise<TxResult>;
+    /**
+     * Set the default ERC-2981 royalty for the entire collection.
+     * `feeNumerator` is out of 10 000 (e.g. 500 = 5%).
+     * Caller must be the collection owner.
+     */
+    setDefaultRoyalty(account: AccountInterface, params: {
+        collection: string;
+        receiver: string;
+        feeNumerator: number;
+    }): Promise<TxResult>;
+    /**
+     * Set a per-token ERC-2981 royalty override.
+     * `feeNumerator` is out of 10 000. Caller must be the collection owner.
+     */
+    setTokenRoyalty(account: AccountInterface, params: {
+        collection: string;
+        tokenId: bigint | string;
+        receiver: string;
+        feeNumerator: number;
+    }): Promise<TxResult>;
+    /**
+     * Approve the Medialane1155 marketplace (or any operator) to transfer
+     * all tokens on behalf of `account`. Required before listing.
+     */
+    setApprovalForAll(account: AccountInterface, params: {
+        collection: string;
+        operator: string;
+        approved: boolean;
+    }): Promise<TxResult>;
+}
+
 declare class MedialaneClient {
     /** On-chain marketplace interactions for ERC-721 assets (create listing, fulfill order, etc.) */
     readonly marketplace: MarketplaceModule;
@@ -1166,6 +1341,7 @@ declare class MedialaneClient {
     readonly services: {
         readonly pop: PopService;
         readonly drop: DropService;
+        readonly erc1155Collection: ERC1155CollectionService;
     };
     private readonly config;
     constructor(rawConfig?: MedialaneConfig);
@@ -2755,99 +2931,6 @@ declare const IPCollection1155ABI: readonly [{
     readonly state_mutability: "external";
 }];
 
-interface DeployCollectionParams {
-    /** Human-readable collection name (e.g. "My IP Collection") */
-    name: string;
-    /** Short ticker symbol (e.g. "MIP") */
-    symbol: string;
-    /**
-     * Collection-level metadata URI (e.g. "ipfs://Qm…/collection.json").
-     * Should point to a JSON containing `name`, `description`, `image`, and `external_link`.
-     * Stored on-chain at deploy time. Pass an empty string if not available.
-     */
-    baseUri: string;
-}
-interface MintItemParams {
-    /** ERC-1155 collection contract address */
-    collection: string;
-    /** Recipient wallet address */
-    to: string;
-    /** Token ID (u256 — use a numeric string or bigint) */
-    tokenId: bigint | string;
-    /** Number of copies to mint */
-    value: bigint | string;
-    /**
-     * Metadata URI — must start with `ipfs://` or `ar://`.
-     * Immutable: validated and stored on first mint of each token_id.
-     */
-    tokenUri: string;
-}
-interface BatchMintItemParams {
-    /** ERC-1155 collection contract address */
-    collection: string;
-    /** Recipient wallet address */
-    to: string;
-    items: Array<{
-        tokenId: bigint | string;
-        value: bigint | string;
-        tokenUri: string;
-    }>;
-}
-declare class ERC1155CollectionService {
-    private readonly factoryAddress;
-    constructor(config: ResolvedConfig);
-    private _factory;
-    private _collection;
-    /**
-     * Deploy a new ERC-1155 IP collection.
-     * Caller becomes the collection owner and can mint items.
-     * Returns the transaction hash; the deployed collection address is emitted
-     * in the `CollectionDeployed` event of the factory.
-     */
-    deployCollection(account: AccountInterface, params: DeployCollectionParams): Promise<TxResult>;
-    /**
-     * Mint a single token into an existing ERC-1155 collection.
-     * Caller must be the collection owner.
-     * The `tokenUri` is immutable — validated and stored on the first mint only.
-     */
-    mintItem(account: AccountInterface, params: MintItemParams): Promise<TxResult>;
-    /**
-     * Batch-mint multiple token IDs into an existing ERC-1155 collection.
-     * All items go to the same `to` address.
-     * Caller must be the collection owner.
-     */
-    batchMintItem(account: AccountInterface, params: BatchMintItemParams): Promise<TxResult>;
-    /**
-     * Set the default ERC-2981 royalty for the entire collection.
-     * `feeNumerator` is out of 10 000 (e.g. 500 = 5%).
-     * Caller must be the collection owner.
-     */
-    setDefaultRoyalty(account: AccountInterface, params: {
-        collection: string;
-        receiver: string;
-        feeNumerator: number;
-    }): Promise<TxResult>;
-    /**
-     * Set a per-token ERC-2981 royalty override.
-     * `feeNumerator` is out of 10 000. Caller must be the collection owner.
-     */
-    setTokenRoyalty(account: AccountInterface, params: {
-        collection: string;
-        tokenId: bigint | string;
-        receiver: string;
-        feeNumerator: number;
-    }): Promise<TxResult>;
-    /**
-     * Approve the Medialane1155 marketplace (or any operator) to transfer
-     * all tokens on behalf of `account`. Required before listing.
-     */
-    setApprovalForAll(account: AccountInterface, params: {
-        collection: string;
-        operator: string;
-        approved: boolean;
-    }): Promise<TxResult>;
-}
-
 /**
  * Normalize a Starknet address to a 0x-prefixed 64-character hex string.
  */
@@ -2895,6 +2978,18 @@ declare function stringifyBigInts(obj: unknown): unknown;
 declare function u256ToBigInt(low: string, high: string): bigint;
 
 /**
+ * Serialize a string as Cairo ByteArray calldata felts using UTF-8 encoding.
+ *
+ * starknet.js byteArray.byteArrayFromString calls encodeShortString internally
+ * which rejects non-ASCII characters (accented letters, CJK, Arabic, etc.).
+ * This implementation packs raw UTF-8 bytes into 31-byte chunks as big-endian
+ * felts, matching the Cairo ByteArray struct layout.
+ *
+ * Return layout: [chunks_len, ...chunk_felts, pending_word, pending_word_len]
+ */
+declare function encodeByteArray(str: string): string[];
+
+/**
  * Build SNIP-12 typed data for signing an OrderParameters struct.
  * Uses TypedDataRevision.ACTIVE and ContractAddress / shortstring SNIP-12 types.
  */
@@ -2926,4 +3021,4 @@ declare function build1155FulfillmentTypedData(message: Record<string, unknown>,
  */
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_CONTRACT_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type CollectionSource, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, INDEXER_START_BLOCK_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MARKETPLACE_CLASS_HASH_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MARKETPLACE_START_BLOCK_MAINNET, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_CONTRACT_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type CollectionSource, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, INDEXER_START_BLOCK_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPMarketplaceABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MARKETPLACE_CLASS_HASH_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MARKETPLACE_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TypedDataRevision, Contract, shortString, cairo, constants, RpcProvider, byteArray, num } from 'starknet';
+import { TypedDataRevision, num, Contract, shortString, cairo, constants, RpcProvider } from 'starknet';
 
 // src/config.ts
 
@@ -191,6 +191,30 @@ function buildCancellationTypedData(message, chainId) {
     },
     message
   };
+}
+function encodeByteArray(str) {
+  const bytes = new TextEncoder().encode(str);
+  const fullChunks = [];
+  let i = 0;
+  while (i + 31 <= bytes.length) {
+    let val = 0n;
+    for (const b of bytes.slice(i, i + 31)) {
+      val = val << 8n | BigInt(b);
+    }
+    fullChunks.push(num.toHex(val));
+    i += 31;
+  }
+  const remaining = bytes.slice(i);
+  let pendingVal = 0n;
+  for (const b of remaining) {
+    pendingVal = pendingVal << 8n | BigInt(b);
+  }
+  return [
+    fullChunks.length.toString(),
+    ...fullChunks,
+    num.toHex(pendingVal),
+    remaining.length.toString()
+  ];
 }
 
 // src/abis.ts
@@ -1677,7 +1701,7 @@ function getListableTokens() {
   return SUPPORTED_TOKENS.filter((t) => t.listable);
 }
 
-// src/marketplace/orders.ts
+// src/marketplace/errors.ts
 var MedialaneError = class extends Error {
   constructor(message, code = "UNKNOWN", cause) {
     super(message);
@@ -1686,6 +1710,7 @@ var MedialaneError = class extends Error {
     this.name = "MedialaneError";
   }
 };
+var START_TIME_BUFFER_SECS = 30;
 function toSignatureArray(sig) {
   if (Array.isArray(sig)) return sig;
   const s = sig;
@@ -1694,29 +1719,6 @@ function toSignatureArray(sig) {
 function getChainId(_config) {
   return constants.StarknetChainId.SN_MAIN;
 }
-var _contractCache = /* @__PURE__ */ new WeakMap();
-var _providerCache = /* @__PURE__ */ new WeakMap();
-function getProvider(config) {
-  let provider = _providerCache.get(config);
-  if (!provider) {
-    provider = new RpcProvider({ nodeUrl: config.rpcUrl });
-    _providerCache.set(config, provider);
-  }
-  return provider;
-}
-function makeContract(config) {
-  const cached = _contractCache.get(config);
-  if (cached) return cached;
-  const provider = getProvider(config);
-  const contract = new Contract(
-    IPMarketplaceABI,
-    config.marketplaceContract,
-    provider
-  );
-  const result = { contract, provider };
-  _contractCache.set(config, result);
-  return result;
-}
 function resolveToken(currency) {
   const token = SUPPORTED_TOKENS.find(
     (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
@@ -1724,13 +1726,37 @@ function resolveToken(currency) {
   if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
   return token;
 }
+var _providerCache = /* @__PURE__ */ new WeakMap();
+function getProvider(config) {
+  let p = _providerCache.get(config);
+  if (!p) {
+    p = new RpcProvider({ nodeUrl: config.rpcUrl });
+    _providerCache.set(config, p);
+  }
+  return p;
+}
+
+// src/marketplace/orders.ts
+var _contractCache = /* @__PURE__ */ new WeakMap();
+function makeContract(config) {
+  const cached = _contractCache.get(config);
+  const provider = getProvider(config);
+  if (cached) return { ...cached, provider };
+  const contract = new Contract(
+    IPMarketplaceABI,
+    config.marketplaceContract,
+    provider
+  );
+  _contractCache.set(config, { contract });
+  return { contract, provider };
+}
 async function createListing(account, params, config) {
   const { nftContract, tokenId, price, currency = DEFAULT_CURRENCY, durationSeconds } = params;
   const { contract, provider } = makeContract(config);
   const token = resolveToken(currency);
   const priceWei = parseAmount(price, token.decimals);
   const now = Math.floor(Date.now() / 1e3);
-  const startTime = now + 300;
+  const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
   const saltBytes = new Uint8Array(4);
   crypto.getRandomValues(saltBytes);
@@ -1814,7 +1840,7 @@ async function makeOffer(account, params, config) {
   const token = resolveToken(currency);
   const priceWei = parseAmount(price, token.decimals);
   const now = Math.floor(Date.now() / 1e3);
-  const startTime = now + 300;
+  const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
   const saltBytes = new Uint8Array(4);
   crypto.getRandomValues(saltBytes);
@@ -1880,7 +1906,7 @@ async function makeOffer(account, params, config) {
   }
 }
 async function fulfillOrder(account, params, config) {
-  const { orderHash } = params;
+  const { orderHash, paymentToken, totalPrice } = params;
   const { contract, provider } = makeContract(config);
   const currentNonce = await contract.nonces(account.address);
   const chainId = getChainId();
@@ -1898,9 +1924,19 @@ async function fulfillOrder(account, params, config) {
     fulfillment: fulfillmentParams,
     signature: signatureArray
   });
-  const call = contract.populate("fulfill_order", [fulfillPayload]);
+  const totalPriceU256 = cairo.uint256(totalPrice);
+  const approveCall = {
+    contractAddress: paymentToken,
+    entrypoint: "approve",
+    calldata: [
+      config.marketplaceContract,
+      totalPriceU256.low.toString(),
+      totalPriceU256.high.toString()
+    ]
+  };
+  const fulfillCall = contract.populate("fulfill_order", [fulfillPayload]);
   try {
-    const tx = await account.execute(call);
+    const tx = await account.execute([approveCall, fulfillCall]);
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
@@ -1934,15 +1970,6 @@ async function cancelOrder(account, params, config) {
   } catch (err) {
     throw new MedialaneError("Failed to cancel order", "TRANSACTION_FAILED", err);
   }
-}
-function encodeByteArray(str) {
-  const ba = byteArray.byteArrayFromString(str);
-  return [
-    ba.data.length.toString(),
-    ...ba.data.map((d) => num.toHex(d)),
-    num.toHex(ba.pending_word),
-    ba.pending_word_len.toString()
-  ];
 }
 async function mint(account, params, config) {
   const { collectionId, recipient, tokenUri, collectionContract } = params;
@@ -2026,6 +2053,14 @@ async function checkoutCart(account, items, config) {
     throw new MedialaneError("Cart checkout failed", "TRANSACTION_FAILED", err);
   }
 }
+async function getOrderDetails(orderHash, config) {
+  const { contract } = makeContract(config);
+  return contract.get_order_details(orderHash);
+}
+async function getNonce(address, config) {
+  const { contract } = makeContract(config);
+  return BigInt((await contract.nonces(address)).toString());
+}
 
 // src/marketplace/index.ts
 var MarketplaceModule = class {
@@ -2053,6 +2088,13 @@ var MarketplaceModule = class {
   }
   createCollection(account, params) {
     return createCollection(account, params, this.config);
+  }
+  // ─── View calls ───────────────────────────────────────────────────────────
+  getOrderDetails(orderHash) {
+    return getOrderDetails(orderHash, this.config);
+  }
+  getNonce(address) {
+    return getNonce(address, this.config);
   }
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
   buildListingTypedData(params, chainId) {
@@ -2144,28 +2186,11 @@ function build1155CancellationTypedData(message, chainId) {
     message
   };
 }
-function toSignatureArray2(sig) {
-  if (Array.isArray(sig)) return sig;
-  const s = sig;
-  return [s.r.toString(), s.s.toString()];
-}
-function getChainId2(_config) {
-  return constants.StarknetChainId.SN_MAIN;
-}
-var _providerCache2 = /* @__PURE__ */ new WeakMap();
 var _contractCache2 = /* @__PURE__ */ new WeakMap();
-function getProvider2(config) {
-  let p = _providerCache2.get(config);
-  if (!p) {
-    p = new RpcProvider({ nodeUrl: config.rpcUrl });
-    _providerCache2.set(config, p);
-  }
-  return p;
-}
 function getContract(config) {
   let c = _contractCache2.get(config);
   if (!c) {
-    const provider = getProvider2(config);
+    const provider = getProvider(config);
     c = new Contract(
       Medialane1155ABI,
       config.marketplace1155Contract,
@@ -2174,13 +2199,6 @@ function getContract(config) {
     _contractCache2.set(config, c);
   }
   return c;
-}
-function resolveToken2(currency) {
-  const token = SUPPORTED_TOKENS.find(
-    (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
-  );
-  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
-  return token;
 }
 async function createListing1155(account, params, config) {
   const {
@@ -2192,8 +2210,8 @@ async function createListing1155(account, params, config) {
     durationSeconds
   } = params;
   const contract = getContract(config);
-  const provider = getProvider2(config);
-  const token = resolveToken2(currency);
+  const provider = getProvider(config);
+  const token = resolveToken(currency);
   const priceWei = parseAmount(pricePerUnit, token.decimals);
   const now = Math.floor(Date.now() / 1e3);
   const endTime = now + durationSeconds;
@@ -2201,7 +2219,7 @@ async function createListing1155(account, params, config) {
   crypto.getRandomValues(saltBytes);
   const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
   const currentNonce = await contract.nonces(account.address);
-  const chainId = getChainId2();
+  const chainId = getChainId();
   const orderParams = {
     offerer: account.address,
     offer: {
@@ -2219,7 +2237,7 @@ async function createListing1155(account, params, config) {
       end_amount: priceWei,
       recipient: account.address
     },
-    start_time: now.toString(),
+    start_time: (now + START_TIME_BUFFER_SECS).toString(),
     end_time: endTime.toString(),
     salt,
     nonce: currentNonce.toString()
@@ -2228,9 +2246,19 @@ async function createListing1155(account, params, config) {
     build1155OrderTypedData(orderParams, chainId)
   );
   const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray2(signature);
+  const signatureArray = toSignatureArray(signature);
   const orderPayload = stringifyBigInts({
-    parameters: orderParams,
+    parameters: {
+      ...orderParams,
+      offer: {
+        ...orderParams.offer,
+        item_type: shortString.encodeShortString(orderParams.offer.item_type)
+      },
+      consideration: {
+        ...orderParams.consideration,
+        item_type: shortString.encodeShortString(orderParams.consideration.item_type)
+      }
+    },
     signature: signatureArray
   });
   let isApproved = false;
@@ -2263,8 +2291,8 @@ async function createListing1155(account, params, config) {
 async function fulfillOrder1155(account, params, config) {
   const { orderHash, paymentToken, totalPrice, quantity = "1" } = params;
   const contract = getContract(config);
-  const provider = getProvider2(config);
-  const chainId = getChainId2();
+  const provider = getProvider(config);
+  const chainId = getChainId();
   const currentNonce = await contract.nonces(account.address);
   const fulfillmentParams = {
     order_hash: orderHash,
@@ -2276,7 +2304,7 @@ async function fulfillOrder1155(account, params, config) {
     build1155FulfillmentTypedData(fulfillmentParams, chainId)
   );
   const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray2(signature);
+  const signatureArray = toSignatureArray(signature);
   const fulfillPayload = stringifyBigInts({
     fulfillment: fulfillmentParams,
     signature: signatureArray
@@ -2303,8 +2331,8 @@ async function fulfillOrder1155(account, params, config) {
 async function cancelOrder1155(account, params, config) {
   const { orderHash } = params;
   const contract = getContract(config);
-  const provider = getProvider2(config);
-  const chainId = getChainId2();
+  const provider = getProvider(config);
+  const chainId = getChainId();
   const currentNonce = await contract.nonces(account.address);
   const cancelParams = {
     order_hash: orderHash,
@@ -2315,7 +2343,7 @@ async function cancelOrder1155(account, params, config) {
     build1155CancellationTypedData(cancelParams, chainId)
   );
   const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray2(signature);
+  const signatureArray = toSignatureArray(signature);
   const cancelPayload = stringifyBigInts({
     cancelation: cancelParams,
     signature: signatureArray
@@ -2328,6 +2356,148 @@ async function cancelOrder1155(account, params, config) {
   } catch (err) {
     throw new MedialaneError("Failed to cancel ERC-1155 order", "TRANSACTION_FAILED", err);
   }
+}
+async function makeOffer1155(account, params, config) {
+  const {
+    nftContract,
+    tokenId,
+    amount,
+    price,
+    currency = DEFAULT_CURRENCY,
+    durationSeconds
+  } = params;
+  const contract = getContract(config);
+  const provider = getProvider(config);
+  const chainId = getChainId();
+  const token = resolveToken(currency);
+  const priceWei = parseAmount(price, token.decimals);
+  const now = Math.floor(Date.now() / 1e3);
+  const endTime = now + durationSeconds;
+  const saltBytes = new Uint8Array(4);
+  crypto.getRandomValues(saltBytes);
+  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
+  const currentNonce = await contract.nonces(account.address);
+  const orderParams = {
+    offerer: account.address,
+    offer: {
+      item_type: "ERC20",
+      token: token.address,
+      identifier_or_criteria: "0",
+      start_amount: priceWei,
+      end_amount: priceWei
+    },
+    consideration: {
+      item_type: "ERC1155",
+      token: nftContract,
+      identifier_or_criteria: tokenId,
+      start_amount: amount,
+      end_amount: amount,
+      recipient: account.address
+    },
+    start_time: (now + START_TIME_BUFFER_SECS).toString(),
+    end_time: endTime.toString(),
+    salt,
+    nonce: currentNonce.toString()
+  };
+  const typedData = stringifyBigInts(
+    build1155OrderTypedData(orderParams, chainId)
+  );
+  const signature = await account.signMessage(typedData);
+  const signatureArray = toSignatureArray(signature);
+  const registerPayload = stringifyBigInts({
+    parameters: {
+      ...orderParams,
+      offer: {
+        ...orderParams.offer,
+        item_type: shortString.encodeShortString(orderParams.offer.item_type)
+      },
+      consideration: {
+        ...orderParams.consideration,
+        item_type: shortString.encodeShortString(orderParams.consideration.item_type)
+      }
+    },
+    signature: signatureArray
+  });
+  const amountU256 = cairo.uint256(priceWei);
+  const approveCall = {
+    contractAddress: token.address,
+    entrypoint: "approve",
+    calldata: [
+      config.marketplace1155Contract,
+      amountU256.low.toString(),
+      amountU256.high.toString()
+    ]
+  };
+  const registerCall = contract.populate("register_order", [registerPayload]);
+  try {
+    const tx = await account.execute([approveCall, registerCall]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to make ERC-1155 offer", "TRANSACTION_FAILED", err);
+  }
+}
+async function checkoutCart1155(account, items, config) {
+  if (items.length === 0) throw new MedialaneError("Cart is empty", "INVALID_PARAMS");
+  const contract = getContract(config);
+  const provider = getProvider(config);
+  const tokenTotals = /* @__PURE__ */ new Map();
+  for (const item of items) {
+    const prev = tokenTotals.get(item.considerationToken) ?? 0n;
+    tokenTotals.set(item.considerationToken, prev + BigInt(item.considerationAmount));
+  }
+  const approveCalls = Array.from(tokenTotals.entries()).map(([tokenAddr, totalWei]) => {
+    const amount = cairo.uint256(totalWei.toString());
+    return {
+      contractAddress: tokenAddr,
+      entrypoint: "approve",
+      calldata: [
+        config.marketplace1155Contract,
+        amount.low.toString(),
+        amount.high.toString()
+      ]
+    };
+  });
+  const currentNonce = await contract.nonces(account.address);
+  const baseNonce = BigInt(currentNonce.toString());
+  const chainId = getChainId();
+  const fulfillCalls = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const nonce = (baseNonce + BigInt(i)).toString();
+    const quantity = item.quantity ?? "1";
+    const fulfillmentParams = {
+      order_hash: item.orderHash,
+      fulfiller: account.address,
+      quantity,
+      nonce
+    };
+    const typedData = stringifyBigInts(
+      build1155FulfillmentTypedData(fulfillmentParams, chainId)
+    );
+    const signature = await account.signMessage(typedData);
+    const signatureArray = toSignatureArray(signature);
+    const fulfillPayload = stringifyBigInts({
+      fulfillment: fulfillmentParams,
+      signature: signatureArray
+    });
+    fulfillCalls.push(contract.populate("fulfill_order", [fulfillPayload]));
+  }
+  try {
+    const tx = await account.execute([...approveCalls, ...fulfillCalls]);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("ERC-1155 cart checkout failed", "TRANSACTION_FAILED", err);
+  }
+}
+async function getOrderDetails1155(orderHash, config) {
+  const contract = getContract(config);
+  return contract.get_order_details(orderHash);
+}
+async function getNonce1155(address, config) {
+  const contract = getContract(config);
+  return BigInt((await contract.nonces(address)).toString());
 }
 
 // src/marketplace1155/index.ts
@@ -2344,6 +2514,13 @@ var Medialane1155Module = class {
     return createListing1155(account, params, this.config);
   }
   /**
+   * Make an offer (bid) on an ERC-1155 token.
+   * Approves the ERC-20 spend then calls `register_order` atomically.
+   */
+  makeOffer(account, params) {
+    return makeOffer1155(account, params, this.config);
+  }
+  /**
    * Fulfill (buy) an ERC-1155 listing.
    * Approves the payment token then calls `fulfill_order` atomically.
    */
@@ -2355,6 +2532,20 @@ var Medialane1155Module = class {
    */
   cancelOrder(account, params) {
     return cancelOrder1155(account, params, this.config);
+  }
+  /**
+   * Checkout a cart of ERC-1155 orders atomically.
+   * Signs one fulfillment per item (with quantity), sums ERC-20 approvals by token.
+   */
+  checkoutCart(account, items) {
+    return checkoutCart1155(account, items, this.config);
+  }
+  // ─── View calls ───────────────────────────────────────────────────────────
+  getOrderDetails(orderHash) {
+    return getOrderDetails1155(orderHash, this.config);
+  }
+  getNonce(address) {
+    return getNonce1155(address, this.config);
   }
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
   buildListingTypedData(params, chainId) {
@@ -2469,6 +2660,21 @@ var ApiClient = class {
   }
   del(path) {
     return this.request(path, { method: "DELETE" });
+  }
+  async checkResponse(res, options) {
+    if (options?.allow404 && res.status === 404) return null;
+    if (options?.allow403 && res.status === 403) return null;
+    if (!res.ok) {
+      const text = await res.text().catch(() => res.statusText);
+      let message = text;
+      try {
+        const body = JSON.parse(text);
+        if (body.error) message = body.error;
+      } catch {
+      }
+      throw new MedialaneApiError(res.status, message);
+    }
+    return res.json();
   }
   // ─── Orders ────────────────────────────────────────────────────────────────
   getOrders(query = {}) {
@@ -2678,7 +2884,7 @@ var ApiClient = class {
       },
       body: JSON.stringify({ contractAddress, walletAddress })
     });
-    return res.json();
+    return this.checkResponse(res);
   }
   /**
    * Path 3: Manual off-chain claim request (email-based).
@@ -2693,8 +2899,7 @@ var ApiClient = class {
   async getCollectionProfile(contractAddress) {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
-    if (res.status === 404) return null;
-    return res.json();
+    return this.checkResponse(res, { allow404: true });
   }
   /**
    * Update collection profile. Requires Clerk JWT for ownership check.
@@ -2710,15 +2915,14 @@ var ApiClient = class {
       },
       body: JSON.stringify(data)
     });
-    return res.json();
+    return this.checkResponse(res);
   }
   async getGatedContent(contractAddress, clerkToken) {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/gated-content`;
     const res = await fetch(url, {
       headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` }
     });
-    if (res.status === 403 || res.status === 404) return null;
-    return res.json();
+    return this.checkResponse(res, { allow404: true, allow403: true });
   }
   // ─── Creator Profiles ───────────────────────────────────────────────────────
   /** List all creators with an approved username. */
@@ -2729,20 +2933,18 @@ var ApiClient = class {
     if (opts.limit) params.set("limit", String(opts.limit));
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators?${params}`;
     const res = await fetch(url, { headers: this.baseHeaders });
-    return res.json();
+    return this.checkResponse(res);
   }
   async getCreatorProfile(walletAddress) {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
-    if (res.status === 404) return null;
-    return res.json();
+    return this.checkResponse(res, { allow404: true });
   }
   /** Resolve a username slug to a creator profile (public). */
   async getCreatorByUsername(username) {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/by-username/${encodeURIComponent(username.toLowerCase().trim())}`;
     const res = await fetch(url, { headers: this.baseHeaders });
-    if (res.status === 404) return null;
-    return res.json();
+    return this.checkResponse(res, { allow404: true });
   }
   /**
    * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
@@ -2758,7 +2960,42 @@ var ApiClient = class {
       },
       body: JSON.stringify(data)
     });
-    return res.json();
+    return this.checkResponse(res);
+  }
+  // ─── Collection Slug Claims ───────────────────────────────────────────────────
+  /** Check if a collection slug is available (public, no auth). */
+  async checkCollectionSlugAvailability(slug) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collection-slug-claims/check/${encodeURIComponent(slug.toLowerCase().trim())}`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    return this.checkResponse(res);
+  }
+  /** Submit a slug claim for a collection. Requires Clerk JWT — caller must be the collection owner. */
+  async submitCollectionSlugClaim(contractAddress, slug, clerkToken, notifyEmail) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collection-slug-claims`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${clerkToken}`
+      },
+      body: JSON.stringify({ contractAddress, slug, notifyEmail })
+    });
+    return this.checkResponse(res);
+  }
+  /** Returns all slug claims submitted by the authenticated wallet. Requires Clerk JWT. */
+  async getMyCollectionSlugClaims(clerkToken) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collection-slug-claims/me`;
+    const res = await fetch(url, {
+      headers: { ...this.baseHeaders, Authorization: `Bearer ${clerkToken}` }
+    });
+    return this.checkResponse(res);
+  }
+  /** Resolve a collection slug to a full collection. Returns null if not found. */
+  async getCollectionBySlug(slug) {
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/by-slug/${encodeURIComponent(slug.toLowerCase().trim())}`;
+    const res = await fetch(url, { headers: this.baseHeaders });
+    return this.checkResponse(res, { allow404: true });
   }
   // ─── User Wallet ─────────────────────────────────────────────────────────────
   /**
@@ -2775,7 +3012,7 @@ var ApiClient = class {
         "Authorization": `Bearer ${clerkToken}`
       }
     });
-    return res.json();
+    return this.checkResponse(res);
   }
   /**
    * Get the authenticated user's stored wallet address from the backend DB.
@@ -2787,8 +3024,7 @@ var ApiClient = class {
     const res = await fetch(url, {
       headers: { "Authorization": `Bearer ${clerkToken}` }
     });
-    if (res.status === 404) return null;
-    return res.json();
+    return this.checkResponse(res, { allow404: true });
   }
   // ─── Remix Licensing ─────────────────────────────────────────────────────────
   /**
@@ -2846,7 +3082,7 @@ var ApiClient = class {
     const res = await fetch(url, {
       headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` }
     });
-    return res.json();
+    return this.checkResponse(res);
   }
   /**
    * Get a single remix offer. Clerk JWT optional (price/currency hidden for non-participants).
@@ -2856,7 +3092,7 @@ var ApiClient = class {
     const headers = { ...this.baseHeaders };
     if (clerkToken) headers["Authorization"] = `Bearer ${clerkToken}`;
     const res = await fetch(url, { headers });
-    return res.json();
+    return this.checkResponse(res);
   }
   /**
    * Creator approves a remix offer (authorises the requester to mint). Requires Clerk JWT.
@@ -3063,44 +3299,6 @@ var DropService = class {
     return { txHash: res.transaction_hash };
   }
 };
-
-// src/client.ts
-var MedialaneClient = class {
-  constructor(rawConfig = {}) {
-    this.config = resolveConfig(rawConfig);
-    this.marketplace = new MarketplaceModule(this.config);
-    this.marketplace1155 = new Medialane1155Module(this.config);
-    this.services = {
-      pop: new PopService(this.config),
-      drop: new DropService(this.config)
-    };
-    if (!this.config.backendUrl) {
-      this.api = new Proxy({}, {
-        get(_target, prop) {
-          return () => {
-            throw new Error(
-              `backendUrl not configured. Pass backendUrl to MedialaneClient to use .api.${String(prop)}()`
-            );
-          };
-        }
-      });
-    } else {
-      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions);
-    }
-  }
-  get network() {
-    return this.config.network;
-  }
-  get rpcUrl() {
-    return this.config.rpcUrl;
-  }
-  get marketplaceContract() {
-    return this.config.marketplaceContract;
-  }
-};
-
-// src/types/api.ts
-var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
 var ERC1155CollectionService = class {
   constructor(config) {
     this.factoryAddress = config.collection1155Contract ?? COLLECTION_1155_CONTRACT_MAINNET;
@@ -3209,6 +3407,45 @@ var ERC1155CollectionService = class {
   }
 };
 
-export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_CONTRACT_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, INDEXER_START_BLOCK_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPMarketplaceABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MARKETPLACE_CLASS_HASH_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MARKETPLACE_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+// src/client.ts
+var MedialaneClient = class {
+  constructor(rawConfig = {}) {
+    this.config = resolveConfig(rawConfig);
+    this.marketplace = new MarketplaceModule(this.config);
+    this.marketplace1155 = new Medialane1155Module(this.config);
+    this.services = {
+      pop: new PopService(this.config),
+      drop: new DropService(this.config),
+      erc1155Collection: new ERC1155CollectionService(this.config)
+    };
+    if (!this.config.backendUrl) {
+      this.api = new Proxy({}, {
+        get(_target, prop) {
+          return () => {
+            throw new Error(
+              `backendUrl not configured. Pass backendUrl to MedialaneClient to use .api.${String(prop)}()`
+            );
+          };
+        }
+      });
+    } else {
+      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions);
+    }
+  }
+  get network() {
+    return this.config.network;
+  }
+  get rpcUrl() {
+    return this.config.rpcUrl;
+  }
+  get marketplaceContract() {
+    return this.config.marketplaceContract;
+  }
+};
+
+// src/types/api.ts
+var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
+
+export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_CONTRACT_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, INDEXER_START_BLOCK_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPMarketplaceABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MARKETPLACE_CLASS_HASH_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MARKETPLACE_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map
