@@ -712,8 +712,8 @@ export const DropFactoryABI = [
 ] as const;
 
 // Collection Registry ABI — minimal subset for list_user_collections + get_collection
-// Contract: 0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b
-// Fetched on 2026-04-10
+// Contract: 0x07c2207d200a1dce1cc82a117d8ba91dabfe3d1cc5072d9e4cdd9654fbb0ff10 (audited)
+// Fetched on 2026-05-14
 export const CollectionRegistryABI = [
   {
     type: "struct",
@@ -733,7 +733,6 @@ export const CollectionRegistryABI = [
       { name: "base_uri", type: "core::byte_array::ByteArray" },
       { name: "owner", type: "core::starknet::contract_address::ContractAddress" },
       { name: "ip_nft", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "is_active", type: "core::bool" },
     ],
   },
   {

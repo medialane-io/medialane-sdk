@@ -30,7 +30,19 @@ export const MARKETPLACE_1155_CLASS_HASH_MAINNET =
 export const MARKETPLACE_1155_START_BLOCK_MAINNET = 9260304;
 
 export const COLLECTION_721_CONTRACT_MAINNET =
+  "0x07c2207d200a1dce1cc82a117d8ba91dabfe3d1cc5072d9e4cdd9654fbb0ff10";
+
+/** Previous v2 registry (pre-audit). Kept for indexer historical reads only. */
+export const COLLECTION_721_CONTRACT_MAINNET_V2 =
   "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
+
+/** Class hash of the audited IPNft (per-collection ERC-721) implementation. */
+export const IPNFT_CLASS_HASH_MAINNET =
+  "0x02d50b7e6d1a14f17a8fdc2df24d6e493bae6fae579656d81959b8c92de4b13f";
+
+/** Class hash of the audited IPCollection registry. */
+export const IPCOLLECTION_CLASS_HASH_MAINNET =
+  "0x00203f0e03a472cb6e058327ca22147c75e574cc2876f4981e99bcbcbe716a29";
 
 /** @deprecated Use COLLECTION_721_CONTRACT_MAINNET. */
 export const COLLECTION_CONTRACT_MAINNET = COLLECTION_721_CONTRACT_MAINNET;
