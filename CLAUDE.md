@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -381,6 +381,12 @@ DEFAULT_RPC_URLS = {
 - `client.api.getDropCollections(opts?)` and `client.api.getDropMintStatus(collection, wallet)`
 - `DropCollectionABI` and `DropFactoryABI` exported
 - `DROP_FACTORY_CONTRACT_MAINNET` and `DROP_COLLECTION_CLASS_HASH_MAINNET` constants exported
+
+**v0.11.0 — Full IPCollection + IPNft ABIs as first-class exports (2026-05-14):**
+- `IPCollectionABI` (full) — exports the audited MIP-Collections-ERC721 registry surface (`create_collection`, `mint`, `archive`, `transfer_collection_ownership`, `get_collection`, `is_transferable_token`, etc.)
+- `IPNftABI` (full) — exports the per-collection ERC-721 surface (`get_full_token_data`, `get_token_creator`, `get_token_registered_at`, archive, …)
+- `CollectionRegistryABI` (the minimal subset for `list_user_collections` + `get_collection`) is now `@deprecated`. Existing consumers continue to work; new code should import `IPCollectionABI` instead.
+- Consumed by `medialane-dapp` and `medialane-io` to eliminate duplicate local ABI files. The SDK is now the single source of truth for all MIP / Medialane Cairo ABIs.
 
 **v0.10.0 — Collection slug claims:**
 - `ApiCollectionProfile.slug: string | null` — approved vanity slug set by admin on claim approval
