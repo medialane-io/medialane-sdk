@@ -14,7 +14,20 @@ export type IPType =
 
 export type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 
-export type CollectionSource = "MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME" | "POP_PROTOCOL" | "COLLECTION_DROP";
+export type CollectionSource =
+  | "MEDIALANE_ERC721"
+  | "MEDIALANE_ERC1155"
+  | "EXTERNAL_ERC721"
+  | "EXTERNAL_ERC1155"
+  | "MEDIALANE_REGISTRY"
+  | "ERC1155_FACTORY"
+  | "EXTERNAL"
+  | "PARTNERSHIP"
+  | "IP_TICKET"
+  | "IP_CLUB"
+  | "GAME"
+  | "POP_PROTOCOL"
+  | "COLLECTION_DROP";
 
 export interface ApiCollectionsQuery {
   page?: number;
