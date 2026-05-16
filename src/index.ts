@@ -50,6 +50,13 @@ export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, D
 export { PopService } from "./services/pop.js";
 export { DropService } from "./services/drop.js";
 export { ERC1155CollectionService } from "./services/erc1155collection.js";
+// Service registry (05-service-model). Types (ServiceDefinition etc.) are
+// already public via `export * from "./types/index.js"`.
+export {
+  getService,
+  listServices,
+  getServicesByCapability,
+} from "./services/registry.js";
 export type {
   DeployCollectionParams,
   MintItemParams,
