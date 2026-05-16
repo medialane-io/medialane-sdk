@@ -208,12 +208,14 @@ export class ApiClient {
     limit = 20,
     isKnown?: boolean,
     sort?: CollectionSort,
-    source?: CollectionSource
+    source?: CollectionSource,
+    service?: string
   ): Promise<ApiResponse<ApiCollection[]>> {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (isKnown !== undefined) params.set("isKnown", String(isKnown));
     if (sort) params.set("sort", sort);
     if (source) params.set("source", source);
+    if (service) params.set("service", service);
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
   }
 
