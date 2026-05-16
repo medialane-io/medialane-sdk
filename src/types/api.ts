@@ -14,6 +14,50 @@ export type IPType =
 
 export type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 
+/** Bounded capability set (05-service-model §III). Expand the union when a
+ *  service needs behavior outside it — never make it free-form. */
+export type ServiceCapability =
+  | "list" | "buy" | "make_offer" | "cancel"
+  | "transfer" | "burn"
+  | "mint" | "claim" | "airdrop"
+  | "remix" | "license"
+  | "subscribe" | "redeem";
+
+/** A service that bakes enforcement into its own contract declares it here
+ *  (04-licensing-model §V, 05-service-model §IV). Absence/all-falsey =
+ *  soft enforcement (the 00-principles §9 default). */
+export interface EnforcementDeclaration {
+  royalty?: "erc2981" | "service-split" | "none";
+  escrow?: boolean;
+  timeLock?: boolean;
+  revocable?: boolean;
+}
+
+/** Declarative description of a service (05-service-model §II).
+ *  SDK-resident in v1; on-chain registry in year 2. */
+export interface ServiceDefinition {
+  /** Stable kebab-case id. NO version number (05 §II). */
+  id: string;
+  displayName: string;
+  description: string;
+  standard: "ERC721" | "ERC1155" | "UNKNOWN";
+  provenance: "MEDIALANE" | "EXTERNAL";
+  onchain?: {
+    factoryAddress?: string;
+    classHash?: string;
+    startBlock?: number;
+  };
+  /** Drives the dapp asset/collection page variant. */
+  uiVariant: string;
+  capabilities: ServiceCapability[];
+  metadataSchema?: {
+    requiredTraits?: string[];
+    /** Canonical platform default is "CC BY-SA" (04-licensing-model §III). */
+    licenseDefault?: string;
+    enforcement?: EnforcementDeclaration;
+  };
+}
+
 export type CollectionSource =
   | "MEDIALANE_ERC721"
   | "MEDIALANE_ERC1155"
@@ -36,6 +80,8 @@ export interface ApiCollectionsQuery {
   sort?: CollectionSort;
   owner?: string;
   source?: CollectionSource;
+  /** Filter by service id (preferred over `source`). */
+  service?: string;
 }
 
 export type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED" | "COUNTER_OFFERED";
@@ -237,6 +283,10 @@ export interface ApiCollection {
   /** Token standard detected via ERC-165. */
   standard: "ERC721" | "ERC1155" | "UNKNOWN";
   isKnown: boolean;
+  /** Stable Medialane service ID, or null for external collections.
+   *  Resolve via getService() (05-service-model). Primary field. */
+  service: string | null;
+  /** @deprecated Since 0.12.0 — use `service`. Removed in 0.13.0. */
   source: CollectionSource;
   claimedBy: string | null;
   profile?: ApiCollectionProfile | null;
