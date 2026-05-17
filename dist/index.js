@@ -4324,11 +4324,11 @@ var ApiClient = class {
     );
   }
   // ─── Collections ───────────────────────────────────────────────────────────
-  getCollections(page = 1, limit = 20, isKnown, sort, source) {
+  getCollections(page = 1, limit = 20, isKnown, sort, service) {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (isKnown !== void 0) params.set("isKnown", String(isKnown));
     if (sort) params.set("sort", sort);
-    if (source) params.set("source", source);
+    if (service) params.set("service", service);
     return this.get(`/v1/collections?${params}`);
   }
   getCollectionsByOwner(owner, page = 1, limit = 50) {
@@ -5051,6 +5051,114 @@ var MedialaneClient = class {
 // src/types/api.ts
 var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
 
-export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_CONTRACT_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, INDEXER_START_BLOCK_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MARKETPLACE_CLASS_HASH_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MARKETPLACE_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getTokenByAddress, getTokenBySymbol, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+// src/services/registry.ts
+var SERVICES = {
+  "mip-erc721": {
+    id: "mip-erc721",
+    displayName: "IP Collection",
+    description: "Tokenize intellectual property as a per-creator ERC-721 collection.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    onchain: {
+      factoryAddress: COLLECTION_721_CONTRACT_MAINNET,
+      startBlock: INDEXER_START_BLOCK_MAINNET
+    },
+    uiVariant: "standard",
+    capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
+    metadataSchema: { licenseDefault: "CC BY-SA" }
+  },
+  "ip-erc721": {
+    id: "ip-erc721",
+    displayName: "Programmable IP (genesis)",
+    description: "One shared ERC-721 contract; many wallets mint genesis pieces.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    uiVariant: "standard",
+    capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
+    metadataSchema: { licenseDefault: "CC BY-SA" }
+  },
+  "mip-erc1155": {
+    id: "mip-erc1155",
+    displayName: "NFT Editions",
+    description: "Per-creator ERC-1155 collection; creator mints editions.",
+    standard: "ERC1155",
+    provenance: "MEDIALANE",
+    onchain: {
+      factoryAddress: ERC1155_FACTORY_CONTRACT_MAINNET,
+      classHash: ERC1155_COLLECTION_CLASS_HASH_MAINNET,
+      startBlock: MARKETPLACE_1155_START_BLOCK_MAINNET
+    },
+    uiVariant: "edition",
+    capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
+    metadataSchema: { licenseDefault: "CC BY-SA" }
+  },
+  "pop-protocol": {
+    id: "pop-protocol",
+    displayName: "POP Protocol",
+    description: "Soulbound proof-of-presence collectibles per event.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    onchain: {
+      factoryAddress: POP_FACTORY_CONTRACT_MAINNET,
+      classHash: POP_COLLECTION_CLASS_HASH_MAINNET
+    },
+    uiVariant: "pop",
+    capabilities: ["claim", "transfer"],
+    metadataSchema: { licenseDefault: "CC BY-SA" }
+  },
+  "drop-collection": {
+    id: "drop-collection",
+    displayName: "Collection Drop",
+    description: "Sequential mint with claim windows + allowlist.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    onchain: {
+      factoryAddress: DROP_FACTORY_CONTRACT_MAINNET,
+      classHash: DROP_COLLECTION_CLASS_HASH_MAINNET
+    },
+    uiVariant: "drop",
+    capabilities: ["claim", "list", "buy", "make_offer", "cancel", "transfer"],
+    metadataSchema: { licenseDefault: "CC BY-SA" }
+  },
+  "medialane-marketplace-erc721": {
+    id: "medialane-marketplace-erc721",
+    displayName: "Medialane Marketplace (ERC-721)",
+    description: "ERC-721 order matching venue.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    onchain: {
+      factoryAddress: MARKETPLACE_721_CONTRACT_MAINNET,
+      classHash: MARKETPLACE_721_CLASS_HASH_MAINNET,
+      startBlock: MARKETPLACE_721_START_BLOCK_MAINNET
+    },
+    uiVariant: "standard",
+    capabilities: ["list", "buy", "make_offer", "cancel"]
+  },
+  "medialane-marketplace-erc1155": {
+    id: "medialane-marketplace-erc1155",
+    displayName: "Medialane Marketplace (ERC-1155)",
+    description: "ERC-1155 order matching venue.",
+    standard: "ERC1155",
+    provenance: "MEDIALANE",
+    onchain: {
+      factoryAddress: MARKETPLACE_1155_CONTRACT_MAINNET,
+      classHash: MARKETPLACE_1155_CLASS_HASH_MAINNET,
+      startBlock: MARKETPLACE_1155_START_BLOCK_MAINNET
+    },
+    uiVariant: "edition",
+    capabilities: ["list", "buy", "make_offer", "cancel"]
+  }
+};
+function getService(id) {
+  return id ? SERVICES[id] : void 0;
+}
+function listServices() {
+  return Object.values(SERVICES);
+}
+function getServicesByCapability(cap) {
+  return Object.values(SERVICES).filter((s) => s.capabilities.includes(cap));
+}
+
+export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_CONTRACT_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, ERC1155_COLLECTION_CLASS_HASH_MAINNET, ERC1155_FACTORY_CONTRACT_MAINNET, INDEXER_START_BLOCK_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MARKETPLACE_CLASS_HASH_MAINNET, MARKETPLACE_CONTRACT_MAINNET, MARKETPLACE_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFulfillmentTypedData, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, listServices, normalizeAddress, parseAmount, resolveConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

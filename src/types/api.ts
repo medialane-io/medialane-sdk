@@ -58,29 +58,13 @@ export interface ServiceDefinition {
   };
 }
 
-export type CollectionSource =
-  | "MEDIALANE_ERC721"
-  | "MEDIALANE_ERC1155"
-  | "EXTERNAL_ERC721"
-  | "EXTERNAL_ERC1155"
-  | "MEDIALANE_REGISTRY"
-  | "ERC1155_FACTORY"
-  | "EXTERNAL"
-  | "PARTNERSHIP"
-  | "IP_TICKET"
-  | "IP_CLUB"
-  | "GAME"
-  | "POP_PROTOCOL"
-  | "COLLECTION_DROP";
-
 export interface ApiCollectionsQuery {
   page?: number;
   limit?: number;
   isKnown?: boolean;
   sort?: CollectionSort;
   owner?: string;
-  source?: CollectionSource;
-  /** Filter by service id (preferred over `source`). */
+  /** Filter by service id. */
   service?: string;
 }
 
@@ -286,8 +270,6 @@ export interface ApiCollection {
   /** Stable Medialane service ID, or null for external collections.
    *  Resolve via getService() (05-service-model). Primary field. */
   service: string | null;
-  /** @deprecated Since 0.12.0 — use `service`. Removed in 0.13.0. */
-  source: CollectionSource;
   claimedBy: string | null;
   profile?: ApiCollectionProfile | null;
   floorPrice: string | null;
