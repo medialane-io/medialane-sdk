@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.11.0",
+  "version": "0.13.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -123,8 +123,9 @@ client.api.getTokenHistory(contract, tokenId, page?, limit?)
 
 **Collections**
 ```ts
-client.api.getCollections(page?, limit?, isKnown?, sort?)
+client.api.getCollections(page?, limit?, isKnown?, sort?, service?)
 // sort: "recent" (default) | "supply" | "floor" | "volume" | "name"
+// service: filter by service id (e.g. "pop-protocol"). `source?` param removed in 0.13.0.
 client.api.getCollection(contract)
 client.api.getCollectionTokens(contract, page?, limit?)
 client.api.getCollectionsByOwner(owner)   // GET /v1/collections?owner=address → ApiCollection[]
@@ -381,6 +382,13 @@ DEFAULT_RPC_URLS = {
 - `client.api.getDropCollections(opts?)` and `client.api.getDropMintStatus(collection, wallet)`
 - `DropCollectionABI` and `DropFactoryABI` exported
 - `DROP_FACTORY_CONTRACT_MAINNET` and `DROP_COLLECTION_CLASS_HASH_MAINNET` constants exported
+
+**v0.13.0 — service-model cleanup (BREAKING, 2026-05-18):**
+- **Removed** `CollectionSource` type, `ApiCollection.source`, `ApiCollectionsQuery.source` (backend dropped the `Collection.source` column + `CollectionSource` enum in Phase 2D.4). Use `ApiCollection.service: string | null` / `getService()`.
+- `getCollections(page?, limit?, isKnown?, sort?, service?)` — the `source?` positional param was removed; `service` moved from the 6th arg to the 5th. Consumer migration: `getCollections(p,l,k,sort,undefined,service)` → `getCollections(p,l,k,sort,service)`.
+- Published to npm; medialane-io + medialane-dapp on 0.13.0.
+
+**v0.12.0 — service-model registry:** `ApiCollection.service`, `getService()`/`getServiceConfig()` registry, `?service=` query support (additive; `source` deprecated then removed in 0.13.0).
 
 **v0.11.0 — Full IPCollection + IPNft ABIs as first-class exports (2026-05-14):**
 - `IPCollectionABI` (full) — exports the audited MIP-Collections-ERC721 registry surface (`create_collection`, `mint`, `archive`, `transfer_collection_ownership`, `get_collection`, `is_transferable_token`, etc.)
