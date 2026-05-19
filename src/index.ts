@@ -4,6 +4,19 @@ export { MedialaneClient } from "./client.js";
 // Config
 export { type MedialaneConfig, type ResolvedConfig, resolveConfig } from "./config.js";
 
+// Fee (platform-layer creators-fund fee — single source of truth)
+export {
+  buildFeeCall,
+  resolveFeeConfig,
+  FeeConfigSchema,
+} from "./fee/index.js";
+export type {
+  FeeConfig,
+  ResolvedFeeConfig,
+  FeeSurface,
+  BuildFeeCallParams,
+} from "./fee/index.js";
+
 // Modules
 export { MarketplaceModule, MedialaneError } from "./marketplace/index.js";
 export { Medialane1155Module } from "./marketplace1155/index.js";

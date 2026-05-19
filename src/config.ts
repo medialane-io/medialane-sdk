@@ -9,6 +9,7 @@ import {
   type Network,
 } from "./constants.js";
 import type { RetryOptions } from "./utils/retry.js";
+import { FeeConfigSchema, resolveFeeConfig, type ResolvedFeeConfig } from "./fee/index.js";
 
 export const MedialaneConfigSchema = z.object({
   network: z.enum(SUPPORTED_NETWORKS).default("mainnet"),
@@ -26,6 +27,7 @@ export const MedialaneConfigSchema = z.object({
     baseDelayMs: z.number().int().min(0).optional(),
     maxDelayMs: z.number().int().min(0).optional(),
   }).optional(),
+  feeConfig: FeeConfigSchema.optional(),
 });
 
 export type MedialaneConfig = z.input<typeof MedialaneConfigSchema>;
@@ -42,6 +44,7 @@ export interface ResolvedConfig {
   collectionContract: string;
   collection1155Contract: string;
   retryOptions?: RetryOptions;
+  feeConfig: ResolvedFeeConfig;
 }
 
 export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
@@ -64,5 +67,6 @@ export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
     collectionContract: collection721Contract,
     collection1155Contract: parsed.collection1155Contract ?? COLLECTION_1155_CONTRACT_MAINNET,
     retryOptions: parsed.retryOptions,
+    feeConfig: resolveFeeConfig(parsed.feeConfig),
   };
 }
