@@ -29,6 +29,7 @@ import {
   buildCancellationTypedData,
 } from "./signing.js";
 import { MedialaneError } from "./errors.js";
+import { buildFeeCall } from "../fee/index.js";
 import {
   toSignatureArray,
   getChainId,
@@ -297,8 +298,16 @@ export async function fulfillOrder(
 
   const fulfillCall = contract.populate("fulfill_order", [fulfillPayload]);
 
+  const feeCall = buildFeeCall(
+    { surface: "marketplace", token: paymentToken, grossAmount: BigInt(totalPrice) },
+    config.feeConfig
+  );
+  const calls = feeCall
+    ? [approveCall, fulfillCall, feeCall]
+    : [approveCall, fulfillCall];
+
   try {
-    const tx = await account.execute([approveCall, fulfillCall]);
+    const tx = await account.execute(calls);
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
@@ -471,8 +480,17 @@ export async function checkoutCart(
     fulfillCalls.push(contract.populate("fulfill_order", [fulfillPayload]));
   }
 
+  const feeCalls = Array.from(tokenTotals.entries())
+    .map(([tokenAddr, totalWei]) =>
+      buildFeeCall(
+        { surface: "marketplace", token: tokenAddr, grossAmount: totalWei },
+        config.feeConfig
+      )
+    )
+    .filter((c): c is NonNullable<typeof c> => c !== null);
+
   try {
-    const tx = await account.execute([...approveCalls, ...fulfillCalls]);
+    const tx = await account.execute([...approveCalls, ...fulfillCalls, ...feeCalls]);
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
