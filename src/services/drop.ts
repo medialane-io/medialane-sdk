@@ -5,6 +5,7 @@ import { DropCollectionABI, DropFactoryABI } from "../abis.js";
 import { DROP_FACTORY_CONTRACT_MAINNET } from "../constants.js";
 import type { ClaimConditions, CreateDropParams } from "../types/services.js";
 import type { TxResult } from "../types/marketplace.js";
+import { buildFeeCall } from "../fee/index.js";
 
 export type { ClaimConditions, CreateDropParams };
 
@@ -20,9 +21,11 @@ function toContractConditions(c: ClaimConditions) {
 
 export class DropService {
   private readonly factoryAddress: string;
+  private readonly config: ResolvedConfig;
 
-  constructor(_config: ResolvedConfig) {
+  constructor(config: ResolvedConfig) {
     this.factoryAddress = DROP_FACTORY_CONTRACT_MAINNET;
+    this.config = config;
   }
 
   private _collection(address: string, account: AccountInterface) {
@@ -34,8 +37,31 @@ export class DropService {
     collectionAddress: string,
     quantity: bigint | string | number = 1
   ): Promise<TxResult> {
-    const call = this._collection(collectionAddress, account).populate("claim", [BigInt(quantity)]);
-    const res = await account.execute([call]);
+    const collection = this._collection(collectionAddress, account);
+    const qty = BigInt(quantity);
+    const claimCall = collection.populate("claim", [qty]);
+
+    // get_claim_conditions() → { price (u256), payment_token, ... }
+    const conditions = (await collection.get_claim_conditions()) as {
+      price: bigint;
+      payment_token: bigint | string;
+    };
+    const price = BigInt(conditions.price);
+    const paymentToken =
+      typeof conditions.payment_token === "bigint"
+        ? "0x" + conditions.payment_token.toString(16)
+        : conditions.payment_token;
+
+    const feeCall =
+      price > 0n
+        ? buildFeeCall(
+            { surface: "launchpad", token: paymentToken, grossAmount: price * qty },
+            this.config.feeConfig
+          )
+        : null;
+
+    const calls = feeCall ? [claimCall, feeCall] : [claimCall];
+    const res = await account.execute(calls);
     return { txHash: res.transaction_hash };
   }
 
