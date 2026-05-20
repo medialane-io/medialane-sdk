@@ -383,10 +383,13 @@ DEFAULT_RPC_URLS = {
 - `DropCollectionABI` and `DropFactoryABI` exported
 - `DROP_FACTORY_CONTRACT_MAINNET` and `DROP_COLLECTION_CLASS_HASH_MAINNET` constants exported
 
-**v0.14.0 — upsertMyWallet metadata:**
+**v0.14.1 — upsertMyWallet metadata:**
 - `ApiWalletType` union: `"ARGENT" | "BRAAVOS" | "CARTRIDGE" | "PRIVY" | "CHIPIPAY" | "INJECTED" | "UNKNOWN"`
 - `ApiAppSource` union: `"MEDIALANE_DAPP" | "MEDIALANE_IO" | "MEDIALANE_PORTAL" | "MEDIALANE_SDK"`
 - `upsertMyWallet(clerkToken, options?: { walletType?, appSource? })` — body now includes `walletType` and `appSource` (defaults: `"UNKNOWN"` and `"MEDIALANE_SDK"`). Previous body was empty; SDK callers were landing as `walletType: UNKNOWN, appSource: MEDIALANE_IO` on the backend. Backward-compatible signature (options is optional).
+
+**v0.14.0 — platform fee module (BREAKING for fee callers):**
+- Resolvable `feeConfig` on `MedialaneConfig`; `buildFeeCall(...)` exported. See `src/fee/`.
 
 **v0.13.0 — service-model cleanup (BREAKING, 2026-05-18):**
 - **Removed** `CollectionSource` type, `ApiCollection.source`, `ApiCollectionsQuery.source` (backend dropped the `Collection.source` column + `CollectionSource` enum in Phase 2D.4). Use `ApiCollection.service: string | null` / `getService()`.
