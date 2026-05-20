@@ -383,6 +383,11 @@ DEFAULT_RPC_URLS = {
 - `DropCollectionABI` and `DropFactoryABI` exported
 - `DROP_FACTORY_CONTRACT_MAINNET` and `DROP_COLLECTION_CLASS_HASH_MAINNET` constants exported
 
+**v0.14.0 — upsertMyWallet metadata:**
+- `ApiWalletType` union: `"ARGENT" | "BRAAVOS" | "CARTRIDGE" | "PRIVY" | "CHIPIPAY" | "INJECTED" | "UNKNOWN"`
+- `ApiAppSource` union: `"MEDIALANE_DAPP" | "MEDIALANE_IO" | "MEDIALANE_PORTAL" | "MEDIALANE_SDK"`
+- `upsertMyWallet(clerkToken, options?: { walletType?, appSource? })` — body now includes `walletType` and `appSource` (defaults: `"UNKNOWN"` and `"MEDIALANE_SDK"`). Previous body was empty; SDK callers were landing as `walletType: UNKNOWN, appSource: MEDIALANE_IO` on the backend. Backward-compatible signature (options is optional).
+
 **v0.13.0 — service-model cleanup (BREAKING, 2026-05-18):**
 - **Removed** `CollectionSource` type, `ApiCollection.source`, `ApiCollectionsQuery.source` (backend dropped the `Collection.source` column + `CollectionSource` enum in Phase 2D.4). Use `ApiCollection.service: string | null` / `getService()`.
 - `getCollections(page?, limit?, isKnown?, sort?, service?)` — the `source?` positional param was removed; `service` moved from the 6th arg to the 5th. Consumer migration: `getCollections(p,l,k,sort,undefined,service)` → `getCollections(p,l,k,sort,service)`.
