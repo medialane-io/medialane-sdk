@@ -706,6 +706,21 @@ export interface ApiCreatorListResult {
 
 // ─── User Wallet ───────────────────────────────────────────────────────────────
 
+export type ApiWalletType =
+  | "ARGENT"
+  | "BRAAVOS"
+  | "CARTRIDGE"
+  | "PRIVY"
+  | "CHIPIPAY"
+  | "INJECTED"
+  | "UNKNOWN";
+
+export type ApiAppSource =
+  | "MEDIALANE_DAPP"
+  | "MEDIALANE_IO"
+  | "MEDIALANE_PORTAL"
+  | "MEDIALANE_SDK";
+
 export interface ApiUserWallet {
   walletAddress: string;
 }

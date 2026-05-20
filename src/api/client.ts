@@ -13,6 +13,8 @@ import type {
   ApiCollectionClaim,
   ApiCollectionSlugClaim,
   ApiUserWallet,
+  ApiWalletType,
+  ApiAppSource,
   ApiActivity,
   ApiActivitiesQuery,
   ApiComment,
@@ -597,7 +599,10 @@ export class ApiClient {
    * Call after onboarding when ChipiPay confirms the wallet address.
    * Requires Clerk JWT; no tenant API key needed.
    */
-  async upsertMyWallet(clerkToken: string): Promise<ApiUserWallet> {
+  async upsertMyWallet(
+    clerkToken: string,
+    options: { walletType?: ApiWalletType; appSource?: ApiAppSource } = {},
+  ): Promise<ApiUserWallet> {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/users/me`;
     const res = await fetch(url, {
       method: "POST",
@@ -605,6 +610,10 @@ export class ApiClient {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${clerkToken}`,
       },
+      body: JSON.stringify({
+        walletType: options.walletType ?? "UNKNOWN",
+        appSource: options.appSource ?? "MEDIALANE_SDK",
+      }),
     });
     return this.checkResponse<ApiUserWallet>(res);
   }
