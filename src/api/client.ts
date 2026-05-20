@@ -599,6 +599,28 @@ export class ApiClient {
    * Call after onboarding when ChipiPay confirms the wallet address.
    * Requires Clerk JWT; no tenant API key needed.
    */
+  /**
+   * Frictionless wallet registration. Tenant API key only (no Clerk JWT required).
+   * Idempotent — backend's ensureAccountForWallet upserts and upgrades existing
+   * UNKNOWN walletType rows when a more specific value is supplied.
+   */
+  async registerUser(params: {
+    walletAddress: string;
+    walletType?: ApiWalletType;
+    appSource?: ApiAppSource;
+    chain?: "STARKNET" | "ETHEREUM" | "SOLANA" | "BITCOIN";
+  }): Promise<{
+    accountId: string;
+    publicId: string;
+    walletAddress: string;
+    chain: string;
+    walletType: ApiWalletType;
+    appSource: ApiAppSource;
+    createdAt: string;
+  }> {
+    return this.post("/v1/users/register", params);
+  }
+
   async upsertMyWallet(
     clerkToken: string,
     options: { walletType?: ApiWalletType; appSource?: ApiAppSource } = {},

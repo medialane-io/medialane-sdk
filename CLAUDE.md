@@ -383,6 +383,9 @@ DEFAULT_RPC_URLS = {
 - `DropCollectionABI` and `DropFactoryABI` exported
 - `DROP_FACTORY_CONTRACT_MAINNET` and `DROP_COLLECTION_CLASS_HASH_MAINNET` constants exported
 
+**v0.14.2 — registerUser:**
+- `client.api.registerUser({ walletAddress, walletType?, appSource?, chain? })` — wraps `POST /v1/users/register` (tenant API key, no Clerk JWT). Returns `{ accountId, publicId, walletAddress, chain, walletType, appSource, createdAt }`. Idempotent on the backend. Used by medialane-dapp to silently register web3 wallet connections.
+
 **v0.14.1 — upsertMyWallet metadata:**
 - `ApiWalletType` union: `"ARGENT" | "BRAAVOS" | "CARTRIDGE" | "PRIVY" | "CHIPIPAY" | "INJECTED" | "UNKNOWN"`
 - `ApiAppSource` union: `"MEDIALANE_DAPP" | "MEDIALANE_IO" | "MEDIALANE_PORTAL" | "MEDIALANE_SDK"`
