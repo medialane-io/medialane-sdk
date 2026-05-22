@@ -1,10 +1,10 @@
 import type { ServiceDefinition, ServiceCapability } from "../types/api.js";
 import {
   COLLECTION_721_CONTRACT_MAINNET,
-  INDEXER_START_BLOCK_MAINNET,
-  ERC1155_FACTORY_CONTRACT_MAINNET,
-  ERC1155_COLLECTION_CLASS_HASH_MAINNET,
-  MARKETPLACE_1155_START_BLOCK_MAINNET,
+  COLLECTION_721_START_BLOCK_MAINNET,
+  COLLECTION_1155_CONTRACT_MAINNET,
+  COLLECTION_1155_CLASS_HASH_MAINNET,
+  COLLECTION_1155_START_BLOCK_MAINNET,
   POP_FACTORY_CONTRACT_MAINNET,
   POP_COLLECTION_CLASS_HASH_MAINNET,
   DROP_FACTORY_CONTRACT_MAINNET,
@@ -14,6 +14,7 @@ import {
   MARKETPLACE_721_START_BLOCK_MAINNET,
   MARKETPLACE_1155_CONTRACT_MAINNET,
   MARKETPLACE_1155_CLASS_HASH_MAINNET,
+  MARKETPLACE_1155_START_BLOCK_MAINNET,
 } from "../constants.js";
 
 /**
@@ -37,7 +38,7 @@ const SERVICES: Record<string, ServiceDefinition> = {
     provenance: "MEDIALANE",
     onchain: {
       factoryAddress: COLLECTION_721_CONTRACT_MAINNET,
-      startBlock: INDEXER_START_BLOCK_MAINNET,
+      startBlock: COLLECTION_721_START_BLOCK_MAINNET,
     },
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
@@ -60,9 +61,9 @@ const SERVICES: Record<string, ServiceDefinition> = {
     standard: "ERC1155",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: ERC1155_FACTORY_CONTRACT_MAINNET,
-      classHash: ERC1155_COLLECTION_CLASS_HASH_MAINNET,
-      startBlock: MARKETPLACE_1155_START_BLOCK_MAINNET,
+      factoryAddress: COLLECTION_1155_CONTRACT_MAINNET,
+      classHash: COLLECTION_1155_CLASS_HASH_MAINNET,
+      startBlock: COLLECTION_1155_START_BLOCK_MAINNET,
     },
     uiVariant: "edition",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],

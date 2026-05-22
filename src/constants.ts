@@ -2,21 +2,12 @@
 export const MARKETPLACE_721_CONTRACT_MAINNET =
   "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6";
 
-/** @deprecated Use MARKETPLACE_721_CONTRACT_MAINNET. */
-export const MARKETPLACE_CONTRACT_MAINNET = MARKETPLACE_721_CONTRACT_MAINNET;
-
 /** Class hash of the Medialane Protocol ERC-721 marketplace implementation. */
 export const MARKETPLACE_721_CLASS_HASH_MAINNET =
   "0x03dff4f34b976207246207954263be9a28b51390321702443291088dcdf4b2e6";
 
-/** @deprecated Use MARKETPLACE_721_CLASS_HASH_MAINNET. */
-export const MARKETPLACE_CLASS_HASH_MAINNET = MARKETPLACE_721_CLASS_HASH_MAINNET;
-
 /** First mainnet block for the current Medialane Protocol ERC-721 deployment. */
 export const MARKETPLACE_721_START_BLOCK_MAINNET = 9196722;
-
-/** @deprecated Use MARKETPLACE_721_START_BLOCK_MAINNET. */
-export const MARKETPLACE_START_BLOCK_MAINNET = MARKETPLACE_721_START_BLOCK_MAINNET;
 
 /** Medialane Protocol ERC-1155 marketplace — immutable, no admin key. */
 export const MARKETPLACE_1155_CONTRACT_MAINNET =
@@ -43,9 +34,6 @@ export const IPCOLLECTION_CLASS_HASH_MAINNET =
 /** First mainnet block for the current MIP IPCollection registry deployment. */
 export const COLLECTION_721_START_BLOCK_MAINNET = 10046166;
 
-/** @deprecated Use COLLECTION_721_CONTRACT_MAINNET. */
-export const COLLECTION_CONTRACT_MAINNET = COLLECTION_721_CONTRACT_MAINNET;
-
 export const DROP_FACTORY_CONTRACT_MAINNET =
   "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
 
@@ -55,9 +43,6 @@ export const POP_FACTORY_CONTRACT_MAINNET =
 /** NFTComments on-chain comment system — immutable, no admin key. */
 export const NFTCOMMENTS_CONTRACT_MAINNET =
   "0x024f97eb5abe659fb650bf162b5fc16501f8f3863a7369901ce6099462e62799";
-
-/** Earliest block required to index the current mainnet protocol deployments. */
-export const INDEXER_START_BLOCK_MAINNET = MARKETPLACE_721_START_BLOCK_MAINNET;
 
 export const SUPPORTED_TOKENS = [
   {
@@ -115,9 +100,6 @@ export const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7
 export const COLLECTION_1155_CONTRACT_MAINNET =
   "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
 
-/** @deprecated Use COLLECTION_1155_CONTRACT_MAINNET. */
-export const ERC1155_FACTORY_CONTRACT_MAINNET = COLLECTION_1155_CONTRACT_MAINNET;
-
 /** Class hash of the IPCollectionFactory implementation. */
 export const COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET =
   "0x188321a7c9ca972cc63e352e3b3a4cdf33781852d957f4b4b62249310fe4c75";
@@ -125,9 +107,6 @@ export const COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET =
 /** Class hash of the IPCollection ERC-1155 implementation. */
 export const COLLECTION_1155_CLASS_HASH_MAINNET =
   "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80";
-
-/** @deprecated Use COLLECTION_1155_CLASS_HASH_MAINNET. */
-export const ERC1155_COLLECTION_CLASS_HASH_MAINNET = COLLECTION_1155_CLASS_HASH_MAINNET;
 
 /** First mainnet block for the current ERC-1155 factory deployment. */
 export const COLLECTION_1155_START_BLOCK_MAINNET = 10045611;
