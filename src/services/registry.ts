@@ -125,10 +125,29 @@ const SERVICES: Record<string, ServiceDefinition> = {
     uiVariant: "edition",
     capabilities: ["list", "buy", "make_offer", "cancel"],
   },
+  "external-erc721": {
+    id: "external-erc721",
+    displayName: "External ERC-721",
+    description: "ERC-721 contract not deployed via a Medialane service.",
+    standard: "ERC721",
+    provenance: "EXTERNAL",
+    uiVariant: "standard",
+    capabilities: ["list", "buy", "make_offer", "cancel", "transfer"],
+  },
+  "external-erc1155": {
+    id: "external-erc1155",
+    displayName: "External ERC-1155",
+    description: "ERC-1155 contract not deployed via a Medialane service.",
+    standard: "ERC1155",
+    provenance: "EXTERNAL",
+    uiVariant: "edition",
+    capabilities: ["list", "buy", "make_offer", "cancel", "transfer"],
+  },
 };
 
-/** Lookup. Returns undefined for external/unknown (service: null) — callers
- *  fall back to standard-based generic UI (01-core-model §I). */
+/** Lookup. Returns undefined for unregistered service IDs — callers should
+ *  treat that as a data error, since every Collection.service value is
+ *  expected to map to a registered ServiceDefinition. */
 export function getService(id: string | null | undefined): ServiceDefinition | undefined {
   return id ? SERVICES[id] : undefined;
 }

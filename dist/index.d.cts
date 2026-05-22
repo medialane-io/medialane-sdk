@@ -4996,8 +4996,9 @@ declare const IPNftABI: readonly [{
     }];
 }];
 
-/** Lookup. Returns undefined for external/unknown (service: null) — callers
- *  fall back to standard-based generic UI (01-core-model §I). */
+/** Lookup. Returns undefined for unregistered service IDs — callers should
+ *  treat that as a data error, since every Collection.service value is
+ *  expected to map to a registered ServiceDefinition. */
 declare function getService(id: string | null | undefined): ServiceDefinition | undefined;
 /** All registered services (e.g. the launchpad grid). */
 declare function listServices(): ServiceDefinition[];

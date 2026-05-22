@@ -6381,6 +6381,24 @@ var SERVICES = {
     },
     uiVariant: "edition",
     capabilities: ["list", "buy", "make_offer", "cancel"]
+  },
+  "external-erc721": {
+    id: "external-erc721",
+    displayName: "External ERC-721",
+    description: "ERC-721 contract not deployed via a Medialane service.",
+    standard: "ERC721",
+    provenance: "EXTERNAL",
+    uiVariant: "standard",
+    capabilities: ["list", "buy", "make_offer", "cancel", "transfer"]
+  },
+  "external-erc1155": {
+    id: "external-erc1155",
+    displayName: "External ERC-1155",
+    description: "ERC-1155 contract not deployed via a Medialane service.",
+    standard: "ERC1155",
+    provenance: "EXTERNAL",
+    uiVariant: "edition",
+    capabilities: ["list", "buy", "make_offer", "cancel", "transfer"]
   }
 };
 function getService(id) {
