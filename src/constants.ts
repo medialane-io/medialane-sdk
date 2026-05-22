@@ -29,33 +29,16 @@ export const MARKETPLACE_1155_CLASS_HASH_MAINNET =
 /** First mainnet block for the current Medialane Protocol ERC-1155 deployment. */
 export const MARKETPLACE_1155_START_BLOCK_MAINNET = 9260304;
 
-/** MIP IPCollection registry — v0.3.0 audit (`creator` mint param). Redeployed 2026-05-22. */
 export const COLLECTION_721_CONTRACT_MAINNET =
   "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2";
 
-/** Previous v2 registry (pre-audit, deprecated). Kept for indexer historical reads only. */
-export const COLLECTION_721_CONTRACT_MAINNET_V2 =
-  "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b";
-
-/** Previous v3 registry (pre-v0.3.0 audit). Kept for indexer historical reads only. */
-export const COLLECTION_721_CONTRACT_MAINNET_V3 =
-  "0x07c2207d200a1dce1cc82a117d8ba91dabfe3d1cc5072d9e4cdd9654fbb0ff10";
-
-/** Class hash of the IPNft (per-collection ERC-721) implementation. v0.3.0 audit. */
+/** Class hash of the IPNft (per-collection ERC-721) implementation. */
 export const IPNFT_CLASS_HASH_MAINNET =
   "0x27ee4ded786d51bced1e94afec3034d6ffce71c032c45ee1ff283ccfa9db12e";
 
-/** Previous IPNft class (pre-v0.3.0 audit). Kept for indexer historical reads only. */
-export const IPNFT_CLASS_HASH_MAINNET_V3 =
-  "0x02d50b7e6d1a14f17a8fdc2df24d6e493bae6fae579656d81959b8c92de4b13f";
-
-/** Class hash of the IPCollection registry. v0.3.0 audit. */
+/** Class hash of the IPCollection registry. */
 export const IPCOLLECTION_CLASS_HASH_MAINNET =
   "0x287ccdff8b6655a2248cfe170d82eae3a35303cd00ef3e751b25ddca26d9095";
-
-/** Previous IPCollection registry class (pre-v0.3.0 audit). Kept for indexer historical reads only. */
-export const IPCOLLECTION_CLASS_HASH_MAINNET_V3 =
-  "0x00203f0e03a472cb6e058327ca22147c75e574cc2876f4981e99bcbcbe716a29";
 
 /** First mainnet block for the current MIP IPCollection registry deployment. */
 export const COLLECTION_721_START_BLOCK_MAINNET = 10046166;
@@ -129,28 +112,19 @@ export const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea1
 
 export const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
 
-/** IP-Programmable-ERC1155-Collections factory. Redeployed 2026-05-22 (v0.2.0 audit). */
 export const COLLECTION_1155_CONTRACT_MAINNET =
   "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
-
-/** Previous v2 factory (pre-v0.2.0 audit). Kept for indexer historical reads only. */
-export const COLLECTION_1155_CONTRACT_MAINNET_V2 =
-  "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6";
 
 /** @deprecated Use COLLECTION_1155_CONTRACT_MAINNET. */
 export const ERC1155_FACTORY_CONTRACT_MAINNET = COLLECTION_1155_CONTRACT_MAINNET;
 
-/** Class hash of the IPCollectionFactory implementation. v0.2.0 audit. */
+/** Class hash of the IPCollectionFactory implementation. */
 export const COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET =
   "0x188321a7c9ca972cc63e352e3b3a4cdf33781852d957f4b4b62249310fe4c75";
 
-/** Class hash of the IPCollection ERC-1155 implementation. v0.2.0 audit. */
+/** Class hash of the IPCollection ERC-1155 implementation. */
 export const COLLECTION_1155_CLASS_HASH_MAINNET =
   "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80";
-
-/** Previous v2 IPCollection ERC-1155 class (pre-v0.2.0 audit). Kept for indexer historical reads only. */
-export const COLLECTION_1155_CLASS_HASH_MAINNET_V2 =
-  "0x39a85126c6627db263617e5bce2bb72e49d2bb1f20961efc8b8954665bcfd25";
 
 /** @deprecated Use COLLECTION_1155_CLASS_HASH_MAINNET. */
 export const ERC1155_COLLECTION_CLASS_HASH_MAINNET = COLLECTION_1155_CLASS_HASH_MAINNET;

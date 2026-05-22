@@ -19,7 +19,6 @@ declare const MARKETPLACE_1155_CONTRACT_MAINNET = "0x02bfa521c25461a09d735889b46
 declare const MARKETPLACE_1155_CLASS_HASH_MAINNET = "0x01b674aad934be85abc7c1970265cbf7e9bc7d586a90f0a67112c201636dbdd3";
 /** First mainnet block for the current Medialane Protocol ERC-1155 deployment. */
 declare const MARKETPLACE_1155_START_BLOCK_MAINNET = 9260304;
-/** MIP IPCollection registry — v0.3.0 audit (`creator` mint param). Redeployed 2026-05-22. */
 declare const COLLECTION_721_CONTRACT_MAINNET = "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2";
 /** @deprecated Use COLLECTION_721_CONTRACT_MAINNET. */
 declare const COLLECTION_CONTRACT_MAINNET = "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2";
@@ -61,11 +60,10 @@ type Network = (typeof SUPPORTED_NETWORKS)[number];
 declare const DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 declare const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 declare const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
-/** IP-Programmable-ERC1155-Collections factory. Redeployed 2026-05-22 (v0.2.0 audit). */
 declare const COLLECTION_1155_CONTRACT_MAINNET = "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
 /** @deprecated Use COLLECTION_1155_CONTRACT_MAINNET. */
 declare const ERC1155_FACTORY_CONTRACT_MAINNET = "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
-/** Class hash of the IPCollection ERC-1155 implementation. v0.2.0 audit. */
+/** Class hash of the IPCollection ERC-1155 implementation. */
 declare const COLLECTION_1155_CLASS_HASH_MAINNET = "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80";
 /** @deprecated Use COLLECTION_1155_CLASS_HASH_MAINNET. */
 declare const ERC1155_COLLECTION_CLASS_HASH_MAINNET = "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80";
