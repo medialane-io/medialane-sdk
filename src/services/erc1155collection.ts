@@ -1,7 +1,7 @@
 import { Contract, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import { normalizeAddress } from "../utils/address.js";
-import { IPCollection1155FactoryABI, IPCollection1155ABI } from "../abis.js";
+import { IPCollection1155FactoryABI, IPCollection1155ABI } from "../abis/index.js";
 import { COLLECTION_1155_CONTRACT_MAINNET } from "../constants.js";
 import type { TxResult } from "../types/marketplace.js";
 

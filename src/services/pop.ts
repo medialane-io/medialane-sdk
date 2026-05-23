@@ -1,7 +1,7 @@
 import { Contract, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import { normalizeAddress } from "../utils/address.js";
-import { POPCollectionABI, POPFactoryABI } from "../abis.js";
+import { POPCollectionABI, POPFactoryABI } from "../abis/index.js";
 import { POP_FACTORY_CONTRACT_MAINNET } from "../constants.js";
 import type { CreatePopCollectionParams } from "../types/services.js";
 import type { TxResult } from "../types/marketplace.js";

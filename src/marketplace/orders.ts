@@ -7,7 +7,7 @@ import {
   type TypedData,
 } from "starknet";
 import { encodeByteArray } from "../utils/bytearray.js";
-import { IPMarketplaceABI } from "../abis.js";
+import { IPMarketplaceABI } from "../abis/index.js";
 import type { ResolvedConfig } from "../config.js";
 import { DEFAULT_CURRENCY } from "../constants.js";
 import type {

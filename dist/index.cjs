@@ -279,7 +279,7 @@ function encodeByteArray(str) {
   ];
 }
 
-// src/abis.ts
+// src/abis/ipMarketplace.ts
 var IPMarketplaceABI = [
   {
     type: "impl",
@@ -586,6 +586,8 @@ var IPMarketplaceABI = [
     ]
   }
 ];
+
+// src/abis/popCollection.ts
 var POPCollectionABI = [
   {
     type: "struct",
@@ -673,6 +675,8 @@ var POPCollectionABI = [
     state_mutability: "view"
   }
 ];
+
+// src/abis/popFactory.ts
 var POPFactoryABI = [
   {
     type: "struct",
@@ -728,6 +732,8 @@ var POPFactoryABI = [
     state_mutability: "external"
   }
 ];
+
+// src/abis/dropCollection.ts
 var DropCollectionABI = [
   {
     type: "struct",
@@ -897,6 +903,8 @@ var DropCollectionABI = [
     state_mutability: "view"
   }
 ];
+
+// src/abis/dropFactory.ts
 var DropFactoryABI = [
   {
     type: "struct",
@@ -984,6 +992,8 @@ var DropFactoryABI = [
     state_mutability: "external"
   }
 ];
+
+// src/abis/collectionRegistry.ts
 var CollectionRegistryABI = [
   {
     type: "struct",
@@ -1020,6 +1030,8 @@ var CollectionRegistryABI = [
     state_mutability: "view"
   }
 ];
+
+// src/abis/medialane1155.ts
 var Medialane1155ABI = [
   {
     "type": "impl",
@@ -1513,6 +1525,8 @@ var Medialane1155ABI = [
     ]
   }
 ];
+
+// src/abis/ipCollection1155Factory.ts
 var IPCollection1155FactoryABI = [
   {
     "type": "impl",
@@ -1798,6 +1812,8 @@ var IPCollection1155FactoryABI = [
     ]
   }
 ];
+
+// src/abis/ipCollection1155.ts
 var IPCollection1155ABI = [
   {
     "type": "impl",
@@ -2879,6 +2895,8 @@ var IPCollection1155ABI = [
     ]
   }
 ];
+
+// src/abis/ipCollection.ts
 var IPCollectionABI = [
   {
     "type": "impl",
@@ -3642,6 +3660,8 @@ var IPCollectionABI = [
     ]
   }
 ];
+
+// src/abis/ipNft.ts
 var IPNftABI = [
   {
     "type": "impl",

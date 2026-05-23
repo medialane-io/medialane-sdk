@@ -6,7 +6,7 @@ import {
   cairo,
   shortString,
 } from "starknet";
-import { Medialane1155ABI } from "../abis.js";
+import { Medialane1155ABI } from "../abis/index.js";
 import type { ResolvedConfig } from "../config.js";
 import { DEFAULT_CURRENCY } from "../constants.js";
 import { MedialaneError } from "../marketplace/errors.js";

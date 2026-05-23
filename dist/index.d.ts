@@ -1848,6 +1848,7 @@ declare const IPMarketplaceABI: readonly [{
         readonly kind: "nested";
     }];
 }];
+
 declare const POPCollectionABI: readonly [{
     readonly type: "struct";
     readonly name: "core::byte_array::ByteArray";
@@ -1958,6 +1959,7 @@ declare const POPCollectionABI: readonly [{
     }];
     readonly state_mutability: "view";
 }];
+
 declare const POPFactoryABI: readonly [{
     readonly type: "struct";
     readonly name: "core::byte_array::ByteArray";
@@ -2044,6 +2046,7 @@ declare const POPFactoryABI: readonly [{
     readonly outputs: readonly [];
     readonly state_mutability: "external";
 }];
+
 declare const DropCollectionABI: readonly [{
     readonly type: "struct";
     readonly name: "core::byte_array::ByteArray";
@@ -2260,6 +2263,7 @@ declare const DropCollectionABI: readonly [{
     }];
     readonly state_mutability: "view";
 }];
+
 declare const DropFactoryABI: readonly [{
     readonly type: "struct";
     readonly name: "core::byte_array::ByteArray";
@@ -2387,6 +2391,7 @@ declare const DropFactoryABI: readonly [{
     readonly outputs: readonly [];
     readonly state_mutability: "external";
 }];
+
 declare const CollectionRegistryABI: readonly [{
     readonly type: "struct";
     readonly name: "core::byte_array::ByteArray";
@@ -2442,6 +2447,7 @@ declare const CollectionRegistryABI: readonly [{
     }];
     readonly state_mutability: "view";
 }];
+
 declare const Medialane1155ABI: readonly [{
     readonly type: "impl";
     readonly name: "Medialane1155V2Impl";
@@ -2805,6 +2811,7 @@ declare const Medialane1155ABI: readonly [{
         readonly kind: "flat";
     }];
 }];
+
 declare const IPCollection1155FactoryABI: readonly [{
     readonly type: "impl";
     readonly name: "IPCollectionFactoryImpl";
@@ -3019,6 +3026,7 @@ declare const IPCollection1155FactoryABI: readonly [{
         readonly kind: "nested";
     }];
 }];
+
 declare const IPCollection1155ABI: readonly [{
     readonly type: "impl";
     readonly name: "ERC1155MetadataURIImpl";
@@ -3818,6 +3826,7 @@ declare const IPCollection1155ABI: readonly [{
         readonly kind: "nested";
     }];
 }];
+
 declare const IPCollectionABI: readonly [{
     readonly type: "impl";
     readonly name: "IPCollectionImpl";
@@ -4382,6 +4391,7 @@ declare const IPCollectionABI: readonly [{
         readonly kind: "nested";
     }];
 }];
+
 declare const IPNftABI: readonly [{
     readonly type: "impl";
     readonly name: "ERC721Metadata";
