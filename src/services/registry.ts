@@ -29,7 +29,7 @@ import {
  * on-chain constant in src/constants.ts, so its `onchain` is omitted rather
  * than invented (the genesis contract address ships with that service).
  */
-const SERVICES: Record<string, ServiceDefinition> = {
+const SERVICES = {
   "mip-erc721": {
     id: "mip-erc721",
     displayName: "IP Collection",
@@ -143,13 +143,28 @@ const SERVICES: Record<string, ServiceDefinition> = {
     uiVariant: "edition",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer"],
   },
-};
+} as const satisfies Record<string, ServiceDefinition>;
+
+/**
+ * Literal-union of every registered service ID. Use this as the type for
+ * `Collection.service` write sites in consumers — typos like "pop_protocol"
+ * (underscore instead of hyphen) become compile errors.
+ *
+ * `getService()` still accepts loose `string` for read-side lookups where the
+ * value came from the DB and is trusted to already be valid.
+ */
+export type ServiceId = keyof typeof SERVICES;
+
+/** Type guard: narrows a string to ServiceId if it's registered. */
+export function isServiceId(id: string | null | undefined): id is ServiceId {
+  return typeof id === "string" && id in SERVICES;
+}
 
 /** Lookup. Returns undefined for unregistered service IDs — callers should
  *  treat that as a data error, since every Collection.service value is
  *  expected to map to a registered ServiceDefinition. */
 export function getService(id: string | null | undefined): ServiceDefinition | undefined {
-  return id ? SERVICES[id] : undefined;
+  return id && id in SERVICES ? (SERVICES as Record<string, ServiceDefinition>)[id] : undefined;
 }
 
 /** All registered services (e.g. the launchpad grid). */
@@ -159,5 +174,7 @@ export function listServices(): ServiceDefinition[] {
 
 /** Services that declare a capability (e.g. "where can users mint"). */
 export function getServicesByCapability(cap: ServiceCapability): ServiceDefinition[] {
-  return Object.values(SERVICES).filter((s) => s.capabilities.includes(cap));
+  return Object.values(SERVICES).filter(
+    (s) => (s.capabilities as readonly ServiceCapability[]).includes(cap),
+  );
 }

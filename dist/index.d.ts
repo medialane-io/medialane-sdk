@@ -5006,6 +5006,154 @@ declare const IPNftABI: readonly [{
     }];
 }];
 
+/**
+ * The Medialane service registry (05-service-model §II, §VI).
+ * Canonical long-form IDs (01-core-model §III). SDK-resident in v1;
+ * on-chain registry in year 2 (08-dao-governance §IV).
+ *
+ * Year-2 forward-compat: cross-account identity uses the future `AccountID`
+ * contract (07-identity-model §IV) — no field here yet, intentionally.
+ *
+ * Phase 2B.2 of the service-model refactor. `ip-erc721` has no dedicated
+ * on-chain constant in src/constants.ts, so its `onchain` is omitted rather
+ * than invented (the genesis contract address ships with that service).
+ */
+declare const SERVICES: {
+    readonly "mip-erc721": {
+        readonly id: "mip-erc721";
+        readonly displayName: "IP Collection";
+        readonly description: "Tokenize intellectual property as a per-creator ERC-721 collection.";
+        readonly standard: "ERC721";
+        readonly provenance: "MEDIALANE";
+        readonly onchain: {
+            readonly factoryAddress: "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2";
+            readonly startBlock: 10046166;
+        };
+        readonly uiVariant: "standard";
+        readonly capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"];
+        readonly metadataSchema: {
+            readonly licenseDefault: "CC BY-SA";
+        };
+    };
+    readonly "ip-erc721": {
+        readonly id: "ip-erc721";
+        readonly displayName: "Programmable IP (genesis)";
+        readonly description: "One shared ERC-721 contract; many wallets mint genesis pieces.";
+        readonly standard: "ERC721";
+        readonly provenance: "MEDIALANE";
+        readonly uiVariant: "standard";
+        readonly capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"];
+        readonly metadataSchema: {
+            readonly licenseDefault: "CC BY-SA";
+        };
+    };
+    readonly "mip-erc1155": {
+        readonly id: "mip-erc1155";
+        readonly displayName: "NFT Editions";
+        readonly description: "Per-creator ERC-1155 collection; creator mints editions.";
+        readonly standard: "ERC1155";
+        readonly provenance: "MEDIALANE";
+        readonly onchain: {
+            readonly factoryAddress: "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
+            readonly classHash: "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80";
+            readonly startBlock: 10045611;
+        };
+        readonly uiVariant: "edition";
+        readonly capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"];
+        readonly metadataSchema: {
+            readonly licenseDefault: "CC BY-SA";
+        };
+    };
+    readonly "pop-protocol": {
+        readonly id: "pop-protocol";
+        readonly displayName: "POP Protocol";
+        readonly description: "Soulbound proof-of-presence collectibles per event.";
+        readonly standard: "ERC721";
+        readonly provenance: "MEDIALANE";
+        readonly onchain: {
+            readonly factoryAddress: "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
+            readonly classHash: "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
+        };
+        readonly uiVariant: "pop";
+        readonly capabilities: ["claim", "transfer"];
+        readonly metadataSchema: {
+            readonly licenseDefault: "CC BY-SA";
+        };
+    };
+    readonly "drop-collection": {
+        readonly id: "drop-collection";
+        readonly displayName: "Collection Drop";
+        readonly description: "Sequential mint with claim windows + allowlist.";
+        readonly standard: "ERC721";
+        readonly provenance: "MEDIALANE";
+        readonly onchain: {
+            readonly factoryAddress: "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
+            readonly classHash: "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
+        };
+        readonly uiVariant: "drop";
+        readonly capabilities: ["claim", "list", "buy", "make_offer", "cancel", "transfer"];
+        readonly metadataSchema: {
+            readonly licenseDefault: "CC BY-SA";
+        };
+    };
+    readonly "medialane-marketplace-erc721": {
+        readonly id: "medialane-marketplace-erc721";
+        readonly displayName: "Medialane Marketplace (ERC-721)";
+        readonly description: "ERC-721 order matching venue.";
+        readonly standard: "ERC721";
+        readonly provenance: "MEDIALANE";
+        readonly onchain: {
+            readonly factoryAddress: "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6";
+            readonly classHash: "0x03dff4f34b976207246207954263be9a28b51390321702443291088dcdf4b2e6";
+            readonly startBlock: 9196722;
+        };
+        readonly uiVariant: "standard";
+        readonly capabilities: ["list", "buy", "make_offer", "cancel"];
+    };
+    readonly "medialane-marketplace-erc1155": {
+        readonly id: "medialane-marketplace-erc1155";
+        readonly displayName: "Medialane Marketplace (ERC-1155)";
+        readonly description: "ERC-1155 order matching venue.";
+        readonly standard: "ERC1155";
+        readonly provenance: "MEDIALANE";
+        readonly onchain: {
+            readonly factoryAddress: "0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99";
+            readonly classHash: "0x01b674aad934be85abc7c1970265cbf7e9bc7d586a90f0a67112c201636dbdd3";
+            readonly startBlock: 9260304;
+        };
+        readonly uiVariant: "edition";
+        readonly capabilities: ["list", "buy", "make_offer", "cancel"];
+    };
+    readonly "external-erc721": {
+        readonly id: "external-erc721";
+        readonly displayName: "External ERC-721";
+        readonly description: "ERC-721 contract not deployed via a Medialane service.";
+        readonly standard: "ERC721";
+        readonly provenance: "EXTERNAL";
+        readonly uiVariant: "standard";
+        readonly capabilities: ["list", "buy", "make_offer", "cancel", "transfer"];
+    };
+    readonly "external-erc1155": {
+        readonly id: "external-erc1155";
+        readonly displayName: "External ERC-1155";
+        readonly description: "ERC-1155 contract not deployed via a Medialane service.";
+        readonly standard: "ERC1155";
+        readonly provenance: "EXTERNAL";
+        readonly uiVariant: "edition";
+        readonly capabilities: ["list", "buy", "make_offer", "cancel", "transfer"];
+    };
+};
+/**
+ * Literal-union of every registered service ID. Use this as the type for
+ * `Collection.service` write sites in consumers — typos like "pop_protocol"
+ * (underscore instead of hyphen) become compile errors.
+ *
+ * `getService()` still accepts loose `string` for read-side lookups where the
+ * value came from the DB and is trusted to already be valid.
+ */
+type ServiceId = keyof typeof SERVICES;
+/** Type guard: narrows a string to ServiceId if it's registered. */
+declare function isServiceId(id: string | null | undefined): id is ServiceId;
 /** Lookup. Returns undefined for unregistered service IDs — callers should
  *  treat that as a data error, since every Collection.service value is
  *  expected to map to a registered ServiceDefinition. */
@@ -5091,4 +5239,4 @@ declare function build1155FulfillmentTypedData(message: Record<string, unknown>,
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWalletType, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, type BuildFeeCallParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EnforcementDeclaration, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildFulfillmentTypedData, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, listServices, normalizeAddress, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWalletType, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, type BuildFeeCallParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EnforcementDeclaration, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceId, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildFulfillmentTypedData, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, listServices, normalizeAddress, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

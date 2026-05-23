@@ -6374,14 +6374,19 @@ var SERVICES = {
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer"]
   }
 };
+function isServiceId(id) {
+  return typeof id === "string" && id in SERVICES;
+}
 function getService(id) {
-  return id ? SERVICES[id] : void 0;
+  return id && id in SERVICES ? SERVICES[id] : void 0;
 }
 function listServices() {
   return Object.values(SERVICES);
 }
 function getServicesByCapability(cap) {
-  return Object.values(SERVICES).filter((s) => s.capabilities.includes(cap));
+  return Object.values(SERVICES).filter(
+    (s) => s.capabilities.includes(cap)
+  );
 }
 
 exports.ApiClient = ApiClient;
@@ -6442,6 +6447,7 @@ exports.getService = getService;
 exports.getServicesByCapability = getServicesByCapability;
 exports.getTokenByAddress = getTokenByAddress;
 exports.getTokenBySymbol = getTokenBySymbol;
+exports.isServiceId = isServiceId;
 exports.listServices = listServices;
 exports.normalizeAddress = normalizeAddress;
 exports.parseAmount = parseAmount;

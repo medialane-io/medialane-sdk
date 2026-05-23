@@ -67,7 +67,9 @@ export {
   getService,
   listServices,
   getServicesByCapability,
+  isServiceId,
 } from "./services/registry.js";
+export type { ServiceId } from "./services/registry.js";
 export type {
   DeployCollectionParams,
   MintItemParams,
