@@ -5065,34 +5065,20 @@ declare function encodeByteArray(str: string): string[];
 
 /**
  * Build SNIP-12 typed data for signing an OrderParameters struct.
- * Uses TypedDataRevision.ACTIVE and ContractAddress / shortstring SNIP-12 types.
+ * The shape is identical across ERC-721 and ERC-1155 (nested OfferItem +
+ * ConsiderationItem) — only the domain version differs.
  */
 declare function buildOrderTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
-/**
- * Build SNIP-12 typed data for signing an OrderFulfillment struct.
- */
-declare function buildFulfillmentTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
-/**
- * Build SNIP-12 typed data for signing an OrderCancellation struct.
- */
-declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
-
-/**
- * Build SNIP-12 typed data for signing an ERC-1155 OrderParameters struct.
- *
- * Uses the ERC-1155 V2 marketplace shape:
- * - Domain name is "Medialane"
- * - Domain version is "2"
- * - OrderParameters contains nested OfferItem and ConsiderationItem structs
- */
 declare function build1155OrderTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 /**
- * Build SNIP-12 typed data for signing an ERC-1155 OrderFulfillment struct.
+ * Build SNIP-12 typed data for an OrderFulfillment struct.
+ * ERC-1155 adds a `quantity` field so the contract can verify the partial-fill
+ * amount; ERC-721 omits it (always single-fill).
  */
+declare function buildFulfillmentTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 declare function build1155FulfillmentTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
-/**
- * Build SNIP-12 typed data for signing an ERC-1155 OrderCancellation struct.
- */
+/** OrderCancellation typed data — identical shape across both standards. */
+declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 
 export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWalletType, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, type BuildFeeCallParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EnforcementDeclaration, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, type Fulfillment, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildFulfillmentTypedData, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, listServices, normalizeAddress, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

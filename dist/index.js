@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { cairo, TypedDataRevision, num, Contract, shortString, constants, RpcProvider } from 'starknet';
+import { cairo, num, Contract, TypedDataRevision, shortString, constants, RpcProvider } from 'starknet';
 
 // src/config.ts
 
@@ -126,66 +126,85 @@ function resolveConfig(raw) {
     feeConfig: resolveFeeConfig(parsed.feeConfig)
   };
 }
+var STARKNET_DOMAIN = [
+  { name: "name", type: "shortstring" },
+  { name: "version", type: "shortstring" },
+  { name: "chainId", type: "shortstring" },
+  { name: "revision", type: "shortstring" }
+];
+var OFFER_ITEM = [
+  { name: "item_type", type: "shortstring" },
+  { name: "token", type: "ContractAddress" },
+  { name: "identifier_or_criteria", type: "felt" },
+  { name: "start_amount", type: "felt" },
+  { name: "end_amount", type: "felt" }
+];
+var CONSIDERATION_ITEM = [
+  { name: "item_type", type: "shortstring" },
+  { name: "token", type: "ContractAddress" },
+  { name: "identifier_or_criteria", type: "felt" },
+  { name: "start_amount", type: "felt" },
+  { name: "end_amount", type: "felt" },
+  { name: "recipient", type: "ContractAddress" }
+];
+var ORDER_PARAMETERS = [
+  { name: "offerer", type: "ContractAddress" },
+  { name: "offer", type: "OfferItem" },
+  { name: "consideration", type: "ConsiderationItem" },
+  { name: "start_time", type: "felt" },
+  { name: "end_time", type: "felt" },
+  { name: "salt", type: "felt" },
+  { name: "nonce", type: "felt" }
+];
+var ORDER_CANCELLATION = [
+  { name: "order_hash", type: "felt" },
+  { name: "offerer", type: "ContractAddress" },
+  { name: "nonce", type: "felt" }
+];
+var DOMAIN_VERSION = {
+  erc721: "1",
+  erc1155: "2"
+};
+function buildDomain(standard, chainId) {
+  return {
+    name: "Medialane",
+    version: DOMAIN_VERSION[standard],
+    chainId,
+    revision: TypedDataRevision.ACTIVE
+  };
+}
 function buildOrderTypedData(message, chainId) {
   return {
-    domain: {
-      name: "Medialane",
-      version: "1",
-      chainId,
-      revision: TypedDataRevision.ACTIVE
-    },
+    domain: buildDomain("erc721", chainId),
     primaryType: "OrderParameters",
     types: {
-      StarknetDomain: [
-        { name: "name", type: "shortstring" },
-        { name: "version", type: "shortstring" },
-        { name: "chainId", type: "shortstring" },
-        { name: "revision", type: "shortstring" }
-      ],
-      OrderParameters: [
-        { name: "offerer", type: "ContractAddress" },
-        { name: "offer", type: "OfferItem" },
-        { name: "consideration", type: "ConsiderationItem" },
-        { name: "start_time", type: "felt" },
-        { name: "end_time", type: "felt" },
-        { name: "salt", type: "felt" },
-        { name: "nonce", type: "felt" }
-      ],
-      OfferItem: [
-        { name: "item_type", type: "shortstring" },
-        { name: "token", type: "ContractAddress" },
-        { name: "identifier_or_criteria", type: "felt" },
-        { name: "start_amount", type: "felt" },
-        { name: "end_amount", type: "felt" }
-      ],
-      ConsiderationItem: [
-        { name: "item_type", type: "shortstring" },
-        { name: "token", type: "ContractAddress" },
-        { name: "identifier_or_criteria", type: "felt" },
-        { name: "start_amount", type: "felt" },
-        { name: "end_amount", type: "felt" },
-        { name: "recipient", type: "ContractAddress" }
-      ]
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderParameters: ORDER_PARAMETERS,
+      OfferItem: OFFER_ITEM,
+      ConsiderationItem: CONSIDERATION_ITEM
+    },
+    message
+  };
+}
+function build1155OrderTypedData(message, chainId) {
+  return {
+    domain: buildDomain("erc1155", chainId),
+    primaryType: "OrderParameters",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderParameters: ORDER_PARAMETERS,
+      OfferItem: OFFER_ITEM,
+      ConsiderationItem: CONSIDERATION_ITEM
     },
     message
   };
 }
 function buildFulfillmentTypedData(message, chainId) {
   return {
-    domain: {
-      name: "Medialane",
-      version: "1",
-      chainId,
-      revision: TypedDataRevision.ACTIVE
-    },
+    domain: buildDomain("erc721", chainId),
     primaryType: "OrderFulfillment",
     types: {
-      StarknetDomain: [
-        { name: "name", type: "shortstring" },
-        { name: "version", type: "shortstring" },
-        { name: "chainId", type: "shortstring" },
-        { name: "revision", type: "shortstring" }
-      ],
+      StarknetDomain: STARKNET_DOMAIN,
       OrderFulfillment: [
         { name: "order_hash", type: "felt" },
         { name: "fulfiller", type: "ContractAddress" },
@@ -195,27 +214,40 @@ function buildFulfillmentTypedData(message, chainId) {
     message
   };
 }
-function buildCancellationTypedData(message, chainId) {
+function build1155FulfillmentTypedData(message, chainId) {
   return {
-    domain: {
-      name: "Medialane",
-      version: "1",
-      chainId,
-      revision: TypedDataRevision.ACTIVE
-    },
-    primaryType: "OrderCancellation",
+    domain: buildDomain("erc1155", chainId),
+    primaryType: "OrderFulfillment",
     types: {
-      StarknetDomain: [
-        { name: "name", type: "shortstring" },
-        { name: "version", type: "shortstring" },
-        { name: "chainId", type: "shortstring" },
-        { name: "revision", type: "shortstring" }
-      ],
-      OrderCancellation: [
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderFulfillment: [
         { name: "order_hash", type: "felt" },
-        { name: "offerer", type: "ContractAddress" },
+        { name: "fulfiller", type: "ContractAddress" },
+        { name: "quantity", type: "felt" },
         { name: "nonce", type: "felt" }
       ]
+    },
+    message
+  };
+}
+function buildCancellationTypedData(message, chainId) {
+  return {
+    domain: buildDomain("erc721", chainId),
+    primaryType: "OrderCancellation",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderCancellation: ORDER_CANCELLATION
+    },
+    message
+  };
+}
+function build1155CancellationTypedData(message, chainId) {
+  return {
+    domain: buildDomain("erc1155", chainId),
+    primaryType: "OrderCancellation",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderCancellation: ORDER_CANCELLATION
     },
     message
   };
@@ -4921,85 +4953,6 @@ var MarketplaceModule = class {
     return buildCancellationTypedData(params, chainId);
   }
 };
-var STARKNET_DOMAIN = [
-  { name: "name", type: "shortstring" },
-  { name: "version", type: "shortstring" },
-  { name: "chainId", type: "shortstring" },
-  { name: "revision", type: "shortstring" }
-];
-function domain1155(chainId) {
-  return {
-    name: "Medialane",
-    version: "2",
-    chainId,
-    revision: TypedDataRevision.ACTIVE
-  };
-}
-function build1155OrderTypedData(message, chainId) {
-  return {
-    domain: domain1155(chainId),
-    primaryType: "OrderParameters",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OfferItem: [
-        { name: "item_type", type: "shortstring" },
-        { name: "token", type: "ContractAddress" },
-        { name: "identifier_or_criteria", type: "felt" },
-        { name: "start_amount", type: "felt" },
-        { name: "end_amount", type: "felt" }
-      ],
-      ConsiderationItem: [
-        { name: "item_type", type: "shortstring" },
-        { name: "token", type: "ContractAddress" },
-        { name: "identifier_or_criteria", type: "felt" },
-        { name: "start_amount", type: "felt" },
-        { name: "end_amount", type: "felt" },
-        { name: "recipient", type: "ContractAddress" }
-      ],
-      OrderParameters: [
-        { name: "offerer", type: "ContractAddress" },
-        { name: "offer", type: "OfferItem" },
-        { name: "consideration", type: "ConsiderationItem" },
-        { name: "start_time", type: "felt" },
-        { name: "end_time", type: "felt" },
-        { name: "salt", type: "felt" },
-        { name: "nonce", type: "felt" }
-      ]
-    },
-    message
-  };
-}
-function build1155FulfillmentTypedData(message, chainId) {
-  return {
-    domain: domain1155(chainId),
-    primaryType: "OrderFulfillment",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderFulfillment: [
-        { name: "order_hash", type: "felt" },
-        { name: "fulfiller", type: "ContractAddress" },
-        { name: "quantity", type: "felt" },
-        { name: "nonce", type: "felt" }
-      ]
-    },
-    message
-  };
-}
-function build1155CancellationTypedData(message, chainId) {
-  return {
-    domain: domain1155(chainId),
-    primaryType: "OrderCancellation",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderCancellation: [
-        { name: "order_hash", type: "felt" },
-        { name: "offerer", type: "ContractAddress" },
-        { name: "nonce", type: "felt" }
-      ]
-    },
-    message
-  };
-}
 var _contractCache2 = /* @__PURE__ */ new WeakMap();
 function getContract(config) {
   let c = _contractCache2.get(config);

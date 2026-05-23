@@ -25,7 +25,7 @@ import {
   build1155OrderTypedData,
   build1155FulfillmentTypedData,
   build1155CancellationTypedData,
-} from "./signing.js";
+} from "../marketplace/signing.js";
 import {
   toSignatureArray,
   getChainId,

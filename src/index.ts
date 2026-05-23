@@ -87,9 +87,7 @@ export {
   buildOrderTypedData,
   buildFulfillmentTypedData,
   buildCancellationTypedData,
-} from "./marketplace/signing.js";
-export {
   build1155OrderTypedData,
   build1155FulfillmentTypedData,
   build1155CancellationTypedData,
-} from "./marketplace1155/signing.js";
+} from "./marketplace/signing.js";
