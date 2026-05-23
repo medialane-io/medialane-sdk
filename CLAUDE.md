@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.13.0",
+  "version": "0.20.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -39,27 +39,51 @@ Built with `tsup` — dual ESM + CJS output in `dist/`.
 src/
   client.ts          ← MedialaneClient (root export)
   config.ts          ← MedialaneConfig schema + resolveConfig()
-  constants.ts       ← contract addresses, SUPPORTED_TOKENS, DEFAULT_RPC_URLS
-  abis.ts            ← IPMarketplaceABI (fetched 2026-02-16)
+  constants.ts       ← contract addresses, SUPPORTED_TOKENS, DEFAULT_RPC_URL
+  abis/              ← one file per contract ABI (split 2026-05-22)
+    index.ts         ← re-exports all ABIs; keep `import { IPNftABI } from "@medialane/sdk"` working
+    ipMarketplace.ts, popCollection.ts, popFactory.ts, dropCollection.ts,
+    dropFactory.ts, collectionRegistry.ts, medialane1155.ts,
+    ipCollection1155Factory.ts, ipCollection1155.ts, ipCollection.ts, ipNft.ts
   index.ts           ← public re-exports
   api/
     client.ts        ← ApiClient class (all REST methods)
+  fee/               ← buildFeeCall + ResolvedFeeConfig (platform creators-fund fee)
   marketplace/
     index.ts         ← MarketplaceModule (wraps orders.ts functions)
     orders.ts        ← createListing, makeOffer, fulfillOrder, cancelOrder, checkoutCart
-    signing.ts       ← SNIP-12 typed data builders
+    signing.ts       ← unified SNIP-12 typed data builders (both ERC-721 and ERC-1155)
+    utils.ts         ← shared getProvider, getChainId, resolveToken
+    errors.ts        ← MedialaneError
+  marketplace1155/   ← thin module — orders for ERC-1155 only (signing lives in marketplace/)
+    index.ts         ← Medialane1155Module
+    orders.ts        ← createListing1155, fulfillOrder1155, cancelOrder1155, etc.
   services/
-    pop.ts           ← PopService (POP Protocol on-chain interactions)
-    drop.ts          ← DropService (Collection Drop on-chain interactions)
+    pop.ts           ← PopService
+    drop.ts          ← DropService
+    erc1155collection.ts ← ERC1155CollectionService
+    registry.ts      ← service registry: SERVICES + getService() + ServiceId literal union
   types/
-    api.ts           ← API response types (ApiOrder, ApiToken, etc.)
-    index.ts
+    api.ts           ← API response types
+    services.ts      ← ServiceDefinition, ServiceCapability
     marketplace.ts   ← on-chain param types
+    errors.ts        ← MedialaneErrorCode
+    index.ts
   utils/
-    address.ts       ← normalizeAddress()
-    bigint.ts        ← stringifyBigInts()
-    token.ts         ← parseAmount(), formatAmount(), getListableTokens()
+    address.ts       ← normalizeAddress(), shortenAddress()
+    bigint.ts        ← stringifyBigInts(), u256ToBigInt()
+    bytearray.ts     ← encodeByteArray() (Cairo ByteArray serialization)
+    token.ts         ← SUPPORTED_TOKENS, getTokenByAddress, getTokenBySymbol, getListableTokens, parseAmount, formatAmount
+    retry.ts         ← RetryOptions
 ```
+
+> **Refactor notes (2026-05-22 → 2026-05-23):**
+>
+> - **v0.16.0**: removed deprecated aliases — `MARKETPLACE_CONTRACT_MAINNET`, `MARKETPLACE_CLASS_HASH_MAINNET`, `MARKETPLACE_START_BLOCK_MAINNET`, `INDEXER_START_BLOCK_MAINNET`, `COLLECTION_CONTRACT_MAINNET`, `ERC1155_FACTORY_CONTRACT_MAINNET`, `ERC1155_COLLECTION_CLASS_HASH_MAINNET`. Use the canonical `MARKETPLACE_721_*`, `COLLECTION_721_*`, `COLLECTION_1155_*` names.
+> - **v0.17.0**: registered `external-erc721` + `external-erc1155` as first-class services. Every `Collection.service` value now maps to a registered `ServiceDefinition`.
+> - **v0.18.0**: unified `marketplace/signing.ts` (was duplicated as `marketplace1155/signing.ts`). All six builders (`buildOrderTypedData`, `build1155OrderTypedData`, etc.) live in one file with shared type definitions; same export names so consumers are unchanged.
+> - **v0.19.0**: split monolithic `abis.ts` (4,247 lines) into per-ABI files under `abis/`. Same public imports via `abis/index.ts` barrel.
+> - **v0.20.0**: exported `ServiceId` literal union (`keyof typeof SERVICES`) + `isServiceId()` type guard. Use these to type-check `Collection.service` write sites in consumers.
 
 ---
 
@@ -294,17 +318,30 @@ On-chain Collection Drop interactions. All require a starknet.js `AccountInterfa
 ## Constants (`src/constants.ts`)
 
 ```ts
-MARKETPLACE_CONTRACT_MAINNET              = "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6"  // ERC-721 current
-MARKETPLACE_1155_CONTRACT_MAINNET         = "0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99"  // ERC-1155 current
-COLLECTION_CONTRACT_MAINNET               = "0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b"  // v2
-ERC1155_FACTORY_CONTRACT_MAINNET          = "0x006b2dc7ca7c4f466bb4575ba043d934310f052074f849caf853a86bcb819fd6"
-ERC1155_COLLECTION_CLASS_HASH_MAINNET     = (see src/constants.ts)
-POP_FACTORY_CONTRACT_MAINNET              = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111"
-POP_COLLECTION_CLASS_HASH_MAINNET         = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f"
-DROP_FACTORY_CONTRACT_MAINNET             = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800"
-DROP_COLLECTION_CLASS_HASH_MAINNET        = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282"
-INDEXER_START_BLOCK_MAINNET               = 9130000
+MARKETPLACE_721_CONTRACT_MAINNET            = "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6"
+MARKETPLACE_721_CLASS_HASH_MAINNET          = "0x03dff4f34b976207246207954263be9a28b51390321702443291088dcdf4b2e6"
+MARKETPLACE_721_START_BLOCK_MAINNET         = 9196722
+MARKETPLACE_1155_CONTRACT_MAINNET           = "0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99"
+MARKETPLACE_1155_CLASS_HASH_MAINNET         = "0x01b674aad934be85abc7c1970265cbf7e9bc7d586a90f0a67112c201636dbdd3"
+MARKETPLACE_1155_START_BLOCK_MAINNET        = 9260304
+COLLECTION_721_CONTRACT_MAINNET             = "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2"  // MIP v0.3.0 (2026-05-22)
+COLLECTION_721_START_BLOCK_MAINNET          = 10046166
+IPNFT_CLASS_HASH_MAINNET                    = "0x27ee4ded786d51bced1e94afec3034d6ffce71c032c45ee1ff283ccfa9db12e"
+IPCOLLECTION_CLASS_HASH_MAINNET             = "0x287ccdff8b6655a2248cfe170d82eae3a35303cd00ef3e751b25ddca26d9095"
+COLLECTION_1155_CONTRACT_MAINNET            = "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131"  // v0.2.0 (2026-05-22)
+COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET  = "0x188321a7c9ca972cc63e352e3b3a4cdf33781852d957f4b4b62249310fe4c75"
+COLLECTION_1155_CLASS_HASH_MAINNET          = "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80"
+COLLECTION_1155_START_BLOCK_MAINNET         = 10045611
+POP_FACTORY_CONTRACT_MAINNET                = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111"
+POP_COLLECTION_CLASS_HASH_MAINNET           = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f"
+DROP_FACTORY_CONTRACT_MAINNET               = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800"
+DROP_COLLECTION_CLASS_HASH_MAINNET          = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282"
+NFTCOMMENTS_CONTRACT_MAINNET                = "0x024f97eb5abe659fb650bf162b5fc16501f8f3863a7369901ce6099462e62799"
+```
 
+> Deprecated short-name aliases (`MARKETPLACE_CONTRACT_MAINNET`, `COLLECTION_CONTRACT_MAINNET`, `ERC1155_FACTORY_CONTRACT_MAINNET`, etc.) were removed in **v0.16.0** — use the canonical `*_721_*` / `*_1155_*` names.
+
+```ts
 DEFAULT_RPC_URLS = {
   mainnet: "https://rpc.starknet.lava.build",
   sepolia: "https://rpc.starknet-sepolia.lava.build",
