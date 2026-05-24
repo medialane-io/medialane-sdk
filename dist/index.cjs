@@ -6241,8 +6241,17 @@ var MedialaneClient = class {
       erc1155Collection: new ERC1155CollectionService(this.config)
     };
     if (!this.config.backendUrl) {
-      this.api = new Proxy({}, {
-        get(_target, prop) {
+      const sentinel = new ApiClient("https://medialane-sdk-no-backend.invalid", this.config.apiKey);
+      const apiMethodNames = new Set(
+        Object.getOwnPropertyNames(ApiClient.prototype).filter(
+          (k) => k !== "constructor" && typeof sentinel[k] === "function"
+        )
+      );
+      this.api = new Proxy(sentinel, {
+        get(target, prop, receiver) {
+          if (typeof prop === "symbol" || !apiMethodNames.has(prop)) {
+            return Reflect.get(target, prop, receiver);
+          }
           return () => {
             throw new Error(
               `backendUrl not configured. Pass backendUrl to MedialaneClient to use .api.${String(prop)}()`
