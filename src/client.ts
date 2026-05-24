@@ -40,11 +40,26 @@ export class MedialaneClient {
     };
 
     if (!this.config.backendUrl) {
-      this.api = new Proxy({} as ApiClient, {
-        get(_target, prop) {
+      // When backendUrl is not configured, `client.api.*()` must fail with a
+      // helpful message. Wrap a real ApiClient (built with a sentinel URL so
+      // it never silently dispatches) in a Proxy that intercepts ONLY actual
+      // ApiClient methods — Symbol access, .then (Promise unwrapping),
+      // .toString, .inspect (Node/Bun debug) and other host introspection
+      // are returned unchanged so they don't fabricate throwing functions.
+      const sentinel = new ApiClient("https://medialane-sdk-no-backend.invalid", this.config.apiKey);
+      const apiMethodNames = new Set<string | symbol>(
+        Object.getOwnPropertyNames(ApiClient.prototype).filter(
+          (k) => k !== "constructor" && typeof (sentinel as unknown as Record<string, unknown>)[k] === "function",
+        ),
+      );
+      this.api = new Proxy(sentinel, {
+        get(target, prop, receiver) {
+          if (typeof prop === "symbol" || !apiMethodNames.has(prop)) {
+            return Reflect.get(target, prop, receiver);
+          }
           return () => {
             throw new Error(
-              `backendUrl not configured. Pass backendUrl to MedialaneClient to use .api.${String(prop)}()`
+              `backendUrl not configured. Pass backendUrl to MedialaneClient to use .api.${String(prop)}()`,
             );
           };
         },
