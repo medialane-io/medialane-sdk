@@ -33,6 +33,38 @@ export interface EnforcementDeclaration {
   revocable?: boolean;
 }
 
+/** An on-chain event the service emits. The indexer consumes this list to
+ *  decide what to poll and how to parse — the year-2 "data-driven event
+ *  parser registry" foundation (02-protocol-app-split §V).
+ *
+ *  The Cairo selector is derivable from `name` via
+ *  `starknet.hash.getSelectorFromName(name)` — not stored to avoid
+ *  duplication and keep the SDK runtime-free of pre-computed hashes.
+ */
+export interface ServiceEventDeclaration {
+  /** Cairo event struct name (e.g. "OrderCreated", "CollectionCreated"). */
+  name: string;
+  /**
+   * Where this event is emitted:
+   *  - "factory":  at the service's `onchain.factoryAddress` (fixed address).
+   *                Examples: marketplace OrderCreated, factory CollectionCreated.
+   *  - "instance": at the address of each deployed collection contract
+   *                (variable; the indexer iterates discovered instances).
+   *                Examples: ERC-721 Transfer, POP AllowlistUpdated.
+   */
+  emittedBy: "factory" | "instance";
+  /**
+   * Polling cadence the indexer should use:
+   *  - "fast" (default): every indexer tick (~6s). Right for low-volume
+   *                      protocol events like order/factory events.
+   *  - "slow":           a separate slower loop (~2min). Right for
+   *                      high-volume per-instance events like Transfer
+   *                      and AllowlistUpdated — polling them every tick
+   *                      against every known instance is RPC-expensive.
+   */
+  poll?: "fast" | "slow";
+}
+
 /** Declarative description of a service (05-service-model §II).
  *  SDK-resident in v1; on-chain registry in year 2. */
 export interface ServiceDefinition {
@@ -50,6 +82,12 @@ export interface ServiceDefinition {
   /** Drives the dapp asset/collection page variant. */
   uiVariant: string;
   capabilities: ServiceCapability[];
+  /** Events the indexer should poll + parse for this service.
+   *  Optional during the year-1 transition — backend hand-coded pollers
+   *  (medialane-backend/src/mirror/poller.ts) take precedence today.
+   *  Populated here so consumers and the future data-driven indexer can
+   *  read what events a service emits without code-spelunking. */
+  events?: ServiceEventDeclaration[];
   metadataSchema?: {
     requiredTraits?: string[];
     /** Canonical platform default is "CC BY-SA" (04-licensing-model §III). */

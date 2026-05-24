@@ -55,7 +55,7 @@ const DOMAIN_VERSION: Record<"erc721" | "erc1155", string> = {
   erc1155: "2",
 };
 
-function buildDomain(standard: "erc721" | "erc1155", chainId: constants.StarknetChainId) {
+function buildDomain(standard: "erc721" | "erc1155", chainId: constants.StarknetChainId | string) {
   return {
     name: "Medialane",
     version: DOMAIN_VERSION[standard],
@@ -73,7 +73,7 @@ function buildDomain(standard: "erc721" | "erc1155", chainId: constants.Starknet
  */
 export function buildOrderTypedData(
   message: Record<string, unknown>,
-  chainId: constants.StarknetChainId,
+  chainId: constants.StarknetChainId | string,
 ): TypedData {
   return {
     domain: buildDomain("erc721", chainId),
@@ -90,7 +90,7 @@ export function buildOrderTypedData(
 
 export function build1155OrderTypedData(
   message: Record<string, unknown>,
-  chainId: constants.StarknetChainId,
+  chainId: constants.StarknetChainId | string,
 ): TypedData {
   return {
     domain: buildDomain("erc1155", chainId),
@@ -112,7 +112,7 @@ export function build1155OrderTypedData(
  */
 export function buildFulfillmentTypedData(
   message: Record<string, unknown>,
-  chainId: constants.StarknetChainId,
+  chainId: constants.StarknetChainId | string,
 ): TypedData {
   return {
     domain: buildDomain("erc721", chainId),
@@ -131,7 +131,7 @@ export function buildFulfillmentTypedData(
 
 export function build1155FulfillmentTypedData(
   message: Record<string, unknown>,
-  chainId: constants.StarknetChainId,
+  chainId: constants.StarknetChainId | string,
 ): TypedData {
   return {
     domain: buildDomain("erc1155", chainId),
@@ -152,7 +152,7 @@ export function build1155FulfillmentTypedData(
 /** OrderCancellation typed data — identical shape across both standards. */
 export function buildCancellationTypedData(
   message: Record<string, unknown>,
-  chainId: constants.StarknetChainId,
+  chainId: constants.StarknetChainId | string,
 ): TypedData {
   return {
     domain: buildDomain("erc721", chainId),
@@ -167,7 +167,7 @@ export function buildCancellationTypedData(
 
 export function build1155CancellationTypedData(
   message: Record<string, unknown>,
-  chainId: constants.StarknetChainId,
+  chainId: constants.StarknetChainId | string,
 ): TypedData {
   return {
     domain: buildDomain("erc1155", chainId),
