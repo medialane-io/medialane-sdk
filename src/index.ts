@@ -77,7 +77,7 @@ export type {
 } from "./services/erc1155collection.js";
 
 // Utils
-export { normalizeAddress, shortenAddress } from "./utils/address.js";
+export { normalizeAddress, normalizeHash, shortenAddress } from "./utils/address.js";
 export { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol, getListableTokens } from "./utils/token.js";
 export type { SupportedToken } from "./utils/token.js";
 export { stringifyBigInts, u256ToBigInt } from "./utils/bigint.js";

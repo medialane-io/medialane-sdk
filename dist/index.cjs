@@ -5347,11 +5347,21 @@ var Medialane1155Module = class {
     return build1155CancellationTypedData(params, chainId);
   }
 };
-
-// src/utils/address.ts
 function normalizeAddress(address) {
-  const hex = address.replace(/^0x/, "").toLowerCase();
-  return "0x" + hex.padStart(64, "0");
+  try {
+    const hex = starknet.num.toHex(BigInt(address));
+    return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
+  } catch {
+    throw new Error(`Invalid Starknet address: "${address}"`);
+  }
+}
+function normalizeHash(hash) {
+  try {
+    const hex = starknet.num.toHex(BigInt(hash));
+    return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
+  } catch {
+    throw new Error(`Invalid Starknet hash: "${hash}"`);
+  }
 }
 function shortenAddress(address, chars = 4) {
   const norm = normalizeAddress(address);
@@ -6450,6 +6460,7 @@ exports.getTokenBySymbol = getTokenBySymbol;
 exports.isServiceId = isServiceId;
 exports.listServices = listServices;
 exports.normalizeAddress = normalizeAddress;
+exports.normalizeHash = normalizeHash;
 exports.parseAmount = parseAmount;
 exports.resolveConfig = resolveConfig;
 exports.resolveFeeConfig = resolveFeeConfig;
