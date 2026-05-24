@@ -6282,6 +6282,13 @@ var SERVICES = {
     },
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
+    events: [
+      { name: "CollectionCreated", emittedBy: "factory" }
+      // Per-instance ERC-721 Transfer emitted by each deployed collection; not
+      // yet declared here because the indexer polls discovered instances on a
+      // slow schedule. Plan 2026-05-24-data-driven-event-registry.md covers
+      // the migration.
+    ],
     metadataSchema: { licenseDefault: "CC BY-SA" }
   },
   "ip-erc721": {
@@ -6292,6 +6299,8 @@ var SERVICES = {
     provenance: "MEDIALANE",
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
+    // No factory — single shared contract. Events declared when the genesis
+    // contract address is wired into onchain.factoryAddress here.
     metadataSchema: { licenseDefault: "CC BY-SA" }
   },
   "mip-erc1155": {
@@ -6307,6 +6316,9 @@ var SERVICES = {
     },
     uiVariant: "edition",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
+    events: [
+      { name: "CollectionDeployed", emittedBy: "factory" }
+    ],
     metadataSchema: { licenseDefault: "CC BY-SA" }
   },
   "pop-protocol": {
@@ -6321,6 +6333,10 @@ var SERVICES = {
     },
     uiVariant: "pop",
     capabilities: ["claim", "transfer"],
+    events: [
+      { name: "CollectionCreated", emittedBy: "factory" },
+      { name: "AllowlistUpdated", emittedBy: "instance", poll: "slow" }
+    ],
     metadataSchema: { licenseDefault: "CC BY-SA" }
   },
   "drop-collection": {
@@ -6335,6 +6351,10 @@ var SERVICES = {
     },
     uiVariant: "drop",
     capabilities: ["claim", "list", "buy", "make_offer", "cancel", "transfer"],
+    events: [
+      { name: "DropCreated", emittedBy: "factory" },
+      { name: "AllowlistUpdated", emittedBy: "instance", poll: "slow" }
+    ],
     metadataSchema: { licenseDefault: "CC BY-SA" }
   },
   "medialane-marketplace-erc721": {
@@ -6349,7 +6369,12 @@ var SERVICES = {
       startBlock: MARKETPLACE_721_START_BLOCK_MAINNET
     },
     uiVariant: "standard",
-    capabilities: ["list", "buy", "make_offer", "cancel"]
+    capabilities: ["list", "buy", "make_offer", "cancel"],
+    events: [
+      { name: "OrderCreated", emittedBy: "factory" },
+      { name: "OrderFulfilled", emittedBy: "factory" },
+      { name: "OrderCancelled", emittedBy: "factory" }
+    ]
   },
   "medialane-marketplace-erc1155": {
     id: "medialane-marketplace-erc1155",
@@ -6363,7 +6388,12 @@ var SERVICES = {
       startBlock: MARKETPLACE_1155_START_BLOCK_MAINNET
     },
     uiVariant: "edition",
-    capabilities: ["list", "buy", "make_offer", "cancel"]
+    capabilities: ["list", "buy", "make_offer", "cancel"],
+    events: [
+      { name: "OrderCreated", emittedBy: "factory" },
+      { name: "OrderFulfilled", emittedBy: "factory" },
+      { name: "OrderCancelled", emittedBy: "factory" }
+    ]
   },
   "external-erc721": {
     id: "external-erc721",
