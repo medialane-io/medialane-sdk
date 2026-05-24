@@ -2,6 +2,21 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.21.0] — 2026-05-24
+
+Audit-driven release. See `medialane-core/docs/audits/2026-05-24-backend-sdk-audit.md`.
+
+### Changed
+- **`normalizeAddress` now validates input.** Routes through `BigInt(...)` — non-numeric input throws `Invalid Starknet address` instead of silently producing `0x000...0banana`. Existing valid Starknet addresses continue to normalize to the same 64-char lowercase hex. (audit P1-10 + R0)
+- **SNIP-12 builder `chainId` parameter widened to `constants.StarknetChainId | string`** so callers using plain strings from `RpcProvider.getChainId()` (e.g. medialane-backend) can import directly without casts. No behavior change. (R1)
+
+### Added
+- **`normalizeHash`** export — same shape as `normalizeAddress`, separate name to make intent explicit at call sites. medialane-backend re-exports both from its `utils/starknet.ts`. (R0)
+- **`ServiceEventDeclaration`** type + optional **`events`** field on `ServiceDefinition`. Populated for the 7 services that emit events (marketplace × 2, MIP factories × 2, POP, Drop). `emittedBy: "factory" | "instance"` + `poll: "fast" | "slow"` cadence hint. Foundation for the year-2 data-driven event-parser registry (see `02-protocol-app-split §V`). Backend indexer keeps hand-coded pollers until it consumes this metadata. (R3 prep)
+
+### Fixed
+- **`MedialaneClient.api` proxy whitelists known method names only.** When `backendUrl` is not configured, the previous proxy returned a throwing function for ANY property access — including `Symbol.iterator`, `.then` (made the proxy thenable; `Promise.resolve(client.api)` silently hung), `.toString`, `.constructor`. Narrowed to `ApiClient.prototype` method names; symbol/unknown access passes through to a sentinel instance. (P2-8)
+
 ## [0.8.3] — 2026-04-28
 
 ### Changed
