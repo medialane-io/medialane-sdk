@@ -573,10 +573,21 @@ interface ApiOrder {
     updatedAt: string;
     /** Embedded token metadata (name/image/description). Null when not yet indexed. */
     token: ApiOrderTokenMeta | null;
-    /** Set when this is a counter-offer listing — points to the original buyer bid. */
+    /** Set when this is a counter-offer listing — points to the original buyer bid.
+     *  Now always emitted by the backend (was conditional); kept optional in the
+     *  type for back-compat with older response shapes. */
     parentOrderHash?: string | null;
     /** Optional seller message accompanying a counter-offer. */
     counterOfferMessage?: string | null;
+    /** True when this order is a bid (ERC-20 offer) AND at least one ACTIVE counter
+     *  exists with `parentOrderHash = this.orderHash`. Set by endpoints that compute
+     *  it (currently `GET /v1/orders/user/:address` and `GET /v1/orders/:orderHash`);
+     *  undefined on endpoints that don't.
+     *
+     *  Use this instead of `status === "COUNTER_OFFERED"` for "this bid has been
+     *  countered" affordances. The status pattern is being phased out per
+     *  01-core-model §V — counter-offers are linked orders, not a lifecycle state. */
+    hasActiveCounterOffer?: boolean;
 }
 /**
  * A single OpenSea-compatible ERC-721 attribute.

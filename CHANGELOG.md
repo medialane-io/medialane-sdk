@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.22.0] — 2026-05-25
+
+### Added
+- **`ApiOrder.hasActiveCounterOffer?: boolean`** — true when this order is a bid (ERC-20 offer) AND at least one ACTIVE counter exists with `parentOrderHash = this.orderHash`. Set by `GET /v1/orders/user/:address` and `GET /v1/orders/:orderHash`; undefined on other endpoints. Use this instead of `status === "COUNTER_OFFERED"` for "this bid has been countered" affordances — the status pattern is being phased out (`01-core-model §V`). (audit P0-1, Phase A.2)
+
+### Changed
+- **`ApiOrder.parentOrderHash`** is now always emitted by the backend (was conditional). Type stays `string | null | undefined` for back-compat with older response shapes.
+
 ## [0.21.0] — 2026-05-24
 
 Audit-driven release. See `medialane-core/docs/audits/2026-05-24-backend-sdk-audit.md`.
