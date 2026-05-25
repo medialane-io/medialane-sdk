@@ -496,7 +496,15 @@ interface ApiCollectionsQuery {
     /** Filter by service id. */
     service?: string;
 }
-type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED" | "COUNTER_OFFERED";
+/**
+ * Order lifecycle states. **Four canonical values** per `01-core-model §V`.
+ *
+ * The legacy `"COUNTER_OFFERED"` value was removed in 0.23.0 (audit P0-1
+ * Phase D). Counter-offers are linked orders via `parentOrderHash`, not a
+ * third lifecycle state on the parent bid. Use `ApiOrder.hasActiveCounterOffer`
+ * (added in 0.22.0) for the "this bid has been countered" affordance.
+ */
+type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
 type SortOrder = "price_asc" | "price_desc" | "recent";
 type ActivityType = "mint" | "transfer" | "sale" | "listing" | "offer" | "cancelled";
 type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION" | "COUNTER_OFFER";
