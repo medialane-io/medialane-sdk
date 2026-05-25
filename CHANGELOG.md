@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.23.0] — 2026-05-25
+
+### BREAKING (type-only)
+- **`OrderStatus` no longer includes `"COUNTER_OFFERED"`.** Canonical values are now `"ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED"` per `01-core-model §V`. Counter-offers are linked orders via `parentOrderHash`, not a third lifecycle state. Use `ApiOrder.hasActiveCounterOffer` (added in 0.22.0) for the "this bid has been countered" affordance. (audit P0-1 Phase D)
+
+  Runtime impact: zero — the backend hasn't written `COUNTER_OFFERED` since 0.22.0 + matching backend release (2026-05-25). Any consumer with a `status === "COUNTER_OFFERED"` predicate left over will get a TypeScript narrowing error and a permanently-false branch at runtime; replace with the `hasActiveCounterOffer` flag.
+
 ## [0.22.0] — 2026-05-25
 
 ### Added
