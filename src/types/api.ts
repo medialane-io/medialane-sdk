@@ -324,6 +324,12 @@ export interface ApiCollection {
   /** Token standard detected via ERC-165. */
   standard: "ERC721" | "ERC1155" | "UNKNOWN";
   isKnown: boolean;
+  /** Hidden by ops/admin (content moderation). When true, list endpoints
+   *  already filter the row out; single-collection fetches still return
+   *  it so the UI can render a "hidden" banner instead of a 404. */
+  isHidden: boolean;
+  /** Promoted on homepage / browse surfaces. */
+  isFeatured: boolean;
   /** Stable Medialane service ID, or null for external collections.
    *  Resolve via getService() (05-service-model). Primary field. */
   service: string | null;
@@ -747,6 +753,12 @@ export interface ApiCreatorProfile {
   bio: string | null;
   avatarImage: string | null;
   bannerImage: string | null;
+  /** Computed fallback used by the creator-list / creator-page endpoints
+   *  ONLY when both `avatarImage` and `bannerImage` are null: image of
+   *  any collection owned by this creator. Undefined on profile-detail
+   *  endpoints where this lookup isn't performed. UI may use this to
+   *  populate hero banners without an extra fetch. */
+  collectionImage?: string | null;
   websiteUrl: string | null;
   twitterUrl: string | null;
   discordUrl: string | null;

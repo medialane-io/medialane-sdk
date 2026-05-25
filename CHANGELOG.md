@@ -2,6 +2,26 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.24.0] — 2026-05-25
+
+### Added
+
+- **`ApiCollection.isHidden: boolean`** — content-moderation flag. Backend already serializes this (`src/api/routes/collections.ts:551`), but the SDK type union was missing it, forcing consumers to cast through `any`. List endpoints filter `isHidden=true` rows out automatically; single-collection fetches still return them so the UI can render a "hidden" banner instead of a 404.
+- **`ApiCollection.isFeatured: boolean`** — homepage / browse promotion flag. Backend serializes this on collection rows but the type union was missing it.
+- **`ApiCreatorProfile.collectionImage?: string | null`** — computed fallback the backend populates on the creator-list / creator-page endpoints when both `avatarImage` and `bannerImage` are null (see `medialane-backend/src/api/routes/profiles.ts:253`). Undefined on profile-detail endpoints that don't perform the lookup. UI can use this to render hero banners without an extra fetch.
+
+### Runtime impact
+
+None — these fields are already returned by the backend; the SDK was simply not typing them, forcing consumers (`medialane-io`, `medialane-dapp`) to use `as any` casts. Adding the typed declarations unblocks ~3 `as any` removals in io's follow-up Batch D.2 sweep.
+
+### Verification
+
+Audit confirmed each new field is actually serialized by the backend:
+- `Collection.isHidden` / `Collection.isFeatured`: see `serializeCollection()` in backend `src/api/routes/collections.ts:540-565`.
+- `ApiCreatorProfile.collectionImage`: see `medialane-backend/src/api/routes/profiles.ts:231-256`.
+
+`Token.isHidden` is intentionally NOT added — backend filters tokens by `isHidden=false` but does not serialize the field on token responses. Consumers checking `(token as any).isHidden` are reading a field that never exists at runtime.
+
 ## [0.23.0] — 2026-05-25
 
 ### BREAKING (type-only)
