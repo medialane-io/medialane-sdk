@@ -23,7 +23,7 @@ declare const COLLECTION_721_START_BLOCK_MAINNET = 10046166;
 declare const DROP_FACTORY_CONTRACT_MAINNET = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
 declare const POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
 /** NFTComments on-chain comment system — immutable, no admin key. */
-declare const NFTCOMMENTS_CONTRACT_MAINNET = "0x024f97eb5abe659fb650bf162b5fc16501f8f3863a7369901ce6099462e62799";
+declare const NFTCOMMENTS_CONTRACT_MAINNET = "0x02cdac70c94447189af0389dfea63f4d5e4154ea8a563de288a5ab1c39e37843";
 declare const SUPPORTED_TOKENS: readonly [{
     readonly symbol: "USDC";
     readonly address: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb";
