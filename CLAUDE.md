@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.24.0",
+  "version": "0.24.1",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -336,7 +336,7 @@ POP_FACTORY_CONTRACT_MAINNET                = "0x00b32c34b427d8f346b5843ada6a37b
 POP_COLLECTION_CLASS_HASH_MAINNET           = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f"
 DROP_FACTORY_CONTRACT_MAINNET               = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800"
 DROP_COLLECTION_CLASS_HASH_MAINNET          = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282"
-NFTCOMMENTS_CONTRACT_MAINNET                = "0x024f97eb5abe659fb650bf162b5fc16501f8f3863a7369901ce6099462e62799"
+NFTCOMMENTS_CONTRACT_MAINNET                = "0x02cdac70c94447189af0389dfea63f4d5e4154ea8a563de288a5ab1c39e37843"  // fix: 0.24.1 — previous 0x024f97… was undeployed
 ```
 
 > Deprecated short-name aliases (`MARKETPLACE_CONTRACT_MAINNET`, `COLLECTION_CONTRACT_MAINNET`, `ERC1155_FACTORY_CONTRACT_MAINNET`, etc.) were removed in **v0.16.0** — use the canonical `*_721_*` / `*_1155_*` names.

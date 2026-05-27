@@ -42,7 +42,7 @@ export const POP_FACTORY_CONTRACT_MAINNET =
 
 /** NFTComments on-chain comment system — immutable, no admin key. */
 export const NFTCOMMENTS_CONTRACT_MAINNET =
-  "0x024f97eb5abe659fb650bf162b5fc16501f8f3863a7369901ce6099462e62799";
+  "0x02cdac70c94447189af0389dfea63f4d5e4154ea8a563de288a5ab1c39e37843";
 
 export const SUPPORTED_TOKENS = [
   {
