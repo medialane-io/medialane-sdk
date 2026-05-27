@@ -15,6 +15,7 @@ import type {
   ApiUserWallet,
   ApiWalletType,
   ApiAppSource,
+  ApiChain,
   ApiActivity,
   ApiActivitiesQuery,
   ApiComment,
@@ -623,19 +624,29 @@ export class ApiClient {
 
   async upsertMyWallet(
     clerkToken: string,
-    options: { walletType?: ApiWalletType; appSource?: ApiAppSource } = {},
+    options: {
+      walletType?: ApiWalletType;
+      appSource?: ApiAppSource;
+      // 07-identity §I: the Wallet identifier is (chain, address). v1
+      // backend rejects anything other than STARKNET on this route (the
+      // auth path can only prove Starknet ownership); the field exists
+      // so the year-2 multichain shape is locked in.
+      chain?: ApiChain;
+    } = {},
   ): Promise<ApiUserWallet> {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/users/me`;
+    const body: Record<string, string> = {
+      walletType: options.walletType ?? "UNKNOWN",
+      appSource: options.appSource ?? "MEDIALANE_SDK",
+    };
+    if (options.chain) body.chain = options.chain;
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${clerkToken}`,
       },
-      body: JSON.stringify({
-        walletType: options.walletType ?? "UNKNOWN",
-        appSource: options.appSource ?? "MEDIALANE_SDK",
-      }),
+      body: JSON.stringify(body),
     });
     return this.checkResponse<ApiUserWallet>(res);
   }
