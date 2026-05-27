@@ -790,6 +790,12 @@ export type ApiAppSource =
   | "MEDIALANE_PORTAL"
   | "MEDIALANE_SDK";
 
+// 07-identity §I: the Wallet identifier is (chain, address). Mirrors
+// the backend Chain enum. v1 callers only ever pass STARKNET; the rest
+// are present so the type doesn't need a breaking change when SIWE/SIWB
+// authentication lands and other chains become callable.
+export type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BITCOIN";
+
 export interface ApiUserWallet {
   walletAddress: string;
 }

@@ -5810,16 +5810,18 @@ var ApiClient = class {
   }
   async upsertMyWallet(clerkToken, options = {}) {
     const url = `${this.baseUrl.replace(/\/$/, "")}/v1/users/me`;
+    const body = {
+      walletType: options.walletType ?? "UNKNOWN",
+      appSource: options.appSource ?? "MEDIALANE_SDK"
+    };
+    if (options.chain) body.chain = options.chain;
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${clerkToken}`
       },
-      body: JSON.stringify({
-        walletType: options.walletType ?? "UNKNOWN",
-        appSource: options.appSource ?? "MEDIALANE_SDK"
-      })
+      body: JSON.stringify(body)
     });
     return this.checkResponse(res);
   }
