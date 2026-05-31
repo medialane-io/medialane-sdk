@@ -1,307 +1,467 @@
+// Auto-generated from Medialane721 class (redesigned venue). Do not hand-edit.
 export const IPMarketplaceABI = [
   {
-    type: "impl",
-    name: "UpgradeableImpl",
-    interface_name: "openzeppelin_upgrades::interface::IUpgradeable",
+    "type": "impl",
+    "name": "Medialane721Impl",
+    "interface_name": "medialane_marketplace_erc721::core::interface::IMedialane"
   },
   {
-    type: "interface",
-    name: "openzeppelin_upgrades::interface::IUpgradeable",
-    items: [
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::OfferItem",
+    "members": [
       {
-        type: "function",
-        name: "upgrade",
-        inputs: [{ name: "new_class_hash", type: "core::starknet::class_hash::ClassHash" }],
-        outputs: [],
-        state_mutability: "external",
-      },
-    ],
-  },
-  {
-    type: "impl",
-    name: "MedialaneImpl",
-    interface_name: "mediolano_core::core::interface::IMedialane",
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OfferItem",
-    members: [
-      { name: "item_type", type: "core::felt252" },
-      { name: "token", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "identifier_or_criteria", type: "core::felt252" },
-      { name: "start_amount", type: "core::felt252" },
-      { name: "end_amount", type: "core::felt252" },
-    ],
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::ConsiderationItem",
-    members: [
-      { name: "item_type", type: "core::felt252" },
-      { name: "token", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "identifier_or_criteria", type: "core::felt252" },
-      { name: "start_amount", type: "core::felt252" },
-      { name: "end_amount", type: "core::felt252" },
-      { name: "recipient", type: "core::starknet::contract_address::ContractAddress" },
-    ],
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OrderParameters",
-    members: [
-      { name: "offerer", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "offer", type: "mediolano_core::core::types::OfferItem" },
-      { name: "consideration", type: "mediolano_core::core::types::ConsiderationItem" },
-      { name: "start_time", type: "core::felt252" },
-      { name: "end_time", type: "core::felt252" },
-      { name: "salt", type: "core::felt252" },
-      { name: "nonce", type: "core::felt252" },
-    ],
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::Order",
-    members: [
-      { name: "parameters", type: "mediolano_core::core::types::OrderParameters" },
-      { name: "signature", type: "core::array::Array::<core::felt252>" },
-    ],
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OrderFulfillment",
-    members: [
-      { name: "order_hash", type: "core::felt252" },
-      { name: "fulfiller", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "nonce", type: "core::felt252" },
-    ],
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::FulfillmentRequest",
-    members: [
-      { name: "fulfillment", type: "mediolano_core::core::types::OrderFulfillment" },
-      { name: "signature", type: "core::array::Array::<core::felt252>" },
-    ],
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OrderCancellation",
-    members: [
-      { name: "order_hash", type: "core::felt252" },
-      { name: "offerer", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "nonce", type: "core::felt252" },
-    ],
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::CancelRequest",
-    members: [
-      { name: "cancelation", type: "mediolano_core::core::types::OrderCancellation" },
-      { name: "signature", type: "core::array::Array::<core::felt252>" },
-    ],
-  },
-  {
-    type: "enum",
-    name: "mediolano_core::core::types::OrderStatus",
-    variants: [
-      { name: "None", type: "()" },
-      { name: "Created", type: "()" },
-      { name: "Filled", type: "()" },
-      { name: "Cancelled", type: "()" },
-    ],
-  },
-  {
-    type: "enum",
-    name: "core::option::Option::<core::starknet::contract_address::ContractAddress>",
-    variants: [
-      { name: "Some", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "None", type: "()" },
-    ],
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OrderDetails",
-    members: [
-      { name: "offerer", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "offer", type: "mediolano_core::core::types::OfferItem" },
-      { name: "consideration", type: "mediolano_core::core::types::ConsiderationItem" },
-      { name: "start_time", type: "core::integer::u64" },
-      { name: "end_time", type: "core::integer::u64" },
-      { name: "order_status", type: "mediolano_core::core::types::OrderStatus" },
-      {
-        name: "fulfiller",
-        type: "core::option::Option::<core::starknet::contract_address::ContractAddress>",
-      },
-    ],
-  },
-  {
-    type: "interface",
-    name: "mediolano_core::core::interface::IMedialane",
-    items: [
-      {
-        type: "function",
-        name: "register_order",
-        inputs: [{ name: "order", type: "mediolano_core::core::types::Order" }],
-        outputs: [],
-        state_mutability: "external",
+        "name": "item_type",
+        "type": "core::felt252"
       },
       {
-        type: "function",
-        name: "fulfill_order",
-        inputs: [
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "identifier_or_criteria",
+        "type": "core::felt252"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::ConsiderationItem",
+    "members": [
+      {
+        "name": "item_type",
+        "type": "core::felt252"
+      },
+      {
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "identifier_or_criteria",
+        "type": "core::felt252"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252"
+      },
+      {
+        "name": "recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::OrderParameters",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "marketplace",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "offer",
+        "type": "medialane_marketplace_erc721::core::types::OfferItem"
+      },
+      {
+        "name": "consideration",
+        "type": "medialane_marketplace_erc721::core::types::ConsiderationItem"
+      },
+      {
+        "name": "royalty_max_bps",
+        "type": "core::felt252"
+      },
+      {
+        "name": "start_time",
+        "type": "core::felt252"
+      },
+      {
+        "name": "end_time",
+        "type": "core::felt252"
+      },
+      {
+        "name": "salt",
+        "type": "core::felt252"
+      },
+      {
+        "name": "counter",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::Order",
+    "members": [
+      {
+        "name": "parameters",
+        "type": "medialane_marketplace_erc721::core::types::OrderParameters"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::OrderCancellation",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::CancelRequest",
+    "members": [
+      {
+        "name": "cancelation",
+        "type": "medialane_marketplace_erc721::core::types::OrderCancellation"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "medialane_marketplace_erc721::core::types::OrderStatus",
+    "variants": [
+      {
+        "name": "None",
+        "type": "()"
+      },
+      {
+        "name": "Created",
+        "type": "()"
+      },
+      {
+        "name": "Filled",
+        "type": "()"
+      },
+      {
+        "name": "Cancelled",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::OrderDetails",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "offer",
+        "type": "medialane_marketplace_erc721::core::types::OfferItem"
+      },
+      {
+        "name": "consideration",
+        "type": "medialane_marketplace_erc721::core::types::ConsiderationItem"
+      },
+      {
+        "name": "royalty_max_bps",
+        "type": "core::felt252"
+      },
+      {
+        "name": "start_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "end_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "order_status",
+        "type": "medialane_marketplace_erc721::core::types::OrderStatus"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "medialane_marketplace_erc721::core::interface::IMedialane",
+    "items": [
+      {
+        "type": "function",
+        "name": "register_order",
+        "inputs": [
           {
-            name: "fulfillment_request",
-            type: "mediolano_core::core::types::FulfillmentRequest",
+            "name": "order",
+            "type": "medialane_marketplace_erc721::core::types::Order"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "fulfill_order",
+        "inputs": [
+          {
+            "name": "order_hash",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "cancel_order",
+        "inputs": [
+          {
+            "name": "cancel_request",
+            "type": "medialane_marketplace_erc721::core::types::CancelRequest"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "increment_counter",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_order_details",
+        "inputs": [
+          {
+            "name": "order_hash",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "medialane_marketplace_erc721::core::types::OrderDetails"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_order_hash",
+        "inputs": [
+          {
+            "name": "parameters",
+            "type": "medialane_marketplace_erc721::core::types::OrderParameters"
           },
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
         ],
-        outputs: [],
-        state_mutability: "external",
-      },
-      {
-        type: "function",
-        name: "cancel_order",
-        inputs: [{ name: "cancel_request", type: "mediolano_core::core::types::CancelRequest" }],
-        outputs: [],
-        state_mutability: "external",
-      },
-      {
-        type: "function",
-        name: "get_order_details",
-        inputs: [{ name: "order_hash", type: "core::felt252" }],
-        outputs: [{ type: "mediolano_core::core::types::OrderDetails" }],
-        state_mutability: "view",
-      },
-      {
-        type: "function",
-        name: "get_order_hash",
-        inputs: [
-          { name: "parameters", type: "mediolano_core::core::types::OrderParameters" },
-          { name: "signer", type: "core::starknet::contract_address::ContractAddress" },
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
         ],
-        outputs: [{ type: "core::felt252" }],
-        state_mutability: "view",
+        "state_mutability": "view"
       },
-    ],
-  },
-  {
-    type: "impl",
-    name: "NoncesImpl",
-    interface_name: "openzeppelin_utils::cryptography::interface::INonces",
-  },
-  {
-    type: "interface",
-    name: "openzeppelin_utils::cryptography::interface::INonces",
-    items: [
       {
-        type: "function",
-        name: "nonces",
-        inputs: [
-          { name: "owner", type: "core::starknet::contract_address::ContractAddress" },
+        "type": "function",
+        "name": "get_cancellation_hash",
+        "inputs": [
+          {
+            "name": "cancellation",
+            "type": "medialane_marketplace_erc721::core::types::OrderCancellation"
+          },
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
         ],
-        outputs: [{ type: "core::felt252" }],
-        state_mutability: "view",
-      },
-    ],
-  },
-  {
-    type: "impl",
-    name: "SRC5Impl",
-    interface_name: "openzeppelin_introspection::interface::ISRC5",
-  },
-  {
-    type: "enum",
-    name: "core::bool",
-    variants: [
-      { name: "False", type: "()" },
-      { name: "True", type: "()" },
-    ],
-  },
-  {
-    type: "interface",
-    name: "openzeppelin_introspection::interface::ISRC5",
-    items: [
-      {
-        type: "function",
-        name: "supports_interface",
-        inputs: [{ name: "interface_id", type: "core::felt252" }],
-        outputs: [{ type: "core::bool" }],
-        state_mutability: "view",
-      },
-    ],
-  },
-  {
-    type: "constructor",
-    name: "constructor",
-    inputs: [
-      { name: "manager", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "native_token_address", type: "core::starknet::contract_address::ContractAddress" },
-    ],
-  },
-  {
-    type: "event",
-    name: "mediolano_core::core::events::OrderCreated",
-    kind: "struct",
-    members: [
-      { name: "order_hash", type: "core::felt252", kind: "key" },
-      {
-        name: "offerer",
-        type: "core::starknet::contract_address::ContractAddress",
-        kind: "key",
-      },
-    ],
-  },
-  {
-    type: "event",
-    name: "mediolano_core::core::events::OrderFulfilled",
-    kind: "struct",
-    members: [
-      { name: "order_hash", type: "core::felt252", kind: "key" },
-      {
-        name: "offerer",
-        type: "core::starknet::contract_address::ContractAddress",
-        kind: "key",
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
       },
       {
-        name: "fulfiller",
-        type: "core::starknet::contract_address::ContractAddress",
-        kind: "key",
+        "type": "function",
+        "name": "get_counter",
+        "inputs": [
+          {
+            "name": "offerer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
       },
-    ],
+      {
+        "type": "function",
+        "name": "get_native_token_address",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
   },
   {
-    type: "event",
-    name: "mediolano_core::core::events::OrderCancelled",
-    kind: "struct",
-    members: [
-      { name: "order_hash", type: "core::felt252", kind: "key" },
+    "type": "constructor",
+    "name": "constructor",
+    "inputs": [
       {
-        name: "offerer",
-        type: "core::starknet::contract_address::ContractAddress",
-        kind: "key",
-      },
-    ],
+        "name": "native_token_address",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
   },
   {
-    type: "event",
-    name: "mediolano_core::core::medialane::Medialane::Event",
-    kind: "enum",
-    variants: [
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::events::OrderCreated",
+    "kind": "struct",
+    "members": [
       {
-        name: "OrderCreated",
-        type: "mediolano_core::core::events::OrderCreated",
-        kind: "nested",
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
       },
       {
-        name: "OrderFulfilled",
-        type: "mediolano_core::core::events::OrderFulfilled",
-        kind: "nested",
-      },
-      {
-        name: "OrderCancelled",
-        type: "mediolano_core::core::events::OrderCancelled",
-        kind: "nested",
-      },
-    ],
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      }
+    ]
   },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::events::OrderFulfilled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "fulfiller",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "sale_amount",
+        "type": "core::integer::u256",
+        "kind": "data"
+      },
+      {
+        "name": "royalty_receiver",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "royalty_amount",
+        "type": "core::integer::u256",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::events::OrderCancelled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::events::CounterIncremented",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "new_counter",
+        "type": "core::felt252",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::medialane::Medialane721::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "OrderCreated",
+        "type": "medialane_marketplace_erc721::core::events::OrderCreated",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderFulfilled",
+        "type": "medialane_marketplace_erc721::core::events::OrderFulfilled",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderCancelled",
+        "type": "medialane_marketplace_erc721::core::events::OrderCancelled",
+        "kind": "nested"
+      },
+      {
+        "name": "CounterIncremented",
+        "type": "medialane_marketplace_erc721::core::events::CounterIncremented",
+        "kind": "nested"
+      }
+    ]
+  }
 ] as const;
-

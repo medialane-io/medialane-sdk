@@ -4,12 +4,12 @@ import { cairo, num, Contract, TypedDataRevision, shortString, constants, RpcPro
 // src/config.ts
 
 // src/constants.ts
-var MARKETPLACE_721_CONTRACT_MAINNET = "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6";
-var MARKETPLACE_721_CLASS_HASH_MAINNET = "0x03dff4f34b976207246207954263be9a28b51390321702443291088dcdf4b2e6";
-var MARKETPLACE_721_START_BLOCK_MAINNET = 9196722;
-var MARKETPLACE_1155_CONTRACT_MAINNET = "0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99";
-var MARKETPLACE_1155_CLASS_HASH_MAINNET = "0x01b674aad934be85abc7c1970265cbf7e9bc7d586a90f0a67112c201636dbdd3";
-var MARKETPLACE_1155_START_BLOCK_MAINNET = 9260304;
+var MARKETPLACE_721_CONTRACT_MAINNET = "0x069cf5391077e3ebdd9cb6aebf90ed530d29f0d6aa34a43f5afae938c0fb565e";
+var MARKETPLACE_721_CLASS_HASH_MAINNET = "0x04c6f952d747ad7ead1b3dad4c1d587837d38f8ec29d6c095a4afa5b5ece5957";
+var MARKETPLACE_721_START_BLOCK_MAINNET = 10350340;
+var MARKETPLACE_1155_CONTRACT_MAINNET = "0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077";
+var MARKETPLACE_1155_CLASS_HASH_MAINNET = "0x02600bb720908f119afe482309d36c39d087587f0df9576454acfb6363e78cd8";
+var MARKETPLACE_1155_START_BLOCK_MAINNET = 10350855;
 var COLLECTION_721_CONTRACT_MAINNET = "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2";
 var IPNFT_CLASS_HASH_MAINNET = "0x27ee4ded786d51bced1e94afec3034d6ffce71c032c45ee1ff283ccfa9db12e";
 var IPCOLLECTION_CLASS_HASH_MAINNET = "0x287ccdff8b6655a2248cfe170d82eae3a35303cd00ef3e751b25ddca26d9095";
@@ -136,34 +136,33 @@ var OFFER_ITEM = [
   { name: "item_type", type: "shortstring" },
   { name: "token", type: "ContractAddress" },
   { name: "identifier_or_criteria", type: "felt" },
-  { name: "start_amount", type: "felt" },
-  { name: "end_amount", type: "felt" }
+  { name: "amount", type: "felt" }
 ];
 var CONSIDERATION_ITEM = [
   { name: "item_type", type: "shortstring" },
   { name: "token", type: "ContractAddress" },
   { name: "identifier_or_criteria", type: "felt" },
-  { name: "start_amount", type: "felt" },
-  { name: "end_amount", type: "felt" },
+  { name: "amount", type: "felt" },
   { name: "recipient", type: "ContractAddress" }
 ];
 var ORDER_PARAMETERS = [
   { name: "offerer", type: "ContractAddress" },
+  { name: "marketplace", type: "ContractAddress" },
   { name: "offer", type: "OfferItem" },
   { name: "consideration", type: "ConsiderationItem" },
+  { name: "royalty_max_bps", type: "felt" },
   { name: "start_time", type: "felt" },
   { name: "end_time", type: "felt" },
   { name: "salt", type: "felt" },
-  { name: "nonce", type: "felt" }
+  { name: "counter", type: "felt" }
 ];
 var ORDER_CANCELLATION = [
   { name: "order_hash", type: "felt" },
-  { name: "offerer", type: "ContractAddress" },
-  { name: "nonce", type: "felt" }
+  { name: "offerer", type: "ContractAddress" }
 ];
 var DOMAIN_VERSION = {
-  erc721: "1",
-  erc1155: "2"
+  erc721: "4",
+  erc1155: "3"
 };
 function buildDomain(standard, chainId) {
   return {
@@ -195,37 +194,6 @@ function build1155OrderTypedData(message, chainId) {
       OrderParameters: ORDER_PARAMETERS,
       OfferItem: OFFER_ITEM,
       ConsiderationItem: CONSIDERATION_ITEM
-    },
-    message
-  };
-}
-function buildFulfillmentTypedData(message, chainId) {
-  return {
-    domain: buildDomain("erc721", chainId),
-    primaryType: "OrderFulfillment",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderFulfillment: [
-        { name: "order_hash", type: "felt" },
-        { name: "fulfiller", type: "ContractAddress" },
-        { name: "nonce", type: "felt" }
-      ]
-    },
-    message
-  };
-}
-function build1155FulfillmentTypedData(message, chainId) {
-  return {
-    domain: buildDomain("erc1155", chainId),
-    primaryType: "OrderFulfillment",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderFulfillment: [
-        { name: "order_hash", type: "felt" },
-        { name: "fulfiller", type: "ContractAddress" },
-        { name: "quantity", type: "felt" },
-        { name: "nonce", type: "felt" }
-      ]
     },
     message
   };
@@ -280,306 +248,466 @@ function encodeByteArray(str) {
 // src/abis/ipMarketplace.ts
 var IPMarketplaceABI = [
   {
-    type: "impl",
-    name: "UpgradeableImpl",
-    interface_name: "openzeppelin_upgrades::interface::IUpgradeable"
+    "type": "impl",
+    "name": "Medialane721Impl",
+    "interface_name": "medialane_marketplace_erc721::core::interface::IMedialane"
   },
   {
-    type: "interface",
-    name: "openzeppelin_upgrades::interface::IUpgradeable",
-    items: [
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::OfferItem",
+    "members": [
       {
-        type: "function",
-        name: "upgrade",
-        inputs: [{ name: "new_class_hash", type: "core::starknet::class_hash::ClassHash" }],
-        outputs: [],
-        state_mutability: "external"
-      }
-    ]
-  },
-  {
-    type: "impl",
-    name: "MedialaneImpl",
-    interface_name: "mediolano_core::core::interface::IMedialane"
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OfferItem",
-    members: [
-      { name: "item_type", type: "core::felt252" },
-      { name: "token", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "identifier_or_criteria", type: "core::felt252" },
-      { name: "start_amount", type: "core::felt252" },
-      { name: "end_amount", type: "core::felt252" }
-    ]
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::ConsiderationItem",
-    members: [
-      { name: "item_type", type: "core::felt252" },
-      { name: "token", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "identifier_or_criteria", type: "core::felt252" },
-      { name: "start_amount", type: "core::felt252" },
-      { name: "end_amount", type: "core::felt252" },
-      { name: "recipient", type: "core::starknet::contract_address::ContractAddress" }
-    ]
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OrderParameters",
-    members: [
-      { name: "offerer", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "offer", type: "mediolano_core::core::types::OfferItem" },
-      { name: "consideration", type: "mediolano_core::core::types::ConsiderationItem" },
-      { name: "start_time", type: "core::felt252" },
-      { name: "end_time", type: "core::felt252" },
-      { name: "salt", type: "core::felt252" },
-      { name: "nonce", type: "core::felt252" }
-    ]
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::Order",
-    members: [
-      { name: "parameters", type: "mediolano_core::core::types::OrderParameters" },
-      { name: "signature", type: "core::array::Array::<core::felt252>" }
-    ]
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OrderFulfillment",
-    members: [
-      { name: "order_hash", type: "core::felt252" },
-      { name: "fulfiller", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "nonce", type: "core::felt252" }
-    ]
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::FulfillmentRequest",
-    members: [
-      { name: "fulfillment", type: "mediolano_core::core::types::OrderFulfillment" },
-      { name: "signature", type: "core::array::Array::<core::felt252>" }
-    ]
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OrderCancellation",
-    members: [
-      { name: "order_hash", type: "core::felt252" },
-      { name: "offerer", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "nonce", type: "core::felt252" }
-    ]
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::CancelRequest",
-    members: [
-      { name: "cancelation", type: "mediolano_core::core::types::OrderCancellation" },
-      { name: "signature", type: "core::array::Array::<core::felt252>" }
-    ]
-  },
-  {
-    type: "enum",
-    name: "mediolano_core::core::types::OrderStatus",
-    variants: [
-      { name: "None", type: "()" },
-      { name: "Created", type: "()" },
-      { name: "Filled", type: "()" },
-      { name: "Cancelled", type: "()" }
-    ]
-  },
-  {
-    type: "enum",
-    name: "core::option::Option::<core::starknet::contract_address::ContractAddress>",
-    variants: [
-      { name: "Some", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "None", type: "()" }
-    ]
-  },
-  {
-    type: "struct",
-    name: "mediolano_core::core::types::OrderDetails",
-    members: [
-      { name: "offerer", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "offer", type: "mediolano_core::core::types::OfferItem" },
-      { name: "consideration", type: "mediolano_core::core::types::ConsiderationItem" },
-      { name: "start_time", type: "core::integer::u64" },
-      { name: "end_time", type: "core::integer::u64" },
-      { name: "order_status", type: "mediolano_core::core::types::OrderStatus" },
-      {
-        name: "fulfiller",
-        type: "core::option::Option::<core::starknet::contract_address::ContractAddress>"
-      }
-    ]
-  },
-  {
-    type: "interface",
-    name: "mediolano_core::core::interface::IMedialane",
-    items: [
-      {
-        type: "function",
-        name: "register_order",
-        inputs: [{ name: "order", type: "mediolano_core::core::types::Order" }],
-        outputs: [],
-        state_mutability: "external"
+        "name": "item_type",
+        "type": "core::felt252"
       },
       {
-        type: "function",
-        name: "fulfill_order",
-        inputs: [
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "identifier_or_criteria",
+        "type": "core::felt252"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::ConsiderationItem",
+    "members": [
+      {
+        "name": "item_type",
+        "type": "core::felt252"
+      },
+      {
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "identifier_or_criteria",
+        "type": "core::felt252"
+      },
+      {
+        "name": "amount",
+        "type": "core::felt252"
+      },
+      {
+        "name": "recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::OrderParameters",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "marketplace",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "offer",
+        "type": "medialane_marketplace_erc721::core::types::OfferItem"
+      },
+      {
+        "name": "consideration",
+        "type": "medialane_marketplace_erc721::core::types::ConsiderationItem"
+      },
+      {
+        "name": "royalty_max_bps",
+        "type": "core::felt252"
+      },
+      {
+        "name": "start_time",
+        "type": "core::felt252"
+      },
+      {
+        "name": "end_time",
+        "type": "core::felt252"
+      },
+      {
+        "name": "salt",
+        "type": "core::felt252"
+      },
+      {
+        "name": "counter",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::Order",
+    "members": [
+      {
+        "name": "parameters",
+        "type": "medialane_marketplace_erc721::core::types::OrderParameters"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::OrderCancellation",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::CancelRequest",
+    "members": [
+      {
+        "name": "cancelation",
+        "type": "medialane_marketplace_erc721::core::types::OrderCancellation"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "medialane_marketplace_erc721::core::types::OrderStatus",
+    "variants": [
+      {
+        "name": "None",
+        "type": "()"
+      },
+      {
+        "name": "Created",
+        "type": "()"
+      },
+      {
+        "name": "Filled",
+        "type": "()"
+      },
+      {
+        "name": "Cancelled",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "medialane_marketplace_erc721::core::types::OrderDetails",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "offer",
+        "type": "medialane_marketplace_erc721::core::types::OfferItem"
+      },
+      {
+        "name": "consideration",
+        "type": "medialane_marketplace_erc721::core::types::ConsiderationItem"
+      },
+      {
+        "name": "royalty_max_bps",
+        "type": "core::felt252"
+      },
+      {
+        "name": "start_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "end_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "order_status",
+        "type": "medialane_marketplace_erc721::core::types::OrderStatus"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "medialane_marketplace_erc721::core::interface::IMedialane",
+    "items": [
+      {
+        "type": "function",
+        "name": "register_order",
+        "inputs": [
           {
-            name: "fulfillment_request",
-            type: "mediolano_core::core::types::FulfillmentRequest"
+            "name": "order",
+            "type": "medialane_marketplace_erc721::core::types::Order"
           }
         ],
-        outputs: [],
-        state_mutability: "external"
+        "outputs": [],
+        "state_mutability": "external"
       },
       {
-        type: "function",
-        name: "cancel_order",
-        inputs: [{ name: "cancel_request", type: "mediolano_core::core::types::CancelRequest" }],
-        outputs: [],
-        state_mutability: "external"
-      },
-      {
-        type: "function",
-        name: "get_order_details",
-        inputs: [{ name: "order_hash", type: "core::felt252" }],
-        outputs: [{ type: "mediolano_core::core::types::OrderDetails" }],
-        state_mutability: "view"
-      },
-      {
-        type: "function",
-        name: "get_order_hash",
-        inputs: [
-          { name: "parameters", type: "mediolano_core::core::types::OrderParameters" },
-          { name: "signer", type: "core::starknet::contract_address::ContractAddress" }
+        "type": "function",
+        "name": "fulfill_order",
+        "inputs": [
+          {
+            "name": "order_hash",
+            "type": "core::felt252"
+          }
         ],
-        outputs: [{ type: "core::felt252" }],
-        state_mutability: "view"
-      }
-    ]
-  },
-  {
-    type: "impl",
-    name: "NoncesImpl",
-    interface_name: "openzeppelin_utils::cryptography::interface::INonces"
-  },
-  {
-    type: "interface",
-    name: "openzeppelin_utils::cryptography::interface::INonces",
-    items: [
+        "outputs": [],
+        "state_mutability": "external"
+      },
       {
-        type: "function",
-        name: "nonces",
-        inputs: [
-          { name: "owner", type: "core::starknet::contract_address::ContractAddress" }
+        "type": "function",
+        "name": "cancel_order",
+        "inputs": [
+          {
+            "name": "cancel_request",
+            "type": "medialane_marketplace_erc721::core::types::CancelRequest"
+          }
         ],
-        outputs: [{ type: "core::felt252" }],
-        state_mutability: "view"
-      }
-    ]
-  },
-  {
-    type: "impl",
-    name: "SRC5Impl",
-    interface_name: "openzeppelin_introspection::interface::ISRC5"
-  },
-  {
-    type: "enum",
-    name: "core::bool",
-    variants: [
-      { name: "False", type: "()" },
-      { name: "True", type: "()" }
-    ]
-  },
-  {
-    type: "interface",
-    name: "openzeppelin_introspection::interface::ISRC5",
-    items: [
-      {
-        type: "function",
-        name: "supports_interface",
-        inputs: [{ name: "interface_id", type: "core::felt252" }],
-        outputs: [{ type: "core::bool" }],
-        state_mutability: "view"
-      }
-    ]
-  },
-  {
-    type: "constructor",
-    name: "constructor",
-    inputs: [
-      { name: "manager", type: "core::starknet::contract_address::ContractAddress" },
-      { name: "native_token_address", type: "core::starknet::contract_address::ContractAddress" }
-    ]
-  },
-  {
-    type: "event",
-    name: "mediolano_core::core::events::OrderCreated",
-    kind: "struct",
-    members: [
-      { name: "order_hash", type: "core::felt252", kind: "key" },
-      {
-        name: "offerer",
-        type: "core::starknet::contract_address::ContractAddress",
-        kind: "key"
-      }
-    ]
-  },
-  {
-    type: "event",
-    name: "mediolano_core::core::events::OrderFulfilled",
-    kind: "struct",
-    members: [
-      { name: "order_hash", type: "core::felt252", kind: "key" },
-      {
-        name: "offerer",
-        type: "core::starknet::contract_address::ContractAddress",
-        kind: "key"
+        "outputs": [],
+        "state_mutability": "external"
       },
       {
-        name: "fulfiller",
-        type: "core::starknet::contract_address::ContractAddress",
-        kind: "key"
+        "type": "function",
+        "name": "increment_counter",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_order_details",
+        "inputs": [
+          {
+            "name": "order_hash",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "medialane_marketplace_erc721::core::types::OrderDetails"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_order_hash",
+        "inputs": [
+          {
+            "name": "parameters",
+            "type": "medialane_marketplace_erc721::core::types::OrderParameters"
+          },
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_cancellation_hash",
+        "inputs": [
+          {
+            "name": "cancellation",
+            "type": "medialane_marketplace_erc721::core::types::OrderCancellation"
+          },
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_counter",
+        "inputs": [
+          {
+            "name": "offerer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_native_token_address",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
       }
     ]
   },
   {
-    type: "event",
-    name: "mediolano_core::core::events::OrderCancelled",
-    kind: "struct",
-    members: [
-      { name: "order_hash", type: "core::felt252", kind: "key" },
+    "type": "constructor",
+    "name": "constructor",
+    "inputs": [
       {
-        name: "offerer",
-        type: "core::starknet::contract_address::ContractAddress",
-        kind: "key"
+        "name": "native_token_address",
+        "type": "core::starknet::contract_address::ContractAddress"
       }
     ]
   },
   {
-    type: "event",
-    name: "mediolano_core::core::medialane::Medialane::Event",
-    kind: "enum",
-    variants: [
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::events::OrderCreated",
+    "kind": "struct",
+    "members": [
       {
-        name: "OrderCreated",
-        type: "mediolano_core::core::events::OrderCreated",
-        kind: "nested"
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
       },
       {
-        name: "OrderFulfilled",
-        type: "mediolano_core::core::events::OrderFulfilled",
-        kind: "nested"
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
       },
       {
-        name: "OrderCancelled",
-        type: "mediolano_core::core::events::OrderCancelled",
-        kind: "nested"
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::events::OrderFulfilled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "fulfiller",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "sale_amount",
+        "type": "core::integer::u256",
+        "kind": "data"
+      },
+      {
+        "name": "royalty_receiver",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "royalty_amount",
+        "type": "core::integer::u256",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::events::OrderCancelled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "order_hash",
+        "type": "core::felt252",
+        "kind": "key"
+      },
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::events::CounterIncremented",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "new_counter",
+        "type": "core::felt252",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "medialane_marketplace_erc721::core::medialane::Medialane721::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "OrderCreated",
+        "type": "medialane_marketplace_erc721::core::events::OrderCreated",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderFulfilled",
+        "type": "medialane_marketplace_erc721::core::events::OrderFulfilled",
+        "kind": "nested"
+      },
+      {
+        "name": "OrderCancelled",
+        "type": "medialane_marketplace_erc721::core::events::OrderCancelled",
+        "kind": "nested"
+      },
+      {
+        "name": "CounterIncremented",
+        "type": "medialane_marketplace_erc721::core::events::CounterIncremented",
+        "kind": "nested"
       }
     ]
   }
@@ -1033,12 +1161,12 @@ var CollectionRegistryABI = [
 var Medialane1155ABI = [
   {
     "type": "impl",
-    "name": "Medialane1155V2Impl",
-    "interface_name": "medialane_erc1155::core::interface::IMedialane1155V2"
+    "name": "Medialane1155Impl",
+    "interface_name": "medialane_marketplace_erc1155::core::interface::IMedialane1155"
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::OfferItem",
+    "name": "medialane_marketplace_erc1155::core::types::OfferItem",
     "members": [
       {
         "name": "item_type",
@@ -1053,18 +1181,14 @@ var Medialane1155ABI = [
         "type": "core::felt252"
       },
       {
-        "name": "start_amount",
-        "type": "core::felt252"
-      },
-      {
-        "name": "end_amount",
+        "name": "amount",
         "type": "core::felt252"
       }
     ]
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::ConsiderationItem",
+    "name": "medialane_marketplace_erc1155::core::types::ConsiderationItem",
     "members": [
       {
         "name": "item_type",
@@ -1079,11 +1203,7 @@ var Medialane1155ABI = [
         "type": "core::felt252"
       },
       {
-        "name": "start_amount",
-        "type": "core::felt252"
-      },
-      {
-        "name": "end_amount",
+        "name": "amount",
         "type": "core::felt252"
       },
       {
@@ -1094,19 +1214,27 @@ var Medialane1155ABI = [
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::OrderParameters",
+    "name": "medialane_marketplace_erc1155::core::types::OrderParameters",
     "members": [
       {
         "name": "offerer",
         "type": "core::starknet::contract_address::ContractAddress"
       },
       {
+        "name": "marketplace",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
         "name": "offer",
-        "type": "medialane_erc1155::core::types::OfferItem"
+        "type": "medialane_marketplace_erc1155::core::types::OfferItem"
       },
       {
         "name": "consideration",
-        "type": "medialane_erc1155::core::types::ConsiderationItem"
+        "type": "medialane_marketplace_erc1155::core::types::ConsiderationItem"
+      },
+      {
+        "name": "royalty_max_bps",
+        "type": "core::felt252"
       },
       {
         "name": "start_time",
@@ -1121,18 +1249,18 @@ var Medialane1155ABI = [
         "type": "core::felt252"
       },
       {
-        "name": "nonce",
+        "name": "counter",
         "type": "core::felt252"
       }
     ]
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::Order",
+    "name": "medialane_marketplace_erc1155::core::types::Order",
     "members": [
       {
         "name": "parameters",
-        "type": "medialane_erc1155::core::types::OrderParameters"
+        "type": "medialane_marketplace_erc1155::core::types::OrderParameters"
       },
       {
         "name": "signature",
@@ -1142,43 +1270,7 @@ var Medialane1155ABI = [
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::OrderFulfillment",
-    "members": [
-      {
-        "name": "order_hash",
-        "type": "core::felt252"
-      },
-      {
-        "name": "fulfiller",
-        "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
-        "name": "quantity",
-        "type": "core::felt252"
-      },
-      {
-        "name": "nonce",
-        "type": "core::felt252"
-      }
-    ]
-  },
-  {
-    "type": "struct",
-    "name": "medialane_erc1155::core::types::FulfillmentRequest",
-    "members": [
-      {
-        "name": "fulfillment",
-        "type": "medialane_erc1155::core::types::OrderFulfillment"
-      },
-      {
-        "name": "signature",
-        "type": "core::array::Array::<core::felt252>"
-      }
-    ]
-  },
-  {
-    "type": "struct",
-    "name": "medialane_erc1155::core::types::OrderCancellation",
+    "name": "medialane_marketplace_erc1155::core::types::OrderCancellation",
     "members": [
       {
         "name": "order_hash",
@@ -1187,20 +1279,16 @@ var Medialane1155ABI = [
       {
         "name": "offerer",
         "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
-        "name": "nonce",
-        "type": "core::felt252"
       }
     ]
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::CancelRequest",
+    "name": "medialane_marketplace_erc1155::core::types::CancelRequest",
     "members": [
       {
         "name": "cancelation",
-        "type": "medialane_erc1155::core::types::OrderCancellation"
+        "type": "medialane_marketplace_erc1155::core::types::OrderCancellation"
       },
       {
         "name": "signature",
@@ -1210,7 +1298,7 @@ var Medialane1155ABI = [
   },
   {
     "type": "enum",
-    "name": "medialane_erc1155::core::types::OrderStatus",
+    "name": "medialane_marketplace_erc1155::core::types::OrderStatus",
     "variants": [
       {
         "name": "None",
@@ -1232,7 +1320,7 @@ var Medialane1155ABI = [
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::OrderDetails",
+    "name": "medialane_marketplace_erc1155::core::types::OrderDetails",
     "members": [
       {
         "name": "offerer",
@@ -1240,11 +1328,15 @@ var Medialane1155ABI = [
       },
       {
         "name": "offer",
-        "type": "medialane_erc1155::core::types::OfferItem"
+        "type": "medialane_marketplace_erc1155::core::types::OfferItem"
       },
       {
         "name": "consideration",
-        "type": "medialane_erc1155::core::types::ConsiderationItem"
+        "type": "medialane_marketplace_erc1155::core::types::ConsiderationItem"
+      },
+      {
+        "name": "royalty_max_bps",
+        "type": "core::felt252"
       },
       {
         "name": "start_time",
@@ -1256,11 +1348,7 @@ var Medialane1155ABI = [
       },
       {
         "name": "order_status",
-        "type": "medialane_erc1155::core::types::OrderStatus"
-      },
-      {
-        "name": "total_amount",
-        "type": "core::felt252"
+        "type": "medialane_marketplace_erc1155::core::types::OrderStatus"
       },
       {
         "name": "remaining_amount",
@@ -1270,7 +1358,7 @@ var Medialane1155ABI = [
   },
   {
     "type": "interface",
-    "name": "medialane_erc1155::core::interface::IMedialane1155V2",
+    "name": "medialane_marketplace_erc1155::core::interface::IMedialane1155",
     "items": [
       {
         "type": "function",
@@ -1278,7 +1366,7 @@ var Medialane1155ABI = [
         "inputs": [
           {
             "name": "order",
-            "type": "medialane_erc1155::core::types::Order"
+            "type": "medialane_marketplace_erc1155::core::types::Order"
           }
         ],
         "outputs": [],
@@ -1289,8 +1377,12 @@ var Medialane1155ABI = [
         "name": "fulfill_order",
         "inputs": [
           {
-            "name": "fulfillment_request",
-            "type": "medialane_erc1155::core::types::FulfillmentRequest"
+            "name": "order_hash",
+            "type": "core::felt252"
+          },
+          {
+            "name": "quantity",
+            "type": "core::felt252"
           }
         ],
         "outputs": [],
@@ -1302,9 +1394,16 @@ var Medialane1155ABI = [
         "inputs": [
           {
             "name": "cancel_request",
-            "type": "medialane_erc1155::core::types::CancelRequest"
+            "type": "medialane_marketplace_erc1155::core::types::CancelRequest"
           }
         ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "increment_counter",
+        "inputs": [],
         "outputs": [],
         "state_mutability": "external"
       },
@@ -1319,7 +1418,7 @@ var Medialane1155ABI = [
         ],
         "outputs": [
           {
-            "type": "medialane_erc1155::core::types::OrderDetails"
+            "type": "medialane_marketplace_erc1155::core::types::OrderDetails"
           }
         ],
         "state_mutability": "view"
@@ -1330,10 +1429,46 @@ var Medialane1155ABI = [
         "inputs": [
           {
             "name": "parameters",
-            "type": "medialane_erc1155::core::types::OrderParameters"
+            "type": "medialane_marketplace_erc1155::core::types::OrderParameters"
           },
           {
             "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_cancellation_hash",
+        "inputs": [
+          {
+            "name": "cancellation",
+            "type": "medialane_marketplace_erc1155::core::types::OrderCancellation"
+          },
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_counter",
+        "inputs": [
+          {
+            "name": "offerer",
             "type": "core::starknet::contract_address::ContractAddress"
           }
         ],
@@ -1358,33 +1493,6 @@ var Medialane1155ABI = [
     ]
   },
   {
-    "type": "impl",
-    "name": "NoncesImpl",
-    "interface_name": "openzeppelin_utils::cryptography::interface::INonces"
-  },
-  {
-    "type": "interface",
-    "name": "openzeppelin_utils::cryptography::interface::INonces",
-    "items": [
-      {
-        "type": "function",
-        "name": "nonces",
-        "inputs": [
-          {
-            "name": "owner",
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::felt252"
-          }
-        ],
-        "state_mutability": "view"
-      }
-    ]
-  },
-  {
     "type": "constructor",
     "name": "constructor",
     "inputs": [
@@ -1396,7 +1504,7 @@ var Medialane1155ABI = [
   },
   {
     "type": "event",
-    "name": "medialane_erc1155::core::events::OrderCreated",
+    "name": "medialane_marketplace_erc1155::core::events::OrderCreated",
     "kind": "struct",
     "members": [
       {
@@ -1427,7 +1535,7 @@ var Medialane1155ABI = [
   },
   {
     "type": "event",
-    "name": "medialane_erc1155::core::events::OrderFulfilled",
+    "name": "medialane_marketplace_erc1155::core::events::OrderFulfilled",
     "kind": "struct",
     "members": [
       {
@@ -1474,7 +1582,7 @@ var Medialane1155ABI = [
   },
   {
     "type": "event",
-    "name": "medialane_erc1155::core::events::OrderCancelled",
+    "name": "medialane_marketplace_erc1155::core::events::OrderCancelled",
     "kind": "struct",
     "members": [
       {
@@ -1491,34 +1599,45 @@ var Medialane1155ABI = [
   },
   {
     "type": "event",
-    "name": "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event",
-    "kind": "enum",
-    "variants": []
+    "name": "medialane_marketplace_erc1155::core::events::CounterIncremented",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "new_counter",
+        "type": "core::felt252",
+        "kind": "data"
+      }
+    ]
   },
   {
     "type": "event",
-    "name": "medialane_erc1155::core::medialane::Medialane1155V2::Event",
+    "name": "medialane_marketplace_erc1155::core::medialane::Medialane1155::Event",
     "kind": "enum",
     "variants": [
       {
         "name": "OrderCreated",
-        "type": "medialane_erc1155::core::events::OrderCreated",
+        "type": "medialane_marketplace_erc1155::core::events::OrderCreated",
         "kind": "nested"
       },
       {
         "name": "OrderFulfilled",
-        "type": "medialane_erc1155::core::events::OrderFulfilled",
+        "type": "medialane_marketplace_erc1155::core::events::OrderFulfilled",
         "kind": "nested"
       },
       {
         "name": "OrderCancelled",
-        "type": "medialane_erc1155::core::events::OrderCancelled",
+        "type": "medialane_marketplace_erc1155::core::events::OrderCancelled",
         "kind": "nested"
       },
       {
-        "name": "NoncesEvent",
-        "type": "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event",
-        "kind": "flat"
+        "name": "CounterIncremented",
+        "type": "medialane_marketplace_erc1155::core::events::CounterIncremented",
+        "kind": "nested"
       }
     ]
   }
@@ -4566,6 +4685,26 @@ var MedialaneError = class extends Error {
   }
 };
 var START_TIME_BUFFER_SECS = 30;
+function generateSalt() {
+  const bytes = new Uint8Array(31);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return num.toHex(BigInt("0x" + hex));
+}
+async function resolveRoyaltyMaxBps(provider, nft, tokenId, override) {
+  if (override !== void 0) return override;
+  try {
+    const id = cairo.uint256(tokenId);
+    const res = await provider.callContract({
+      contractAddress: nft,
+      entrypoint: "royalty_info",
+      calldata: [id.low.toString(), id.high.toString(), "10000", "0"]
+    });
+    return BigInt(res[1] ?? "0").toString();
+  } catch {
+    return "0";
+  }
+}
 function toSignatureArray(sig) {
   if (Array.isArray(sig)) return sig;
   const s = sig;
@@ -4613,31 +4752,29 @@ async function createListing(account, params, config) {
   const now = Math.floor(Date.now() / 1e3);
   const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
-  const saltBytes = new Uint8Array(4);
-  crypto.getRandomValues(saltBytes);
-  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
-  const currentNonce = await contract.nonces(account.address);
+  const counter = (await contract.get_counter(account.address)).toString();
+  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
   const orderParams = {
     offerer: account.address,
+    marketplace: config.marketplaceContract,
     offer: {
       item_type: "ERC721",
       token: nftContract,
       identifier_or_criteria: tokenId,
-      start_amount: "1",
-      end_amount: "1"
+      amount: "1"
     },
     consideration: {
       item_type: "ERC20",
       token: token.address,
       identifier_or_criteria: "0",
-      start_amount: priceWei,
-      end_amount: priceWei,
+      amount: priceWei,
       recipient: account.address
     },
+    royalty_max_bps: royaltyMaxBps,
     start_time: startTime.toString(),
     end_time: endTime.toString(),
-    salt,
-    nonce: currentNonce.toString()
+    salt: generateSalt(),
+    counter
   };
   const chainId = getChainId();
   const typedData = stringifyBigInts(buildOrderTypedData(orderParams, chainId));
@@ -4697,31 +4834,29 @@ async function makeOffer(account, params, config) {
   const now = Math.floor(Date.now() / 1e3);
   const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
-  const saltBytes = new Uint8Array(4);
-  crypto.getRandomValues(saltBytes);
-  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
-  const currentNonce = await contract.nonces(account.address);
+  const counter = (await contract.get_counter(account.address)).toString();
+  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
   const orderParams = {
     offerer: account.address,
+    marketplace: config.marketplaceContract,
     offer: {
       item_type: "ERC20",
       token: token.address,
       identifier_or_criteria: "0",
-      start_amount: priceWei,
-      end_amount: priceWei
+      amount: priceWei
     },
     consideration: {
       item_type: "ERC721",
       token: nftContract,
       identifier_or_criteria: tokenId,
-      start_amount: "1",
-      end_amount: "1",
+      amount: "1",
       recipient: account.address
     },
+    royalty_max_bps: royaltyMaxBps,
     start_time: startTime.toString(),
     end_time: endTime.toString(),
-    salt,
-    nonce: currentNonce.toString()
+    salt: generateSalt(),
+    counter
   };
   const chainId = getChainId();
   const typedData = stringifyBigInts(buildOrderTypedData(orderParams, chainId));
@@ -4763,22 +4898,6 @@ async function makeOffer(account, params, config) {
 async function fulfillOrder(account, params, config) {
   const { orderHash, paymentToken, totalPrice } = params;
   const { contract, provider } = makeContract(config);
-  const currentNonce = await contract.nonces(account.address);
-  const chainId = getChainId();
-  const fulfillmentParams = {
-    order_hash: orderHash,
-    fulfiller: account.address,
-    nonce: currentNonce.toString()
-  };
-  const typedData = stringifyBigInts(
-    buildFulfillmentTypedData(fulfillmentParams, chainId)
-  );
-  const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray(signature);
-  const fulfillPayload = stringifyBigInts({
-    fulfillment: fulfillmentParams,
-    signature: signatureArray
-  });
   const totalPriceU256 = cairo.uint256(totalPrice);
   const approveCall = {
     contractAddress: paymentToken,
@@ -4789,7 +4908,7 @@ async function fulfillOrder(account, params, config) {
       totalPriceU256.high.toString()
     ]
   };
-  const fulfillCall = contract.populate("fulfill_order", [fulfillPayload]);
+  const fulfillCall = contract.populate("fulfill_order", [orderHash]);
   const feeCall = buildFeeCall(
     { surface: "marketplace", token: paymentToken, grossAmount: BigInt(totalPrice) },
     config.feeConfig
@@ -4806,12 +4925,10 @@ async function fulfillOrder(account, params, config) {
 async function cancelOrder(account, params, config) {
   const { orderHash } = params;
   const { contract, provider } = makeContract(config);
-  const currentNonce = await contract.nonces(account.address);
   const chainId = getChainId();
   const cancelParams = {
     order_hash: orderHash,
-    offerer: account.address,
-    nonce: currentNonce.toString()
+    offerer: account.address
   };
   const typedData = stringifyBigInts(
     buildCancellationTypedData(cancelParams, chainId)
@@ -4882,29 +4999,9 @@ async function checkoutCart(account, items, config) {
       ]
     };
   });
-  const currentNonce = await contract.nonces(account.address);
-  const baseNonce = BigInt(currentNonce.toString());
-  const chainId = getChainId();
-  const fulfillCalls = [];
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    const nonce = (baseNonce + BigInt(i)).toString();
-    const fulfillmentParams = {
-      order_hash: item.orderHash,
-      fulfiller: account.address,
-      nonce
-    };
-    const typedData = stringifyBigInts(
-      buildFulfillmentTypedData(fulfillmentParams, chainId)
-    );
-    const signature = await account.signMessage(typedData);
-    const signatureArray = toSignatureArray(signature);
-    const fulfillPayload = stringifyBigInts({
-      fulfillment: fulfillmentParams,
-      signature: signatureArray
-    });
-    fulfillCalls.push(contract.populate("fulfill_order", [fulfillPayload]));
-  }
+  const fulfillCalls = items.map(
+    (item) => contract.populate("fulfill_order", [item.orderHash])
+  );
   const feeCalls = Array.from(tokenTotals.entries()).map(
     ([tokenAddr, totalWei]) => buildFeeCall(
       { surface: "marketplace", token: tokenAddr, grossAmount: totalWei },
@@ -4923,9 +5020,20 @@ async function getOrderDetails(orderHash, config) {
   const { contract } = makeContract(config);
   return contract.get_order_details(orderHash);
 }
-async function getNonce(address, config) {
+async function getCounter(address, config) {
   const { contract } = makeContract(config);
-  return BigInt((await contract.nonces(address)).toString());
+  return BigInt((await contract.get_counter(address)).toString());
+}
+async function incrementCounter(account, config) {
+  const { contract, provider } = makeContract(config);
+  const call = contract.populate("increment_counter", []);
+  try {
+    const tx = await account.execute(call);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to increment counter", "TRANSACTION_FAILED", err);
+  }
 }
 
 // src/marketplace/index.ts
@@ -4955,19 +5063,20 @@ var MarketplaceModule = class {
   createCollection(account, params) {
     return createCollection(account, params, this.config);
   }
+  /** Bulk-cancel: bump the caller's counter, invalidating all their open orders. */
+  incrementCounter(account) {
+    return incrementCounter(account, this.config);
+  }
   // ─── View calls ───────────────────────────────────────────────────────────
   getOrderDetails(orderHash) {
     return getOrderDetails(orderHash, this.config);
   }
-  getNonce(address) {
-    return getNonce(address, this.config);
+  getCounter(address) {
+    return getCounter(address, this.config);
   }
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
   buildListingTypedData(params, chainId) {
     return buildOrderTypedData(params, chainId);
-  }
-  buildFulfillmentTypedData(params, chainId) {
-    return buildFulfillmentTypedData(params, chainId);
   }
   buildCancellationTypedData(params, chainId) {
     return buildCancellationTypedData(params, chainId);
@@ -5002,32 +5111,32 @@ async function createListing1155(account, params, config) {
   const priceWei = parseAmount(pricePerUnit, token.decimals);
   const now = Math.floor(Date.now() / 1e3);
   const endTime = now + durationSeconds;
-  const saltBytes = new Uint8Array(4);
-  crypto.getRandomValues(saltBytes);
-  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
-  const currentNonce = await contract.nonces(account.address);
   const chainId = getChainId();
+  const counter = (await contract.get_counter(account.address)).toString();
+  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
   const orderParams = {
     offerer: account.address,
+    marketplace: config.marketplace1155Contract,
     offer: {
       item_type: "ERC1155",
       token: nftContract,
       identifier_or_criteria: tokenId,
-      start_amount: amount,
-      end_amount: amount
+      amount
+      // ERC-1155 leg amount = unit quantity
     },
     consideration: {
       item_type: "ERC20",
       token: token.address,
       identifier_or_criteria: "0",
-      start_amount: priceWei,
-      end_amount: priceWei,
+      amount: priceWei,
+      // payment leg amount = price PER UNIT
       recipient: account.address
     },
+    royalty_max_bps: royaltyMaxBps,
     start_time: (now + START_TIME_BUFFER_SECS).toString(),
     end_time: endTime.toString(),
-    salt,
-    nonce: currentNonce.toString()
+    salt: generateSalt(),
+    counter
   };
   const typedData = stringifyBigInts(
     build1155OrderTypedData(orderParams, chainId)
@@ -5079,23 +5188,6 @@ async function fulfillOrder1155(account, params, config) {
   const { orderHash, paymentToken, totalPrice, quantity = "1" } = params;
   const contract = getContract(config);
   const provider = getProvider(config);
-  const chainId = getChainId();
-  const currentNonce = await contract.nonces(account.address);
-  const fulfillmentParams = {
-    order_hash: orderHash,
-    fulfiller: account.address,
-    quantity,
-    nonce: currentNonce.toString()
-  };
-  const typedData = stringifyBigInts(
-    build1155FulfillmentTypedData(fulfillmentParams, chainId)
-  );
-  const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray(signature);
-  const fulfillPayload = stringifyBigInts({
-    fulfillment: fulfillmentParams,
-    signature: signatureArray
-  });
   const totalPriceU256 = cairo.uint256(totalPrice);
   const approveCall = {
     contractAddress: paymentToken,
@@ -5106,7 +5198,7 @@ async function fulfillOrder1155(account, params, config) {
       totalPriceU256.high.toString()
     ]
   };
-  const fulfillCall = contract.populate("fulfill_order", [fulfillPayload]);
+  const fulfillCall = contract.populate("fulfill_order", [orderHash, quantity]);
   try {
     const tx = await account.execute([approveCall, fulfillCall]);
     await provider.waitForTransaction(tx.transaction_hash);
@@ -5120,11 +5212,9 @@ async function cancelOrder1155(account, params, config) {
   const contract = getContract(config);
   const provider = getProvider(config);
   const chainId = getChainId();
-  const currentNonce = await contract.nonces(account.address);
   const cancelParams = {
     order_hash: orderHash,
-    offerer: account.address,
-    nonce: currentNonce.toString()
+    offerer: account.address
   };
   const typedData = stringifyBigInts(
     build1155CancellationTypedData(cancelParams, chainId)
@@ -5160,31 +5250,31 @@ async function makeOffer1155(account, params, config) {
   const priceWei = parseAmount(price, token.decimals);
   const now = Math.floor(Date.now() / 1e3);
   const endTime = now + durationSeconds;
-  const saltBytes = new Uint8Array(4);
-  crypto.getRandomValues(saltBytes);
-  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
-  const currentNonce = await contract.nonces(account.address);
+  const counter = (await contract.get_counter(account.address)).toString();
+  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
   const orderParams = {
     offerer: account.address,
+    marketplace: config.marketplace1155Contract,
     offer: {
       item_type: "ERC20",
       token: token.address,
       identifier_or_criteria: "0",
-      start_amount: priceWei,
-      end_amount: priceWei
+      amount: priceWei
+      // price PER UNIT
     },
     consideration: {
       item_type: "ERC1155",
       token: nftContract,
       identifier_or_criteria: tokenId,
-      start_amount: amount,
-      end_amount: amount,
+      amount,
+      // unit quantity
       recipient: account.address
     },
+    royalty_max_bps: royaltyMaxBps,
     start_time: (now + START_TIME_BUFFER_SECS).toString(),
     end_time: endTime.toString(),
-    salt,
-    nonce: currentNonce.toString()
+    salt: generateSalt(),
+    counter
   };
   const typedData = stringifyBigInts(
     build1155OrderTypedData(orderParams, chainId)
@@ -5205,7 +5295,8 @@ async function makeOffer1155(account, params, config) {
     },
     signature: signatureArray
   });
-  const amountU256 = cairo.uint256(priceWei);
+  const totalWei = BigInt(priceWei) * BigInt(amount);
+  const amountU256 = cairo.uint256(totalWei.toString());
   const approveCall = {
     contractAddress: token.address,
     entrypoint: "approve",
@@ -5245,31 +5336,9 @@ async function checkoutCart1155(account, items, config) {
       ]
     };
   });
-  const currentNonce = await contract.nonces(account.address);
-  const baseNonce = BigInt(currentNonce.toString());
-  const chainId = getChainId();
-  const fulfillCalls = [];
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    const nonce = (baseNonce + BigInt(i)).toString();
-    const quantity = item.quantity ?? "1";
-    const fulfillmentParams = {
-      order_hash: item.orderHash,
-      fulfiller: account.address,
-      quantity,
-      nonce
-    };
-    const typedData = stringifyBigInts(
-      build1155FulfillmentTypedData(fulfillmentParams, chainId)
-    );
-    const signature = await account.signMessage(typedData);
-    const signatureArray = toSignatureArray(signature);
-    const fulfillPayload = stringifyBigInts({
-      fulfillment: fulfillmentParams,
-      signature: signatureArray
-    });
-    fulfillCalls.push(contract.populate("fulfill_order", [fulfillPayload]));
-  }
+  const fulfillCalls = items.map(
+    (item) => contract.populate("fulfill_order", [item.orderHash, item.quantity ?? "1"])
+  );
   try {
     const tx = await account.execute([...approveCalls, ...fulfillCalls]);
     await provider.waitForTransaction(tx.transaction_hash);
@@ -5282,9 +5351,21 @@ async function getOrderDetails1155(orderHash, config) {
   const contract = getContract(config);
   return contract.get_order_details(orderHash);
 }
-async function getNonce1155(address, config) {
+async function getCounter1155(address, config) {
   const contract = getContract(config);
-  return BigInt((await contract.nonces(address)).toString());
+  return BigInt((await contract.get_counter(address)).toString());
+}
+async function incrementCounter1155(account, config) {
+  const contract = getContract(config);
+  const provider = getProvider(config);
+  const call = contract.populate("increment_counter", []);
+  try {
+    const tx = await account.execute(call);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to increment counter (1155)", "TRANSACTION_FAILED", err);
+  }
 }
 
 // src/marketplace1155/index.ts
@@ -5327,19 +5408,20 @@ var Medialane1155Module = class {
   checkoutCart(account, items) {
     return checkoutCart1155(account, items, this.config);
   }
+  /** Bulk-cancel on the 1155 venue: bump the caller's counter. */
+  incrementCounter(account) {
+    return incrementCounter1155(account, this.config);
+  }
   // ─── View calls ───────────────────────────────────────────────────────────
   getOrderDetails(orderHash) {
     return getOrderDetails1155(orderHash, this.config);
   }
-  getNonce(address) {
-    return getNonce1155(address, this.config);
+  getCounter(address) {
+    return getCounter1155(address, this.config);
   }
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
   buildListingTypedData(params, chainId) {
     return build1155OrderTypedData(params, chainId);
-  }
-  buildFulfillmentTypedData(params, chainId) {
-    return build1155FulfillmentTypedData(params, chainId);
   }
   buildCancellationTypedData(params, chainId) {
     return build1155CancellationTypedData(params, chainId);
@@ -6438,6 +6520,6 @@ function getServicesByCapability(cap) {
   );
 }
 
-export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155FulfillmentTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildFulfillmentTypedData, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

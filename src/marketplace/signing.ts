@@ -13,33 +13,32 @@ const OFFER_ITEM = [
   { name: "item_type", type: "shortstring" },
   { name: "token", type: "ContractAddress" },
   { name: "identifier_or_criteria", type: "felt" },
-  { name: "start_amount", type: "felt" },
-  { name: "end_amount", type: "felt" },
+  { name: "amount", type: "felt" },
 ];
 
 const CONSIDERATION_ITEM = [
   { name: "item_type", type: "shortstring" },
   { name: "token", type: "ContractAddress" },
   { name: "identifier_or_criteria", type: "felt" },
-  { name: "start_amount", type: "felt" },
-  { name: "end_amount", type: "felt" },
+  { name: "amount", type: "felt" },
   { name: "recipient", type: "ContractAddress" },
 ];
 
 const ORDER_PARAMETERS = [
   { name: "offerer", type: "ContractAddress" },
+  { name: "marketplace", type: "ContractAddress" },
   { name: "offer", type: "OfferItem" },
   { name: "consideration", type: "ConsiderationItem" },
+  { name: "royalty_max_bps", type: "felt" },
   { name: "start_time", type: "felt" },
   { name: "end_time", type: "felt" },
   { name: "salt", type: "felt" },
-  { name: "nonce", type: "felt" },
+  { name: "counter", type: "felt" },
 ];
 
 const ORDER_CANCELLATION = [
   { name: "order_hash", type: "felt" },
   { name: "offerer", type: "ContractAddress" },
-  { name: "nonce", type: "felt" },
 ];
 
 /**
@@ -51,8 +50,8 @@ const ORDER_CANCELLATION = [
  * update only this lookup — every builder reads through it.
  */
 const DOMAIN_VERSION: Record<"erc721" | "erc1155", string> = {
-  erc721: "1",
-  erc1155: "2",
+  erc721: "4",
+  erc1155: "3",
 };
 
 function buildDomain(standard: "erc721" | "erc1155", chainId: constants.StarknetChainId | string) {
@@ -100,50 +99,6 @@ export function build1155OrderTypedData(
       OrderParameters: ORDER_PARAMETERS,
       OfferItem: OFFER_ITEM,
       ConsiderationItem: CONSIDERATION_ITEM,
-    },
-    message,
-  };
-}
-
-/**
- * Build SNIP-12 typed data for an OrderFulfillment struct.
- * ERC-1155 adds a `quantity` field so the contract can verify the partial-fill
- * amount; ERC-721 omits it (always single-fill).
- */
-export function buildFulfillmentTypedData(
-  message: Record<string, unknown>,
-  chainId: constants.StarknetChainId | string,
-): TypedData {
-  return {
-    domain: buildDomain("erc721", chainId),
-    primaryType: "OrderFulfillment",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderFulfillment: [
-        { name: "order_hash", type: "felt" },
-        { name: "fulfiller", type: "ContractAddress" },
-        { name: "nonce", type: "felt" },
-      ],
-    },
-    message,
-  };
-}
-
-export function build1155FulfillmentTypedData(
-  message: Record<string, unknown>,
-  chainId: constants.StarknetChainId | string,
-): TypedData {
-  return {
-    domain: buildDomain("erc1155", chainId),
-    primaryType: "OrderFulfillment",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderFulfillment: [
-        { name: "order_hash", type: "felt" },
-        { name: "fulfiller", type: "ContractAddress" },
-        { name: "quantity", type: "felt" },
-        { name: "nonce", type: "felt" },
-      ],
     },
     message,
   };

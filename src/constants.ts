@@ -1,24 +1,24 @@
-/** Medialane Protocol ERC-721 marketplace — immutable, no admin key. */
+/** Medialane721 marketplace venue — immutable, ownerless (redesign, deployed 2026-05-31). */
 export const MARKETPLACE_721_CONTRACT_MAINNET =
-  "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6";
+  "0x069cf5391077e3ebdd9cb6aebf90ed530d29f0d6aa34a43f5afae938c0fb565e";
 
-/** Class hash of the Medialane Protocol ERC-721 marketplace implementation. */
+/** Class hash of the Medialane721 venue. */
 export const MARKETPLACE_721_CLASS_HASH_MAINNET =
-  "0x03dff4f34b976207246207954263be9a28b51390321702443291088dcdf4b2e6";
+  "0x04c6f952d747ad7ead1b3dad4c1d587837d38f8ec29d6c095a4afa5b5ece5957";
 
-/** First mainnet block for the current Medialane Protocol ERC-721 deployment. */
-export const MARKETPLACE_721_START_BLOCK_MAINNET = 9196722;
+/** First mainnet block for the Medialane721 venue deployment. */
+export const MARKETPLACE_721_START_BLOCK_MAINNET = 10350340;
 
-/** Medialane Protocol ERC-1155 marketplace — immutable, no admin key. */
+/** Medialane1155 marketplace venue — immutable, ownerless (redesign, deployed 2026-05-31). */
 export const MARKETPLACE_1155_CONTRACT_MAINNET =
-  "0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99";
+  "0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077";
 
-/** Class hash of the Medialane Protocol ERC-1155 marketplace implementation. */
+/** Class hash of the Medialane1155 venue. */
 export const MARKETPLACE_1155_CLASS_HASH_MAINNET =
-  "0x01b674aad934be85abc7c1970265cbf7e9bc7d586a90f0a67112c201636dbdd3";
+  "0x02600bb720908f119afe482309d36c39d087587f0df9576454acfb6363e78cd8";
 
-/** First mainnet block for the current Medialane Protocol ERC-1155 deployment. */
-export const MARKETPLACE_1155_START_BLOCK_MAINNET = 9260304;
+/** First mainnet block for the Medialane1155 venue deployment. */
+export const MARKETPLACE_1155_START_BLOCK_MAINNET = 10350855;
 
 export const COLLECTION_721_CONTRACT_MAINNET =
   "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2";

@@ -25,7 +25,6 @@ import { stringifyBigInts } from "../utils/bigint.js";
 import { parseAmount } from "../utils/token.js";
 import {
   buildOrderTypedData,
-  buildFulfillmentTypedData,
   buildCancellationTypedData,
 } from "./signing.js";
 import { MedialaneError } from "./errors.js";
@@ -35,6 +34,8 @@ import {
   getChainId,
   getProvider,
   resolveToken,
+  generateSalt,
+  resolveRoyaltyMaxBps,
   START_TIME_BUFFER_SECS,
 } from "./utils.js";
 
@@ -72,33 +73,31 @@ export async function createListing(
   const now = Math.floor(Date.now() / 1000);
   const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
-  const saltBytes = new Uint8Array(4);
-  crypto.getRandomValues(saltBytes);
-  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
 
-  const currentNonce = await contract.nonces(account.address);
+  const counter = (await contract.get_counter(account.address)).toString();
+  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
 
   const orderParams = {
     offerer: account.address,
+    marketplace: config.marketplaceContract,
     offer: {
       item_type: "ERC721",
       token: nftContract,
       identifier_or_criteria: tokenId,
-      start_amount: "1",
-      end_amount: "1",
+      amount: "1",
     },
     consideration: {
       item_type: "ERC20",
       token: token.address,
       identifier_or_criteria: "0",
-      start_amount: priceWei,
-      end_amount: priceWei,
+      amount: priceWei,
       recipient: account.address,
     },
+    royalty_max_bps: royaltyMaxBps,
     start_time: startTime.toString(),
     end_time: endTime.toString(),
-    salt,
-    nonce: currentNonce.toString(),
+    salt: generateSalt(),
+    counter,
   };
 
   const chainId = getChainId(config);
@@ -180,33 +179,31 @@ export async function makeOffer(
   const now = Math.floor(Date.now() / 1000);
   const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
-  const saltBytes = new Uint8Array(4);
-  crypto.getRandomValues(saltBytes);
-  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
 
-  const currentNonce = await contract.nonces(account.address);
+  const counter = (await contract.get_counter(account.address)).toString();
+  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
 
   const orderParams = {
     offerer: account.address,
+    marketplace: config.marketplaceContract,
     offer: {
       item_type: "ERC20",
       token: token.address,
       identifier_or_criteria: "0",
-      start_amount: priceWei,
-      end_amount: priceWei,
+      amount: priceWei,
     },
     consideration: {
       item_type: "ERC721",
       token: nftContract,
       identifier_or_criteria: tokenId,
-      start_amount: "1",
-      end_amount: "1",
+      amount: "1",
       recipient: account.address,
     },
+    royalty_max_bps: royaltyMaxBps,
     start_time: startTime.toString(),
     end_time: endTime.toString(),
-    salt,
-    nonce: currentNonce.toString(),
+    salt: generateSalt(),
+    counter,
   };
 
   const chainId = getChainId(config);
@@ -264,27 +261,7 @@ export async function fulfillOrder(
   const { orderHash, paymentToken, totalPrice } = params;
   const { contract, provider } = makeContract(config);
 
-  const currentNonce = await contract.nonces(account.address);
-  const chainId = getChainId(config);
-
-  const fulfillmentParams = {
-    order_hash: orderHash,
-    fulfiller: account.address,
-    nonce: currentNonce.toString(),
-  };
-
-  const typedData = stringifyBigInts(
-    buildFulfillmentTypedData(fulfillmentParams, chainId)
-  ) as TypedData;
-
-  const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray(signature);
-
-  const fulfillPayload = stringifyBigInts({
-    fulfillment: fulfillmentParams,
-    signature: signatureArray,
-  }) as Record<string, unknown>;
-
+  // Fulfilment is unsigned — the caller IS the fulfiller (audit F3).
   const totalPriceU256 = cairo.uint256(totalPrice);
   const approveCall = {
     contractAddress: paymentToken,
@@ -296,7 +273,7 @@ export async function fulfillOrder(
     ],
   };
 
-  const fulfillCall = contract.populate("fulfill_order", [fulfillPayload]);
+  const fulfillCall = contract.populate("fulfill_order", [orderHash]);
 
   const feeCall = buildFeeCall(
     { surface: "marketplace", token: paymentToken, grossAmount: BigInt(totalPrice) },
@@ -326,13 +303,11 @@ export async function cancelOrder(
   const { orderHash } = params;
   const { contract, provider } = makeContract(config);
 
-  const currentNonce = await contract.nonces(account.address);
   const chainId = getChainId(config);
 
   const cancelParams = {
     order_hash: orderHash,
     offerer: account.address,
-    nonce: currentNonce.toString(),
   };
 
   const typedData = stringifyBigInts(
@@ -447,38 +422,10 @@ export async function checkoutCart(
     };
   });
 
-  const currentNonce = await contract.nonces(account.address);
-  const baseNonce = BigInt(currentNonce.toString());
-  const chainId = getChainId(config);
-
-  const fulfillCalls = [];
-
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    // Nonces are sequential (baseNonce + i) because all fulfill calls land in one atomic tx.
-    // The contract increments its nonce after each fulfill_order call within the multicall.
-    const nonce = (baseNonce + BigInt(i)).toString();
-
-    const fulfillmentParams = {
-      order_hash: item.orderHash,
-      fulfiller: account.address,
-      nonce,
-    };
-
-    const typedData = stringifyBigInts(
-      buildFulfillmentTypedData(fulfillmentParams, chainId)
-    ) as TypedData;
-
-    const signature = await account.signMessage(typedData);
-    const signatureArray = toSignatureArray(signature);
-
-    const fulfillPayload = stringifyBigInts({
-      fulfillment: fulfillmentParams,
-      signature: signatureArray,
-    }) as Record<string, unknown>;
-
-    fulfillCalls.push(contract.populate("fulfill_order", [fulfillPayload]));
-  }
+  // Fulfilment is unsigned now — each fulfill is just a call; no per-item signing.
+  const fulfillCalls = items.map((item) =>
+    contract.populate("fulfill_order", [item.orderHash]),
+  );
 
   const feeCalls = Array.from(tokenTotals.entries())
     .map(([tokenAddr, totalWei]) =>
@@ -506,10 +453,26 @@ export async function getOrderDetails(
   return contract.get_order_details(orderHash) as Promise<OrderDetails>;
 }
 
-export async function getNonce(
+export async function getCounter(
   address: string,
   config: ResolvedConfig
 ): Promise<bigint> {
   const { contract } = makeContract(config);
-  return BigInt((await contract.nonces(address)).toString());
+  return BigInt((await contract.get_counter(address)).toString());
+}
+
+/** Bulk-cancel: bump the caller's counter, invalidating all their open orders. */
+export async function incrementCounter(
+  account: AccountInterface,
+  config: ResolvedConfig
+): Promise<TxResult> {
+  const { contract, provider } = makeContract(config);
+  const call = contract.populate("increment_counter", []);
+  try {
+    const tx = await account.execute(call);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to increment counter", "TRANSACTION_FAILED", err);
+  }
 }

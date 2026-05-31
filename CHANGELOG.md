@@ -2,6 +2,33 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.26.0] — 2026-05-31
+
+### BREAKING — redesigned marketplace venues
+
+The marketplace contracts were redesigned and redeployed as fresh immutable
+classes (Medialane721 / Medialane1155). The SDK now targets the new signed
+schema; orders produced by ≤0.25.0 are not valid on the new venues.
+
+- **Order schema:** `OfferItem`/`ConsiderationItem` use a single `amount`
+  (removed `start_amount`/`end_amount`). `OrderParameters` adds `marketplace`,
+  `royalty_max_bps`, `counter`; removes `nonce`. `Cancelation` drops `nonce`.
+  SNIP-12 domain versions are now 721=`4`, 1155=`3`.
+- **Fulfilment is unsigned** — the caller IS the fulfiller. `buildFulfillmentTypedData`
+  and `build1155FulfillmentTypedData` are **removed**, as is
+  `MarketplaceModule.buildFulfillmentTypedData`; `fulfillOrder`/`fulfillOrder1155`/
+  `checkoutCart*` no longer prompt a signature.
+- **Bulk cancel:** `nonces()`/`getNonce` removed → `getCounter()` + new
+  `incrementCounter()` (per-offerer counter epoch) on both modules.
+- **Royalties:** listings/offers now sign a `royaltyMaxBps` cap, derived from the
+  NFT's live EIP-2981 (override via the new `royaltyMaxBps?` param).
+- **Addresses/ABIs:** new mainnet `MARKETPLACE_721/1155_*` constants + regenerated
+  `IPMarketplaceABI` / `Medialane1155ABI`.
+- **salt** widened to a full random felt (sole hash-uniqueness source now).
+
+Migration: consumers replace `getNonce`→`getCounter`, drop fulfillment-signing
+flows, and read `OrderFulfilled.fulfiller` (the `OrderDetails.fulfiller` field is gone).
+
 ## [0.24.0] — 2026-05-25
 
 ### Added
