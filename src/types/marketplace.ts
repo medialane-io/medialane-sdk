@@ -2,8 +2,7 @@ export interface OfferItem {
   item_type: string;
   token: string;
   identifier_or_criteria: string;
-  start_amount: string;
-  end_amount: string;
+  amount: string;
 }
 
 export interface ConsiderationItem extends OfferItem {
@@ -12,12 +11,14 @@ export interface ConsiderationItem extends OfferItem {
 
 export interface OrderParameters {
   offerer: string;
+  marketplace: string;
   offer: OfferItem;
   consideration: ConsiderationItem;
+  royalty_max_bps: string;
   start_time: string;
   end_time: string;
   salt: string;
-  nonce: string;
+  counter: string;
 }
 
 export interface Order {
@@ -25,16 +26,11 @@ export interface Order {
   signature: string[];
 }
 
-export interface Fulfillment {
-  order_hash: string;
-  fulfiller: string;
-  nonce: string;
-}
+// Fulfillment type removed — fulfill is unsigned (caller is the fulfiller).
 
 export interface Cancelation {
   order_hash: string;
   offerer: string;
-  nonce: string;
 }
 
 // SDK-level param types for the public API
@@ -46,6 +42,8 @@ export interface CreateListingParams {
   /** Currency symbol or token address. Defaults to "USDC" (native). */
   currency?: string;
   durationSeconds: number;
+  /** Signed EIP-2981 royalty cap in bps. Defaults to the NFT's live 2981 rate. */
+  royaltyMaxBps?: string;
 }
 
 export interface MakeOfferParams {
@@ -55,6 +53,8 @@ export interface MakeOfferParams {
   /** Currency symbol or token address. Defaults to "USDC" (native). */
   currency?: string;
   durationSeconds: number;
+  /** Signed EIP-2981 royalty cap in bps. Defaults to the NFT's live 2981 rate. */
+  royaltyMaxBps?: string;
 }
 
 export interface FulfillOrderParams {
@@ -105,10 +105,12 @@ export interface OrderDetails {
   offerer: string;
   offer: OfferItem;
   consideration: ConsiderationItem;
+  royalty_max_bps: string;
   start_time: bigint;
   end_time: bigint;
   order_status: string;
-  fulfiller: string | null;
+  /** ERC-1155 only — units still available. */
+  remaining_amount?: string;
 }
 
 // ─── ERC-1155 Marketplace (Medialane1155) ─────────────────────────────────────
@@ -126,6 +128,8 @@ export interface CreateListing1155Params {
   currency?: string;
   /** How long the listing is valid, in seconds */
   durationSeconds: number;
+  /** Signed EIP-2981 royalty cap in bps. Defaults to the NFT's live 2981 rate. */
+  royaltyMaxBps?: string;
 }
 
 export interface FulfillOrder1155Params {
@@ -157,4 +161,6 @@ export interface MakeOffer1155Params {
   currency?: string;
   /** How long the offer is valid, in seconds */
   durationSeconds: number;
+  /** Signed EIP-2981 royalty cap in bps. Defaults to the NFT's live 2981 rate. */
+  royaltyMaxBps?: string;
 }
