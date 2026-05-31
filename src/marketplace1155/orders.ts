@@ -23,7 +23,6 @@ import { stringifyBigInts } from "../utils/bigint.js";
 import { parseAmount } from "../utils/token.js";
 import {
   build1155OrderTypedData,
-  build1155FulfillmentTypedData,
   build1155CancellationTypedData,
 } from "../marketplace/signing.js";
 import {
@@ -31,6 +30,8 @@ import {
   getChainId,
   getProvider,
   resolveToken,
+  generateSalt,
+  resolveRoyaltyMaxBps,
   START_TIME_BUFFER_SECS,
 } from "../marketplace/utils.js";
 
@@ -79,35 +80,32 @@ export async function createListing1155(
 
   const now = Math.floor(Date.now() / 1000);
   const endTime = now + durationSeconds;
-
-  const saltBytes = new Uint8Array(4);
-  crypto.getRandomValues(saltBytes);
-  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
-
-  const currentNonce = await contract.nonces(account.address);
   const chainId = getChainId(config);
+
+  const counter = (await contract.get_counter(account.address)).toString();
+  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
 
   const orderParams = {
     offerer: account.address,
+    marketplace: config.marketplace1155Contract,
     offer: {
       item_type: "ERC1155",
       token: nftContract,
       identifier_or_criteria: tokenId,
-      start_amount: amount,
-      end_amount: amount,
+      amount, // ERC-1155 leg amount = unit quantity
     },
     consideration: {
       item_type: "ERC20",
       token: token.address,
       identifier_or_criteria: "0",
-      start_amount: priceWei,
-      end_amount: priceWei,
+      amount: priceWei, // payment leg amount = price PER UNIT
       recipient: account.address,
     },
+    royalty_max_bps: royaltyMaxBps,
     start_time: (now + START_TIME_BUFFER_SECS).toString(),
     end_time: endTime.toString(),
-    salt,
-    nonce: currentNonce.toString(),
+    salt: generateSalt(),
+    counter,
   };
 
   const typedData = stringifyBigInts(
@@ -170,12 +168,9 @@ export async function createListing1155(
 }
 
 /**
- * Fulfill (buy) an ERC-1155 order.
- *
- * The fulfiller signs `OrderFulfillment` off-chain, then the signed
- * fulfillment is submitted to `fulfill_order`. The fulfiller must have
- * approved the Medialane1155 contract to spend `pricePerUnit × amount`
- * of the payment token before calling this.
+ * Fulfill (buy) `quantity` units of an ERC-1155 order. Unsigned — the caller
+ * IS the fulfiller (audit F3). The fulfiller must have approved the Medialane1155
+ * contract to spend `pricePerUnit × quantity` of the payment token before calling.
  */
 export async function fulfillOrder1155(
   account: AccountInterface,
@@ -186,28 +181,6 @@ export async function fulfillOrder1155(
 
   const contract = getContract(config);
   const provider = getProvider(config);
-  const chainId = getChainId(config);
-
-  const currentNonce = await contract.nonces(account.address);
-
-  const fulfillmentParams = {
-    order_hash: orderHash,
-    fulfiller: account.address,
-    quantity,
-    nonce: currentNonce.toString(),
-  };
-
-  const typedData = stringifyBigInts(
-    build1155FulfillmentTypedData(fulfillmentParams, chainId)
-  ) as TypedData;
-
-  const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray(signature);
-
-  const fulfillPayload = stringifyBigInts({
-    fulfillment: fulfillmentParams,
-    signature: signatureArray,
-  }) as Record<string, unknown>;
 
   const totalPriceU256 = cairo.uint256(totalPrice);
   const approveCall = {
@@ -220,7 +193,7 @@ export async function fulfillOrder1155(
     ],
   };
 
-  const fulfillCall = contract.populate("fulfill_order", [fulfillPayload]);
+  const fulfillCall = contract.populate("fulfill_order", [orderHash, quantity]);
 
   try {
     const tx = await account.execute([approveCall, fulfillCall]);
@@ -232,10 +205,8 @@ export async function fulfillOrder1155(
 }
 
 /**
- * Cancel an ERC-1155 order.
- *
- * Only the original offerer can cancel. The offerer signs `OrderCancellation`
- * off-chain, then the signed cancellation is submitted to `cancel_order`.
+ * Cancel an ERC-1155 order. Only the original offerer can cancel: the offerer
+ * signs `OrderCancellation` off-chain (no nonce), submitted to `cancel_order`.
  */
 export async function cancelOrder1155(
   account: AccountInterface,
@@ -248,12 +219,9 @@ export async function cancelOrder1155(
   const provider = getProvider(config);
   const chainId = getChainId(config);
 
-  const currentNonce = await contract.nonces(account.address);
-
   const cancelParams = {
     order_hash: orderHash,
     offerer: account.address,
-    nonce: currentNonce.toString(),
   };
 
   const typedData = stringifyBigInts(
@@ -280,11 +248,9 @@ export async function cancelOrder1155(
 }
 
 /**
- * Make an offer (bid) on an ERC-1155 token.
- *
- * The offerer offers ERC-20 and asks for the specified ERC-1155 amount.
- * Signs `OrderParameters` off-chain via SNIP-12, approves the ERC-20 spend,
- * then submits to `register_order`.
+ * Make an offer (bid) on an ERC-1155 token. The offerer offers ERC-20 and asks
+ * for the specified ERC-1155 quantity. Signs `OrderParameters` off-chain via
+ * SNIP-12, approves the ERC-20 spend, then submits to `register_order`.
  */
 export async function makeOffer1155(
   account: AccountInterface,
@@ -310,33 +276,30 @@ export async function makeOffer1155(
   const now = Math.floor(Date.now() / 1000);
   const endTime = now + durationSeconds;
 
-  const saltBytes = new Uint8Array(4);
-  crypto.getRandomValues(saltBytes);
-  const salt = new DataView(saltBytes.buffer).getUint32(0).toString();
-
-  const currentNonce = await contract.nonces(account.address);
+  const counter = (await contract.get_counter(account.address)).toString();
+  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
 
   const orderParams = {
     offerer: account.address,
+    marketplace: config.marketplace1155Contract,
     offer: {
       item_type: "ERC20",
       token: token.address,
       identifier_or_criteria: "0",
-      start_amount: priceWei,
-      end_amount: priceWei,
+      amount: priceWei, // price PER UNIT
     },
     consideration: {
       item_type: "ERC1155",
       token: nftContract,
       identifier_or_criteria: tokenId,
-      start_amount: amount,
-      end_amount: amount,
+      amount, // unit quantity
       recipient: account.address,
     },
+    royalty_max_bps: royaltyMaxBps,
     start_time: (now + START_TIME_BUFFER_SECS).toString(),
     end_time: endTime.toString(),
-    salt,
-    nonce: currentNonce.toString(),
+    salt: generateSalt(),
+    counter,
   };
 
   const typedData = stringifyBigInts(
@@ -361,7 +324,9 @@ export async function makeOffer1155(
     signature: signatureArray,
   }) as Record<string, unknown>;
 
-  const amountU256 = cairo.uint256(priceWei);
+  // Bid pays per-unit price × quantity total — approve the full amount.
+  const totalWei = BigInt(priceWei) * BigInt(amount);
+  const amountU256 = cairo.uint256(totalWei.toString());
   const approveCall = {
     contractAddress: token.address,
     entrypoint: "approve",
@@ -384,11 +349,9 @@ export async function makeOffer1155(
 }
 
 /**
- * Checkout a cart of ERC-1155 orders in a single atomic multicall.
- *
- * Signs one `OrderFulfillment` per item (each includes a `quantity` field),
- * groups ERC-20 approvals by token, then executes all calls atomically.
- * Nonces are sequential: baseNonce + i per item.
+ * Checkout a cart of ERC-1155 orders in a single atomic multicall. Fulfilment
+ * is unsigned now — group ERC-20 approvals by token, then one `fulfill_order`
+ * call per item with its quantity.
  */
 export async function checkoutCart1155(
   account: AccountInterface,
@@ -419,38 +382,9 @@ export async function checkoutCart1155(
     };
   });
 
-  const currentNonce = await contract.nonces(account.address);
-  const baseNonce = BigInt(currentNonce.toString());
-  const chainId = getChainId(config);
-
-  const fulfillCalls = [];
-
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    const nonce = (baseNonce + BigInt(i)).toString();
-    const quantity = item.quantity ?? "1";
-
-    const fulfillmentParams = {
-      order_hash: item.orderHash,
-      fulfiller: account.address,
-      quantity,
-      nonce,
-    };
-
-    const typedData = stringifyBigInts(
-      build1155FulfillmentTypedData(fulfillmentParams, chainId)
-    ) as TypedData;
-
-    const signature = await account.signMessage(typedData);
-    const signatureArray = toSignatureArray(signature);
-
-    const fulfillPayload = stringifyBigInts({
-      fulfillment: fulfillmentParams,
-      signature: signatureArray,
-    }) as Record<string, unknown>;
-
-    fulfillCalls.push(contract.populate("fulfill_order", [fulfillPayload]));
-  }
+  const fulfillCalls = items.map((item) =>
+    contract.populate("fulfill_order", [item.orderHash, item.quantity ?? "1"]),
+  );
 
   try {
     const tx = await account.execute([...approveCalls, ...fulfillCalls]);
@@ -469,10 +403,27 @@ export async function getOrderDetails1155(
   return contract.get_order_details(orderHash) as Promise<OrderDetails>;
 }
 
-export async function getNonce1155(
+export async function getCounter1155(
   address: string,
   config: ResolvedConfig
 ): Promise<bigint> {
   const contract = getContract(config);
-  return BigInt((await contract.nonces(address)).toString());
+  return BigInt((await contract.get_counter(address)).toString());
+}
+
+/** Bulk-cancel on the 1155 venue: bump the caller's counter. */
+export async function incrementCounter1155(
+  account: AccountInterface,
+  config: ResolvedConfig
+): Promise<TxResult> {
+  const contract = getContract(config);
+  const provider = getProvider(config);
+  const call = contract.populate("increment_counter", []);
+  try {
+    const tx = await account.execute(call);
+    await provider.waitForTransaction(tx.transaction_hash);
+    return { txHash: tx.transaction_hash };
+  } catch (err) {
+    throw new MedialaneError("Failed to increment counter (1155)", "TRANSACTION_FAILED", err);
+  }
 }
