@@ -452,12 +452,28 @@ export interface ApiIntent {
   updatedAt: string;
 }
 
-export interface ApiIntentCreated {
-  id: string;
-  typedData: unknown;
-  calls: unknown;
-  expiresAt: string;
+/** A single Starknet call as returned in intent calldata. */
+export interface IntentCall {
+  contractAddress: string;
+  entrypoint: string;
+  calldata: string[];
 }
+
+/**
+ * Response from any `createXIntent` call. Discriminated on `requiresSignature`:
+ *   • true  — SNIP-12 intent (listing / offer / cancel / counter-offer). Sign
+ *             `typedData`, then call `submitIntentSignature(id, sig)` to obtain
+ *             the executable calls.
+ *   • false — prebuilt intent (fulfill / mint / create-collection). `calls` are
+ *             ready to execute directly; there is no signature step.
+ *
+ * The discriminant makes the wrong access a compile error: `typedData` does not
+ * exist on the `false` variant, nor `calls` on the `true` variant. Consumers
+ * MUST narrow on `requiresSignature` before reading either.
+ */
+export type ApiIntentCreated =
+  | { id: string; expiresAt: string; requiresSignature: true; typedData: unknown }
+  | { id: string; expiresAt: string; requiresSignature: false; calls: IntentCall[] };
 
 export interface CreateListingIntentParams {
   offerer: string;
