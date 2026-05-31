@@ -87,9 +87,7 @@ export { encodeByteArray } from "./utils/bytearray.js";
 // Signing builders (for advanced / ChipiPay integrations)
 export {
   buildOrderTypedData,
-  buildFulfillmentTypedData,
   buildCancellationTypedData,
   build1155OrderTypedData,
-  build1155FulfillmentTypedData,
   build1155CancellationTypedData,
 } from "./marketplace/signing.js";

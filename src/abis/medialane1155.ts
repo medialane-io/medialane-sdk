@@ -1,12 +1,13 @@
+// Auto-generated from Medialane1155 class (redesigned venue). Do not hand-edit.
 export const Medialane1155ABI = [
   {
     "type": "impl",
-    "name": "Medialane1155V2Impl",
-    "interface_name": "medialane_erc1155::core::interface::IMedialane1155V2"
+    "name": "Medialane1155Impl",
+    "interface_name": "medialane_marketplace_erc1155::core::interface::IMedialane1155"
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::OfferItem",
+    "name": "medialane_marketplace_erc1155::core::types::OfferItem",
     "members": [
       {
         "name": "item_type",
@@ -21,18 +22,14 @@ export const Medialane1155ABI = [
         "type": "core::felt252"
       },
       {
-        "name": "start_amount",
-        "type": "core::felt252"
-      },
-      {
-        "name": "end_amount",
+        "name": "amount",
         "type": "core::felt252"
       }
     ]
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::ConsiderationItem",
+    "name": "medialane_marketplace_erc1155::core::types::ConsiderationItem",
     "members": [
       {
         "name": "item_type",
@@ -47,11 +44,7 @@ export const Medialane1155ABI = [
         "type": "core::felt252"
       },
       {
-        "name": "start_amount",
-        "type": "core::felt252"
-      },
-      {
-        "name": "end_amount",
+        "name": "amount",
         "type": "core::felt252"
       },
       {
@@ -62,19 +55,27 @@ export const Medialane1155ABI = [
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::OrderParameters",
+    "name": "medialane_marketplace_erc1155::core::types::OrderParameters",
     "members": [
       {
         "name": "offerer",
         "type": "core::starknet::contract_address::ContractAddress"
       },
       {
+        "name": "marketplace",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
         "name": "offer",
-        "type": "medialane_erc1155::core::types::OfferItem"
+        "type": "medialane_marketplace_erc1155::core::types::OfferItem"
       },
       {
         "name": "consideration",
-        "type": "medialane_erc1155::core::types::ConsiderationItem"
+        "type": "medialane_marketplace_erc1155::core::types::ConsiderationItem"
+      },
+      {
+        "name": "royalty_max_bps",
+        "type": "core::felt252"
       },
       {
         "name": "start_time",
@@ -89,18 +90,18 @@ export const Medialane1155ABI = [
         "type": "core::felt252"
       },
       {
-        "name": "nonce",
+        "name": "counter",
         "type": "core::felt252"
       }
     ]
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::Order",
+    "name": "medialane_marketplace_erc1155::core::types::Order",
     "members": [
       {
         "name": "parameters",
-        "type": "medialane_erc1155::core::types::OrderParameters"
+        "type": "medialane_marketplace_erc1155::core::types::OrderParameters"
       },
       {
         "name": "signature",
@@ -110,43 +111,7 @@ export const Medialane1155ABI = [
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::OrderFulfillment",
-    "members": [
-      {
-        "name": "order_hash",
-        "type": "core::felt252"
-      },
-      {
-        "name": "fulfiller",
-        "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
-        "name": "quantity",
-        "type": "core::felt252"
-      },
-      {
-        "name": "nonce",
-        "type": "core::felt252"
-      }
-    ]
-  },
-  {
-    "type": "struct",
-    "name": "medialane_erc1155::core::types::FulfillmentRequest",
-    "members": [
-      {
-        "name": "fulfillment",
-        "type": "medialane_erc1155::core::types::OrderFulfillment"
-      },
-      {
-        "name": "signature",
-        "type": "core::array::Array::<core::felt252>"
-      }
-    ]
-  },
-  {
-    "type": "struct",
-    "name": "medialane_erc1155::core::types::OrderCancellation",
+    "name": "medialane_marketplace_erc1155::core::types::OrderCancellation",
     "members": [
       {
         "name": "order_hash",
@@ -155,20 +120,16 @@ export const Medialane1155ABI = [
       {
         "name": "offerer",
         "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
-        "name": "nonce",
-        "type": "core::felt252"
       }
     ]
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::CancelRequest",
+    "name": "medialane_marketplace_erc1155::core::types::CancelRequest",
     "members": [
       {
         "name": "cancelation",
-        "type": "medialane_erc1155::core::types::OrderCancellation"
+        "type": "medialane_marketplace_erc1155::core::types::OrderCancellation"
       },
       {
         "name": "signature",
@@ -178,7 +139,7 @@ export const Medialane1155ABI = [
   },
   {
     "type": "enum",
-    "name": "medialane_erc1155::core::types::OrderStatus",
+    "name": "medialane_marketplace_erc1155::core::types::OrderStatus",
     "variants": [
       {
         "name": "None",
@@ -200,7 +161,7 @@ export const Medialane1155ABI = [
   },
   {
     "type": "struct",
-    "name": "medialane_erc1155::core::types::OrderDetails",
+    "name": "medialane_marketplace_erc1155::core::types::OrderDetails",
     "members": [
       {
         "name": "offerer",
@@ -208,11 +169,15 @@ export const Medialane1155ABI = [
       },
       {
         "name": "offer",
-        "type": "medialane_erc1155::core::types::OfferItem"
+        "type": "medialane_marketplace_erc1155::core::types::OfferItem"
       },
       {
         "name": "consideration",
-        "type": "medialane_erc1155::core::types::ConsiderationItem"
+        "type": "medialane_marketplace_erc1155::core::types::ConsiderationItem"
+      },
+      {
+        "name": "royalty_max_bps",
+        "type": "core::felt252"
       },
       {
         "name": "start_time",
@@ -224,11 +189,7 @@ export const Medialane1155ABI = [
       },
       {
         "name": "order_status",
-        "type": "medialane_erc1155::core::types::OrderStatus"
-      },
-      {
-        "name": "total_amount",
-        "type": "core::felt252"
+        "type": "medialane_marketplace_erc1155::core::types::OrderStatus"
       },
       {
         "name": "remaining_amount",
@@ -238,7 +199,7 @@ export const Medialane1155ABI = [
   },
   {
     "type": "interface",
-    "name": "medialane_erc1155::core::interface::IMedialane1155V2",
+    "name": "medialane_marketplace_erc1155::core::interface::IMedialane1155",
     "items": [
       {
         "type": "function",
@@ -246,7 +207,7 @@ export const Medialane1155ABI = [
         "inputs": [
           {
             "name": "order",
-            "type": "medialane_erc1155::core::types::Order"
+            "type": "medialane_marketplace_erc1155::core::types::Order"
           }
         ],
         "outputs": [],
@@ -257,8 +218,12 @@ export const Medialane1155ABI = [
         "name": "fulfill_order",
         "inputs": [
           {
-            "name": "fulfillment_request",
-            "type": "medialane_erc1155::core::types::FulfillmentRequest"
+            "name": "order_hash",
+            "type": "core::felt252"
+          },
+          {
+            "name": "quantity",
+            "type": "core::felt252"
           }
         ],
         "outputs": [],
@@ -270,9 +235,16 @@ export const Medialane1155ABI = [
         "inputs": [
           {
             "name": "cancel_request",
-            "type": "medialane_erc1155::core::types::CancelRequest"
+            "type": "medialane_marketplace_erc1155::core::types::CancelRequest"
           }
         ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "increment_counter",
+        "inputs": [],
         "outputs": [],
         "state_mutability": "external"
       },
@@ -287,7 +259,7 @@ export const Medialane1155ABI = [
         ],
         "outputs": [
           {
-            "type": "medialane_erc1155::core::types::OrderDetails"
+            "type": "medialane_marketplace_erc1155::core::types::OrderDetails"
           }
         ],
         "state_mutability": "view"
@@ -298,10 +270,46 @@ export const Medialane1155ABI = [
         "inputs": [
           {
             "name": "parameters",
-            "type": "medialane_erc1155::core::types::OrderParameters"
+            "type": "medialane_marketplace_erc1155::core::types::OrderParameters"
           },
           {
             "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_cancellation_hash",
+        "inputs": [
+          {
+            "name": "cancellation",
+            "type": "medialane_marketplace_erc1155::core::types::OrderCancellation"
+          },
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_counter",
+        "inputs": [
+          {
+            "name": "offerer",
             "type": "core::starknet::contract_address::ContractAddress"
           }
         ],
@@ -326,33 +334,6 @@ export const Medialane1155ABI = [
     ]
   },
   {
-    "type": "impl",
-    "name": "NoncesImpl",
-    "interface_name": "openzeppelin_utils::cryptography::interface::INonces"
-  },
-  {
-    "type": "interface",
-    "name": "openzeppelin_utils::cryptography::interface::INonces",
-    "items": [
-      {
-        "type": "function",
-        "name": "nonces",
-        "inputs": [
-          {
-            "name": "owner",
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::felt252"
-          }
-        ],
-        "state_mutability": "view"
-      }
-    ]
-  },
-  {
     "type": "constructor",
     "name": "constructor",
     "inputs": [
@@ -364,7 +345,7 @@ export const Medialane1155ABI = [
   },
   {
     "type": "event",
-    "name": "medialane_erc1155::core::events::OrderCreated",
+    "name": "medialane_marketplace_erc1155::core::events::OrderCreated",
     "kind": "struct",
     "members": [
       {
@@ -395,7 +376,7 @@ export const Medialane1155ABI = [
   },
   {
     "type": "event",
-    "name": "medialane_erc1155::core::events::OrderFulfilled",
+    "name": "medialane_marketplace_erc1155::core::events::OrderFulfilled",
     "kind": "struct",
     "members": [
       {
@@ -442,7 +423,7 @@ export const Medialane1155ABI = [
   },
   {
     "type": "event",
-    "name": "medialane_erc1155::core::events::OrderCancelled",
+    "name": "medialane_marketplace_erc1155::core::events::OrderCancelled",
     "kind": "struct",
     "members": [
       {
@@ -459,36 +440,46 @@ export const Medialane1155ABI = [
   },
   {
     "type": "event",
-    "name": "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event",
-    "kind": "enum",
-    "variants": []
+    "name": "medialane_marketplace_erc1155::core::events::CounterIncremented",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "offerer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "new_counter",
+        "type": "core::felt252",
+        "kind": "data"
+      }
+    ]
   },
   {
     "type": "event",
-    "name": "medialane_erc1155::core::medialane::Medialane1155V2::Event",
+    "name": "medialane_marketplace_erc1155::core::medialane::Medialane1155::Event",
     "kind": "enum",
     "variants": [
       {
         "name": "OrderCreated",
-        "type": "medialane_erc1155::core::events::OrderCreated",
+        "type": "medialane_marketplace_erc1155::core::events::OrderCreated",
         "kind": "nested"
       },
       {
         "name": "OrderFulfilled",
-        "type": "medialane_erc1155::core::events::OrderFulfilled",
+        "type": "medialane_marketplace_erc1155::core::events::OrderFulfilled",
         "kind": "nested"
       },
       {
         "name": "OrderCancelled",
-        "type": "medialane_erc1155::core::events::OrderCancelled",
+        "type": "medialane_marketplace_erc1155::core::events::OrderCancelled",
         "kind": "nested"
       },
       {
-        "name": "NoncesEvent",
-        "type": "openzeppelin_utils::cryptography::nonces::NoncesComponent::Event",
-        "kind": "flat"
+        "name": "CounterIncremented",
+        "type": "medialane_marketplace_erc1155::core::events::CounterIncremented",
+        "kind": "nested"
       }
     ]
   }
 ] as const;
-

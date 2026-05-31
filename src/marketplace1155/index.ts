@@ -11,7 +11,6 @@ import type {
 } from "../types/marketplace.js";
 import {
   build1155OrderTypedData,
-  build1155FulfillmentTypedData,
   build1155CancellationTypedData,
 } from "../marketplace/signing.js";
 import {
@@ -21,7 +20,8 @@ import {
   cancelOrder1155,
   checkoutCart1155,
   getOrderDetails1155,
-  getNonce1155,
+  getCounter1155,
+  incrementCounter1155,
 } from "./orders.js";
 
 export class Medialane1155Module {
@@ -68,14 +68,19 @@ export class Medialane1155Module {
     return checkoutCart1155(account, items, this.config);
   }
 
+  /** Bulk-cancel on the 1155 venue: bump the caller's counter. */
+  incrementCounter(account: AccountInterface): Promise<TxResult> {
+    return incrementCounter1155(account, this.config);
+  }
+
   // ─── View calls ───────────────────────────────────────────────────────────
 
   getOrderDetails(orderHash: string): Promise<OrderDetails> {
     return getOrderDetails1155(orderHash, this.config);
   }
 
-  getNonce(address: string): Promise<bigint> {
-    return getNonce1155(address, this.config);
+  getCounter(address: string): Promise<bigint> {
+    return getCounter1155(address, this.config);
   }
 
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
@@ -85,13 +90,6 @@ export class Medialane1155Module {
     chainId: constants.StarknetChainId
   ): TypedData {
     return build1155OrderTypedData(params, chainId);
-  }
-
-  buildFulfillmentTypedData(
-    params: Record<string, unknown>,
-    chainId: constants.StarknetChainId
-  ): TypedData {
-    return build1155FulfillmentTypedData(params, chainId);
   }
 
   buildCancellationTypedData(

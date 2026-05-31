@@ -13,7 +13,6 @@ import type {
 } from "../types/marketplace.js";
 import {
   buildOrderTypedData,
-  buildFulfillmentTypedData,
   buildCancellationTypedData,
 } from "./signing.js";
 import {
@@ -25,7 +24,8 @@ import {
   mint,
   createCollection,
   getOrderDetails,
-  getNonce,
+  getCounter,
+  incrementCounter,
 } from "./orders.js";
 
 export { MedialaneError } from "./errors.js";
@@ -63,14 +63,19 @@ export class MarketplaceModule {
     return createCollection(account, params, this.config);
   }
 
+  /** Bulk-cancel: bump the caller's counter, invalidating all their open orders. */
+  incrementCounter(account: AccountInterface): Promise<TxResult> {
+    return incrementCounter(account, this.config);
+  }
+
   // ─── View calls ───────────────────────────────────────────────────────────
 
   getOrderDetails(orderHash: string): Promise<OrderDetails> {
     return getOrderDetails(orderHash, this.config);
   }
 
-  getNonce(address: string): Promise<bigint> {
-    return getNonce(address, this.config);
+  getCounter(address: string): Promise<bigint> {
+    return getCounter(address, this.config);
   }
 
   // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
@@ -80,13 +85,6 @@ export class MarketplaceModule {
     chainId: constants.StarknetChainId
   ): TypedData {
     return buildOrderTypedData(params, chainId);
-  }
-
-  buildFulfillmentTypedData(
-    params: Record<string, unknown>,
-    chainId: constants.StarknetChainId
-  ): TypedData {
-    return buildFulfillmentTypedData(params, chainId);
   }
 
   buildCancellationTypedData(
