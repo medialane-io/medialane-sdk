@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.24.1",
+  "version": "0.27.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -84,6 +84,8 @@ src/
 > - **v0.18.0**: unified `marketplace/signing.ts` (was duplicated as `marketplace1155/signing.ts`). All six builders (`buildOrderTypedData`, `build1155OrderTypedData`, etc.) live in one file with shared type definitions; same export names so consumers are unchanged.
 > - **v0.19.0**: split monolithic `abis.ts` (4,247 lines) into per-ABI files under `abis/`. Same public imports via `abis/index.ts` barrel.
 > - **v0.20.0**: exported `ServiceId` literal union (`keyof typeof SERVICES`) + `isServiceId()` type guard. Use these to type-check `Collection.service` write sites in consumers.
+> - **v0.26.0 (BREAKING — redesigned marketplace venues)**: new marketplace ABIs + mainnet addresses; order schema is single-`amount` with `marketplace`/`royalty_max_bps`/`counter` (no nonce), SNIP-12 domain v4 (721) / v3 (1155); **fulfilment is unsigned** (fulfillment builders removed). Wide 248-bit salt is the sole order-hash uniqueness source.
+> - **v0.27.0**: `ApiIntentCreated` is a discriminated union on `requiresSignature` — `{ requiresSignature: true; typedData } | { requiresSignature: false; calls: IntentCall[] }`. Accessing the wrong field without narrowing is a compile error. New `IntentCall` type exported. Pairs with the backend `requiresSignature` field on every create-intent response.
 
 ---
 
@@ -522,11 +524,18 @@ throw new MedialaneApiError(status, "message")   // e.g. status=401, "Invalid or
 
 ## SNIP-12 Signing (`src/marketplace/signing.ts`)
 
-Three typed data builders used before `account.signMessage()`:
+Typed-data builders used before `account.signMessage()` (redesigned venues, v0.26.0):
 
-- `buildOrderTypedData(orderParams, chainId)` — listing or offer
-- `buildFulfillmentTypedData({ order_hash, fulfiller, nonce }, chainId)` — fulfill
-- `buildCancellationTypedData({ order_hash, offerer, nonce }, chainId)` — cancel
+- `buildOrderTypedData(orderParams, chainId)` — listing or offer (ERC-721)
+- `build1155OrderTypedData(orderParams, chainId)` — listing or offer (ERC-1155)
+- `buildCancellationTypedData({ order_hash, offerer }, chainId)` — cancel (no nonce)
+- `build1155CancellationTypedData(...)` — cancel (ERC-1155, no nonce)
 
-Domain: `{ name: "Medialane", version: "1", revision: "1", chainId }`
-All results pass through `stringifyBigInts()` before being cast to starknet.js `TypedData`.
+**Fulfilment is UNSIGNED** — the caller is the fulfiller, so there is no
+fulfillment builder (the old `buildFulfillmentTypedData` was removed in 0.26.0).
+
+Order schema (0.26.0): nested `OfferItem`/`ConsiderationItem` with a single
+`amount` (no start/end), plus `marketplace`, `royalty_max_bps`, and `counter`
+(replaces the removed `nonce`; salt is now the sole hash-uniqueness source).
+SNIP-12 domain: `{ name: "Medialane", version: "4" (ERC-721) | "3" (ERC-1155),
+revision: "1", chainId }`. All results pass through `stringifyBigInts()`.
