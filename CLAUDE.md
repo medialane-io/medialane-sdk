@@ -116,15 +116,16 @@ On-chain write operations. All require a starknet.js `AccountInterface`.
 |---|---|
 | `createListing(account, params)` | List ERC-721 for sale. Checks approval first; prepends approve call if needed |
 | `makeOffer(account, params)` | Bid on ERC-721 with ERC-20. Always includes approve + register_order |
-| `fulfillOrder(account, params)` | Buy a listed NFT. Fetches nonce, signs fulfillment typed data |
-| `cancelOrder(account, params)` | Cancel active order. Fetches nonce, signs cancellation typed data |
-| `checkoutCart(account, items)` | Atomic multicall: one ERC-20 approve per token (summed), sequential nonce per fulfill |
+| `fulfillOrder(account, params)` | Buy a listed NFT. **Unsigned** — approves payment then calls `fulfill_order(orderHash)` (the buyer is the fulfiller; no signature since 0.26.0) |
+| `cancelOrder(account, params)` | Cancel active order. Signs the SNIP-12 cancellation (no nonce — `counter`-based) and calls `cancel_order` |
+| `checkoutCart(account, items)` | Atomic multicall: one ERC-20 approve per token (summed) + one unsigned `fulfill_order` per item |
 | `mint(account, params)` | Mint NFT into a collection. Calls `mint(collection_id, recipient, token_uri)` on collection registry. No SNIP-12. params: `{ collectionId, recipient, tokenUri, collectionContract? }` |
 | `createCollection(account, params)` | Register new collection. Calls `create_collection(name, symbol, base_uri)`. No SNIP-12. **Owner = the executing `account` (implicit caller).** params: `{ name, symbol, baseUri, collectionContract? }` |
+| `incrementCounter(account)` | Bulk-cancel: bump the caller's `counter`, invalidating all their open orders at once |
 | `getOrderDetails(orderHash)` | View call: `get_order_details(order_hash)` → `OrderDetails` |
-| `getNonce(address)` | View call: `nonces(owner)` → `bigint` |
+| `getCounter(address)` | View call: `get_counter(owner)` → `bigint` (replaces the removed `getNonce` in 0.26.0) |
 
-All write methods: fetch nonce → build typed data → `account.signMessage()` → execute calls → `waitForTransaction()` → `TxResult { txHash }`.
+Signed writes (listing, offer, cancel): build typed data → `account.signMessage()` → execute calls → `waitForTransaction()` → `TxResult { txHash }`. Fulfilment is unsigned (calls only). The `counter` (via `get_counter`) replaces the removed per-order nonce.
 
 Throws `MedialaneError(message, cause?)` on on-chain failures.
 
@@ -271,18 +272,22 @@ client.api.getPopEligibilityBatch(collection, wallets) // wallets: string[] (max
 
 ### client.marketplace1155 (`Medialane1155Module`) — added v0.6.8
 
-On-chain ERC-1155 marketplace operations against the Medialane1155V2 contract (`0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99`). All require a starknet.js `AccountInterface`.
+On-chain ERC-1155 marketplace operations against the redesigned Medialane1155 venue (`0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077`, deployed 2026-05-31). All require a starknet.js `AccountInterface`.
 
 | Method | Description |
 |---|---|
 | `createListing(account, params)` | Signs `OrderParameters` (SNIP-12) + calls `register_order`. Auto-grants `set_approval_for_all` if needed. |
-| `fulfillOrder(account, params)` | Signs `OrderFulfillment`, approves ERC-20 payment, calls `fulfill_order`. |
-| `cancelOrder(account, params)` | Signs `OrderCancellation`, calls `cancel_order`. |
-| `buildListingTypedData(params, chainId)` | Returns SNIP-12 typed data (for ChipiPay/custom flows). |
-| `buildFulfillmentTypedData(params, chainId)` | Returns SNIP-12 fulfillment typed data. |
+| `makeOffer(account, params)` | Signs an offer order, approves the ERC-20 spend, calls `register_order`. |
+| `fulfillOrder(account, params)` | **Unsigned** — approves the payment token then calls `fulfill_order(orderHash, quantity)`. The buyer is the fulfiller (no signature since 0.26.0). |
+| `cancelOrder(account, params)` | Signs `OrderCancellation` (no nonce), calls `cancel_order`. |
+| `checkoutCart(account, items)` | Atomic multi-item buy: summed ERC-20 approvals + one unsigned `fulfill_order` per item (with quantity). |
+| `incrementCounter(account)` | Bulk-cancel on the 1155 venue: bump the caller's `counter`. |
+| `getOrderDetails(orderHash)` | View call → `OrderDetails`. |
+| `getCounter(address)` | View call: `get_counter(owner)` → `bigint`. |
+| `buildListingTypedData(params, chainId)` | Returns SNIP-12 listing/offer typed data (for ChipiPay/custom flows). |
 | `buildCancellationTypedData(params, chainId)` | Returns SNIP-12 cancellation typed data. |
 
-SNIP-12 domain: `{ name: "Medialane", version: "2", revision: "1" }`. V2 uses nested `OfferItem` and `ConsiderationItem` order data, matching the ERC-721 protocol shape while preserving ERC-1155 quantities.
+SNIP-12 domain: `{ name: "Medialane", version: "3", revision: "1" }`. Nested `OfferItem`/`ConsiderationItem` with a single `amount` (no start/end) plus `marketplace`, `royalty_max_bps`, and `counter`, matching the ERC-721 venue shape (domain v4) while preserving ERC-1155 quantities. There is no fulfillment builder — fulfilment is an unsigned call.
 
 ### client.services.erc1155Collection (`ERC1155CollectionService`) — added v0.7.0
 
@@ -320,12 +325,12 @@ On-chain Collection Drop interactions. All require a starknet.js `AccountInterfa
 ## Constants (`src/constants.ts`)
 
 ```ts
-MARKETPLACE_721_CONTRACT_MAINNET            = "0x00f8ccaae0bc811c79605974cc1dab769b9cea8877f033f8e3c17f30457caba6"
-MARKETPLACE_721_CLASS_HASH_MAINNET          = "0x03dff4f34b976207246207954263be9a28b51390321702443291088dcdf4b2e6"
-MARKETPLACE_721_START_BLOCK_MAINNET         = 9196722
-MARKETPLACE_1155_CONTRACT_MAINNET           = "0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99"
-MARKETPLACE_1155_CLASS_HASH_MAINNET         = "0x01b674aad934be85abc7c1970265cbf7e9bc7d586a90f0a67112c201636dbdd3"
-MARKETPLACE_1155_START_BLOCK_MAINNET        = 9260304
+MARKETPLACE_721_CONTRACT_MAINNET            = "0x069cf5391077e3ebdd9cb6aebf90ed530d29f0d6aa34a43f5afae938c0fb565e"  // Medialane721 redesign (2026-05-31)
+MARKETPLACE_721_CLASS_HASH_MAINNET          = "0x04c6f952d747ad7ead1b3dad4c1d587837d38f8ec29d6c095a4afa5b5ece5957"
+MARKETPLACE_721_START_BLOCK_MAINNET         = 10350340
+MARKETPLACE_1155_CONTRACT_MAINNET           = "0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077"  // Medialane1155 redesign (2026-05-31)
+MARKETPLACE_1155_CLASS_HASH_MAINNET         = "0x02600bb720908f119afe482309d36c39d087587f0df9576454acfb6363e78cd8"
+MARKETPLACE_1155_START_BLOCK_MAINNET        = 10350855
 COLLECTION_721_CONTRACT_MAINNET             = "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2"  // MIP v0.3.0 (2026-05-22)
 COLLECTION_721_START_BLOCK_MAINNET          = 10046166
 IPNFT_CLASS_HASH_MAINNET                    = "0x27ee4ded786d51bced1e94afec3034d6ffce71c032c45ee1ff283ccfa9db12e"
