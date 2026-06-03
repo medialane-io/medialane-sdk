@@ -4684,6 +4684,63 @@ var MedialaneError = class extends Error {
     this.name = "MedialaneError";
   }
 };
+
+// src/utils/rpc.ts
+var PUBLIC_RPC_FALLBACKS = [
+  "https://rpc.starknet.lava.build",
+  "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
+  "https://free-rpc.nethermind.io/mainnet-juno/v0_7"
+];
+var TRANSIENT_BODY_RE = /"code"\s*:\s*-32001|"code"\s*:\s*-32603|unable to complete|rate.?limit|too many|throttl|exceed.*quota|temporarily unavailable|service unavailable|overload|gateway.*time|upstream.*time|backend.*error/i;
+function isTransientRpcError(input) {
+  const { status, body } = input;
+  if (typeof status === "number" && (status === 429 || status >= 500)) return true;
+  if (body == null) return false;
+  if (typeof body === "object") {
+    const err = body.error;
+    if (!err || typeof err !== "object") return false;
+    const code = err.code;
+    if (typeof code === "number") {
+      if (code === 429) return true;
+      if (code >= -32099 && code <= -32e3) return true;
+      if (code === -32603) return true;
+    }
+    const message = err.message;
+    return typeof message === "string" ? TRANSIENT_BODY_RE.test(message) : false;
+  }
+  return TRANSIENT_BODY_RE.test(String(body));
+}
+function createFailoverFetch(urls, options = {}) {
+  const endpoints = urls.filter((u) => Boolean(u));
+  if (endpoints.length === 0) {
+    throw new Error("createFailoverFetch: at least one RPC URL is required");
+  }
+  const doFetch = options.baseFetch ?? fetch;
+  const failover = async (_input, init) => {
+    let lastError;
+    for (let i = 0; i < endpoints.length; i++) {
+      const url = endpoints[i];
+      const isLast = i === endpoints.length - 1;
+      try {
+        const res = await doFetch(url, init);
+        const text = await res.text();
+        const rebuilt = () => new Response(text, { status: res.status, statusText: res.statusText, headers: res.headers });
+        if (isLast || !isTransientRpcError({ status: res.status, body: text })) {
+          return rebuilt();
+        }
+        options.onFailover?.({ url, status: res.status });
+      } catch (err) {
+        lastError = err;
+        if (isLast) throw err;
+        options.onFailover?.({ url, error: err });
+      }
+    }
+    throw lastError ?? new Error("createFailoverFetch: all endpoints failed");
+  };
+  return failover;
+}
+
+// src/marketplace/utils.ts
 var START_TIME_BUFFER_SECS = 30;
 function generateSalt() {
   const bytes = new Uint8Array(31);
@@ -4724,7 +4781,8 @@ var _providerCache = /* @__PURE__ */ new WeakMap();
 function getProvider(config) {
   let p = _providerCache.get(config);
   if (!p) {
-    p = new RpcProvider({ nodeUrl: config.rpcUrl });
+    const urls = Array.from(/* @__PURE__ */ new Set([config.rpcUrl, ...PUBLIC_RPC_FALLBACKS]));
+    p = new RpcProvider({ nodeUrl: urls[0], baseFetch: createFailoverFetch(urls) });
     _providerCache.set(config, p);
   }
   return p;
@@ -6520,6 +6578,6 @@ function getServicesByCapability(cap) {
   );
 }
 
-export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CollectionRegistryABI, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map
