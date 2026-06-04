@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -89,6 +89,7 @@ src/
 > - **v0.27.0**: `ApiIntentCreated` is a discriminated union on `requiresSignature` — `{ requiresSignature: true; typedData } | { requiresSignature: false; calls: IntentCall[] }`. Accessing the wrong field without narrowing is a compile error. New `IntentCall` type exported. Pairs with the backend `requiresSignature` field on every create-intent response.
 > - **v0.28.0 (resilient RPC — single source of truth)**: new `src/utils/rpc.ts` exports `PUBLIC_RPC_FALLBACKS` (ordered public mainnet endpoints: lava.build → blastapi → nethermind), `isTransientRpcError({ status?, body? })` (one transient-vs-deterministic detector for both raw-text and parsed JSON-RPC paths; **excludes `-32000`** so io's `/api/rpc` "Unauthorized" never fails over), and `createFailoverFetch(urls)` (an `RpcProvider.baseFetch` that rotates endpoints on transient failure — 503/429, `-32001`/`-32603` — while propagating deterministic contract errors verbatim). `getProvider()` (marketplace utils) now builds with `createFailoverFetch([config.rpcUrl, ...PUBLIC_RPC_FALLBACKS])`, so every SDK-client read is resilient by default. Consumed by dapp/io provider singletons, io's `/api/rpc` proxy, and the backend. Motivation + full incident: `medialane-core/docs/specs/2026-06-03-rpc-resilience-failover.md`.
 > - **v0.29.0**: **Creator Coin** (chain layer deployed mainnet 2026-06-04, Ekubo-only). One registry entry: `creator-coin` issuance service (`standard: "ERC20"`, `uiVariant: "coin"`, capabilities `launch`/`swap`/`transfer`). **No Medialane trading venue** — `swap` is a UI affordance that drives an embedded Ekubo swap (StarkZapp); settlement is external Ekubo and Medialane custodies nothing. `ServiceCapability` gained `"launch"`/`"swap"`; `ServiceDefinition.standard` gained `"ERC20"`. New `CreatorCoinService` (`client.services.creatorCoin`): `createCreatorCoin`, `launchOnEkubo` (optional `quoteFundAmount` prepends the buyback quote transfer), `isCreatorCoin`. Exports `CreatorCoinFactoryABI`, `VALIDATED_EKUBO_PARAMS` (smoke-validated 0.01 quote/coin tick params), and `CREATOR_COIN_*` constants (Factory `0x50fa80…`, EkuboLauncher `0x4f7fce…`). TODO: `priceToEkuboParams()` tick-math helper for arbitrary launch prices.
+> - **v0.30.0**: new `external-erc20` registry service (provenance `EXTERNAL`, `standard: "ERC20"`, capabilities `swap`/`transfer`) — the ERC-20 parallel to `external-erc721`/`external-erc1155`. For any ERC-20 not deployed via a Medialane service (unrug memecoins, partner coins, future chains), brought in by owner claim or admin/partnership — **never bulk-indexed**. No `unrug-`-specific service; admin/claim curation is the gate.
 
 ---
 

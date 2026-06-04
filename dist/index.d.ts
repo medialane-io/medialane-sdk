@@ -5716,6 +5716,15 @@ declare const SERVICES: {
             readonly emittedBy: "factory";
         }];
     };
+    readonly "external-erc20": {
+        readonly id: "external-erc20";
+        readonly displayName: "External ERC-20";
+        readonly description: "An ERC-20 token (e.g. an unrug memecoin or a partner coin) not deployed via a Medialane service. Brought in by owner claim or admin/partnership — never bulk-indexed. Generalizes to future chains.";
+        readonly standard: "ERC20";
+        readonly provenance: "EXTERNAL";
+        readonly uiVariant: "coin";
+        readonly capabilities: ["swap", "transfer"];
+    };
     readonly "external-erc721": {
         readonly id: "external-erc721";
         readonly displayName: "External ERC-721";

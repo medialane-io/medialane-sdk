@@ -181,6 +181,16 @@ const SERVICES = {
       { name: "OrderCancelled", emittedBy: "factory" },
     ],
   },
+  "external-erc20": {
+    id: "external-erc20",
+    displayName: "External ERC-20",
+    description:
+      "An ERC-20 token (e.g. an unrug memecoin or a partner coin) not deployed via a Medialane service. Brought in by owner claim or admin/partnership — never bulk-indexed. Generalizes to future chains.",
+    standard: "ERC20",
+    provenance: "EXTERNAL",
+    uiVariant: "coin",
+    capabilities: ["swap", "transfer"],
+  },
   "external-erc721": {
     id: "external-erc721",
     displayName: "External ERC-721",
