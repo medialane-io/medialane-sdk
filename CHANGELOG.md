@@ -2,6 +2,54 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.30.0] — 2026-06-04
+
+### Added — Creator Coin price reads + external ERC-20s
+
+- **`getCreatorCoinPrice(coinAddress, provider)`** + `client.services.creatorCoin.getPrice(coin)`
+  — read a Creator Coin's live spot price directly from its Ekubo pool. Self-contained,
+  read-only, day-one: discovers pool params from the coin's `launched_with_liquidity_parameters`,
+  reads `Core.get_pool_price`, and converts `sqrt_ratio` → quote-per-coin (handling token0/1
+  ordering + quote decimals; normalizes the quote address so `getTokenByAddress` resolves
+  symbol/decimals). No AVNU/backend dependency. Returns `null` if not launched on Ekubo.
+  New `EKUBO_CORE_MAINNET` constant + `CreatorCoinPrice` type.
+- **`external-erc20` registry service** (provenance `EXTERNAL`, `standard: ERC20`,
+  `uiVariant: "coin"`, capabilities `swap`/`transfer`) — the ERC-20 parallel to
+  `external-erc721`/`external-erc1155`, for claimed/partner/future-multichain coins (e.g.
+  Starknet unrug memecoins). Curation is via the existing claim/admin-add path; no bulk
+  indexing, no per-source service.
+
+## [0.29.0] — 2026-06-04
+
+### Added — Creator Coin service
+
+- **`creator-coin` registry service** (`standard: ERC20`, capabilities
+  `launch`/`swap`/`transfer`, onchain Factory + `startBlock` 10474544). Extends
+  `ServiceCapability` (+`launch`, +`swap`) and `ServiceDefinition.standard` (+`ERC20`).
+  **No `medialane-coin-trader` venue** — Medialane runs no coin-trading venue; `swap` drives
+  an embedded Ekubo swap, settlement external.
+- **`CreatorCoinService`** (`client.services.creatorCoin`): `createCreatorCoin`,
+  `launchOnEkubo` (optional `quoteFundAmount` prepends the team-allocation buyback transfer),
+  `isCreatorCoin`. `VALIDATED_EKUBO_PARAMS` (0.01 quote/coin, smoke-validated) + `CREATOR_COIN_*`
+  constants + `CreatorCoinFactoryABI`.
+- Published as 0.29.0 (not 0.28.0) to avoid colliding with main's concurrently-shipped 0.28.0.
+
+## [0.28.0] — 2026-06-03
+
+### Added — resilient RPC failover
+
+- `createFailoverFetch(urls)` + `PUBLIC_RPC_FALLBACKS` + `isTransientRpcError` +
+  `FailoverFetchOptions`. Single source of the RPC-failover policy (Alchemy primary →
+  lava.build on transient `-32001`/`503`), shared across dapp / io / backend. Construct
+  `RpcProvider` with `baseFetch: createFailoverFetch(...)` instead of a bare `nodeUrl`.
+
+## [0.27.0] — 2026-06-01
+
+### Changed
+
+- `ApiIntentCreated` is now a discriminated union on `requiresSignature` (signature-required
+  intents expose `typedData`; auto-executed intents expose `calls`).
+
 ## [0.26.0] — 2026-05-31
 
 ### BREAKING — redesigned marketplace venues
