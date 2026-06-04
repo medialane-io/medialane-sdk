@@ -4694,6 +4694,63 @@ var MedialaneError = class extends Error {
     this.name = "MedialaneError";
   }
 };
+
+// src/utils/rpc.ts
+var PUBLIC_RPC_FALLBACKS = [
+  "https://rpc.starknet.lava.build",
+  "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
+  "https://free-rpc.nethermind.io/mainnet-juno/v0_7"
+];
+var TRANSIENT_BODY_RE = /"code"\s*:\s*-32001|"code"\s*:\s*-32603|unable to complete|rate.?limit|too many|throttl|exceed.*quota|temporarily unavailable|service unavailable|overload|gateway.*time|upstream.*time|backend.*error/i;
+function isTransientRpcError(input) {
+  const { status, body } = input;
+  if (typeof status === "number" && (status === 429 || status >= 500)) return true;
+  if (body == null) return false;
+  if (typeof body === "object") {
+    const err = body.error;
+    if (!err || typeof err !== "object") return false;
+    const code = err.code;
+    if (typeof code === "number") {
+      if (code === 429) return true;
+      if (code >= -32099 && code <= -32e3) return true;
+      if (code === -32603) return true;
+    }
+    const message = err.message;
+    return typeof message === "string" ? TRANSIENT_BODY_RE.test(message) : false;
+  }
+  return TRANSIENT_BODY_RE.test(String(body));
+}
+function createFailoverFetch(urls, options = {}) {
+  const endpoints = urls.filter((u) => Boolean(u));
+  if (endpoints.length === 0) {
+    throw new Error("createFailoverFetch: at least one RPC URL is required");
+  }
+  const doFetch = options.baseFetch ?? fetch;
+  const failover = async (_input, init) => {
+    let lastError;
+    for (let i = 0; i < endpoints.length; i++) {
+      const url = endpoints[i];
+      const isLast = i === endpoints.length - 1;
+      try {
+        const res = await doFetch(url, init);
+        const text = await res.text();
+        const rebuilt = () => new Response(text, { status: res.status, statusText: res.statusText, headers: res.headers });
+        if (isLast || !isTransientRpcError({ status: res.status, body: text })) {
+          return rebuilt();
+        }
+        options.onFailover?.({ url, status: res.status });
+      } catch (err) {
+        lastError = err;
+        if (isLast) throw err;
+        options.onFailover?.({ url, error: err });
+      }
+    }
+    throw lastError ?? new Error("createFailoverFetch: all endpoints failed");
+  };
+  return failover;
+}
+
+// src/marketplace/utils.ts
 var START_TIME_BUFFER_SECS = 30;
 function generateSalt() {
   const bytes = new Uint8Array(31);
@@ -4734,7 +4791,8 @@ var _providerCache = /* @__PURE__ */ new WeakMap();
 function getProvider(config) {
   let p = _providerCache.get(config);
   if (!p) {
-    p = new starknet.RpcProvider({ nodeUrl: config.rpcUrl });
+    const urls = Array.from(/* @__PURE__ */ new Set([config.rpcUrl, ...PUBLIC_RPC_FALLBACKS]));
+    p = new starknet.RpcProvider({ nodeUrl: urls[0], baseFetch: createFailoverFetch(urls) });
     _providerCache.set(config, p);
   }
   return p;
@@ -6670,6 +6728,7 @@ exports.POPCollectionABI = POPCollectionABI;
 exports.POPFactoryABI = POPFactoryABI;
 exports.POP_COLLECTION_CLASS_HASH_MAINNET = POP_COLLECTION_CLASS_HASH_MAINNET;
 exports.POP_FACTORY_CONTRACT_MAINNET = POP_FACTORY_CONTRACT_MAINNET;
+exports.PUBLIC_RPC_FALLBACKS = PUBLIC_RPC_FALLBACKS;
 exports.PopService = PopService;
 exports.SUPPORTED_NETWORKS = SUPPORTED_NETWORKS;
 exports.SUPPORTED_TOKENS = SUPPORTED_TOKENS;
@@ -6679,6 +6738,7 @@ exports.build1155OrderTypedData = build1155OrderTypedData;
 exports.buildCancellationTypedData = buildCancellationTypedData;
 exports.buildFeeCall = buildFeeCall;
 exports.buildOrderTypedData = buildOrderTypedData;
+exports.createFailoverFetch = createFailoverFetch;
 exports.encodeByteArray = encodeByteArray;
 exports.formatAmount = formatAmount;
 exports.getListableTokens = getListableTokens;
@@ -6687,6 +6747,7 @@ exports.getServicesByCapability = getServicesByCapability;
 exports.getTokenByAddress = getTokenByAddress;
 exports.getTokenBySymbol = getTokenBySymbol;
 exports.isServiceId = isServiceId;
+exports.isTransientRpcError = isTransientRpcError;
 exports.listServices = listServices;
 exports.normalizeAddress = normalizeAddress;
 exports.normalizeHash = normalizeHash;

@@ -1,7 +1,7 @@
 {
   "name": "@medialane/sdk",
-  "version": "0.28.0",
-  "description": "Framework-agnostic TypeScript SDK for Medialane.io \u2014 the IP marketplace on Starknet",
+  "version": "0.29.0",
+  "description": "Framework-agnostic TypeScript SDK for Medialane.io — the IP marketplace on Starknet",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

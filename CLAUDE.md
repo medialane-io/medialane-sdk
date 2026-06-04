@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.27.0",
+  "version": "0.29.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -86,7 +86,8 @@ src/
 > - **v0.20.0**: exported `ServiceId` literal union (`keyof typeof SERVICES`) + `isServiceId()` type guard. Use these to type-check `Collection.service` write sites in consumers.
 > - **v0.26.0 (BREAKING — redesigned marketplace venues)**: new marketplace ABIs + mainnet addresses; order schema is single-`amount` with `marketplace`/`royalty_max_bps`/`counter` (no nonce), SNIP-12 domain v4 (721) / v3 (1155); **fulfilment is unsigned** (fulfillment builders removed). Wide 248-bit salt is the sole order-hash uniqueness source.
 > - **v0.27.0**: `ApiIntentCreated` is a discriminated union on `requiresSignature` — `{ requiresSignature: true; typedData } | { requiresSignature: false; calls: IntentCall[] }`. Accessing the wrong field without narrowing is a compile error. New `IntentCall` type exported. Pairs with the backend `requiresSignature` field on every create-intent response.
-> - **v0.28.0**: **Creator Coin** (chain layer deployed mainnet 2026-06-04, Ekubo-only). Per the architecture (05 §V/§VI, 06 §V), two registry entries: `creator-coin` issuance service (`standard: "ERC20"`, `uiVariant: "coin"`, capabilities `launch`/`transfer`) and `medialane-coin-trader` AMM venue (capability `swap`, routes to Ekubo, no Order lifecycle). `ServiceCapability` gained `"launch"`/`"swap"` (the canonical names — **not** `trade`); `ServiceDefinition.standard` gained `"ERC20"`. New `CreatorCoinService` (`client.services.creatorCoin`): `createCreatorCoin`, `launchOnEkubo` (optional `quoteFundAmount` prepends the buyback quote transfer), `isCreatorCoin`. Exports `CreatorCoinFactoryABI`, `VALIDATED_EKUBO_PARAMS` (smoke-validated 0.01 quote/coin tick params), and `CREATOR_COIN_*` constants (Factory `0x50fa80…`, EkuboLauncher `0x4f7fce…`). TODO: `priceToEkuboParams()` tick-math helper for arbitrary launch prices.
+> - **v0.28.0**: centralized resilient RPC failover — `PUBLIC_RPC_FALLBACKS`, `isTransientRpcError`, `createFailoverFetch` (`src/utils/rpc.ts`).
+> - **v0.29.0**: **Creator Coin** (chain layer deployed mainnet 2026-06-04, Ekubo-only). One registry entry: `creator-coin` issuance service (`standard: "ERC20"`, `uiVariant: "coin"`, capabilities `launch`/`swap`/`transfer`). **No Medialane trading venue** — `swap` is a UI affordance that drives an embedded Ekubo swap (StarkZapp); settlement is external Ekubo and Medialane custodies nothing. `ServiceCapability` gained `"launch"`/`"swap"`; `ServiceDefinition.standard` gained `"ERC20"`. New `CreatorCoinService` (`client.services.creatorCoin`): `createCreatorCoin`, `launchOnEkubo` (optional `quoteFundAmount` prepends the buyback quote transfer), `isCreatorCoin`. Exports `CreatorCoinFactoryABI`, `VALIDATED_EKUBO_PARAMS` (smoke-validated 0.01 quote/coin tick params), and `CREATOR_COIN_*` constants (Factory `0x50fa80…`, EkuboLauncher `0x4f7fce…`). TODO: `priceToEkuboParams()` tick-math helper for arbitrary launch prices.
 
 ---
 

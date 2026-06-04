@@ -94,6 +94,8 @@ export type { SupportedToken } from "./utils/token.js";
 export { stringifyBigInts, u256ToBigInt } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
 export { encodeByteArray } from "./utils/bytearray.js";
+export { PUBLIC_RPC_FALLBACKS, isTransientRpcError, createFailoverFetch } from "./utils/rpc.js";
+export type { FailoverFetchOptions } from "./utils/rpc.js";
 
 // Signing builders (for advanced / ChipiPay integrations)
 export {
