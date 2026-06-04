@@ -132,3 +132,7 @@ export const CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET =
 
 /** First mainnet block of the Factory deployment. */
 export const CREATOR_COIN_START_BLOCK_MAINNET = 10474544;
+
+/** Ekubo Core (Starknet mainnet) — Creator Coin pools live here; read spot price via `get_pool_price`. */
+export const EKUBO_CORE_MAINNET =
+  "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b";

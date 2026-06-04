@@ -52,6 +52,7 @@ export {
   CREATOR_COIN_CLASS_HASH_MAINNET,
   CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
   CREATOR_COIN_START_BLOCK_MAINNET,
+  EKUBO_CORE_MAINNET,
   SUPPORTED_TOKENS,
   SUPPORTED_NETWORKS,
   DEFAULT_RPC_URL,
@@ -66,11 +67,12 @@ export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, D
 export { PopService } from "./services/pop.js";
 export { DropService } from "./services/drop.js";
 export { ERC1155CollectionService } from "./services/erc1155collection.js";
-export { CreatorCoinService, VALIDATED_EKUBO_PARAMS } from "./services/creatorCoin.js";
+export { CreatorCoinService, VALIDATED_EKUBO_PARAMS, getCreatorCoinPrice } from "./services/creatorCoin.js";
 export type {
   CreateCreatorCoinParams,
   EkuboLaunchParams,
   EkuboPoolParams,
+  CreatorCoinPrice,
 } from "./services/creatorCoin.js";
 // Service registry (05-service-model). Types (ServiceDefinition etc.) are
 // already public via `export * from "./types/index.js"`.

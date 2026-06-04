@@ -1,7 +1,9 @@
-import { Contract, uint256, type AccountInterface, type Call } from "starknet";
+import { Contract, RpcProvider, uint256, type AccountInterface, type Call, type ProviderInterface } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import { CreatorCoinFactoryABI } from "../abis/index.js";
-import { CREATOR_COIN_FACTORY_CONTRACT_MAINNET } from "../constants.js";
+import { CREATOR_COIN_FACTORY_CONTRACT_MAINNET, EKUBO_CORE_MAINNET } from "../constants.js";
+import { getTokenByAddress } from "../utils/token.js";
+import { normalizeAddress } from "../utils/address.js";
 import type { TxResult } from "../types/marketplace.js";
 
 export interface CreateCreatorCoinParams {
@@ -60,17 +62,78 @@ export const VALIDATED_EKUBO_PARAMS: EkuboPoolParams = {
   bound: 88719042n,
 };
 
+/** A Creator Coin's live spot price, read from its Ekubo pool. */
+export interface CreatorCoinPrice {
+  /** Quote tokens per 1 coin, human units (e.g. 0.0101 = 0.0101 STRK/coin). */
+  quotePerCoin: number;
+  /** The quote token the coin is paired against on Ekubo. */
+  quoteToken: string;
+  quoteSymbol: string | null;
+  quoteDecimals: number;
+}
+
+const COIN_DECIMALS = 18; // CreatorCoin is always 18 decimals
+
+/**
+ * Read a Creator Coin's live spot price directly from its Ekubo pool (read-only).
+ *
+ * Self-contained: discovers the pool params (quote token, fee, tick spacing) from the
+ * coin's own `launched_with_liquidity_parameters`, reads `Core.get_pool_price`, and
+ * converts the `sqrt_ratio` to quote-per-coin (handling token0/1 ordering + decimals).
+ * Returns `null` if the coin isn't launched on Ekubo. No backend, no swap-quote
+ * dependency — works for day-one coins that AVNU doesn't index yet.
+ */
+export async function getCreatorCoinPrice(
+  coinAddress: string,
+  provider: ProviderInterface,
+): Promise<CreatorCoinPrice | null> {
+  // Option<LiquidityParameters::Ekubo({ ekubo_pool_parameters:{fee,tick_spacing,
+  //   starting_price(mag,sign),bound}, quote_address })>
+  // felts: [opt(0=Some), variant(0=Ekubo), fee, tick_spacing, sp_mag, sp_sign, bound, quote]
+  const r = await provider.callContract({
+    contractAddress: coinAddress,
+    entrypoint: "launched_with_liquidity_parameters",
+    calldata: [],
+  });
+  if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return null; // not launched, or not Ekubo
+  const fee = r[2];
+  const tickSpacing = r[3];
+  // Zero-pad to 64 hex so it matches SUPPORTED_TOKENS (the RPC returns it unpadded).
+  const quoteToken = normalizeAddress("0x" + BigInt(r[7]).toString(16));
+  const token = getTokenByAddress(quoteToken);
+  const quoteDecimals = token?.decimals ?? 18;
+
+  const ci = BigInt(coinAddress);
+  const qi = BigInt(quoteToken);
+  const [t0, t1] = ci < qi ? [coinAddress, quoteToken] : [quoteToken, coinAddress];
+  const quoteIsToken0 = qi === BigInt(t0);
+
+  // Core.get_pool_price(PoolKey{token0,token1,fee,tick_spacing,extension}) -> PoolPrice{sqrt_ratio:u256, tick:i129}
+  const pp = await provider.callContract({
+    contractAddress: EKUBO_CORE_MAINNET,
+    entrypoint: "get_pool_price",
+    calldata: [t0, t1, fee, tickSpacing, "0x0"],
+  });
+  const sqrt = BigInt(pp[0]) + (BigInt(pp[1] ?? "0x0") << 128n);
+  // price(token1/token0) = (sqrt_ratio / 2^128)^2, raw units; coin is 18 decimals.
+  const priceT1perT0 = (Number(sqrt) / 2 ** 128) ** 2;
+  const decAdj = 10 ** (COIN_DECIMALS - quoteDecimals);
+  const quotePerCoin = (quoteIsToken0 ? 1 / priceT1perT0 : priceT1perT0) * decAdj;
+
+  return { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals };
+}
+
 /**
  * On-chain Creator Coin interactions (Ekubo-only launchpad).
  * Faithful fork of unruggable.meme — permanent LP lock + team-allocation buyback.
  */
 export class CreatorCoinService {
   private readonly factoryAddress: string;
+  private readonly config: ResolvedConfig;
 
-  // config is accepted for signature parity with the other services (none needed
-  // today — launch is zero-fee and views take an account).
-  constructor(_config: ResolvedConfig) {
+  constructor(config: ResolvedConfig) {
     this.factoryAddress = CREATOR_COIN_FACTORY_CONTRACT_MAINNET;
+    this.config = config;
   }
 
   private _factory(account: AccountInterface) {
@@ -137,5 +200,11 @@ export class CreatorCoinService {
   async isCreatorCoin(address: string, account: AccountInterface): Promise<boolean> {
     const r = await this._factory(account).is_creator_coin(address);
     return BigInt(r as any) === 1n;
+  }
+
+  /** Read a coin's live Ekubo spot price (quote-per-coin) via the configured RPC.
+   *  Read-only; returns null if the coin isn't launched on Ekubo. */
+  async getPrice(coinAddress: string): Promise<CreatorCoinPrice | null> {
+    return getCreatorCoinPrice(coinAddress, new RpcProvider({ nodeUrl: this.config.rpcUrl }));
   }
 }

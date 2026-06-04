@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { cairo, num, Contract, uint256, TypedDataRevision, shortString, constants, RpcProvider } from 'starknet';
+import { cairo, num, Contract, uint256, RpcProvider, TypedDataRevision, shortString, constants } from 'starknet';
 
 // src/config.ts
 
@@ -64,6 +64,7 @@ var CREATOR_COIN_EKUBO_LAUNCHER_MAINNET = "0x4f7fceb5ac10f12f9544a09580592e5bdf1
 var CREATOR_COIN_CLASS_HASH_MAINNET = "0x743e4c8a5b96bb83bbf4af04edbbb482d5ece89eed9b729a79fb7df0cd0b6b6";
 var CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET = "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55";
 var CREATOR_COIN_START_BLOCK_MAINNET = 10474544;
+var EKUBO_CORE_MAINNET = "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b";
 var FeeConfigSchema = z.object({
   enabled: z.boolean().default(true),
   fundAddress: z.string().min(1).optional(),
@@ -6382,11 +6383,38 @@ var VALIDATED_EKUBO_PARAMS = {
   startingPrice: { mag: 4600158n, sign: true },
   bound: 88719042n
 };
+var COIN_DECIMALS = 18;
+async function getCreatorCoinPrice(coinAddress, provider) {
+  const r = await provider.callContract({
+    contractAddress: coinAddress,
+    entrypoint: "launched_with_liquidity_parameters",
+    calldata: []
+  });
+  if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return null;
+  const fee = r[2];
+  const tickSpacing = r[3];
+  const quoteToken = normalizeAddress("0x" + BigInt(r[7]).toString(16));
+  const token = getTokenByAddress(quoteToken);
+  const quoteDecimals = token?.decimals ?? 18;
+  const ci = BigInt(coinAddress);
+  const qi = BigInt(quoteToken);
+  const [t0, t1] = ci < qi ? [coinAddress, quoteToken] : [quoteToken, coinAddress];
+  const quoteIsToken0 = qi === BigInt(t0);
+  const pp = await provider.callContract({
+    contractAddress: EKUBO_CORE_MAINNET,
+    entrypoint: "get_pool_price",
+    calldata: [t0, t1, fee, tickSpacing, "0x0"]
+  });
+  const sqrt = BigInt(pp[0]) + (BigInt(pp[1] ?? "0x0") << 128n);
+  const priceT1perT0 = (Number(sqrt) / 2 ** 128) ** 2;
+  const decAdj = 10 ** (COIN_DECIMALS - quoteDecimals);
+  const quotePerCoin = (quoteIsToken0 ? 1 / priceT1perT0 : priceT1perT0) * decAdj;
+  return { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals };
+}
 var CreatorCoinService = class {
-  // config is accepted for signature parity with the other services (none needed
-  // today — launch is zero-fee and views take an account).
-  constructor(_config) {
+  constructor(config) {
     this.factoryAddress = CREATOR_COIN_FACTORY_CONTRACT_MAINNET;
+    this.config = config;
   }
   _factory(account) {
     return new Contract(CreatorCoinFactoryABI, this.factoryAddress, account);
@@ -6443,6 +6471,11 @@ var CreatorCoinService = class {
   async isCreatorCoin(address, account) {
     const r = await this._factory(account).is_creator_coin(address);
     return BigInt(r) === 1n;
+  }
+  /** Read a coin's live Ekubo spot price (quote-per-coin) via the configured RPC.
+   *  Read-only; returns null if the coin isn't launched on Ekubo. */
+  async getPrice(coinAddress) {
+    return getCreatorCoinPrice(coinAddress, new RpcProvider({ nodeUrl: this.config.rpcUrl }));
   }
 };
 
@@ -6687,6 +6720,6 @@ function getServicesByCapability(cap) {
   );
 }
 
-export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, CollectionRegistryABI, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, VALIDATED_EKUBO_PARAMS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, CollectionRegistryABI, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, VALIDATED_EKUBO_PARAMS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

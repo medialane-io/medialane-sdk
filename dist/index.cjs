@@ -66,6 +66,7 @@ var CREATOR_COIN_EKUBO_LAUNCHER_MAINNET = "0x4f7fceb5ac10f12f9544a09580592e5bdf1
 var CREATOR_COIN_CLASS_HASH_MAINNET = "0x743e4c8a5b96bb83bbf4af04edbbb482d5ece89eed9b729a79fb7df0cd0b6b6";
 var CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET = "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55";
 var CREATOR_COIN_START_BLOCK_MAINNET = 10474544;
+var EKUBO_CORE_MAINNET = "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b";
 var FeeConfigSchema = zod.z.object({
   enabled: zod.z.boolean().default(true),
   fundAddress: zod.z.string().min(1).optional(),
@@ -6384,11 +6385,38 @@ var VALIDATED_EKUBO_PARAMS = {
   startingPrice: { mag: 4600158n, sign: true },
   bound: 88719042n
 };
+var COIN_DECIMALS = 18;
+async function getCreatorCoinPrice(coinAddress, provider) {
+  const r = await provider.callContract({
+    contractAddress: coinAddress,
+    entrypoint: "launched_with_liquidity_parameters",
+    calldata: []
+  });
+  if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return null;
+  const fee = r[2];
+  const tickSpacing = r[3];
+  const quoteToken = normalizeAddress("0x" + BigInt(r[7]).toString(16));
+  const token = getTokenByAddress(quoteToken);
+  const quoteDecimals = token?.decimals ?? 18;
+  const ci = BigInt(coinAddress);
+  const qi = BigInt(quoteToken);
+  const [t0, t1] = ci < qi ? [coinAddress, quoteToken] : [quoteToken, coinAddress];
+  const quoteIsToken0 = qi === BigInt(t0);
+  const pp = await provider.callContract({
+    contractAddress: EKUBO_CORE_MAINNET,
+    entrypoint: "get_pool_price",
+    calldata: [t0, t1, fee, tickSpacing, "0x0"]
+  });
+  const sqrt = BigInt(pp[0]) + (BigInt(pp[1] ?? "0x0") << 128n);
+  const priceT1perT0 = (Number(sqrt) / 2 ** 128) ** 2;
+  const decAdj = 10 ** (COIN_DECIMALS - quoteDecimals);
+  const quotePerCoin = (quoteIsToken0 ? 1 / priceT1perT0 : priceT1perT0) * decAdj;
+  return { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals };
+}
 var CreatorCoinService = class {
-  // config is accepted for signature parity with the other services (none needed
-  // today — launch is zero-fee and views take an account).
-  constructor(_config) {
+  constructor(config) {
     this.factoryAddress = CREATOR_COIN_FACTORY_CONTRACT_MAINNET;
+    this.config = config;
   }
   _factory(account) {
     return new starknet.Contract(CreatorCoinFactoryABI, this.factoryAddress, account);
@@ -6445,6 +6473,11 @@ var CreatorCoinService = class {
   async isCreatorCoin(address, account) {
     const r = await this._factory(account).is_creator_coin(address);
     return BigInt(r) === 1n;
+  }
+  /** Read a coin's live Ekubo spot price (quote-per-coin) via the configured RPC.
+   *  Read-only; returns null if the coin isn't launched on Ekubo. */
+  async getPrice(coinAddress) {
+    return getCreatorCoinPrice(coinAddress, new starknet.RpcProvider({ nodeUrl: this.config.rpcUrl }));
   }
 };
 
@@ -6710,6 +6743,7 @@ exports.DROP_FACTORY_CONTRACT_MAINNET = DROP_FACTORY_CONTRACT_MAINNET;
 exports.DropCollectionABI = DropCollectionABI;
 exports.DropFactoryABI = DropFactoryABI;
 exports.DropService = DropService;
+exports.EKUBO_CORE_MAINNET = EKUBO_CORE_MAINNET;
 exports.ERC1155CollectionService = ERC1155CollectionService;
 exports.FeeConfigSchema = FeeConfigSchema;
 exports.IPCOLLECTION_CLASS_HASH_MAINNET = IPCOLLECTION_CLASS_HASH_MAINNET;
@@ -6750,6 +6784,7 @@ exports.buildOrderTypedData = buildOrderTypedData;
 exports.createFailoverFetch = createFailoverFetch;
 exports.encodeByteArray = encodeByteArray;
 exports.formatAmount = formatAmount;
+exports.getCreatorCoinPrice = getCreatorCoinPrice;
 exports.getListableTokens = getListableTokens;
 exports.getService = getService;
 exports.getServicesByCapability = getServicesByCapability;

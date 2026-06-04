@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Call, AccountInterface, constants, TypedData } from 'starknet';
+import { Call, AccountInterface, constants, TypedData, ProviderInterface } from 'starknet';
 
 /** Medialane721 marketplace venue — immutable, ownerless (redesign, deployed 2026-05-31). */
 declare const MARKETPLACE_721_CONTRACT_MAINNET = "0x069cf5391077e3ebdd9cb6aebf90ed530d29f0d6aa34a43f5afae938c0fb565e";
@@ -73,6 +73,8 @@ declare const CREATOR_COIN_CLASS_HASH_MAINNET = "0x743e4c8a5b96bb83bbf4af04edbbb
 declare const CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET = "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55";
 /** First mainnet block of the Factory deployment. */
 declare const CREATOR_COIN_START_BLOCK_MAINNET = 10474544;
+/** Ekubo Core (Starknet mainnet) — Creator Coin pools live here; read spot price via `get_pool_price`. */
+declare const EKUBO_CORE_MAINNET = "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b";
 
 interface RetryOptions {
     maxAttempts?: number;
@@ -1617,13 +1619,33 @@ interface EkuboLaunchParams {
  * unrug's `ekubo/helpers.cairo` tick math) so callers can pick an arbitrary price.
  */
 declare const VALIDATED_EKUBO_PARAMS: EkuboPoolParams;
+/** A Creator Coin's live spot price, read from its Ekubo pool. */
+interface CreatorCoinPrice {
+    /** Quote tokens per 1 coin, human units (e.g. 0.0101 = 0.0101 STRK/coin). */
+    quotePerCoin: number;
+    /** The quote token the coin is paired against on Ekubo. */
+    quoteToken: string;
+    quoteSymbol: string | null;
+    quoteDecimals: number;
+}
+/**
+ * Read a Creator Coin's live spot price directly from its Ekubo pool (read-only).
+ *
+ * Self-contained: discovers the pool params (quote token, fee, tick spacing) from the
+ * coin's own `launched_with_liquidity_parameters`, reads `Core.get_pool_price`, and
+ * converts the `sqrt_ratio` to quote-per-coin (handling token0/1 ordering + decimals).
+ * Returns `null` if the coin isn't launched on Ekubo. No backend, no swap-quote
+ * dependency — works for day-one coins that AVNU doesn't index yet.
+ */
+declare function getCreatorCoinPrice(coinAddress: string, provider: ProviderInterface): Promise<CreatorCoinPrice | null>;
 /**
  * On-chain Creator Coin interactions (Ekubo-only launchpad).
  * Faithful fork of unruggable.meme — permanent LP lock + team-allocation buyback.
  */
 declare class CreatorCoinService {
     private readonly factoryAddress;
-    constructor(_config: ResolvedConfig);
+    private readonly config;
+    constructor(config: ResolvedConfig);
     private _factory;
     /** Deploy a fixed-supply CreatorCoin (full supply minted to the Factory). */
     createCreatorCoin(account: AccountInterface, params: CreateCreatorCoinParams): Promise<TxResult>;
@@ -1635,6 +1657,9 @@ declare class CreatorCoinService {
     launchOnEkubo(account: AccountInterface, params: EkuboLaunchParams): Promise<TxResult>;
     /** View: is this address a Factory-deployed Creator Coin? */
     isCreatorCoin(address: string, account: AccountInterface): Promise<boolean>;
+    /** Read a coin's live Ekubo spot price (quote-per-coin) via the configured RPC.
+     *  Read-only; returns null if the coin isn't launched on Ekubo. */
+    getPrice(coinAddress: string): Promise<CreatorCoinPrice | null>;
 }
 
 declare class MedialaneClient {
@@ -5905,4 +5930,4 @@ declare function build1155OrderTypedData(message: Record<string, unknown>, chain
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWalletType, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, type BuildFeeCallParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateCreatorCoinParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EkuboLaunchParams, type EkuboPoolParams, type EnforcementDeclaration, type FailoverFetchOptions, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, type IPType, type IntentCall, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, VALIDATED_EKUBO_PARAMS, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWalletType, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, type BuildFeeCallParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateCreatorCoinParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, CreatorCoinFactoryABI, type CreatorCoinPrice, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, type EkuboLaunchParams, type EkuboPoolParams, type EnforcementDeclaration, type FailoverFetchOptions, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, type IPType, type IntentCall, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, VALIDATED_EKUBO_PARAMS, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
