@@ -21,7 +21,8 @@ export type ServiceCapability =
   | "transfer" | "burn"
   | "mint" | "claim" | "airdrop"
   | "remix" | "license"
-  | "subscribe" | "redeem";
+  | "subscribe" | "redeem"
+  | "launch" | "swap";
 
 /** A service that bakes enforcement into its own contract declares it here
  *  (04-licensing-model §V, 05-service-model §IV). Absence/all-falsey =
@@ -72,7 +73,7 @@ export interface ServiceDefinition {
   id: string;
   displayName: string;
   description: string;
-  standard: "ERC721" | "ERC1155" | "UNKNOWN";
+  standard: "ERC721" | "ERC1155" | "ERC20" | "UNKNOWN";
   provenance: "MEDIALANE" | "EXTERNAL";
   onchain?: {
     factoryAddress?: string;

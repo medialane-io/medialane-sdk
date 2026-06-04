@@ -110,3 +110,25 @@ export const COLLECTION_1155_CLASS_HASH_MAINNET =
 
 /** First mainnet block for the current ERC-1155 factory deployment. */
 export const COLLECTION_1155_START_BLOCK_MAINNET = 10045611;
+
+// ─── Creator Coin ────────────────────────────────────────────────────────────
+// Faithful fork of unruggable.meme, Ekubo-only, deployed mainnet 2026-06-04.
+
+/** Creator Coin Factory — entrypoint: create_creator_coin + launch_on_ekubo. */
+export const CREATOR_COIN_FACTORY_CONTRACT_MAINNET =
+  "0x50fa807b5274079fb19374673d7bab6d2dc3af7e1032ea43eb6e44bcbde4c3c";
+
+/** EkuboLauncher — permanently holds (locks) each Creator Coin's LP position. */
+export const CREATOR_COIN_EKUBO_LAUNCHER_MAINNET =
+  "0x4f7fceb5ac10f12f9544a09580592e5bdf1b7f04f48765eecf12286d8ccb7b4";
+
+/** Class hash of the per-coin CreatorCoin ERC-20 the Factory deploys. */
+export const CREATOR_COIN_CLASS_HASH_MAINNET =
+  "0x743e4c8a5b96bb83bbf4af04edbbb482d5ece89eed9b729a79fb7df0cd0b6b6";
+
+/** Class hash of the Creator Coin Factory. */
+export const CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET =
+  "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55";
+
+/** First mainnet block of the Factory deployment. */
+export const CREATOR_COIN_START_BLOCK_MAINNET = 10474544;

@@ -15,6 +15,9 @@ import {
   MARKETPLACE_1155_CONTRACT_MAINNET,
   MARKETPLACE_1155_CLASS_HASH_MAINNET,
   MARKETPLACE_1155_START_BLOCK_MAINNET,
+  CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
+  CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
+  CREATOR_COIN_START_BLOCK_MAINNET,
 } from "../constants.js";
 
 /**
@@ -116,6 +119,29 @@ const SERVICES = {
       { name: "AllowlistUpdated", emittedBy: "instance", poll: "slow" },
     ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
+  },
+  "creator-coin": {
+    id: "creator-coin",
+    displayName: "Creator Coin",
+    description:
+      "Launch a fixed-supply social token with permanently-locked Ekubo liquidity.",
+    standard: "ERC20",
+    provenance: "MEDIALANE",
+    onchain: {
+      factoryAddress: CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
+      classHash: CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
+      startBlock: CREATOR_COIN_START_BLOCK_MAINNET,
+    },
+    uiVariant: "coin",
+    // `swap` is a UI affordance (05 §III): the marketplace renders an embedded
+    // Ekubo swap (via StarkZapp) for the coin. Settlement is Ekubo — Medialane
+    // operates NO trading venue and custodies nothing. No venue service exists
+    // for coins (unlike NFTs, whose Medialane marketplace contract settles them).
+    capabilities: ["launch", "swap", "transfer"],
+    events: [
+      { name: "CreatorCoinCreated", emittedBy: "factory" },
+      { name: "CreatorCoinLaunched", emittedBy: "factory" },
+    ],
   },
   "medialane-marketplace-erc721": {
     id: "medialane-marketplace-erc721",

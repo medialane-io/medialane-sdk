@@ -63,6 +63,16 @@ declare const COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = "0x188321a7c9ca972cc6
 declare const COLLECTION_1155_CLASS_HASH_MAINNET = "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80";
 /** First mainnet block for the current ERC-1155 factory deployment. */
 declare const COLLECTION_1155_START_BLOCK_MAINNET = 10045611;
+/** Creator Coin Factory — entrypoint: create_creator_coin + launch_on_ekubo. */
+declare const CREATOR_COIN_FACTORY_CONTRACT_MAINNET = "0x50fa807b5274079fb19374673d7bab6d2dc3af7e1032ea43eb6e44bcbde4c3c";
+/** EkuboLauncher — permanently holds (locks) each Creator Coin's LP position. */
+declare const CREATOR_COIN_EKUBO_LAUNCHER_MAINNET = "0x4f7fceb5ac10f12f9544a09580592e5bdf1b7f04f48765eecf12286d8ccb7b4";
+/** Class hash of the per-coin CreatorCoin ERC-20 the Factory deploys. */
+declare const CREATOR_COIN_CLASS_HASH_MAINNET = "0x743e4c8a5b96bb83bbf4af04edbbb482d5ece89eed9b729a79fb7df0cd0b6b6";
+/** Class hash of the Creator Coin Factory. */
+declare const CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET = "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55";
+/** First mainnet block of the Factory deployment. */
+declare const CREATOR_COIN_START_BLOCK_MAINNET = 10474544;
 
 interface RetryOptions {
     maxAttempts?: number;
@@ -423,7 +433,7 @@ type IPType = "Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | 
 type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 /** Bounded capability set (05-service-model §III). Expand the union when a
  *  service needs behavior outside it — never make it free-form. */
-type ServiceCapability = "list" | "buy" | "make_offer" | "cancel" | "transfer" | "burn" | "mint" | "claim" | "airdrop" | "remix" | "license" | "subscribe" | "redeem";
+type ServiceCapability = "list" | "buy" | "make_offer" | "cancel" | "transfer" | "burn" | "mint" | "claim" | "airdrop" | "remix" | "license" | "subscribe" | "redeem" | "launch" | "swap";
 /** A service that bakes enforcement into its own contract declares it here
  *  (04-licensing-model §V, 05-service-model §IV). Absence/all-falsey =
  *  soft enforcement (the 00-principles §9 default). */
@@ -471,7 +481,7 @@ interface ServiceDefinition {
     id: string;
     displayName: string;
     description: string;
-    standard: "ERC721" | "ERC1155" | "UNKNOWN";
+    standard: "ERC721" | "ERC1155" | "ERC20" | "UNKNOWN";
     provenance: "MEDIALANE" | "EXTERNAL";
     onchain?: {
         factoryAddress?: string;
@@ -807,12 +817,35 @@ interface ApiIntent {
     createdAt: string;
     updatedAt: string;
 }
-interface ApiIntentCreated {
-    id: string;
-    typedData: unknown;
-    calls: unknown;
-    expiresAt: string;
+/** A single Starknet call as returned in intent calldata. */
+interface IntentCall {
+    contractAddress: string;
+    entrypoint: string;
+    calldata: string[];
 }
+/**
+ * Response from any `createXIntent` call. Discriminated on `requiresSignature`:
+ *   • true  — SNIP-12 intent (listing / offer / cancel / counter-offer). Sign
+ *             `typedData`, then call `submitIntentSignature(id, sig)` to obtain
+ *             the executable calls.
+ *   • false — prebuilt intent (fulfill / mint / create-collection). `calls` are
+ *             ready to execute directly; there is no signature step.
+ *
+ * The discriminant makes the wrong access a compile error: `typedData` does not
+ * exist on the `false` variant, nor `calls` on the `true` variant. Consumers
+ * MUST narrow on `requiresSignature` before reading either.
+ */
+type ApiIntentCreated = {
+    id: string;
+    expiresAt: string;
+    requiresSignature: true;
+    typedData: unknown;
+} | {
+    id: string;
+    expiresAt: string;
+    requiresSignature: false;
+    calls: IntentCall[];
+};
 interface CreateListingIntentParams {
     offerer: string;
     nftContract: string;
@@ -1534,6 +1567,76 @@ declare class ERC1155CollectionService {
     }): Promise<TxResult>;
 }
 
+interface CreateCreatorCoinParams {
+    /** Owner of the new coin — the only address allowed to launch it. */
+    owner: string;
+    name: string;
+    symbol: string;
+    /** Full fixed supply (raw, 18 decimals). Minted to the Factory until launch. */
+    initialSupply: bigint | string;
+    /** Deterministic deploy salt. Defaults to a timestamp-derived value. */
+    salt?: bigint | string;
+}
+/** Ekubo pool params (off-chain tick). The `startingPrice` is an Ekubo i129 tick. */
+interface EkuboPoolParams {
+    fee: bigint | string;
+    tickSpacing: bigint | string;
+    startingPrice: {
+        mag: bigint | string;
+        sign: boolean;
+    };
+    bound: bigint | string;
+}
+interface EkuboLaunchParams {
+    creatorCoin: string;
+    /** Quote token (e.g. STRK). Must NOT itself be a Creator Coin. */
+    quoteToken: string;
+    /** Team-allocation recipients (≤10% of supply, summed). */
+    initialHolders: string[];
+    initialHoldersAmounts: (bigint | string)[];
+    /** Anti-snipe window in seconds. 0 = none. */
+    transferRestrictionDelay?: number;
+    /** Max % of supply buyable per tx during the window, in bps (≥50 = 0.5%). */
+    maxPercentageBuyLaunch?: number;
+    /** Ekubo pool params. Defaults to {@link VALIDATED_EKUBO_PARAMS} (0.01 quote/coin). */
+    ekubo?: EkuboPoolParams;
+    /**
+     * Quote (raw units) to transfer to the Factory in the same multicall, used to
+     * buy the team allocation back out of the pool. Must cover
+     * `sum(initialHoldersAmounts) × price` (leftover is returned to the caller).
+     * If omitted, the Factory must already hold enough quote.
+     */
+    quoteFundAmount?: bigint | string;
+}
+/**
+ * Smoke-validated Ekubo params (mainnet 2026-06-04): 0.01 quote/coin for an
+ * 18-decimal quote. `sign: true` yields 0.01 quote/coin regardless of token0/1
+ * ordering — the launcher compensates internally.
+ *
+ * TODO: a `priceToEkuboParams(price, quoteDecimals, tickSpacing)` helper (port of
+ * unrug's `ekubo/helpers.cairo` tick math) so callers can pick an arbitrary price.
+ */
+declare const VALIDATED_EKUBO_PARAMS: EkuboPoolParams;
+/**
+ * On-chain Creator Coin interactions (Ekubo-only launchpad).
+ * Faithful fork of unruggable.meme — permanent LP lock + team-allocation buyback.
+ */
+declare class CreatorCoinService {
+    private readonly factoryAddress;
+    constructor(_config: ResolvedConfig);
+    private _factory;
+    /** Deploy a fixed-supply CreatorCoin (full supply minted to the Factory). */
+    createCreatorCoin(account: AccountInterface, params: CreateCreatorCoinParams): Promise<TxResult>;
+    /**
+     * Launch a coin on Ekubo (owner-only). Optionally pre-funds the Factory with
+     * quote (for the buyback) in the same multicall. Liquidity is permanently
+     * locked in the EkuboLauncher.
+     */
+    launchOnEkubo(account: AccountInterface, params: EkuboLaunchParams): Promise<TxResult>;
+    /** View: is this address a Factory-deployed Creator Coin? */
+    isCreatorCoin(address: string, account: AccountInterface): Promise<boolean>;
+}
+
 declare class MedialaneClient {
     /** On-chain marketplace interactions for ERC-721 assets (create listing, fulfill order, etc.) */
     readonly marketplace: MarketplaceModule;
@@ -1548,6 +1651,7 @@ declare class MedialaneClient {
         readonly pop: PopService;
         readonly drop: DropService;
         readonly erc1155Collection: ERC1155CollectionService;
+        readonly creatorCoin: CreatorCoinService;
     };
     private readonly config;
     constructor(rawConfig?: MedialaneConfig);
@@ -5051,6 +5155,384 @@ declare const IPNftABI: readonly [{
     }];
 }];
 
+declare const CreatorCoinFactoryABI: readonly [{
+    readonly type: "impl";
+    readonly name: "FactoryImpl";
+    readonly interface_name: "creator_coin::factory::interface::IFactory";
+}, {
+    readonly type: "struct";
+    readonly name: "core::integer::u256";
+    readonly members: readonly [{
+        readonly name: "low";
+        readonly type: "core::integer::u128";
+    }, {
+        readonly name: "high";
+        readonly type: "core::integer::u128";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "core::array::Span::<core::starknet::contract_address::ContractAddress>";
+    readonly members: readonly [{
+        readonly name: "snapshot";
+        readonly type: "@core::array::Array::<core::starknet::contract_address::ContractAddress>";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "core::array::Span::<core::integer::u256>";
+    readonly members: readonly [{
+        readonly name: "snapshot";
+        readonly type: "@core::array::Array::<core::integer::u256>";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "creator_coin::factory::LaunchParameters";
+    readonly members: readonly [{
+        readonly name: "creator_coin_address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "transfer_restriction_delay";
+        readonly type: "core::integer::u64";
+    }, {
+        readonly name: "max_percentage_buy_launch";
+        readonly type: "core::integer::u16";
+    }, {
+        readonly name: "quote_address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "initial_holders";
+        readonly type: "core::array::Span::<core::starknet::contract_address::ContractAddress>";
+    }, {
+        readonly name: "initial_holders_amounts";
+        readonly type: "core::array::Span::<core::integer::u256>";
+    }];
+}, {
+    readonly type: "enum";
+    readonly name: "core::bool";
+    readonly variants: readonly [{
+        readonly name: "False";
+        readonly type: "()";
+    }, {
+        readonly name: "True";
+        readonly type: "()";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "ekubo::types::i129::i129";
+    readonly members: readonly [{
+        readonly name: "mag";
+        readonly type: "core::integer::u128";
+    }, {
+        readonly name: "sign";
+        readonly type: "core::bool";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "creator_coin::exchanges::ekubo::ekubo_adapter::EkuboPoolParameters";
+    readonly members: readonly [{
+        readonly name: "fee";
+        readonly type: "core::integer::u128";
+    }, {
+        readonly name: "tick_spacing";
+        readonly type: "core::integer::u128";
+    }, {
+        readonly name: "starting_price";
+        readonly type: "ekubo::types::i129::i129";
+    }, {
+        readonly name: "bound";
+        readonly type: "core::integer::u128";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "ekubo::types::keys::PoolKey";
+    readonly members: readonly [{
+        readonly name: "token0";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "token1";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "fee";
+        readonly type: "core::integer::u128";
+    }, {
+        readonly name: "tick_spacing";
+        readonly type: "core::integer::u128";
+    }, {
+        readonly name: "extension";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "ekubo::types::bounds::Bounds";
+    readonly members: readonly [{
+        readonly name: "lower";
+        readonly type: "ekubo::types::i129::i129";
+    }, {
+        readonly name: "upper";
+        readonly type: "ekubo::types::i129::i129";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "creator_coin::exchanges::ekubo::launcher::EkuboLP";
+    readonly members: readonly [{
+        readonly name: "owner";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "quote_address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "pool_key";
+        readonly type: "ekubo::types::keys::PoolKey";
+    }, {
+        readonly name: "bounds";
+        readonly type: "ekubo::types::bounds::Bounds";
+    }];
+}, {
+    readonly type: "enum";
+    readonly name: "creator_coin::exchanges::SupportedExchanges";
+    readonly variants: readonly [{
+        readonly name: "Jediswap";
+        readonly type: "()";
+    }, {
+        readonly name: "Ekubo";
+        readonly type: "()";
+    }, {
+        readonly name: "Starkdefi";
+        readonly type: "()";
+    }];
+}, {
+    readonly type: "enum";
+    readonly name: "creator_coin::token::creator_coin::LiquidityType";
+    readonly variants: readonly [{
+        readonly name: "JediERC20";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "StarkDeFiERC20";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "EkuboNFT";
+        readonly type: "core::integer::u64";
+    }];
+}, {
+    readonly type: "enum";
+    readonly name: "core::option::Option::<(core::starknet::contract_address::ContractAddress, creator_coin::token::creator_coin::LiquidityType)>";
+    readonly variants: readonly [{
+        readonly name: "Some";
+        readonly type: "(core::starknet::contract_address::ContractAddress, creator_coin::token::creator_coin::LiquidityType)";
+    }, {
+        readonly name: "None";
+        readonly type: "()";
+    }];
+}, {
+    readonly type: "interface";
+    readonly name: "creator_coin::factory::interface::IFactory";
+    readonly items: readonly [{
+        readonly type: "function";
+        readonly name: "create_creator_coin";
+        readonly inputs: readonly [{
+            readonly name: "owner";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }, {
+            readonly name: "name";
+            readonly type: "core::felt252";
+        }, {
+            readonly name: "symbol";
+            readonly type: "core::felt252";
+        }, {
+            readonly name: "initial_supply";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "contract_address_salt";
+            readonly type: "core::felt252";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "launch_on_jediswap";
+        readonly inputs: readonly [{
+            readonly name: "launch_parameters";
+            readonly type: "creator_coin::factory::LaunchParameters";
+        }, {
+            readonly name: "quote_amount";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "unlock_time";
+            readonly type: "core::integer::u64";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "launch_on_ekubo";
+        readonly inputs: readonly [{
+            readonly name: "launch_parameters";
+            readonly type: "creator_coin::factory::LaunchParameters";
+        }, {
+            readonly name: "ekubo_parameters";
+            readonly type: "creator_coin::exchanges::ekubo::ekubo_adapter::EkuboPoolParameters";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "(core::integer::u64, creator_coin::exchanges::ekubo::launcher::EkuboLP)";
+        }];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "launch_on_starkdefi";
+        readonly inputs: readonly [{
+            readonly name: "launch_parameters";
+            readonly type: "creator_coin::factory::LaunchParameters";
+        }, {
+            readonly name: "quote_amount";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "unlock_time";
+            readonly type: "core::integer::u64";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "exchange_address";
+        readonly inputs: readonly [{
+            readonly name: "exchange";
+            readonly type: "creator_coin::exchanges::SupportedExchanges";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "lock_manager_address";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "locked_liquidity";
+        readonly inputs: readonly [{
+            readonly name: "token";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::option::Option::<(core::starknet::contract_address::ContractAddress, creator_coin::token::creator_coin::LiquidityType)>";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "is_creator_coin";
+        readonly inputs: readonly [{
+            readonly name: "address";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::bool";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "ekubo_core_address";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly state_mutability: "view";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "core::array::Span::<(creator_coin::exchanges::SupportedExchanges, core::starknet::contract_address::ContractAddress)>";
+    readonly members: readonly [{
+        readonly name: "snapshot";
+        readonly type: "@core::array::Array::<(creator_coin::exchanges::SupportedExchanges, core::starknet::contract_address::ContractAddress)>";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "core::array::Span::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress)>";
+    readonly members: readonly [{
+        readonly name: "snapshot";
+        readonly type: "@core::array::Array::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress)>";
+    }];
+}, {
+    readonly type: "constructor";
+    readonly name: "constructor";
+    readonly inputs: readonly [{
+        readonly name: "creator_coin_class_hash";
+        readonly type: "core::starknet::class_hash::ClassHash";
+    }, {
+        readonly name: "lock_manager_address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+    }, {
+        readonly name: "exchanges";
+        readonly type: "core::array::Span::<(creator_coin::exchanges::SupportedExchanges, core::starknet::contract_address::ContractAddress)>";
+    }, {
+        readonly name: "migrated_tokens";
+        readonly type: "core::array::Span::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress)>";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "creator_coin::factory::factory::Factory::CreatorCoinCreated";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "owner";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }, {
+        readonly name: "name";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "symbol";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }, {
+        readonly name: "initial_supply";
+        readonly type: "core::integer::u256";
+        readonly kind: "data";
+    }, {
+        readonly name: "creator_coin_address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "creator_coin::factory::factory::Factory::CreatorCoinLaunched";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "creator_coin_address";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }, {
+        readonly name: "quote_token";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "data";
+    }, {
+        readonly name: "exchange_name";
+        readonly type: "core::felt252";
+        readonly kind: "data";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "creator_coin::factory::factory::Factory::Event";
+    readonly kind: "enum";
+    readonly variants: readonly [{
+        readonly name: "CreatorCoinCreated";
+        readonly type: "creator_coin::factory::factory::Factory::CreatorCoinCreated";
+        readonly kind: "nested";
+    }, {
+        readonly name: "CreatorCoinLaunched";
+        readonly type: "creator_coin::factory::factory::Factory::CreatorCoinLaunched";
+        readonly kind: "nested";
+    }];
+}];
+
 /**
  * The Medialane service registry (05-service-model §II, §VI).
  * Canonical long-form IDs (01-core-model §III). SDK-resident in v1;
@@ -5164,6 +5646,27 @@ declare const SERVICES: {
         readonly metadataSchema: {
             readonly licenseDefault: "CC BY-SA";
         };
+    };
+    readonly "creator-coin": {
+        readonly id: "creator-coin";
+        readonly displayName: "Creator Coin";
+        readonly description: "Launch a fixed-supply social token with permanently-locked Ekubo liquidity.";
+        readonly standard: "ERC20";
+        readonly provenance: "MEDIALANE";
+        readonly onchain: {
+            readonly factoryAddress: "0x50fa807b5274079fb19374673d7bab6d2dc3af7e1032ea43eb6e44bcbde4c3c";
+            readonly classHash: "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55";
+            readonly startBlock: 10474544;
+        };
+        readonly uiVariant: "coin";
+        readonly capabilities: ["launch", "swap", "transfer"];
+        readonly events: [{
+            readonly name: "CreatorCoinCreated";
+            readonly emittedBy: "factory";
+        }, {
+            readonly name: "CreatorCoinLaunched";
+            readonly emittedBy: "factory";
+        }];
     };
     readonly "medialane-marketplace-erc721": {
         readonly id: "medialane-marketplace-erc721";
@@ -5336,4 +5839,4 @@ declare function build1155OrderTypedData(message: Record<string, unknown>, chain
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWalletType, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, type BuildFeeCallParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EnforcementDeclaration, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, type IPType, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWalletType, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, type BuildFeeCallParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateCreatorCoinParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EkuboLaunchParams, type EkuboPoolParams, type EnforcementDeclaration, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, type IPType, type IntentCall, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, VALIDATED_EKUBO_PARAMS, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, encodeByteArray, formatAmount, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

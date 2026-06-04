@@ -47,6 +47,11 @@ export {
   COLLECTION_1155_CLASS_HASH_MAINNET,
   COLLECTION_1155_START_BLOCK_MAINNET,
   NFTCOMMENTS_CONTRACT_MAINNET,
+  CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
+  CREATOR_COIN_EKUBO_LAUNCHER_MAINNET,
+  CREATOR_COIN_CLASS_HASH_MAINNET,
+  CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
+  CREATOR_COIN_START_BLOCK_MAINNET,
   SUPPORTED_TOKENS,
   SUPPORTED_NETWORKS,
   DEFAULT_RPC_URL,
@@ -55,12 +60,18 @@ export {
 } from "./constants.js";
 
 // ABI
-export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, CollectionRegistryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI } from "./abis/index.js";
+export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, CollectionRegistryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI } from "./abis/index.js";
 
 // Services
 export { PopService } from "./services/pop.js";
 export { DropService } from "./services/drop.js";
 export { ERC1155CollectionService } from "./services/erc1155collection.js";
+export { CreatorCoinService, VALIDATED_EKUBO_PARAMS } from "./services/creatorCoin.js";
+export type {
+  CreateCreatorCoinParams,
+  EkuboLaunchParams,
+  EkuboPoolParams,
+} from "./services/creatorCoin.js";
 // Service registry (05-service-model). Types (ServiceDefinition etc.) are
 // already public via `export * from "./types/index.js"`.
 export {
