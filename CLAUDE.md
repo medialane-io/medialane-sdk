@@ -75,6 +75,7 @@ src/
     bytearray.ts     ← encodeByteArray() (Cairo ByteArray serialization)
     token.ts         ← SUPPORTED_TOKENS, getTokenByAddress, getTokenBySymbol, getListableTokens, parseAmount, formatAmount
     retry.ts         ← RetryOptions
+    rpc.ts           ← PUBLIC_RPC_FALLBACKS, isTransientRpcError, createFailoverFetch (resilient RPC — single source for every app)
 ```
 
 > **Refactor notes (2026-05-22 → 2026-05-23):**
@@ -86,7 +87,7 @@ src/
 > - **v0.20.0**: exported `ServiceId` literal union (`keyof typeof SERVICES`) + `isServiceId()` type guard. Use these to type-check `Collection.service` write sites in consumers.
 > - **v0.26.0 (BREAKING — redesigned marketplace venues)**: new marketplace ABIs + mainnet addresses; order schema is single-`amount` with `marketplace`/`royalty_max_bps`/`counter` (no nonce), SNIP-12 domain v4 (721) / v3 (1155); **fulfilment is unsigned** (fulfillment builders removed). Wide 248-bit salt is the sole order-hash uniqueness source.
 > - **v0.27.0**: `ApiIntentCreated` is a discriminated union on `requiresSignature` — `{ requiresSignature: true; typedData } | { requiresSignature: false; calls: IntentCall[] }`. Accessing the wrong field without narrowing is a compile error. New `IntentCall` type exported. Pairs with the backend `requiresSignature` field on every create-intent response.
-> - **v0.28.0**: centralized resilient RPC failover — `PUBLIC_RPC_FALLBACKS`, `isTransientRpcError`, `createFailoverFetch` (`src/utils/rpc.ts`).
+> - **v0.28.0 (resilient RPC — single source of truth)**: new `src/utils/rpc.ts` exports `PUBLIC_RPC_FALLBACKS` (ordered public mainnet endpoints: lava.build → blastapi → nethermind), `isTransientRpcError({ status?, body? })` (one transient-vs-deterministic detector for both raw-text and parsed JSON-RPC paths; **excludes `-32000`** so io's `/api/rpc` "Unauthorized" never fails over), and `createFailoverFetch(urls)` (an `RpcProvider.baseFetch` that rotates endpoints on transient failure — 503/429, `-32001`/`-32603` — while propagating deterministic contract errors verbatim). `getProvider()` (marketplace utils) now builds with `createFailoverFetch([config.rpcUrl, ...PUBLIC_RPC_FALLBACKS])`, so every SDK-client read is resilient by default. Consumed by dapp/io provider singletons, io's `/api/rpc` proxy, and the backend. Motivation + full incident: `medialane-core/docs/specs/2026-06-03-rpc-resilience-failover.md`.
 > - **v0.29.0**: **Creator Coin** (chain layer deployed mainnet 2026-06-04, Ekubo-only). One registry entry: `creator-coin` issuance service (`standard: "ERC20"`, `uiVariant: "coin"`, capabilities `launch`/`swap`/`transfer`). **No Medialane trading venue** — `swap` is a UI affordance that drives an embedded Ekubo swap (StarkZapp); settlement is external Ekubo and Medialane custodies nothing. `ServiceCapability` gained `"launch"`/`"swap"`; `ServiceDefinition.standard` gained `"ERC20"`. New `CreatorCoinService` (`client.services.creatorCoin`): `createCreatorCoin`, `launchOnEkubo` (optional `quoteFundAmount` prepends the buyback quote transfer), `isCreatorCoin`. Exports `CreatorCoinFactoryABI`, `VALIDATED_EKUBO_PARAMS` (smoke-validated 0.01 quote/coin tick params), and `CREATOR_COIN_*` constants (Factory `0x50fa80…`, EkuboLauncher `0x4f7fce…`). TODO: `priceToEkuboParams()` tick-math helper for arbitrary launch prices.
 
 ---
