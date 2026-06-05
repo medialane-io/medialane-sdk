@@ -1297,7 +1297,7 @@ declare class ApiClient {
      */
     registerUser(params: {
         walletAddress: string;
-        walletType?: ApiWalletType;
+        walletType?: string;
         appSource?: ApiAppSource;
         chain?: ApiChain;
     }): Promise<{
@@ -1305,12 +1305,12 @@ declare class ApiClient {
         publicId: string;
         walletAddress: string;
         chain: string;
-        walletType: string;
+        provider: string;
         appSource: ApiAppSource;
         createdAt: string;
     }>;
     upsertMyWallet(clerkToken: string, options?: {
-        walletType?: ApiWalletType;
+        walletType?: string;
         appSource?: ApiAppSource;
         chain?: ApiChain;
     }): Promise<ApiUserWallet>;
