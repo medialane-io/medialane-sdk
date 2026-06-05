@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -92,6 +92,7 @@ src/
 > - **v0.30.0**: new `external-erc20` registry service (provenance `EXTERNAL`, `standard: "ERC20"`, capabilities `swap`/`transfer`) — the ERC-20 parallel to `external-erc721`/`external-erc1155`. For any ERC-20 not deployed via a Medialane service (unrug memecoins, partner coins, future chains), brought in by owner claim or admin/partnership — **never bulk-indexed**. No `unrug-`-specific service; admin/claim curation is the gate.
 >   Also adds the **Ekubo price helper**: `getCreatorCoinPrice(coinAddress, provider)` + `client.services.creatorCoin.getPrice(coin)` — reads a coin's live spot price directly from its Ekubo pool (discovers pool params from `launched_with_liquidity_parameters` → `Core.get_pool_price` → quote-per-coin). Self-contained, read-only, works day-one (no AVNU/backend dependency). New `EKUBO_CORE_MAINNET` const + `CreatorCoinPrice` type. This is the inverse of the planned `priceToEkuboParams()` — Ekubo math now lives in the SDK (single source), consumed by the dapp coin page.
 > - **v0.32.0 (identity model — `MEDIALANE_STARKNET`)**: the backend unified its identity model — a wallet is now one *kind* of `Identity` (`scheme="wallet"`), and `Wallet`/`CreatorProfile`/`User` tables + the `WalletType`/`IdentityProvider` enums were dropped (medialane-backend#51). SDK changes: (1) `ApiAppSource` gains **`"MEDIALANE_STARKNET"`** — the renamed `MEDIALANE_DAPP` (the "dapp" is the Starknet app; the platform is multichain). `MEDIALANE_DAPP` stays as a **deprecated alias** the backend normalizes, so existing apps keep working. (2) `registerUser(...)` response `walletType` is now a **free-form provider label** (`string`, e.g. `"braavos"`/`"chipipay"`/`"unknown"`), not `ApiWalletType` — the backend folds walletType into `Identity.provider`. The **input** `walletType` param (register/me) is unchanged. **App migration:** send `appSource: "MEDIALANE_STARKNET"` (dapp) instead of `"MEDIALANE_DAPP"`. Identity model: `medialane-core/docs/architecture/07-identity-model.md`; app rollout plan: `medialane-core/docs/specs/2026-06-05-identity-app-rollout.md`.
+> - **v0.33.0 (finish the walletType cutover)**: 0.32.0 loosened the register *output* but left the *input* typed as the dropped `ApiWalletType` enum. Now symmetric: (1) `registerUser()`/`upsertMyWallet()` **input** `walletType` is `string` (send the lowercase label directly; backend lowercases into `Identity.provider`, never gates). (2) `registerUser()` **response** field `walletType` → **`provider`** (type-only breaking; no app reads it — the dapp's `.walletType` reads are local session state). `ApiWalletType` is still exported for display. Lets the dapp drop its `toBackendWalletType` uppercase mapping; io unaffected. Spec: `medialane-core/docs/specs/2026-06-05-identity-cleanup-followups.md` (item B).
 
 ---
 

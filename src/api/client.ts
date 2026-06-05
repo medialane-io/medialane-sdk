@@ -13,7 +13,6 @@ import type {
   ApiCollectionClaim,
   ApiCollectionSlugClaim,
   ApiUserWallet,
-  ApiWalletType,
   ApiAppSource,
   ApiChain,
   ApiActivity,
@@ -607,7 +606,10 @@ export class ApiClient {
    */
   async registerUser(params: {
     walletAddress: string;
-    walletType?: ApiWalletType;
+    // Free-form wallet-software label ("braavos" / "ready" / "chipipay" / …).
+    // The backend lowercases it into Identity.provider and never gates on it
+    // (07-identity §II) — so it's a plain string, not a closed enum.
+    walletType?: string;
     appSource?: ApiAppSource;
     chain?: ApiChain;
   }): Promise<{
@@ -615,10 +617,9 @@ export class ApiClient {
     publicId: string;
     walletAddress: string;
     chain: string;
-    // Free-form provider label of the wallet identity ("braavos", "chipipay",
-    // "unknown", …) — the backend folds walletType into Identity.provider. No
-    // longer the ApiWalletType enum.
-    walletType: string;
+    // The wallet identity's free-form provider label, echoed back from
+    // Identity.provider ("braavos" / "chipipay" / "unknown" / …).
+    provider: string;
     appSource: ApiAppSource;
     createdAt: string;
   }> {
@@ -628,7 +629,9 @@ export class ApiClient {
   async upsertMyWallet(
     clerkToken: string,
     options: {
-      walletType?: ApiWalletType;
+      // Free-form provider label (see registerUser); lowercased into
+      // Identity.provider by the backend, never gated on.
+      walletType?: string;
       appSource?: ApiAppSource;
       // 07-identity §I: the Wallet identifier is (chain, address). v1
       // backend rejects anything other than STARKNET on this route (the

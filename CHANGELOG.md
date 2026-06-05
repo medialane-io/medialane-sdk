@@ -2,6 +2,46 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.33.0] — 2026-06-05
+
+### Changed — finish the identity-model cutover (walletType is no longer an enum)
+
+Follow-up to 0.32.0. The backend long since dropped the `WalletType` enum — `Identity.provider`
+is free-form and lowercased server-side (permissionless, `07-identity §II`). 0.32.0 loosened the
+register **output** to `string` but left the **input** typed as the now-defunct `ApiWalletType`.
+This finishes the cutover, symmetric on both sides:
+
+- **`registerUser()` / `upsertMyWallet()` input `walletType` is now `string`** (was `ApiWalletType`).
+  Send the wallet-software label directly (e.g. `"braavos"`, `"ready"`, `"chipipay"`); the backend
+  lowercases it into `Identity.provider` and never gates on it. The wire field name is unchanged.
+- **`registerUser()` response field `walletType` → `provider`** (BREAKING, type-only). The field
+  always carried `Identity.provider`, so the old name lied. No app reads it today (the dapp's
+  `.walletType` reads are all local wallet-session state), so the rename is low-risk — but a consumer
+  destructuring `registerUser().walletType` will now get `undefined`; read `.provider`.
+- `ApiWalletType` is still **exported** for any display/labelling use — it's just no longer the type
+  of these inputs.
+
+App migration: the dapp can drop its `toBackendWalletType` uppercase mapping and pass the lowercase
+connector id straight through. io is unaffected (sends the literal `"CHIPIPAY"`, ignores the response).
+Spec: `medialane-core/docs/specs/2026-06-05-identity-cleanup-followups.md` (item B).
+
+## [0.32.0] — 2026-06-05
+
+### Changed — identity model (`MEDIALANE_STARKNET`)
+
+The backend unified its identity model (medialane-backend#51): a wallet is now one *kind* of
+`Identity` (`scheme="wallet"`); the `Wallet`/`CreatorProfile`/`User` tables and the
+`WalletType`/`IdentityProvider` enums were dropped.
+
+- **`ApiAppSource` gains `"MEDIALANE_STARKNET"`** — the renamed `MEDIALANE_DAPP` (the "dapp" is the
+  Starknet app; the platform is multichain). `MEDIALANE_DAPP` stays as a **deprecated alias** the
+  backend normalizes, so existing apps keep working during cutover.
+- **`registerUser()` response `walletType` is now a free-form `string`** (was `ApiWalletType`) — the
+  backend folds walletType into `Identity.provider`. (Renamed to `provider` in 0.33.0.)
+
+Identity model: `medialane-core/docs/architecture/07-identity-model.md`; app rollout:
+`medialane-core/docs/specs/2026-06-05-identity-app-rollout.md`.
+
 ## [0.31.0] — 2026-06-05
 
 ### Added — BASE chain
