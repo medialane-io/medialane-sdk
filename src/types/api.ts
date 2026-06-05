@@ -811,7 +811,7 @@ export type ApiAppSource =
 // the backend Chain enum. v1 callers only ever pass STARKNET; the rest
 // are present so the type doesn't need a breaking change when SIWE/SIWB
 // authentication lands and other chains become callable.
-export type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BITCOIN";
+export type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BASE" | "BITCOIN";
 
 export interface ApiUserWallet {
   walletAddress: string;
