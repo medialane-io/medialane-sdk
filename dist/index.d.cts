@@ -1117,8 +1117,8 @@ interface ApiCreatorListResult {
     limit: number;
 }
 type ApiWalletType = "ARGENT" | "BRAAVOS" | "CARTRIDGE" | "PRIVY" | "CHIPIPAY" | "INJECTED" | "UNKNOWN";
-type ApiAppSource = "MEDIALANE_DAPP" | "MEDIALANE_IO" | "MEDIALANE_PORTAL" | "MEDIALANE_SDK";
-type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BITCOIN";
+type ApiAppSource = "MEDIALANE_STARKNET" | "MEDIALANE_IO" | "MEDIALANE_PORTAL" | "MEDIALANE_SDK" | "MEDIALANE_DAPP";
+type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BASE" | "BITCOIN";
 interface ApiUserWallet {
     walletAddress: string;
 }
@@ -1299,13 +1299,13 @@ declare class ApiClient {
         walletAddress: string;
         walletType?: ApiWalletType;
         appSource?: ApiAppSource;
-        chain?: "STARKNET" | "ETHEREUM" | "SOLANA" | "BITCOIN";
+        chain?: ApiChain;
     }): Promise<{
         accountId: string;
         publicId: string;
         walletAddress: string;
         chain: string;
-        walletType: ApiWalletType;
+        walletType: string;
         appSource: ApiAppSource;
         createdAt: string;
     }>;

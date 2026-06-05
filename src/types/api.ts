@@ -802,10 +802,14 @@ export type ApiWalletType =
   | "UNKNOWN";
 
 export type ApiAppSource =
-  | "MEDIALANE_DAPP"
+  | "MEDIALANE_STARKNET" // the Starknet dapp (renamed from MEDIALANE_DAPP — the platform is multichain)
   | "MEDIALANE_IO"
   | "MEDIALANE_PORTAL"
-  | "MEDIALANE_SDK";
+  | "MEDIALANE_SDK"
+  // Deprecated alias for MEDIALANE_STARKNET. The backend still accepts it (normalizes
+  // to MEDIALANE_STARKNET) so existing apps keep working; migrate to MEDIALANE_STARKNET
+  // and drop this in a later major.
+  | "MEDIALANE_DAPP";
 
 // 07-identity §I: the Wallet identifier is (chain, address). Mirrors
 // the backend Chain enum. v1 callers only ever pass STARKNET; the rest

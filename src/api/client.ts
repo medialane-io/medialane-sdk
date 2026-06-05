@@ -615,7 +615,10 @@ export class ApiClient {
     publicId: string;
     walletAddress: string;
     chain: string;
-    walletType: ApiWalletType;
+    // Free-form provider label of the wallet identity ("braavos", "chipipay",
+    // "unknown", …) — the backend folds walletType into Identity.provider. No
+    // longer the ApiWalletType enum.
+    walletType: string;
     appSource: ApiAppSource;
     createdAt: string;
   }> {
