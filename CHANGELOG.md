@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.31.0] — 2026-06-05
+
+### Added — BASE chain
+
+- **`ApiChain` now includes `"BASE"`** (the EVM L2), alongside `STARKNET`/`ETHEREUM`/`SOLANA`/`BITCOIN`.
+  Part of the chain-sovereignty foundations work (invariant I1: chain is first-class). The
+  inline chain union in `registerUser()` was also collapsed to reference `ApiChain`, so the
+  SDK chain list is now single-sourced. Additive, non-breaking.
+
 ## [0.30.0] — 2026-06-04
 
 ### Added — Creator Coin price reads + external ERC-20s
