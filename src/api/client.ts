@@ -609,7 +609,7 @@ export class ApiClient {
     walletAddress: string;
     walletType?: ApiWalletType;
     appSource?: ApiAppSource;
-    chain?: "STARKNET" | "ETHEREUM" | "SOLANA" | "BITCOIN";
+    chain?: ApiChain;
   }): Promise<{
     accountId: string;
     publicId: string;
