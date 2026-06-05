@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.30.0",
+  "version": "0.32.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -91,6 +91,7 @@ src/
 > - **v0.29.0**: **Creator Coin** (chain layer deployed mainnet 2026-06-04, Ekubo-only). One registry entry: `creator-coin` issuance service (`standard: "ERC20"`, `uiVariant: "coin"`, capabilities `launch`/`swap`/`transfer`). **No Medialane trading venue** — `swap` is a UI affordance that drives an embedded Ekubo swap (StarkZapp); settlement is external Ekubo and Medialane custodies nothing. `ServiceCapability` gained `"launch"`/`"swap"`; `ServiceDefinition.standard` gained `"ERC20"`. New `CreatorCoinService` (`client.services.creatorCoin`): `createCreatorCoin`, `launchOnEkubo` (optional `quoteFundAmount` prepends the buyback quote transfer), `isCreatorCoin`. Exports `CreatorCoinFactoryABI`, `VALIDATED_EKUBO_PARAMS` (smoke-validated 0.01 quote/coin tick params), and `CREATOR_COIN_*` constants (Factory `0x50fa80…`, EkuboLauncher `0x4f7fce…`). TODO: `priceToEkuboParams()` tick-math helper for arbitrary launch prices.
 > - **v0.30.0**: new `external-erc20` registry service (provenance `EXTERNAL`, `standard: "ERC20"`, capabilities `swap`/`transfer`) — the ERC-20 parallel to `external-erc721`/`external-erc1155`. For any ERC-20 not deployed via a Medialane service (unrug memecoins, partner coins, future chains), brought in by owner claim or admin/partnership — **never bulk-indexed**. No `unrug-`-specific service; admin/claim curation is the gate.
 >   Also adds the **Ekubo price helper**: `getCreatorCoinPrice(coinAddress, provider)` + `client.services.creatorCoin.getPrice(coin)` — reads a coin's live spot price directly from its Ekubo pool (discovers pool params from `launched_with_liquidity_parameters` → `Core.get_pool_price` → quote-per-coin). Self-contained, read-only, works day-one (no AVNU/backend dependency). New `EKUBO_CORE_MAINNET` const + `CreatorCoinPrice` type. This is the inverse of the planned `priceToEkuboParams()` — Ekubo math now lives in the SDK (single source), consumed by the dapp coin page.
+> - **v0.32.0 (identity model — `MEDIALANE_STARKNET`)**: the backend unified its identity model — a wallet is now one *kind* of `Identity` (`scheme="wallet"`), and `Wallet`/`CreatorProfile`/`User` tables + the `WalletType`/`IdentityProvider` enums were dropped (medialane-backend#51). SDK changes: (1) `ApiAppSource` gains **`"MEDIALANE_STARKNET"`** — the renamed `MEDIALANE_DAPP` (the "dapp" is the Starknet app; the platform is multichain). `MEDIALANE_DAPP` stays as a **deprecated alias** the backend normalizes, so existing apps keep working. (2) `registerUser(...)` response `walletType` is now a **free-form provider label** (`string`, e.g. `"braavos"`/`"chipipay"`/`"unknown"`), not `ApiWalletType` — the backend folds walletType into `Identity.provider`. The **input** `walletType` param (register/me) is unchanged. **App migration:** send `appSource: "MEDIALANE_STARKNET"` (dapp) instead of `"MEDIALANE_DAPP"`. Identity model: `medialane-core/docs/architecture/07-identity-model.md`; app rollout plan: `medialane-core/docs/specs/2026-06-05-identity-app-rollout.md`.
 
 ---
 
