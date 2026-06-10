@@ -56,13 +56,20 @@ type Network = (typeof SUPPORTED_NETWORKS)[number];
 declare const DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 declare const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 declare const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
-declare const COLLECTION_1155_CONTRACT_MAINNET = "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
-/** Class hash of the IPCollectionFactory implementation. */
-declare const COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = "0x188321a7c9ca972cc63e352e3b3a4cdf33781852d957f4b4b62249310fe4c75";
-/** Class hash of the IPCollection ERC-1155 implementation. */
-declare const COLLECTION_1155_CLASS_HASH_MAINNET = "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80";
-/** First mainnet block for the current ERC-1155 factory deployment. */
-declare const COLLECTION_1155_START_BLOCK_MAINNET = 10045611;
+/** IPCollectionFactory v0.3.0 (deployed mainnet 2026-06-10): sequential on-chain
+ *  edition ids, ownerless/immutable. New collections deploy from here. */
+declare const COLLECTION_1155_CONTRACT_MAINNET = "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc";
+/** Prior ERC-1155 factory (v0.2.0, caller-supplied timestamp ids, mint_item).
+ *  Kept so the indexer can still recognise collections deployed before cutover. */
+declare const COLLECTION_1155_CONTRACT_LEGACY_MAINNET = "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
+/** Class hash of the IPCollectionFactory v0.3.0 implementation. */
+declare const COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = "0x331a69da8655a882ba1fbcb55188b8fa09116521db901bbbaafc9fead0689f8";
+/** Class hash of the IPCollection ERC-1155 v0.3.0 implementation. */
+declare const COLLECTION_1155_CLASS_HASH_MAINNET = "0x4e110b59af240ae6c7742999964c4eae13fb2ed935c47fe97653ec017ebea34";
+/** First mainnet block of the v0.3.0 ERC-1155 factory deployment. */
+declare const COLLECTION_1155_START_BLOCK_MAINNET = 10665319;
+/** First mainnet block of the prior (v0.2.0) ERC-1155 factory. */
+declare const COLLECTION_1155_START_BLOCK_LEGACY_MAINNET = 10045611;
 /** Creator Coin Factory — entrypoint: create_creator_coin + launch_on_ekubo. */
 declare const CREATOR_COIN_FACTORY_CONTRACT_MAINNET = "0x50fa807b5274079fb19374673d7bab6d2dc3af7e1032ea43eb6e44bcbde4c3c";
 /** EkuboLauncher — permanently holds (locks) each Creator Coin's LP position. */
@@ -1488,31 +1495,40 @@ interface DeployCollectionParams {
      */
     baseUri: string;
 }
-interface MintItemParams {
+interface MintEditionParams {
     /** ERC-1155 collection contract address */
     collection: string;
     /** Recipient wallet address */
     to: string;
-    /** Token ID (u256 — use a numeric string or bigint) */
-    tokenId: bigint | string;
-    /** Number of copies to mint */
+    /** Number of copies of this new edition to mint */
     value: bigint | string;
     /**
      * Metadata URI — must start with `ipfs://` or `ar://`.
-     * Immutable: validated and stored on first mint of each token_id.
+     * Immutable: validated and stored at mint. The token id is assigned on-chain
+     * (sequential from 1); read it from the `IPMinted` event of the returned tx.
      */
     tokenUri: string;
 }
-interface BatchMintItemParams {
+interface BatchMintEditionParams {
     /** ERC-1155 collection contract address */
     collection: string;
     /** Recipient wallet address */
     to: string;
+    /** New editions to create; ids are assigned sequentially on-chain. */
     items: Array<{
-        tokenId: bigint | string;
         value: bigint | string;
         tokenUri: string;
     }>;
+}
+interface AddSupplyParams {
+    /** ERC-1155 collection contract address */
+    collection: string;
+    /** Recipient wallet address */
+    to: string;
+    /** Existing edition id to mint more copies of (reverts if it doesn't exist) */
+    tokenId: bigint | string;
+    /** Number of additional copies */
+    value: bigint | string;
 }
 declare class ERC1155CollectionService {
     private readonly factoryAddress;
@@ -1527,17 +1543,24 @@ declare class ERC1155CollectionService {
      */
     deployCollection(account: AccountInterface, params: DeployCollectionParams): Promise<TxResult>;
     /**
-     * Mint a single token into an existing ERC-1155 collection.
-     * Caller must be the collection owner.
-     * The `tokenUri` is immutable — validated and stored on the first mint only.
+     * Mint a new edition into an existing ERC-1155 collection.
+     * Caller must be the collection owner. The token id is assigned on-chain
+     * (sequential from 1) — read it from the `IPMinted` event of the returned tx.
+     * The `tokenUri` is immutable.
      */
-    mintItem(account: AccountInterface, params: MintItemParams): Promise<TxResult>;
+    mintEdition(account: AccountInterface, params: MintEditionParams): Promise<TxResult>;
     /**
-     * Batch-mint multiple token IDs into an existing ERC-1155 collection.
-     * All items go to the same `to` address.
+     * Batch-mint multiple new editions into an existing ERC-1155 collection.
+     * All editions go to the same `to` address; ids are assigned sequentially
+     * on-chain. Caller must be the collection owner.
+     */
+    batchMintEdition(account: AccountInterface, params: BatchMintEditionParams): Promise<TxResult>;
+    /**
+     * Mint additional copies of an EXISTING edition into an ERC-1155 collection.
+     * Reverts on-chain if `tokenId` has never been minted. Provenance/URI unchanged.
      * Caller must be the collection owner.
      */
-    batchMintItem(account: AccountInterface, params: BatchMintItemParams): Promise<TxResult>;
+    addSupply(account: AccountInterface, params: AddSupplyParams): Promise<TxResult>;
     /**
      * Set the default ERC-2981 royalty for the entire collection.
      * `feeNumerator` is out of 10 000 (e.g. 500 = 5%).
@@ -3024,15 +3047,6 @@ declare const IPCollection1155FactoryABI: readonly [{
         readonly state_mutability: "view";
     }, {
         readonly type: "function";
-        readonly name: "update_collection_class_hash";
-        readonly inputs: readonly [{
-            readonly name: "new_class_hash";
-            readonly type: "core::starknet::class_hash::ClassHash";
-        }];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
         readonly name: "deploy_collection";
         readonly inputs: readonly [{
             readonly name: "name";
@@ -3050,99 +3064,11 @@ declare const IPCollection1155FactoryABI: readonly [{
         readonly state_mutability: "external";
     }];
 }, {
-    readonly type: "impl";
-    readonly name: "OwnableMixinImpl";
-    readonly interface_name: "openzeppelin_access::ownable::interface::OwnableABI";
-}, {
-    readonly type: "interface";
-    readonly name: "openzeppelin_access::ownable::interface::OwnableABI";
-    readonly items: readonly [{
-        readonly type: "function";
-        readonly name: "owner";
-        readonly inputs: readonly [];
-        readonly outputs: readonly [{
-            readonly type: "core::starknet::contract_address::ContractAddress";
-        }];
-        readonly state_mutability: "view";
-    }, {
-        readonly type: "function";
-        readonly name: "transfer_ownership";
-        readonly inputs: readonly [{
-            readonly name: "new_owner";
-            readonly type: "core::starknet::contract_address::ContractAddress";
-        }];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "renounce_ownership";
-        readonly inputs: readonly [];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "transferOwnership";
-        readonly inputs: readonly [{
-            readonly name: "newOwner";
-            readonly type: "core::starknet::contract_address::ContractAddress";
-        }];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "renounceOwnership";
-        readonly inputs: readonly [];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }];
-}, {
     readonly type: "constructor";
     readonly name: "constructor";
     readonly inputs: readonly [{
-        readonly name: "owner";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-    }, {
         readonly name: "collection_class_hash";
         readonly type: "core::starknet::class_hash::ClassHash";
-    }];
-}, {
-    readonly type: "event";
-    readonly name: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred";
-    readonly kind: "struct";
-    readonly members: readonly [{
-        readonly name: "previous_owner";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-        readonly kind: "key";
-    }, {
-        readonly name: "new_owner";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-        readonly kind: "key";
-    }];
-}, {
-    readonly type: "event";
-    readonly name: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted";
-    readonly kind: "struct";
-    readonly members: readonly [{
-        readonly name: "previous_owner";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-        readonly kind: "key";
-    }, {
-        readonly name: "new_owner";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-        readonly kind: "key";
-    }];
-}, {
-    readonly type: "event";
-    readonly name: "openzeppelin_access::ownable::ownable::OwnableComponent::Event";
-    readonly kind: "enum";
-    readonly variants: readonly [{
-        readonly name: "OwnershipTransferred";
-        readonly type: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred";
-        readonly kind: "nested";
-    }, {
-        readonly name: "OwnershipTransferStarted";
-        readonly type: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted";
-        readonly kind: "nested";
     }];
 }, {
     readonly type: "event";
@@ -3171,32 +3097,11 @@ declare const IPCollection1155FactoryABI: readonly [{
     }];
 }, {
     readonly type: "event";
-    readonly name: "ip_programmable_erc1155_collections::IPCollectionFactory::IPCollectionFactory::CollectionClassHashUpdated";
-    readonly kind: "struct";
-    readonly members: readonly [{
-        readonly name: "previous_class_hash";
-        readonly type: "core::starknet::class_hash::ClassHash";
-        readonly kind: "data";
-    }, {
-        readonly name: "new_class_hash";
-        readonly type: "core::starknet::class_hash::ClassHash";
-        readonly kind: "data";
-    }];
-}, {
-    readonly type: "event";
     readonly name: "ip_programmable_erc1155_collections::IPCollectionFactory::IPCollectionFactory::Event";
     readonly kind: "enum";
     readonly variants: readonly [{
-        readonly name: "OwnableEvent";
-        readonly type: "openzeppelin_access::ownable::ownable::OwnableComponent::Event";
-        readonly kind: "flat";
-    }, {
         readonly name: "CollectionDeployed";
         readonly type: "ip_programmable_erc1155_collections::IPCollectionFactory::IPCollectionFactory::CollectionDeployed";
-        readonly kind: "nested";
-    }, {
-        readonly name: "CollectionClassHashUpdated";
-        readonly type: "ip_programmable_erc1155_collections::IPCollectionFactory::IPCollectionFactory::CollectionClassHashUpdated";
         readonly kind: "nested";
     }];
 }];
@@ -3271,6 +3176,16 @@ declare const IPCollection1155ABI: readonly [{
         readonly type: "core::integer::u64";
     }];
 }, {
+    readonly type: "enum";
+    readonly name: "core::bool";
+    readonly variants: readonly [{
+        readonly name: "False";
+        readonly type: "()";
+    }, {
+        readonly name: "True";
+        readonly type: "()";
+    }];
+}, {
     readonly type: "interface";
     readonly name: "ip_programmable_erc1155_collections::interfaces::IIPCollection::IIPCollection";
     readonly items: readonly [{
@@ -3307,7 +3222,41 @@ declare const IPCollection1155ABI: readonly [{
         readonly state_mutability: "view";
     }, {
         readonly type: "function";
-        readonly name: "mint_item";
+        readonly name: "mint_edition";
+        readonly inputs: readonly [{
+            readonly name: "to";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }, {
+            readonly name: "value";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "token_uri";
+            readonly type: "core::byte_array::ByteArray";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::integer::u256";
+        }];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "batch_mint_edition";
+        readonly inputs: readonly [{
+            readonly name: "to";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }, {
+            readonly name: "values";
+            readonly type: "core::array::Span::<core::integer::u256>";
+        }, {
+            readonly name: "token_uris";
+            readonly type: "core::array::Array::<core::byte_array::ByteArray>";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::array::Span::<core::integer::u256>";
+        }];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "add_supply";
         readonly inputs: readonly [{
             readonly name: "to";
             readonly type: "core::starknet::contract_address::ContractAddress";
@@ -3317,27 +3266,6 @@ declare const IPCollection1155ABI: readonly [{
         }, {
             readonly name: "value";
             readonly type: "core::integer::u256";
-        }, {
-            readonly name: "token_uri";
-            readonly type: "core::byte_array::ByteArray";
-        }];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "batch_mint_item";
-        readonly inputs: readonly [{
-            readonly name: "to";
-            readonly type: "core::starknet::contract_address::ContractAddress";
-        }, {
-            readonly name: "token_ids";
-            readonly type: "core::array::Span::<core::integer::u256>";
-        }, {
-            readonly name: "values";
-            readonly type: "core::array::Span::<core::integer::u256>";
-        }, {
-            readonly name: "token_uris";
-            readonly type: "core::array::Array::<core::byte_array::ByteArray>";
         }];
         readonly outputs: readonly [];
         readonly state_mutability: "external";
@@ -3380,6 +3308,25 @@ declare const IPCollection1155ABI: readonly [{
         }];
         readonly outputs: readonly [{
             readonly type: "ip_programmable_erc1155_collections::types::TokenData";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "total_editions";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly type: "core::integer::u256";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "token_exists";
+        readonly inputs: readonly [{
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::bool";
         }];
         readonly state_mutability: "view";
     }];
@@ -3433,16 +3380,6 @@ declare const IPCollection1155ABI: readonly [{
     readonly type: "impl";
     readonly name: "SRC5Impl";
     readonly interface_name: "openzeppelin_introspection::interface::ISRC5";
-}, {
-    readonly type: "enum";
-    readonly name: "core::bool";
-    readonly variants: readonly [{
-        readonly name: "False";
-        readonly type: "()";
-    }, {
-        readonly name: "True";
-        readonly type: "()";
-    }];
 }, {
     readonly type: "interface";
     readonly name: "openzeppelin_introspection::interface::ISRC5";
@@ -5610,9 +5547,9 @@ declare const SERVICES: {
         readonly standard: "ERC1155";
         readonly provenance: "MEDIALANE";
         readonly onchain: {
-            readonly factoryAddress: "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
-            readonly classHash: "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80";
-            readonly startBlock: 10045611;
+            readonly factoryAddress: "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc";
+            readonly classHash: "0x4e110b59af240ae6c7742999964c4eae13fb2ed935c47fe97653ec017ebea34";
+            readonly startBlock: 10665319;
         };
         readonly uiVariant: "edition";
         readonly capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"];
@@ -5930,4 +5867,4 @@ declare function build1155OrderTypedData(message: Record<string, unknown>, chain
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 
-export { type ActivityType, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWalletType, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintItemParams, type BuildFeeCallParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateCreatorCoinParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, CreatorCoinFactoryABI, type CreatorCoinPrice, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, type EkuboLaunchParams, type EkuboPoolParams, type EnforcementDeclaration, type FailoverFetchOptions, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, type IPType, type IntentCall, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintItemParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, VALIDATED_EKUBO_PARAMS, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { type ActivityType, type AddSupplyParams, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWalletType, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintEditionParams, type BuildFeeCallParams, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_LEGACY_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_LEGACY_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type ClaimConditions, CollectionRegistryABI, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateCreatorCoinParams, type CreateDropParams, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, CreatorCoinFactoryABI, type CreatorCoinPrice, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, type EkuboLaunchParams, type EkuboPoolParams, type EnforcementDeclaration, type FailoverFetchOptions, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, type IPType, type IntentCall, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintEditionParams, type MintParams, NFTCOMMENTS_CONTRACT_MAINNET, type Network, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, VALIDATED_EKUBO_PARAMS, type WebhookEventType, type WebhookStatus, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };

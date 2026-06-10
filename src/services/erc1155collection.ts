@@ -18,32 +18,42 @@ export interface DeployCollectionParams {
   baseUri: string;
 }
 
-export interface MintItemParams {
+export interface MintEditionParams {
   /** ERC-1155 collection contract address */
   collection: string;
   /** Recipient wallet address */
   to: string;
-  /** Token ID (u256 — use a numeric string or bigint) */
-  tokenId: bigint | string;
-  /** Number of copies to mint */
+  /** Number of copies of this new edition to mint */
   value: bigint | string;
   /**
    * Metadata URI — must start with `ipfs://` or `ar://`.
-   * Immutable: validated and stored on first mint of each token_id.
+   * Immutable: validated and stored at mint. The token id is assigned on-chain
+   * (sequential from 1); read it from the `IPMinted` event of the returned tx.
    */
   tokenUri: string;
 }
 
-export interface BatchMintItemParams {
+export interface BatchMintEditionParams {
   /** ERC-1155 collection contract address */
   collection: string;
   /** Recipient wallet address */
   to: string;
+  /** New editions to create; ids are assigned sequentially on-chain. */
   items: Array<{
-    tokenId: bigint | string;
     value: bigint | string;
     tokenUri: string;
   }>;
+}
+
+export interface AddSupplyParams {
+  /** ERC-1155 collection contract address */
+  collection: string;
+  /** Recipient wallet address */
+  to: string;
+  /** Existing edition id to mint more copies of (reverts if it doesn't exist) */
+  tokenId: bigint | string;
+  /** Number of additional copies */
+  value: bigint | string;
 }
 
 export class ERC1155CollectionService {
@@ -86,18 +96,18 @@ export class ERC1155CollectionService {
   }
 
   /**
-   * Mint a single token into an existing ERC-1155 collection.
-   * Caller must be the collection owner.
-   * The `tokenUri` is immutable — validated and stored on the first mint only.
+   * Mint a new edition into an existing ERC-1155 collection.
+   * Caller must be the collection owner. The token id is assigned on-chain
+   * (sequential from 1) — read it from the `IPMinted` event of the returned tx.
+   * The `tokenUri` is immutable.
    */
-  async mintItem(
+  async mintEdition(
     account: AccountInterface,
-    params: MintItemParams
+    params: MintEditionParams
   ): Promise<TxResult> {
     const collection = this._collection(params.collection, account);
-    const call = collection.populate("mint_item", [
+    const call = collection.populate("mint_edition", [
       params.to,
-      BigInt(params.tokenId),
       BigInt(params.value),
       params.tokenUri,
     ]);
@@ -106,23 +116,40 @@ export class ERC1155CollectionService {
   }
 
   /**
-   * Batch-mint multiple token IDs into an existing ERC-1155 collection.
-   * All items go to the same `to` address.
-   * Caller must be the collection owner.
+   * Batch-mint multiple new editions into an existing ERC-1155 collection.
+   * All editions go to the same `to` address; ids are assigned sequentially
+   * on-chain. Caller must be the collection owner.
    */
-  async batchMintItem(
+  async batchMintEdition(
     account: AccountInterface,
-    params: BatchMintItemParams
+    params: BatchMintEditionParams
   ): Promise<TxResult> {
     const collection = this._collection(params.collection, account);
-    const tokenIds = params.items.map((i) => BigInt(i.tokenId));
     const values = params.items.map((i) => BigInt(i.value));
     const tokenUris = params.items.map((i) => i.tokenUri);
-    const call = collection.populate("batch_mint_item", [
+    const call = collection.populate("batch_mint_edition", [
       params.to,
-      tokenIds,
       values,
       tokenUris,
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+
+  /**
+   * Mint additional copies of an EXISTING edition into an ERC-1155 collection.
+   * Reverts on-chain if `tokenId` has never been minted. Provenance/URI unchanged.
+   * Caller must be the collection owner.
+   */
+  async addSupply(
+    account: AccountInterface,
+    params: AddSupplyParams
+  ): Promise<TxResult> {
+    const collection = this._collection(params.collection, account);
+    const call = collection.populate("add_supply", [
+      params.to,
+      BigInt(params.tokenId),
+      BigInt(params.value),
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };

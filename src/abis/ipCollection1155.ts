@@ -96,6 +96,20 @@ export const IPCollection1155ABI = [
     ]
   },
   {
+    "type": "enum",
+    "name": "core::bool",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
     "type": "interface",
     "name": "ip_programmable_erc1155_collections::interfaces::IIPCollection::IIPCollection",
     "items": [
@@ -145,7 +159,55 @@ export const IPCollection1155ABI = [
       },
       {
         "type": "function",
-        "name": "mint_item",
+        "name": "mint_edition",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "value",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_uri",
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "batch_mint_edition",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "values",
+            "type": "core::array::Span::<core::integer::u256>"
+          },
+          {
+            "name": "token_uris",
+            "type": "core::array::Array::<core::byte_array::ByteArray>"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::array::Span::<core::integer::u256>"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "add_supply",
         "inputs": [
           {
             "name": "to",
@@ -158,34 +220,6 @@ export const IPCollection1155ABI = [
           {
             "name": "value",
             "type": "core::integer::u256"
-          },
-          {
-            "name": "token_uri",
-            "type": "core::byte_array::ByteArray"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "batch_mint_item",
-        "inputs": [
-          {
-            "name": "to",
-            "type": "core::starknet::contract_address::ContractAddress"
-          },
-          {
-            "name": "token_ids",
-            "type": "core::array::Span::<core::integer::u256>"
-          },
-          {
-            "name": "values",
-            "type": "core::array::Span::<core::integer::u256>"
-          },
-          {
-            "name": "token_uris",
-            "type": "core::array::Array::<core::byte_array::ByteArray>"
           }
         ],
         "outputs": [],
@@ -246,6 +280,33 @@ export const IPCollection1155ABI = [
         "outputs": [
           {
             "type": "ip_programmable_erc1155_collections::types::TokenData"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "total_editions",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "token_exists",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
           }
         ],
         "state_mutability": "view"
@@ -316,20 +377,6 @@ export const IPCollection1155ABI = [
     "type": "impl",
     "name": "SRC5Impl",
     "interface_name": "openzeppelin_introspection::interface::ISRC5"
-  },
-  {
-    "type": "enum",
-    "name": "core::bool",
-    "variants": [
-      {
-        "name": "False",
-        "type": "()"
-      },
-      {
-        "name": "True",
-        "type": "()"
-      }
-    ]
   },
   {
     "type": "interface",
@@ -1079,4 +1126,3 @@ export const IPCollection1155ABI = [
     ]
   }
 ] as const;
-

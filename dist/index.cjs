@@ -57,10 +57,12 @@ var SUPPORTED_NETWORKS = ["mainnet"];
 var DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
 var POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
 var DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
-var COLLECTION_1155_CONTRACT_MAINNET = "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
-var COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = "0x188321a7c9ca972cc63e352e3b3a4cdf33781852d957f4b4b62249310fe4c75";
-var COLLECTION_1155_CLASS_HASH_MAINNET = "0x281e13803c906f20bbe158efb44b7a0273c56fdebbeeb55b2ba59530ddb1c80";
-var COLLECTION_1155_START_BLOCK_MAINNET = 10045611;
+var COLLECTION_1155_CONTRACT_MAINNET = "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc";
+var COLLECTION_1155_CONTRACT_LEGACY_MAINNET = "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
+var COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = "0x331a69da8655a882ba1fbcb55188b8fa09116521db901bbbaafc9fead0689f8";
+var COLLECTION_1155_CLASS_HASH_MAINNET = "0x4e110b59af240ae6c7742999964c4eae13fb2ed935c47fe97653ec017ebea34";
+var COLLECTION_1155_START_BLOCK_MAINNET = 10665319;
+var COLLECTION_1155_START_BLOCK_LEGACY_MAINNET = 10045611;
 var CREATOR_COIN_FACTORY_CONTRACT_MAINNET = "0x50fa807b5274079fb19374673d7bab6d2dc3af7e1032ea43eb6e44bcbde4c3c";
 var CREATOR_COIN_EKUBO_LAUNCHER_MAINNET = "0x4f7fceb5ac10f12f9544a09580592e5bdf1b7f04f48765eecf12286d8ccb7b4";
 var CREATOR_COIN_CLASS_HASH_MAINNET = "0x743e4c8a5b96bb83bbf4af04edbbb482d5ece89eed9b729a79fb7df0cd0b6b6";
@@ -1704,18 +1706,6 @@ var IPCollection1155FactoryABI = [
       },
       {
         "type": "function",
-        "name": "update_collection_class_hash",
-        "inputs": [
-          {
-            "name": "new_class_hash",
-            "type": "core::starknet::class_hash::ClassHash"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
         "name": "deploy_collection",
         "inputs": [
           {
@@ -1741,127 +1731,12 @@ var IPCollection1155FactoryABI = [
     ]
   },
   {
-    "type": "impl",
-    "name": "OwnableMixinImpl",
-    "interface_name": "openzeppelin_access::ownable::interface::OwnableABI"
-  },
-  {
-    "type": "interface",
-    "name": "openzeppelin_access::ownable::interface::OwnableABI",
-    "items": [
-      {
-        "type": "function",
-        "name": "owner",
-        "inputs": [],
-        "outputs": [
-          {
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "transfer_ownership",
-        "inputs": [
-          {
-            "name": "new_owner",
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "renounce_ownership",
-        "inputs": [],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "transferOwnership",
-        "inputs": [
-          {
-            "name": "newOwner",
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "renounceOwnership",
-        "inputs": [],
-        "outputs": [],
-        "state_mutability": "external"
-      }
-    ]
-  },
-  {
     "type": "constructor",
     "name": "constructor",
     "inputs": [
       {
-        "name": "owner",
-        "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
         "name": "collection_class_hash",
         "type": "core::starknet::class_hash::ClassHash"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "previous_owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      },
-      {
-        "name": "new_owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "previous_owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      },
-      {
-        "name": "new_owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "openzeppelin_access::ownable::ownable::OwnableComponent::Event",
-    "kind": "enum",
-    "variants": [
-      {
-        "name": "OwnershipTransferred",
-        "type": "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred",
-        "kind": "nested"
-      },
-      {
-        "name": "OwnershipTransferStarted",
-        "type": "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted",
-        "kind": "nested"
       }
     ]
   },
@@ -1899,39 +1774,12 @@ var IPCollection1155FactoryABI = [
   },
   {
     "type": "event",
-    "name": "ip_programmable_erc1155_collections::IPCollectionFactory::IPCollectionFactory::CollectionClassHashUpdated",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "previous_class_hash",
-        "type": "core::starknet::class_hash::ClassHash",
-        "kind": "data"
-      },
-      {
-        "name": "new_class_hash",
-        "type": "core::starknet::class_hash::ClassHash",
-        "kind": "data"
-      }
-    ]
-  },
-  {
-    "type": "event",
     "name": "ip_programmable_erc1155_collections::IPCollectionFactory::IPCollectionFactory::Event",
     "kind": "enum",
     "variants": [
       {
-        "name": "OwnableEvent",
-        "type": "openzeppelin_access::ownable::ownable::OwnableComponent::Event",
-        "kind": "flat"
-      },
-      {
         "name": "CollectionDeployed",
         "type": "ip_programmable_erc1155_collections::IPCollectionFactory::IPCollectionFactory::CollectionDeployed",
-        "kind": "nested"
-      },
-      {
-        "name": "CollectionClassHashUpdated",
-        "type": "ip_programmable_erc1155_collections::IPCollectionFactory::IPCollectionFactory::CollectionClassHashUpdated",
         "kind": "nested"
       }
     ]
@@ -2037,6 +1885,20 @@ var IPCollection1155ABI = [
     ]
   },
   {
+    "type": "enum",
+    "name": "core::bool",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
     "type": "interface",
     "name": "ip_programmable_erc1155_collections::interfaces::IIPCollection::IIPCollection",
     "items": [
@@ -2086,7 +1948,55 @@ var IPCollection1155ABI = [
       },
       {
         "type": "function",
-        "name": "mint_item",
+        "name": "mint_edition",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "value",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_uri",
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "batch_mint_edition",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "values",
+            "type": "core::array::Span::<core::integer::u256>"
+          },
+          {
+            "name": "token_uris",
+            "type": "core::array::Array::<core::byte_array::ByteArray>"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::array::Span::<core::integer::u256>"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "add_supply",
         "inputs": [
           {
             "name": "to",
@@ -2099,34 +2009,6 @@ var IPCollection1155ABI = [
           {
             "name": "value",
             "type": "core::integer::u256"
-          },
-          {
-            "name": "token_uri",
-            "type": "core::byte_array::ByteArray"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "batch_mint_item",
-        "inputs": [
-          {
-            "name": "to",
-            "type": "core::starknet::contract_address::ContractAddress"
-          },
-          {
-            "name": "token_ids",
-            "type": "core::array::Span::<core::integer::u256>"
-          },
-          {
-            "name": "values",
-            "type": "core::array::Span::<core::integer::u256>"
-          },
-          {
-            "name": "token_uris",
-            "type": "core::array::Array::<core::byte_array::ByteArray>"
           }
         ],
         "outputs": [],
@@ -2187,6 +2069,33 @@ var IPCollection1155ABI = [
         "outputs": [
           {
             "type": "ip_programmable_erc1155_collections::types::TokenData"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "total_editions",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "token_exists",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
           }
         ],
         "state_mutability": "view"
@@ -2257,20 +2166,6 @@ var IPCollection1155ABI = [
     "type": "impl",
     "name": "SRC5Impl",
     "interface_name": "openzeppelin_introspection::interface::ISRC5"
-  },
-  {
-    "type": "enum",
-    "name": "core::bool",
-    "variants": [
-      {
-        "name": "False",
-        "type": "()"
-      },
-      {
-        "name": "True",
-        "type": "()"
-      }
-    ]
   },
   {
     "type": "interface",
@@ -6303,15 +6198,15 @@ var ERC1155CollectionService = class {
     return { txHash: res.transaction_hash };
   }
   /**
-   * Mint a single token into an existing ERC-1155 collection.
-   * Caller must be the collection owner.
-   * The `tokenUri` is immutable — validated and stored on the first mint only.
+   * Mint a new edition into an existing ERC-1155 collection.
+   * Caller must be the collection owner. The token id is assigned on-chain
+   * (sequential from 1) — read it from the `IPMinted` event of the returned tx.
+   * The `tokenUri` is immutable.
    */
-  async mintItem(account, params) {
+  async mintEdition(account, params) {
     const collection = this._collection(params.collection, account);
-    const call = collection.populate("mint_item", [
+    const call = collection.populate("mint_edition", [
       params.to,
-      BigInt(params.tokenId),
       BigInt(params.value),
       params.tokenUri
     ]);
@@ -6319,20 +6214,33 @@ var ERC1155CollectionService = class {
     return { txHash: res.transaction_hash };
   }
   /**
-   * Batch-mint multiple token IDs into an existing ERC-1155 collection.
-   * All items go to the same `to` address.
-   * Caller must be the collection owner.
+   * Batch-mint multiple new editions into an existing ERC-1155 collection.
+   * All editions go to the same `to` address; ids are assigned sequentially
+   * on-chain. Caller must be the collection owner.
    */
-  async batchMintItem(account, params) {
+  async batchMintEdition(account, params) {
     const collection = this._collection(params.collection, account);
-    const tokenIds = params.items.map((i) => BigInt(i.tokenId));
     const values = params.items.map((i) => BigInt(i.value));
     const tokenUris = params.items.map((i) => i.tokenUri);
-    const call = collection.populate("batch_mint_item", [
+    const call = collection.populate("batch_mint_edition", [
       params.to,
-      tokenIds,
       values,
       tokenUris
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /**
+   * Mint additional copies of an EXISTING edition into an ERC-1155 collection.
+   * Reverts on-chain if `tokenId` has never been minted. Provenance/URI unchanged.
+   * Caller must be the collection owner.
+   */
+  async addSupply(account, params) {
+    const collection = this._collection(params.collection, account);
+    const call = collection.populate("add_supply", [
+      params.to,
+      BigInt(params.tokenId),
+      BigInt(params.value)
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
@@ -6724,8 +6632,10 @@ function getServicesByCapability(cap) {
 
 exports.ApiClient = ApiClient;
 exports.COLLECTION_1155_CLASS_HASH_MAINNET = COLLECTION_1155_CLASS_HASH_MAINNET;
+exports.COLLECTION_1155_CONTRACT_LEGACY_MAINNET = COLLECTION_1155_CONTRACT_LEGACY_MAINNET;
 exports.COLLECTION_1155_CONTRACT_MAINNET = COLLECTION_1155_CONTRACT_MAINNET;
 exports.COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET;
+exports.COLLECTION_1155_START_BLOCK_LEGACY_MAINNET = COLLECTION_1155_START_BLOCK_LEGACY_MAINNET;
 exports.COLLECTION_1155_START_BLOCK_MAINNET = COLLECTION_1155_START_BLOCK_MAINNET;
 exports.COLLECTION_721_CONTRACT_MAINNET = COLLECTION_721_CONTRACT_MAINNET;
 exports.COLLECTION_721_START_BLOCK_MAINNET = COLLECTION_721_START_BLOCK_MAINNET;
