@@ -1,4 +1,4 @@
-import { Contract, RpcProvider, uint256, type AccountInterface, type Call, type ProviderInterface } from "starknet";
+import { Contract, RpcProvider, hash, uint256, type AccountInterface, type Call, type ProviderInterface } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import { CreatorCoinFactoryABI } from "../abis/index.js";
 import { CREATOR_COIN_FACTORY_CONTRACT_MAINNET, EKUBO_CORE_MAINNET } from "../constants.js";
@@ -123,6 +123,94 @@ export async function getCreatorCoinPrice(
   return { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals };
 }
 
+// ── Account-free call builders ───────────────────────────────────────────────
+// Apps that execute through their own pipeline (io's ChipiPay atomic chokepoint,
+// paymaster flows) need the calls, not an executor. The service methods below
+// build on these — one calldata source for every app.
+
+const factoryContract = new Contract(
+  CreatorCoinFactoryABI as any,
+  CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
+);
+
+/** Build the `create_creator_coin` call (full supply minted to the Factory). */
+export function buildCreateCreatorCoinCall(params: CreateCreatorCoinParams): Call {
+  const salt = params.salt ?? BigInt("0x" + Date.now().toString(16));
+  return factoryContract.populate("create_creator_coin", [
+    params.owner,
+    params.name,
+    params.symbol,
+    BigInt(params.initialSupply),
+    BigInt(salt),
+  ]);
+}
+
+/**
+ * Build the Ekubo launch multicall: optional quote `transfer` (pre-funds the
+ * Factory for the team-allocation buyback) + `launch_on_ekubo`.
+ */
+export function buildLaunchOnEkuboCalls(params: EkuboLaunchParams): Call[] {
+  const ek = params.ekubo ?? VALIDATED_EKUBO_PARAMS;
+
+  const launchParameters = {
+    creator_coin_address: params.creatorCoin,
+    transfer_restriction_delay: params.transferRestrictionDelay ?? 0,
+    max_percentage_buy_launch: params.maxPercentageBuyLaunch ?? 200,
+    quote_address: params.quoteToken,
+    initial_holders: params.initialHolders,
+    initial_holders_amounts: params.initialHoldersAmounts.map((a) => BigInt(a)),
+  };
+  const ekuboParameters = {
+    fee: BigInt(ek.fee),
+    tick_spacing: BigInt(ek.tickSpacing),
+    starting_price: { mag: BigInt(ek.startingPrice.mag), sign: ek.startingPrice.sign },
+    bound: BigInt(ek.bound),
+  };
+
+  const calls: Call[] = [];
+  if (params.quoteFundAmount !== undefined) {
+    const amt = uint256.bnToUint256(BigInt(params.quoteFundAmount));
+    calls.push({
+      contractAddress: params.quoteToken,
+      entrypoint: "transfer",
+      calldata: [CREATOR_COIN_FACTORY_CONTRACT_MAINNET, amt.low, amt.high],
+    });
+  }
+  calls.push(factoryContract.populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
+  return calls;
+}
+
+/** Minimal receipt shape — works with any starknet.js receipt version. */
+export interface CreatorCoinReceiptLike {
+  events?: Array<{ from_address?: string; keys?: string[]; data?: string[] }>;
+}
+
+const CREATOR_COIN_CREATED_SELECTOR = hash.getSelectorFromName("CreatorCoinCreated");
+
+/**
+ * Pull the deployed coin address from a `create_creator_coin` tx receipt.
+ * Event data = [owner, name, symbol, supply_low, supply_high, coin_address].
+ * Throws when the receipt carries no matching Factory event.
+ */
+export function parseCreatorCoinCreated(receipt: CreatorCoinReceiptLike): string {
+  const factory = normalizeAddress(CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
+  for (const ev of receipt?.events ?? []) {
+    let from: string;
+    try {
+      from = normalizeAddress(ev.from_address ?? "");
+    } catch {
+      continue;
+    }
+    if (from !== factory) continue;
+    const k0 = ev.keys?.[0];
+    if (!k0 || normalizeAddress(k0) !== normalizeAddress(CREATOR_COIN_CREATED_SELECTOR)) continue;
+    const data = ev.data ?? [];
+    if (data.length < 1) continue;
+    return normalizeAddress(data[data.length - 1]); // coin_address is last
+  }
+  throw new Error("Coin deployed but the coin address could not be read from the receipt");
+}
+
 /**
  * On-chain Creator Coin interactions (Ekubo-only launchpad).
  * Faithful fork of unruggable.meme — permanent LP lock + team-allocation buyback.
@@ -145,15 +233,7 @@ export class CreatorCoinService {
     account: AccountInterface,
     params: CreateCreatorCoinParams
   ): Promise<TxResult> {
-    const salt = params.salt ?? BigInt("0x" + Date.now().toString(16));
-    const call = this._factory(account).populate("create_creator_coin", [
-      params.owner,
-      params.name,
-      params.symbol,
-      BigInt(params.initialSupply),
-      BigInt(salt),
-    ]);
-    const res = await account.execute([call]);
+    const res = await account.execute([buildCreateCreatorCoinCall(params)]);
     return { txHash: res.transaction_hash };
   }
 
@@ -163,36 +243,7 @@ export class CreatorCoinService {
    * locked in the EkuboLauncher.
    */
   async launchOnEkubo(account: AccountInterface, params: EkuboLaunchParams): Promise<TxResult> {
-    const ek = params.ekubo ?? VALIDATED_EKUBO_PARAMS;
-    const factory = this._factory(account);
-
-    const launchParameters = {
-      creator_coin_address: params.creatorCoin,
-      transfer_restriction_delay: params.transferRestrictionDelay ?? 0,
-      max_percentage_buy_launch: params.maxPercentageBuyLaunch ?? 200,
-      quote_address: params.quoteToken,
-      initial_holders: params.initialHolders,
-      initial_holders_amounts: params.initialHoldersAmounts.map((a) => BigInt(a)),
-    };
-    const ekuboParameters = {
-      fee: BigInt(ek.fee),
-      tick_spacing: BigInt(ek.tickSpacing),
-      starting_price: { mag: BigInt(ek.startingPrice.mag), sign: ek.startingPrice.sign },
-      bound: BigInt(ek.bound),
-    };
-
-    const calls: Call[] = [];
-    if (params.quoteFundAmount !== undefined) {
-      const amt = uint256.bnToUint256(BigInt(params.quoteFundAmount));
-      calls.push({
-        contractAddress: params.quoteToken,
-        entrypoint: "transfer",
-        calldata: [this.factoryAddress, amt.low, amt.high],
-      });
-    }
-    calls.push(factory.populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
-
-    const res = await account.execute(calls);
+    const res = await account.execute(buildLaunchOnEkuboCalls(params));
     return { txHash: res.transaction_hash };
   }
 

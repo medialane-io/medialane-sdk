@@ -67,8 +67,16 @@ export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, D
 export { PopService } from "./services/pop.js";
 export { DropService } from "./services/drop.js";
 export { ERC1155CollectionService } from "./services/erc1155collection.js";
-export { CreatorCoinService, VALIDATED_EKUBO_PARAMS, getCreatorCoinPrice } from "./services/creatorCoin.js";
+export {
+  CreatorCoinService,
+  VALIDATED_EKUBO_PARAMS,
+  getCreatorCoinPrice,
+  buildCreateCreatorCoinCall,
+  buildLaunchOnEkuboCalls,
+  parseCreatorCoinCreated,
+} from "./services/creatorCoin.js";
 export type {
+  CreatorCoinReceiptLike,
   CreateCreatorCoinParams,
   EkuboLaunchParams,
   EkuboPoolParams,
