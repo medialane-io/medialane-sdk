@@ -128,15 +128,24 @@ export async function getCreatorCoinPrice(
 // paymaster flows) need the calls, not an executor. The service methods below
 // build on these — one calldata source for every app.
 
-const factoryContract = new Contract(
-  CreatorCoinFactoryABI as any,
-  CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
-);
+// Lazy — constructing at module scope breaks the "no side effects at import
+// time" convention and crashes CJS-interop consumers whose ABI barrel hasn't
+// evaluated yet (dapp webpack build, 2026-06-10).
+let _factoryContract: Contract | null = null;
+function factoryContract(): Contract {
+  if (!_factoryContract) {
+    _factoryContract = new Contract(
+      CreatorCoinFactoryABI as any,
+      CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
+    );
+  }
+  return _factoryContract;
+}
 
 /** Build the `create_creator_coin` call (full supply minted to the Factory). */
 export function buildCreateCreatorCoinCall(params: CreateCreatorCoinParams): Call {
   const salt = params.salt ?? BigInt("0x" + Date.now().toString(16));
-  return factoryContract.populate("create_creator_coin", [
+  return factoryContract().populate("create_creator_coin", [
     params.owner,
     params.name,
     params.symbol,
@@ -176,7 +185,7 @@ export function buildLaunchOnEkuboCalls(params: EkuboLaunchParams): Call[] {
       calldata: [CREATOR_COIN_FACTORY_CONTRACT_MAINNET, amt.low, amt.high],
     });
   }
-  calls.push(factoryContract.populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
+  calls.push(factoryContract().populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
   return calls;
 }
 

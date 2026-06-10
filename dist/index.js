@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { cairo, num, Contract, uint256, RpcProvider, TypedDataRevision, shortString, constants } from 'starknet';
+import { hash, cairo, num, Contract, uint256, RpcProvider, TypedDataRevision, shortString, constants } from 'starknet';
 
 // src/config.ts
 
@@ -5395,12 +5395,12 @@ function normalizeAddress(address) {
     throw new Error(`Invalid Starknet address: "${address}"`);
   }
 }
-function normalizeHash(hash) {
+function normalizeHash(hash2) {
   try {
-    const hex = num.toHex(BigInt(hash));
+    const hex = num.toHex(BigInt(hash2));
     return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
   } catch {
-    throw new Error(`Invalid Starknet hash: "${hash}"`);
+    throw new Error(`Invalid Starknet hash: "${hash2}"`);
   }
 }
 function shortenAddress(address, chars = 4) {
@@ -6317,6 +6317,73 @@ async function getCreatorCoinPrice(coinAddress, provider) {
   const quotePerCoin = (quoteIsToken0 ? 1 / priceT1perT0 : priceT1perT0) * decAdj;
   return { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals };
 }
+var _factoryContract = null;
+function factoryContract() {
+  if (!_factoryContract) {
+    _factoryContract = new Contract(
+      CreatorCoinFactoryABI,
+      CREATOR_COIN_FACTORY_CONTRACT_MAINNET
+    );
+  }
+  return _factoryContract;
+}
+function buildCreateCreatorCoinCall(params) {
+  const salt = params.salt ?? BigInt("0x" + Date.now().toString(16));
+  return factoryContract().populate("create_creator_coin", [
+    params.owner,
+    params.name,
+    params.symbol,
+    BigInt(params.initialSupply),
+    BigInt(salt)
+  ]);
+}
+function buildLaunchOnEkuboCalls(params) {
+  const ek = params.ekubo ?? VALIDATED_EKUBO_PARAMS;
+  const launchParameters = {
+    creator_coin_address: params.creatorCoin,
+    transfer_restriction_delay: params.transferRestrictionDelay ?? 0,
+    max_percentage_buy_launch: params.maxPercentageBuyLaunch ?? 200,
+    quote_address: params.quoteToken,
+    initial_holders: params.initialHolders,
+    initial_holders_amounts: params.initialHoldersAmounts.map((a) => BigInt(a))
+  };
+  const ekuboParameters = {
+    fee: BigInt(ek.fee),
+    tick_spacing: BigInt(ek.tickSpacing),
+    starting_price: { mag: BigInt(ek.startingPrice.mag), sign: ek.startingPrice.sign },
+    bound: BigInt(ek.bound)
+  };
+  const calls = [];
+  if (params.quoteFundAmount !== void 0) {
+    const amt = uint256.bnToUint256(BigInt(params.quoteFundAmount));
+    calls.push({
+      contractAddress: params.quoteToken,
+      entrypoint: "transfer",
+      calldata: [CREATOR_COIN_FACTORY_CONTRACT_MAINNET, amt.low, amt.high]
+    });
+  }
+  calls.push(factoryContract().populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
+  return calls;
+}
+var CREATOR_COIN_CREATED_SELECTOR = hash.getSelectorFromName("CreatorCoinCreated");
+function parseCreatorCoinCreated(receipt) {
+  const factory = normalizeAddress(CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
+  for (const ev of receipt?.events ?? []) {
+    let from;
+    try {
+      from = normalizeAddress(ev.from_address ?? "");
+    } catch {
+      continue;
+    }
+    if (from !== factory) continue;
+    const k0 = ev.keys?.[0];
+    if (!k0 || normalizeAddress(k0) !== normalizeAddress(CREATOR_COIN_CREATED_SELECTOR)) continue;
+    const data = ev.data ?? [];
+    if (data.length < 1) continue;
+    return normalizeAddress(data[data.length - 1]);
+  }
+  throw new Error("Coin deployed but the coin address could not be read from the receipt");
+}
 var CreatorCoinService = class {
   constructor(config) {
     this.factoryAddress = CREATOR_COIN_FACTORY_CONTRACT_MAINNET;
@@ -6327,15 +6394,7 @@ var CreatorCoinService = class {
   }
   /** Deploy a fixed-supply CreatorCoin (full supply minted to the Factory). */
   async createCreatorCoin(account, params) {
-    const salt = params.salt ?? BigInt("0x" + Date.now().toString(16));
-    const call = this._factory(account).populate("create_creator_coin", [
-      params.owner,
-      params.name,
-      params.symbol,
-      BigInt(params.initialSupply),
-      BigInt(salt)
-    ]);
-    const res = await account.execute([call]);
+    const res = await account.execute([buildCreateCreatorCoinCall(params)]);
     return { txHash: res.transaction_hash };
   }
   /**
@@ -6344,33 +6403,7 @@ var CreatorCoinService = class {
    * locked in the EkuboLauncher.
    */
   async launchOnEkubo(account, params) {
-    const ek = params.ekubo ?? VALIDATED_EKUBO_PARAMS;
-    const factory = this._factory(account);
-    const launchParameters = {
-      creator_coin_address: params.creatorCoin,
-      transfer_restriction_delay: params.transferRestrictionDelay ?? 0,
-      max_percentage_buy_launch: params.maxPercentageBuyLaunch ?? 200,
-      quote_address: params.quoteToken,
-      initial_holders: params.initialHolders,
-      initial_holders_amounts: params.initialHoldersAmounts.map((a) => BigInt(a))
-    };
-    const ekuboParameters = {
-      fee: BigInt(ek.fee),
-      tick_spacing: BigInt(ek.tickSpacing),
-      starting_price: { mag: BigInt(ek.startingPrice.mag), sign: ek.startingPrice.sign },
-      bound: BigInt(ek.bound)
-    };
-    const calls = [];
-    if (params.quoteFundAmount !== void 0) {
-      const amt = uint256.bnToUint256(BigInt(params.quoteFundAmount));
-      calls.push({
-        contractAddress: params.quoteToken,
-        entrypoint: "transfer",
-        calldata: [this.factoryAddress, amt.low, amt.high]
-      });
-    }
-    calls.push(factory.populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
-    const res = await account.execute(calls);
+    const res = await account.execute(buildLaunchOnEkuboCalls(params));
     return { txHash: res.transaction_hash };
   }
   /** View: is this address a Factory-deployed Creator Coin? */
@@ -6626,6 +6659,6 @@ function getServicesByCapability(cap) {
   );
 }
 
-export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, CollectionRegistryABI, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, VALIDATED_EKUBO_PARAMS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildFeeCall, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, CollectionRegistryABI, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, VALIDATED_EKUBO_PARAMS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, parseCreatorCoinCreated, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

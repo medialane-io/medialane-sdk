@@ -5397,12 +5397,12 @@ function normalizeAddress(address) {
     throw new Error(`Invalid Starknet address: "${address}"`);
   }
 }
-function normalizeHash(hash) {
+function normalizeHash(hash2) {
   try {
-    const hex = starknet.num.toHex(BigInt(hash));
+    const hex = starknet.num.toHex(BigInt(hash2));
     return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
   } catch {
-    throw new Error(`Invalid Starknet hash: "${hash}"`);
+    throw new Error(`Invalid Starknet hash: "${hash2}"`);
   }
 }
 function shortenAddress(address, chars = 4) {
@@ -6319,6 +6319,73 @@ async function getCreatorCoinPrice(coinAddress, provider) {
   const quotePerCoin = (quoteIsToken0 ? 1 / priceT1perT0 : priceT1perT0) * decAdj;
   return { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals };
 }
+var _factoryContract = null;
+function factoryContract() {
+  if (!_factoryContract) {
+    _factoryContract = new starknet.Contract(
+      CreatorCoinFactoryABI,
+      CREATOR_COIN_FACTORY_CONTRACT_MAINNET
+    );
+  }
+  return _factoryContract;
+}
+function buildCreateCreatorCoinCall(params) {
+  const salt = params.salt ?? BigInt("0x" + Date.now().toString(16));
+  return factoryContract().populate("create_creator_coin", [
+    params.owner,
+    params.name,
+    params.symbol,
+    BigInt(params.initialSupply),
+    BigInt(salt)
+  ]);
+}
+function buildLaunchOnEkuboCalls(params) {
+  const ek = params.ekubo ?? VALIDATED_EKUBO_PARAMS;
+  const launchParameters = {
+    creator_coin_address: params.creatorCoin,
+    transfer_restriction_delay: params.transferRestrictionDelay ?? 0,
+    max_percentage_buy_launch: params.maxPercentageBuyLaunch ?? 200,
+    quote_address: params.quoteToken,
+    initial_holders: params.initialHolders,
+    initial_holders_amounts: params.initialHoldersAmounts.map((a) => BigInt(a))
+  };
+  const ekuboParameters = {
+    fee: BigInt(ek.fee),
+    tick_spacing: BigInt(ek.tickSpacing),
+    starting_price: { mag: BigInt(ek.startingPrice.mag), sign: ek.startingPrice.sign },
+    bound: BigInt(ek.bound)
+  };
+  const calls = [];
+  if (params.quoteFundAmount !== void 0) {
+    const amt = starknet.uint256.bnToUint256(BigInt(params.quoteFundAmount));
+    calls.push({
+      contractAddress: params.quoteToken,
+      entrypoint: "transfer",
+      calldata: [CREATOR_COIN_FACTORY_CONTRACT_MAINNET, amt.low, amt.high]
+    });
+  }
+  calls.push(factoryContract().populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
+  return calls;
+}
+var CREATOR_COIN_CREATED_SELECTOR = starknet.hash.getSelectorFromName("CreatorCoinCreated");
+function parseCreatorCoinCreated(receipt) {
+  const factory = normalizeAddress(CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
+  for (const ev of receipt?.events ?? []) {
+    let from;
+    try {
+      from = normalizeAddress(ev.from_address ?? "");
+    } catch {
+      continue;
+    }
+    if (from !== factory) continue;
+    const k0 = ev.keys?.[0];
+    if (!k0 || normalizeAddress(k0) !== normalizeAddress(CREATOR_COIN_CREATED_SELECTOR)) continue;
+    const data = ev.data ?? [];
+    if (data.length < 1) continue;
+    return normalizeAddress(data[data.length - 1]);
+  }
+  throw new Error("Coin deployed but the coin address could not be read from the receipt");
+}
 var CreatorCoinService = class {
   constructor(config) {
     this.factoryAddress = CREATOR_COIN_FACTORY_CONTRACT_MAINNET;
@@ -6329,15 +6396,7 @@ var CreatorCoinService = class {
   }
   /** Deploy a fixed-supply CreatorCoin (full supply minted to the Factory). */
   async createCreatorCoin(account, params) {
-    const salt = params.salt ?? BigInt("0x" + Date.now().toString(16));
-    const call = this._factory(account).populate("create_creator_coin", [
-      params.owner,
-      params.name,
-      params.symbol,
-      BigInt(params.initialSupply),
-      BigInt(salt)
-    ]);
-    const res = await account.execute([call]);
+    const res = await account.execute([buildCreateCreatorCoinCall(params)]);
     return { txHash: res.transaction_hash };
   }
   /**
@@ -6346,33 +6405,7 @@ var CreatorCoinService = class {
    * locked in the EkuboLauncher.
    */
   async launchOnEkubo(account, params) {
-    const ek = params.ekubo ?? VALIDATED_EKUBO_PARAMS;
-    const factory = this._factory(account);
-    const launchParameters = {
-      creator_coin_address: params.creatorCoin,
-      transfer_restriction_delay: params.transferRestrictionDelay ?? 0,
-      max_percentage_buy_launch: params.maxPercentageBuyLaunch ?? 200,
-      quote_address: params.quoteToken,
-      initial_holders: params.initialHolders,
-      initial_holders_amounts: params.initialHoldersAmounts.map((a) => BigInt(a))
-    };
-    const ekuboParameters = {
-      fee: BigInt(ek.fee),
-      tick_spacing: BigInt(ek.tickSpacing),
-      starting_price: { mag: BigInt(ek.startingPrice.mag), sign: ek.startingPrice.sign },
-      bound: BigInt(ek.bound)
-    };
-    const calls = [];
-    if (params.quoteFundAmount !== void 0) {
-      const amt = starknet.uint256.bnToUint256(BigInt(params.quoteFundAmount));
-      calls.push({
-        contractAddress: params.quoteToken,
-        entrypoint: "transfer",
-        calldata: [this.factoryAddress, amt.low, amt.high]
-      });
-    }
-    calls.push(factory.populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
-    const res = await account.execute(calls);
+    const res = await account.execute(buildLaunchOnEkuboCalls(params));
     return { txHash: res.transaction_hash };
   }
   /** View: is this address a Factory-deployed Creator Coin? */
@@ -6685,7 +6718,9 @@ exports.VALIDATED_EKUBO_PARAMS = VALIDATED_EKUBO_PARAMS;
 exports.build1155CancellationTypedData = build1155CancellationTypedData;
 exports.build1155OrderTypedData = build1155OrderTypedData;
 exports.buildCancellationTypedData = buildCancellationTypedData;
+exports.buildCreateCreatorCoinCall = buildCreateCreatorCoinCall;
 exports.buildFeeCall = buildFeeCall;
+exports.buildLaunchOnEkuboCalls = buildLaunchOnEkuboCalls;
 exports.buildOrderTypedData = buildOrderTypedData;
 exports.createFailoverFetch = createFailoverFetch;
 exports.encodeByteArray = encodeByteArray;
@@ -6702,6 +6737,7 @@ exports.listServices = listServices;
 exports.normalizeAddress = normalizeAddress;
 exports.normalizeHash = normalizeHash;
 exports.parseAmount = parseAmount;
+exports.parseCreatorCoinCreated = parseCreatorCoinCreated;
 exports.resolveConfig = resolveConfig;
 exports.resolveFeeConfig = resolveFeeConfig;
 exports.shortenAddress = shortenAddress;
