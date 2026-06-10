@@ -102,11 +102,6 @@ export const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7
 export const COLLECTION_1155_CONTRACT_MAINNET =
   "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc";
 
-/** Prior ERC-1155 factory (v0.2.0, caller-supplied timestamp ids, mint_item).
- *  Kept so the indexer can still recognise collections deployed before cutover. */
-export const COLLECTION_1155_CONTRACT_LEGACY_MAINNET =
-  "0x067064adcaaed61e17bf50ea802ea6482336126aec5b4d032b4ff8fbb5009131";
-
 /** Class hash of the IPCollectionFactory v0.3.0 implementation. */
 export const COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET =
   "0x331a69da8655a882ba1fbcb55188b8fa09116521db901bbbaafc9fead0689f8";
@@ -117,9 +112,6 @@ export const COLLECTION_1155_CLASS_HASH_MAINNET =
 
 /** First mainnet block of the v0.3.0 ERC-1155 factory deployment. */
 export const COLLECTION_1155_START_BLOCK_MAINNET = 10665319;
-
-/** First mainnet block of the prior (v0.2.0) ERC-1155 factory. */
-export const COLLECTION_1155_START_BLOCK_LEGACY_MAINNET = 10045611;
 
 // ─── Creator Coin ────────────────────────────────────────────────────────────
 // Faithful fork of unruggable.meme, Ekubo-only, deployed mainnet 2026-06-04.
