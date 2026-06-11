@@ -6467,6 +6467,46 @@ var MedialaneClient = class {
 // src/types/api.ts
 var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
 
+// src/services/coinLaunchMath.ts
+var COIN_DECIMALS2 = 18;
+var LAUNCH_PRICE_QUOTE_PER_COIN = 0.01;
+var MIN_SUPPLY = 1000n;
+var MAX_SUPPLY = 1000000000000n;
+var MAX_FELT_BYTES = 31;
+function byteLen(s) {
+  return new TextEncoder().encode(s).length;
+}
+function validateName(s) {
+  if (!s.trim()) return "Name is required";
+  if (byteLen(s) > MAX_FELT_BYTES) return `Name must be at most ${MAX_FELT_BYTES} bytes`;
+  return null;
+}
+function validateSymbol(s) {
+  if (!s.trim()) return "Symbol is required";
+  if (byteLen(s) > MAX_FELT_BYTES) return `Symbol must be at most ${MAX_FELT_BYTES} bytes`;
+  return null;
+}
+function validateSupply(human) {
+  if (!/^\d+$/.test(human.trim())) return "Supply must be a whole number";
+  const v = BigInt(human.trim());
+  if (v < MIN_SUPPLY) return `Supply must be at least ${MIN_SUPPLY.toString()}`;
+  if (v > MAX_SUPPLY) return `Supply must be at most ${MAX_SUPPLY.toString()}`;
+  return null;
+}
+function toRaw(human, decimals = COIN_DECIMALS2) {
+  return human * 10n ** BigInt(decimals);
+}
+function teamCoinsRaw(supplyRaw, pct) {
+  const bps = BigInt(Math.round(pct * 100));
+  return supplyRaw * bps / 10000n;
+}
+function buybackQuoteRaw(teamCoinsRawValue, quoteDecimals) {
+  return teamCoinsRawValue * 10n ** BigInt(quoteDecimals) / (100n * 10n ** BigInt(COIN_DECIMALS2));
+}
+function fdvHuman(supplyHuman) {
+  return supplyHuman * LAUNCH_PRICE_QUOTE_PER_COIN;
+}
+
 // src/services/registry.ts
 var SERVICES = {
   "mip-erc721": {
@@ -6659,6 +6699,6 @@ function getServicesByCapability(cap) {
   );
 }
 
-export { ApiClient, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, CollectionRegistryABI, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, VALIDATED_EKUBO_PARAMS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, createFailoverFetch, encodeByteArray, formatAmount, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, parseCreatorCoinCreated, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, u256ToBigInt };
+export { ApiClient, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, CollectionRegistryABI, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, LAUNCH_PRICE_QUOTE_PER_COIN, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, VALIDATED_EKUBO_PARAMS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createFailoverFetch, encodeByteArray, fdvHuman, formatAmount, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, parseCreatorCoinCreated, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

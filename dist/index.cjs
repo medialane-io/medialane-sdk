@@ -6469,6 +6469,46 @@ var MedialaneClient = class {
 // src/types/api.ts
 var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
 
+// src/services/coinLaunchMath.ts
+var COIN_DECIMALS2 = 18;
+var LAUNCH_PRICE_QUOTE_PER_COIN = 0.01;
+var MIN_SUPPLY = 1000n;
+var MAX_SUPPLY = 1000000000000n;
+var MAX_FELT_BYTES = 31;
+function byteLen(s) {
+  return new TextEncoder().encode(s).length;
+}
+function validateName(s) {
+  if (!s.trim()) return "Name is required";
+  if (byteLen(s) > MAX_FELT_BYTES) return `Name must be at most ${MAX_FELT_BYTES} bytes`;
+  return null;
+}
+function validateSymbol(s) {
+  if (!s.trim()) return "Symbol is required";
+  if (byteLen(s) > MAX_FELT_BYTES) return `Symbol must be at most ${MAX_FELT_BYTES} bytes`;
+  return null;
+}
+function validateSupply(human) {
+  if (!/^\d+$/.test(human.trim())) return "Supply must be a whole number";
+  const v = BigInt(human.trim());
+  if (v < MIN_SUPPLY) return `Supply must be at least ${MIN_SUPPLY.toString()}`;
+  if (v > MAX_SUPPLY) return `Supply must be at most ${MAX_SUPPLY.toString()}`;
+  return null;
+}
+function toRaw(human, decimals = COIN_DECIMALS2) {
+  return human * 10n ** BigInt(decimals);
+}
+function teamCoinsRaw(supplyRaw, pct) {
+  const bps = BigInt(Math.round(pct * 100));
+  return supplyRaw * bps / 10000n;
+}
+function buybackQuoteRaw(teamCoinsRawValue, quoteDecimals) {
+  return teamCoinsRawValue * 10n ** BigInt(quoteDecimals) / (100n * 10n ** BigInt(COIN_DECIMALS2));
+}
+function fdvHuman(supplyHuman) {
+  return supplyHuman * LAUNCH_PRICE_QUOTE_PER_COIN;
+}
+
 // src/services/registry.ts
 var SERVICES = {
   "mip-erc721": {
@@ -6662,6 +6702,8 @@ function getServicesByCapability(cap) {
 }
 
 exports.ApiClient = ApiClient;
+exports.COIN_MAX_SUPPLY = MAX_SUPPLY;
+exports.COIN_MIN_SUPPLY = MIN_SUPPLY;
 exports.COLLECTION_1155_CLASS_HASH_MAINNET = COLLECTION_1155_CLASS_HASH_MAINNET;
 exports.COLLECTION_1155_CONTRACT_MAINNET = COLLECTION_1155_CONTRACT_MAINNET;
 exports.COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET;
@@ -6692,6 +6734,7 @@ exports.IPCollectionABI = IPCollectionABI;
 exports.IPMarketplaceABI = IPMarketplaceABI;
 exports.IPNFT_CLASS_HASH_MAINNET = IPNFT_CLASS_HASH_MAINNET;
 exports.IPNftABI = IPNftABI;
+exports.LAUNCH_PRICE_QUOTE_PER_COIN = LAUNCH_PRICE_QUOTE_PER_COIN;
 exports.MARKETPLACE_1155_CLASS_HASH_MAINNET = MARKETPLACE_1155_CLASS_HASH_MAINNET;
 exports.MARKETPLACE_1155_CONTRACT_MAINNET = MARKETPLACE_1155_CONTRACT_MAINNET;
 exports.MARKETPLACE_1155_START_BLOCK_MAINNET = MARKETPLACE_1155_START_BLOCK_MAINNET;
@@ -6722,8 +6765,11 @@ exports.buildCreateCreatorCoinCall = buildCreateCreatorCoinCall;
 exports.buildFeeCall = buildFeeCall;
 exports.buildLaunchOnEkuboCalls = buildLaunchOnEkuboCalls;
 exports.buildOrderTypedData = buildOrderTypedData;
+exports.buybackQuoteRaw = buybackQuoteRaw;
+exports.coinToRaw = toRaw;
 exports.createFailoverFetch = createFailoverFetch;
 exports.encodeByteArray = encodeByteArray;
+exports.fdvHuman = fdvHuman;
 exports.formatAmount = formatAmount;
 exports.getCreatorCoinPrice = getCreatorCoinPrice;
 exports.getListableTokens = getListableTokens;
@@ -6742,6 +6788,10 @@ exports.resolveConfig = resolveConfig;
 exports.resolveFeeConfig = resolveFeeConfig;
 exports.shortenAddress = shortenAddress;
 exports.stringifyBigInts = stringifyBigInts;
+exports.teamCoinsRaw = teamCoinsRaw;
 exports.u256ToBigInt = u256ToBigInt;
+exports.validateCoinName = validateName;
+exports.validateCoinSupply = validateSupply;
+exports.validateCoinSymbol = validateSymbol;
 //# sourceMappingURL=index.cjs.map
 //# sourceMappingURL=index.cjs.map

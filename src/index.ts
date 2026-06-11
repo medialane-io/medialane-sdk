@@ -75,6 +75,18 @@ export {
   buildLaunchOnEkuboCalls,
   parseCreatorCoinCreated,
 } from "./services/creatorCoin.js";
+export {
+  validateName as validateCoinName,
+  validateSymbol as validateCoinSymbol,
+  validateSupply as validateCoinSupply,
+  toRaw as coinToRaw,
+  teamCoinsRaw,
+  buybackQuoteRaw,
+  fdvHuman,
+  LAUNCH_PRICE_QUOTE_PER_COIN,
+  MIN_SUPPLY as COIN_MIN_SUPPLY,
+  MAX_SUPPLY as COIN_MAX_SUPPLY,
+} from "./services/coinLaunchMath.js";
 export type {
   CreatorCoinReceiptLike,
   CreateCreatorCoinParams,
