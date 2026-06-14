@@ -75,11 +75,11 @@ export interface ServiceDefinition {
   description: string;
   standard: "ERC721" | "ERC1155" | "ERC20" | "UNKNOWN";
   provenance: "MEDIALANE" | "EXTERNAL";
-  onchain?: {
+  onchain?: Partial<Record<import("../chains.js").Chain, {
     factoryAddress?: string;
     classHash?: string;
     startBlock?: number;
-  };
+  }>>;
   /** Drives the dapp asset/collection page variant. */
   uiVariant: string;
   capabilities: ServiceCapability[];
