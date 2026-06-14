@@ -72,8 +72,8 @@ export class MedialaneClient {
     }
   }
 
-  get network() {
-    return this.config.network;
+  get chain() {
+    return this.config.chain;
   }
 
   get rpcUrl() {

@@ -1,21 +1,16 @@
 import { z } from "zod";
-import {
-  SUPPORTED_NETWORKS,
-  DEFAULT_RPC_URL,
-  MARKETPLACE_721_CONTRACT_MAINNET,
-  COLLECTION_721_CONTRACT_MAINNET,
-  COLLECTION_1155_CONTRACT_MAINNET,
-  MARKETPLACE_1155_CONTRACT_MAINNET,
-  type Network,
-} from "./constants.js";
+import { CHAINS, getCoordinates, DEFAULT_CHAIN, type Chain } from "./chains.js";
 import type { RetryOptions } from "./utils/retry.js";
 import { FeeConfigSchema, resolveFeeConfig, type ResolvedFeeConfig } from "./fee/index.js";
 
 export const MedialaneConfigSchema = z.object({
-  network: z.enum(SUPPORTED_NETWORKS).default("mainnet"),
+  // Chain-scoped client (spec 2026-06-13 Decision B): one client per chain,
+  // coordinates resolved from the registry. Replaces the removed `network` axis.
+  chain: z.enum(CHAINS).default(DEFAULT_CHAIN),
   rpcUrl: z.string().url().optional(),
   backendUrl: z.string().url().optional(),
   apiKey: z.string().optional(),
+  // Per-contract overrides remain for tests/forks; default from the registry.
   marketplace721Contract: z.string().optional(),
   marketplaceContract: z.string().optional(),
   marketplace1155Contract: z.string().optional(),
@@ -33,7 +28,7 @@ export const MedialaneConfigSchema = z.object({
 export type MedialaneConfig = z.input<typeof MedialaneConfigSchema>;
 
 export interface ResolvedConfig {
-  network: Network;
+  chain: Chain;
   rpcUrl: string;
   backendUrl: string | undefined;
   apiKey: string | undefined;
@@ -49,23 +44,24 @@ export interface ResolvedConfig {
 
 export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
   const parsed = MedialaneConfigSchema.parse(raw);
+  const coords = getCoordinates(parsed.chain);
 
   const marketplace721Contract =
-    parsed.marketplace721Contract ?? parsed.marketplaceContract ?? MARKETPLACE_721_CONTRACT_MAINNET;
+    parsed.marketplace721Contract ?? parsed.marketplaceContract ?? coords.marketplace721!;
   const collection721Contract =
-    parsed.collection721Contract ?? parsed.collectionContract ?? COLLECTION_721_CONTRACT_MAINNET;
+    parsed.collection721Contract ?? parsed.collectionContract ?? coords.collection721!;
 
   return {
-    network: parsed.network,
-    rpcUrl: parsed.rpcUrl ?? DEFAULT_RPC_URL,
+    chain: parsed.chain,
+    rpcUrl: parsed.rpcUrl ?? coords.rpcUrl,
     backendUrl: parsed.backendUrl,
     apiKey: parsed.apiKey,
     marketplace721Contract,
     marketplaceContract: marketplace721Contract,
-    marketplace1155Contract: parsed.marketplace1155Contract ?? MARKETPLACE_1155_CONTRACT_MAINNET,
+    marketplace1155Contract: parsed.marketplace1155Contract ?? coords.marketplace1155!,
     collection721Contract,
     collectionContract: collection721Contract,
-    collection1155Contract: parsed.collection1155Contract ?? COLLECTION_1155_CONTRACT_MAINNET,
+    collection1155Contract: parsed.collection1155Contract ?? coords.collection1155!,
     retryOptions: parsed.retryOptions,
     feeConfig: resolveFeeConfig(parsed.feeConfig),
   };

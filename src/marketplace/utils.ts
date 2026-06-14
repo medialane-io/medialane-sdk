@@ -48,7 +48,12 @@ export function toSignatureArray(sig: unknown): string[] {
   return [s.r.toString(), s.s.toString()];
 }
 
-export function getChainId(_config: ResolvedConfig): constants.StarknetChainId {
+export function getChainId(config: ResolvedConfig): constants.StarknetChainId {
+  // SNIP-12 signing is Starknet-only today; EVM/Solana signing arrives behind
+  // the verify seam (spec 2026-06-13 §3.4), not here.
+  if (config.chain !== "STARKNET") {
+    throw new Error(`SNIP-12 signing is Starknet-only; got chain "${config.chain}"`);
+  }
   return constants.StarknetChainId.SN_MAIN;
 }
 
