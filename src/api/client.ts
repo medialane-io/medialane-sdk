@@ -8,6 +8,8 @@ import type {
   ApiCounterOffersQuery,
   ApiToken,
   ApiCollection,
+  ApiCoin,
+  ApiCoinsQuery,
   ApiCollectionProfile,
   ApiCreatorProfile,
   ApiCreatorListResult,
@@ -825,6 +827,23 @@ export class ApiClient {
       `/v1/pop/eligibility/${this.addr(collection)}?${params}`
     );
     return res.data;
+  }
+
+  // ─── Coins (fungible — ERC-20 etc.) ───────────────────────────────────────────
+  // Coins are a separate model from Collections (spec 2026-06-14). Price/liquidity
+  // is read live from Ekubo (CreatorCoinService.getPrice), never from these.
+
+  getCoins(opts: ApiCoinsQuery = {}): Promise<ApiResponse<ApiCoin[]>> {
+    const params = new URLSearchParams();
+    if (opts.page) params.set("page", String(opts.page));
+    if (opts.limit) params.set("limit", String(opts.limit));
+    if (opts.service) params.set("service", opts.service);
+    const qs = params.toString();
+    return this.get<ApiResponse<ApiCoin[]>>(`/v1/coins${qs ? `?${qs}` : ""}`);
+  }
+
+  getCoin(contract: string): Promise<{ data: ApiCoin }> {
+    return this.get<{ data: ApiCoin }>(`/v1/coins/${this.addr(contract)}`);
   }
 
   // ─── Collection Drop ────────────────────────────────────────────────────────
