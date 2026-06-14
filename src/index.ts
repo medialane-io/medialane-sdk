@@ -54,11 +54,17 @@ export {
   CREATOR_COIN_START_BLOCK_MAINNET,
   EKUBO_CORE_MAINNET,
   SUPPORTED_TOKENS,
-  SUPPORTED_NETWORKS,
-  DEFAULT_RPC_URL,
-  type Network,
   type SupportedTokenSymbol,
 } from "./constants.js";
+
+// Chain registry — coordinates keyed by chain (single source; spec 2026-06-13 §3.1)
+export {
+  CHAINS,
+  getCoordinates,
+  DEFAULT_CHAIN,
+  type Chain,
+  type ChainCoordinates,
+} from "./chains.js";
 
 // ABI
 export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, CollectionRegistryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI } from "./abis/index.js";

@@ -85,13 +85,6 @@ export type SupportedTokenSymbol = (typeof SUPPORTED_TOKENS)[number]["symbol"];
 /** Default currency for listings and offers — Circle-native USDC on Starknet. */
 export const DEFAULT_CURRENCY: SupportedTokenSymbol = "USDC";
 
-// NOTE: SUPPORTED_NETWORKS / Network / DEFAULT_RPC_URL are removed in Task 1.5
-// once config.ts no longer imports them. Kept here transiently.
-export const SUPPORTED_NETWORKS = ["mainnet"] as const;
-export type Network = (typeof SUPPORTED_NETWORKS)[number];
-
-export const DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
-
 export const POP_COLLECTION_CLASS_HASH_MAINNET = SN.popCollectionClassHash!;
 
 export const DROP_COLLECTION_CLASS_HASH_MAINNET = SN.dropCollectionClassHash!;
