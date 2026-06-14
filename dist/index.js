@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { hash, cairo, num, Contract, uint256, RpcProvider, TypedDataRevision, shortString, constants } from 'starknet';
+import { keccak_256 } from '@noble/hashes/sha3.js';
+import { base58 } from '@scure/base';
 
 // src/config.ts
 
@@ -5432,12 +5434,46 @@ var Medialane1155Module = class {
     return build1155CancellationTypedData(params, chainId);
   }
 };
-function normalizeAddress(address) {
+function normalizeAddress(chain, address) {
+  switch (chain) {
+    case "STARKNET":
+      return normalizeStarknet(address);
+    case "ETHEREUM":
+    case "BASE":
+      return normalizeEvm(address);
+    case "SOLANA":
+      return normalizeSolana(address);
+    case "BITCOIN":
+      throw new Error("BITCOIN address normalization not implemented");
+  }
+}
+function normalizeStarknet(address) {
   try {
     const hex = num.toHex(BigInt(address));
     return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
   } catch {
-    throw new Error(`Invalid Starknet address: "${address}"`);
+    throw new Error(`Invalid STARKNET address: "${address}"`);
+  }
+}
+function normalizeEvm(address) {
+  const m = /^0x([0-9a-fA-F]{40})$/.exec(address);
+  if (!m) throw new Error(`Invalid ETHEREUM/BASE address: "${address}"`);
+  const lower = m[1].toLowerCase();
+  const hash2 = keccak_256(new TextEncoder().encode(lower));
+  let out = "0x";
+  for (let i = 0; i < 40; i++) {
+    const nibble = hash2[i >> 1] >> (i % 2 === 0 ? 4 : 0) & 15;
+    out += nibble >= 8 ? lower[i].toUpperCase() : lower[i];
+  }
+  return out;
+}
+function normalizeSolana(address) {
+  try {
+    const bytes = base58.decode(address);
+    if (bytes.length !== 32) throw new Error("not a 32-byte key");
+    return address;
+  } catch {
+    throw new Error(`Invalid SOLANA address: "${address}"`);
   }
 }
 function normalizeHash(hash2) {
@@ -5445,11 +5481,11 @@ function normalizeHash(hash2) {
     const hex = num.toHex(BigInt(hash2));
     return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
   } catch {
-    throw new Error(`Invalid Starknet hash: "${hash2}"`);
+    throw new Error(`Invalid hash: "${hash2}"`);
   }
 }
-function shortenAddress(address, chars = 4) {
-  const norm = normalizeAddress(address);
+function shortenAddress(chain, address, chars = 4) {
+  const norm = normalizeAddress(chain, address);
   return `${norm.slice(0, chars + 2)}...${norm.slice(-chars)}`;
 }
 
@@ -5503,10 +5539,15 @@ var MedialaneApiError = class extends Error {
   }
 };
 var ApiClient = class {
-  constructor(baseUrl, apiKey, retryOptions) {
+  constructor(baseUrl, apiKey, retryOptions, chain = "STARKNET") {
     this.baseUrl = baseUrl;
+    this.chain = chain;
     this.baseHeaders = apiKey ? { "x-api-key": apiKey } : {};
     this.retryOptions = retryOptions;
+  }
+  /** Normalize an address for this client's chain (chain-scoped — Decision B). */
+  addr(a) {
+    return normalizeAddress(this.chain, a);
   }
   async request(path, init) {
     const url = `${this.baseUrl.replace(/\/$/, "")}${path}`;
@@ -5569,7 +5610,7 @@ var ApiClient = class {
     if (query.sort) params.set("sort", query.sort);
     if (query.page !== void 0) params.set("page", String(query.page));
     if (query.limit !== void 0) params.set("limit", String(query.limit));
-    if (query.offerer) params.set("offerer", normalizeAddress(query.offerer));
+    if (query.offerer) params.set("offerer", this.addr(query.offerer));
     if (query.minPrice) params.set("minPrice", query.minPrice);
     if (query.maxPrice) params.set("maxPrice", query.maxPrice);
     const qs = params.toString();
@@ -5579,11 +5620,11 @@ var ApiClient = class {
     return this.get(`/v1/orders/${orderHash}`);
   }
   getActiveOrdersForToken(contract, tokenId) {
-    return this.get(`/v1/orders/token/${normalizeAddress(contract)}/${tokenId}`);
+    return this.get(`/v1/orders/token/${this.addr(contract)}/${tokenId}`);
   }
   getOrdersByUser(address, page = 1, limit = 20) {
     return this.get(
-      `/v1/orders/user/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+      `/v1/orders/user/${this.addr(address)}?page=${page}&limit=${limit}`
     );
   }
   // ─── Tokens ────────────────────────────────────────────────────────────────
@@ -5594,7 +5635,7 @@ var ApiClient = class {
   }
   getTokensByOwner(address, page = 1, limit = 20) {
     return this.get(
-      `/v1/tokens/owned/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+      `/v1/tokens/owned/${this.addr(address)}?page=${page}&limit=${limit}`
     );
   }
   getTokenHistory(contract, tokenId, page = 1, limit = 20) {
@@ -5611,15 +5652,15 @@ var ApiClient = class {
     return this.get(`/v1/collections?${params}`);
   }
   getCollectionsByOwner(owner, page = 1, limit = 50) {
-    const params = new URLSearchParams({ owner: normalizeAddress(owner), page: String(page), limit: String(limit) });
+    const params = new URLSearchParams({ owner: this.addr(owner), page: String(page), limit: String(limit) });
     return this.get(`/v1/collections?${params}`);
   }
   getCollection(contract) {
-    return this.get(`/v1/collections/${normalizeAddress(contract)}`);
+    return this.get(`/v1/collections/${this.addr(contract)}`);
   }
   getCollectionTokens(contract, page = 1, limit = 20) {
     return this.get(
-      `/v1/collections/${normalizeAddress(contract)}/tokens?page=${page}&limit=${limit}`
+      `/v1/collections/${this.addr(contract)}/tokens?page=${page}&limit=${limit}`
     );
   }
   // ─── Activities ────────────────────────────────────────────────────────────
@@ -5633,7 +5674,7 @@ var ApiClient = class {
   }
   getActivitiesByAddress(address, page = 1, limit = 20) {
     return this.get(
-      `/v1/activities/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+      `/v1/activities/${this.addr(address)}?page=${page}&limit=${limit}`
     );
   }
   // ─── Comments ──────────────────────────────────────────────────────────────
@@ -5643,7 +5684,7 @@ var ApiClient = class {
     if (opts.limit !== void 0) params.set("limit", String(opts.limit));
     const qs = params.toString();
     return this.get(
-      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/comments${qs ? `?${qs}` : ""}`
+      `/v1/tokens/${this.addr(contract)}/${tokenId}/comments${qs ? `?${qs}` : ""}`
     );
   }
   // ─── Search ────────────────────────────────────────────────────────────────
@@ -5781,7 +5822,7 @@ var ApiClient = class {
   }
   // ─── Collection Profiles ────────────────────────────────────────────────────
   async getCollectionProfile(contractAddress) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
     return this.checkResponse(res, { allow404: true });
   }
@@ -5789,7 +5830,7 @@ var ApiClient = class {
    * Update collection profile. Requires Clerk JWT for ownership check.
    */
   async updateCollectionProfile(contractAddress, data, clerkToken) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/profile`;
     const res = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -5802,7 +5843,7 @@ var ApiClient = class {
     return this.checkResponse(res);
   }
   async getGatedContent(contractAddress, clerkToken) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/gated-content`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/gated-content`;
     const res = await fetch(url, {
       headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` }
     });
@@ -5820,7 +5861,7 @@ var ApiClient = class {
     return this.checkResponse(res);
   }
   async getCreatorProfile(walletAddress) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${this.addr(walletAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
     return this.checkResponse(res, { allow404: true });
   }
@@ -5834,7 +5875,7 @@ var ApiClient = class {
    * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
    */
   async updateCreatorProfile(walletAddress, data, clerkToken) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${this.addr(walletAddress)}/profile`;
     const res = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -5934,7 +5975,7 @@ var ApiClient = class {
     if (opts.limit !== void 0) params.set("limit", String(opts.limit));
     const qs = params.toString();
     return this.get(
-      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/remixes${qs ? `?${qs}` : ""}`
+      `/v1/tokens/${this.addr(contract)}/${tokenId}/remixes${qs ? `?${qs}` : ""}`
     );
   }
   /**
@@ -6029,14 +6070,14 @@ var ApiClient = class {
   }
   async getPopEligibility(collection, wallet) {
     const res = await this.get(
-      `/v1/pop/eligibility/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
+      `/v1/pop/eligibility/${this.addr(collection)}/${this.addr(wallet)}`
     );
     return res.data;
   }
   async getPopEligibilityBatch(collection, wallets) {
-    const params = new URLSearchParams({ wallets: wallets.map(normalizeAddress).join(",") });
+    const params = new URLSearchParams({ wallets: wallets.map((w) => this.addr(w)).join(",") });
     const res = await this.get(
-      `/v1/pop/eligibility/${normalizeAddress(collection)}?${params}`
+      `/v1/pop/eligibility/${this.addr(collection)}?${params}`
     );
     return res.data;
   }
@@ -6046,7 +6087,7 @@ var ApiClient = class {
   }
   async getDropMintStatus(collection, wallet) {
     const res = await this.get(
-      `/v1/drop/mint-status/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
+      `/v1/drop/mint-status/${this.addr(collection)}/${this.addr(wallet)}`
     );
     return res.data;
   }
@@ -6056,7 +6097,7 @@ var PopService = class {
     this.factoryAddress = POP_FACTORY_CONTRACT_MAINNET;
   }
   _collection(address, account) {
-    return new Contract(POPCollectionABI, normalizeAddress(address), account);
+    return new Contract(POPCollectionABI, normalizeAddress("STARKNET", address), account);
   }
   async claim(account, collectionAddress) {
     const call = this._collection(collectionAddress, account).populate("claim", []);
@@ -6132,7 +6173,7 @@ var DropService = class {
     this.config = config;
   }
   _collection(address, account) {
-    return new Contract(DropCollectionABI, normalizeAddress(address), account);
+    return new Contract(DropCollectionABI, normalizeAddress("STARKNET", address), account);
   }
   async claim(account, collectionAddress, quantity = 1) {
     const collection = this._collection(collectionAddress, account);
@@ -6215,14 +6256,14 @@ var ERC1155CollectionService = class {
   _factory(account) {
     return new Contract(
       IPCollection1155FactoryABI,
-      normalizeAddress(this.factoryAddress),
+      normalizeAddress("STARKNET", this.factoryAddress),
       account
     );
   }
   _collection(address, account) {
     return new Contract(
       IPCollection1155ABI,
-      normalizeAddress(address),
+      normalizeAddress("STARKNET", address),
       account
     );
   }
@@ -6344,7 +6385,7 @@ async function getCreatorCoinPrice(coinAddress, provider) {
   if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return null;
   const fee = r[2];
   const tickSpacing = r[3];
-  const quoteToken = normalizeAddress("0x" + BigInt(r[7]).toString(16));
+  const quoteToken = normalizeAddress("STARKNET", "0x" + BigInt(r[7]).toString(16));
   const token = getTokenByAddress(quoteToken);
   const quoteDecimals = token?.decimals ?? 18;
   const ci = BigInt(coinAddress);
@@ -6412,20 +6453,20 @@ function buildLaunchOnEkuboCalls(params) {
 }
 var CREATOR_COIN_CREATED_SELECTOR = hash.getSelectorFromName("CreatorCoinCreated");
 function parseCreatorCoinCreated(receipt) {
-  const factory = normalizeAddress(CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
+  const factory = normalizeAddress("STARKNET", CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
   for (const ev of receipt?.events ?? []) {
     let from;
     try {
-      from = normalizeAddress(ev.from_address ?? "");
+      from = normalizeAddress("STARKNET", ev.from_address ?? "");
     } catch {
       continue;
     }
     if (from !== factory) continue;
     const k0 = ev.keys?.[0];
-    if (!k0 || normalizeAddress(k0) !== normalizeAddress(CREATOR_COIN_CREATED_SELECTOR)) continue;
+    if (!k0 || normalizeAddress("STARKNET", k0) !== normalizeAddress("STARKNET", CREATOR_COIN_CREATED_SELECTOR)) continue;
     const data = ev.data ?? [];
     if (data.length < 1) continue;
-    return normalizeAddress(data[data.length - 1]);
+    return normalizeAddress("STARKNET", data[data.length - 1]);
   }
   throw new Error("Coin deployed but the coin address could not be read from the receipt");
 }
@@ -6495,7 +6536,7 @@ var MedialaneClient = class {
         }
       });
     } else {
-      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions);
+      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions, this.config.chain);
     }
   }
   get chain() {

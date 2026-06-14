@@ -66,7 +66,7 @@ export class ERC1155CollectionService {
   private _factory(account: AccountInterface) {
     return new Contract(
       IPCollection1155FactoryABI as any,
-      normalizeAddress(this.factoryAddress),
+      normalizeAddress("STARKNET",this.factoryAddress),
       account as any
     );
   }
@@ -74,7 +74,7 @@ export class ERC1155CollectionService {
   private _collection(address: string, account: AccountInterface) {
     return new Contract(
       IPCollection1155ABI as any,
-      normalizeAddress(address),
+      normalizeAddress("STARKNET",address),
       account as any
     );
   }

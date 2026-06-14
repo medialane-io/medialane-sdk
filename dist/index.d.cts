@@ -1121,9 +1121,12 @@ declare class MedialaneApiError extends Error {
 }
 declare class ApiClient {
     private readonly baseUrl;
+    private readonly chain;
     private readonly baseHeaders;
     private readonly retryOptions;
-    constructor(baseUrl: string, apiKey?: string, retryOptions?: RetryOptions);
+    constructor(baseUrl: string, apiKey?: string, retryOptions?: RetryOptions, chain?: Chain);
+    /** Normalize an address for this client's chain (chain-scoped — Decision B). */
+    private addr;
     private request;
     private get;
     private post;
@@ -5808,28 +5811,25 @@ declare function listServices(): ServiceDefinition[];
 declare function getServicesByCapability(cap: ServiceCapability): ServiceDefinition[];
 
 /**
- * Normalize a Starknet address to a 0x-prefixed 64-character lowercase hex
- * string. Validates the input by routing through `BigInt(...)` — non-numeric
- * input throws `Invalid Starknet address: "<input>"`.
- *
- * The single source of truth for address normalization across Medialane.
+ * Normalize an address to its chain's canonical form. The single source of
+ * address normalization across Medialane (07-identity §I; spec 2026-06-13 §3.2).
  * `medialane-backend` re-exports this; do not maintain a parallel copy.
- */
-declare function normalizeAddress(address: string): string;
-/**
- * Normalize a Starknet felt/hash (tx hash, order hash, etc.) to a 0x-prefixed
- * 64-character lowercase hex string. Same shape as `normalizeAddress` — kept
- * as a separate name so the *intent* of each call site is explicit.
  *
- * Starknet RPCs and wallets may omit leading zeroes for the same value;
- * database uniqueness must not treat those textual variants as different
- * transactions.
+ * - STARKNET: 0x-prefixed 64-char lowercase hex (felt, zero-padded).
+ * - ETHEREUM / BASE: EIP-55 mixed-case checksum.
+ * - SOLANA: base58, validated as a 32-byte public key, returned verbatim.
+ * - BITCOIN: not implemented — a non-foreclosed seam, gated on a future
+ *   Bitcoin fork (chain-sovereignty §2); never a built path today.
+ */
+declare function normalizeAddress(chain: Chain, address: string): string;
+/**
+ * Normalize a felt/hash (tx hash, order hash) to 0x-prefixed 64-char lowercase
+ * hex. Starknet-shaped; chain-scoped at call sites that handle other chains'
+ * hashes.
  */
 declare function normalizeHash(hash: string): string;
-/**
- * Shorten an address to "0x1234...abcd" format.
- */
-declare function shortenAddress(address: string, chars?: number): string;
+/** Shorten an address to "0x1234...abcd" form, normalized for its chain. */
+declare function shortenAddress(chain: Chain, address: string, chars?: number): string;
 
 type SupportedToken = (typeof SUPPORTED_TOKENS)[number];
 /**
