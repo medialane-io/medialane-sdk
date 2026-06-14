@@ -64,8 +64,8 @@ yarn add @medialane/sdk starknet
 import { MedialaneClient } from "@medialane/sdk";
 
 const client = new MedialaneClient({
-  network: "mainnet",                                                         // mainnet only
-  rpcUrl: "https://rpc.starknet.lava.build",                                  // optional; defaults to Lava
+  chain: "STARKNET",                                                          // chain-scoped (default "STARKNET"); replaces `network` (v0.37.0)
+  rpcUrl: "https://rpc.starknet.lava.build",                                  // optional; defaults to the chain's registry rpcUrl
   backendUrl: "https://medialane-backend-production.up.railway.app",          // required for .api methods
   apiKey: "ml_live_...",                                                       // from Medialane Portal
 });
@@ -412,8 +412,11 @@ const token = getTokenByAddress("0x033068...");
 
 ```typescript
 import {
-  normalizeAddress,    // Pad to 64-char 0x-prefixed lowercase hex
-  shortenAddress,      // → "0x1234...5678"
+  normalizeAddress,    // (chain, address) → canonical form per chain (Starknet pad / EVM EIP-55 / Solana base58)
+  shortenAddress,      // (chain, address) → "0x1234...5678"
+  getCoordinates,      // (chain) → that chain's service coordinates from the registry
+  CHAINS,              // readonly ["STARKNET","ETHEREUM","SOLANA","BASE","BITCOIN"]
+  type Chain,
   parseAmount,         // Human-readable → smallest unit BigInt ("1.5", 6) → 1500000n
   formatAmount,        // Smallest unit → human-readable ("1500000", 6) → "1.5"
   stringifyBigInts,    // Recursively convert BigInt → string (for JSON)
@@ -454,8 +457,8 @@ try {
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `network` | `"mainnet" \| "sepolia"` | `"mainnet"` | Starknet network |
-| `rpcUrl` | `string` | Lava public endpoint | JSON-RPC URL |
+| `chain` | `Chain` (`"STARKNET" \| "ETHEREUM" \| "SOLANA" \| "BASE" \| "BITCOIN"`) | `"STARKNET"` | The chain this client is scoped to. Coordinates resolve from the `coordinates[chain]` registry (`chains.ts`). Replaces `network` (v0.37.0). |
+| `rpcUrl` | `string` | the chain's registry `rpcUrl` | JSON-RPC URL override |
 | `backendUrl` | `string` | — | Medialane API base URL (required for `.api.*`) |
 | `apiKey` | `string` | — | API key from [Medialane Portal](https://medialane.xyz) |
 | `marketplace721Contract` | `string` | Mainnet default | ERC-721 marketplace protocol override |
@@ -502,6 +505,15 @@ Built with:
 ---
 
 ## Changelog
+
+> Full history in [CHANGELOG.md](./CHANGELOG.md). Highlights below.
+
+### v0.37.0 — multichain readiness (BREAKING)
+- **Chain is a first-class axis.** New `chains.ts` `coordinates[chain]` registry is the single source of per-chain service coordinates (`CHAINS`, `getCoordinates`, `DEFAULT_CHAIN`, `Chain`, `ChainCoordinates`); the flat `*_MAINNET` constants derive from it.
+- **`MedialaneConfig.chain` replaces `network`** — the client is chain-scoped; `client.network` getter → `client.chain`.
+- **`ServiceDefinition.onchain` is per-chain** — `Partial<Record<Chain, …>>`; read `service.onchain?.STARKNET?.factoryAddress`.
+- **`normalizeAddress(chain, address)`** — per-chain codec (Starknet pad / EVM EIP-55 / Solana base58; Bitcoin not yet implemented).
+- **Removed** `SUPPORTED_NETWORKS`, `DEFAULT_RPC_URL`, `Network` (mainnet-only — coordinates key by chain alone). `getChainId(config)` throws for non-Starknet.
 
 ### v0.6.7
 - **`CollectionRegistryABI`** exported from `@medialane/sdk` — minimal ABI covering `list_user_collections` and `get_collection` on the collection registry contract. Eliminates duplicated inline ABI definitions in consuming apps.

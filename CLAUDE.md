@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.35.0",
+  "version": "0.37.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -37,9 +37,10 @@ Built with `tsup` — dual ESM + CJS output in `dist/`.
 
 ```
 src/
-  client.ts          ← MedialaneClient (root export)
-  config.ts          ← MedialaneConfig schema + resolveConfig()
-  constants.ts       ← contract addresses, SUPPORTED_TOKENS, DEFAULT_RPC_URL
+  client.ts          ← MedialaneClient (chain-scoped, root export)
+  config.ts          ← MedialaneConfig schema (chain) + resolveConfig() (coordinates from registry)
+  chains.ts          ← coordinates[chain] registry — single source of per-chain coordinates (CHAINS, getCoordinates, Chain)
+  constants.ts       ← flat *_MAINNET re-exports (derive from chains.ts), SUPPORTED_TOKENS, selectors
   abis/              ← one file per contract ABI (split 2026-05-22)
     index.ts         ← re-exports all ABIs; keep `import { IPNftABI } from "@medialane/sdk"` working
     ipMarketplace.ts, popCollection.ts, popFactory.ts, dropCollection.ts,
@@ -95,7 +96,7 @@ src/
 > - **v0.33.0 (finish the walletType cutover)**: 0.32.0 loosened the register *output* but left the *input* typed as the dropped `ApiWalletType` enum. Now symmetric: (1) `registerUser()`/`upsertMyWallet()` **input** `walletType` is `string` (send the lowercase label directly; backend lowercases into `Identity.provider`, never gates). (2) `registerUser()` **response** field `walletType` → **`provider`** (type-only breaking; no app reads it — the dapp's `.walletType` reads are local session state). `ApiWalletType` is still exported for display. Lets the dapp drop its `toBackendWalletType` uppercase mapping; io unaffected. Spec: `medialane-core/docs/specs/2026-06-05-identity-cleanup-followups.md` (item B).
 > - **v0.34.0 (ERC-1155 v0.3.0 — sequential on-chain edition ids)**: the IP-Programmable-ERC1155 contract was redeployed (mainnet 2026-06-10) so edition ids are assigned **on-chain** (sequential from 1), replacing the app-side `Date.now()` token-id scheme + the merge-prone `mint_item`. **New mainnet addresses** (`constants.ts`): `COLLECTION_1155_CONTRACT_MAINNET` → `0x0083543c…` (new ownerless factory), `COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET` → `0x331a69da…`, `COLLECTION_1155_CLASS_HASH_MAINNET` → `0x4e110b59…`, `COLLECTION_1155_START_BLOCK_MAINNET` → `10665319`. **ABI** (`IPCollection1155ABI`, `IPCollection1155FactoryABI` regenerated from the deployed artifacts): `mint_item`/`batch_mint_item` → **`mint_edition(to,value,uri)→u256`** + **`batch_mint_edition(to,values,uris)→Span<u256>`**; new **`add_supply(to,token_id,value)`** (re-supply an existing edition, reverts if absent), **`total_editions()→u256`**, **`token_exists(id)→bool`**; factory dropped `update_collection_class_hash` + Ownable. **`ERC1155CollectionService`** (BREAKING): `mintItem`→`mintEdition`, `batchMintItem`→`batchMintEdition`, new `addSupply`; param types `MintItemParams`/`BatchMintItemParams` → `MintEditionParams`/`BatchMintEditionParams`/`AddSupplyParams`. The assigned id is read from the tx's `IPMinted` event (`keys[1]`). Contract: mediolano-contracts #134.
 > - **v0.35.0 (drop legacy ERC-1155 constants)**: removed `COLLECTION_1155_CONTRACT_LEGACY_MAINNET` + `COLLECTION_1155_START_BLOCK_LEGACY_MAINNET`. Medialane keeps no legacy protocol support — prior-version (v0.2.0) collections were reclassified `external-erc1155` (read-only) on the 2026-06-10 cutover, so the SDK no longer carries the retired factory address.
-> - **v0.37.0 (multichain-readiness foundations — BREAKING, Phase 1)**: `chain` is now a first-class axis. New `chains.ts` holds the **`coordinates[chain]` registry** (single source of per-chain service coordinates; exports `CHAINS`/`getCoordinates`/`DEFAULT_CHAIN`/`Chain`/`ChainCoordinates`). The flat `*_MAINNET` constants stay (same names/values) but **derive** from it. **`MedialaneConfig.chain` replaces `network`** (client is chain-scoped; `client.network`→`client.chain`); **`ServiceDefinition.onchain` is per-chain** (`Partial<Record<Chain,…>>` — read `.onchain?.STARKNET?.factoryAddress`); **removed `SUPPORTED_NETWORKS`/`DEFAULT_RPC_URL`/`Network`** (mainnet-only, coordinates key by chain — refines `D-9`); **`getChainId(config)` throws for non-Starknet**. Starknet behavior unchanged. Not published — branch `feat/multichain-readiness`. Spec: `medialane-core/docs/specs/2026-06-13-multichain-readiness-design.md`.
+> - **v0.37.0 (multichain-readiness foundations — BREAKING, Phase 1)**: `chain` is now a first-class axis. New `chains.ts` holds the **`coordinates[chain]` registry** (single source of per-chain service coordinates; exports `CHAINS`/`getCoordinates`/`DEFAULT_CHAIN`/`Chain`/`ChainCoordinates`). The flat `*_MAINNET` constants stay (same names/values) but **derive** from it. **`MedialaneConfig.chain` replaces `network`** (client is chain-scoped; `client.network`→`client.chain`); **`ServiceDefinition.onchain` is per-chain** (`Partial<Record<Chain,…>>` — read `.onchain?.STARKNET?.factoryAddress`); **removed `SUPPORTED_NETWORKS`/`DEFAULT_RPC_URL`/`Network`** (mainnet-only, coordinates key by chain — refines `D-9`); **`getChainId(config)` throws for non-Starknet**. Starknet behavior unchanged. **Published to npm + merged to `main` 2026-06-14** (backend on 0.37.0, deployed to prod). Spec: `medialane-core/docs/specs/2026-06-13-multichain-readiness-design.md`.
 
 ---
 
@@ -514,7 +515,7 @@ DEFAULT_RPC_URLS = {
 
 - **Runtime**: Bun. `~/.bun/bin/bun`, never `node`/`npm`/`npx`.
 - **Imports**: Use `.js` extension (ESM resolution via tsup).
-- **Address normalization**: `normalizeAddress()` is called internally in all `ApiClient` methods — callers pass any valid format, SDK normalizes before sending to the backend.
+- **Address normalization**: `normalizeAddress(chain, address)` is chain-dispatched (Starknet pad / EVM EIP-55 / Solana base58; Bitcoin throws). `ApiClient` is chain-scoped and normalizes internally via `this.addr()` using its `config.chain` — callers pass any valid format. Cairo-only services pass `"STARKNET"` explicitly.
 - **No side effects at import time** — config and contract instances are lazy/cached.
 - **Signatures**: `toSignatureArray()` handles both array format and `{ r, s }` object format from starknet.js.
 - **BigInt serialization**: `stringifyBigInts()` recursively converts BigInt to string before JSON or contract calls.
