@@ -322,8 +322,9 @@ export interface ApiCollection {
   owner: string | null;
   startBlock: string;
   metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
-  /** Token standard detected via ERC-165. */
-  standard: "ERC721" | "ERC1155" | "UNKNOWN";
+  /** Token standard detected via ERC-165. Collection is NFT-only since the
+   *  2026-06-14 coin split — fungible coins are `ApiCoin`, served by getCoins(). */
+  standard: "ERC721" | "ERC1155";
   isKnown: boolean;
   /** Hidden by ops/admin (content moderation). When true, list endpoints
    *  already filter the row out; single-collection fetches still return
@@ -342,6 +343,36 @@ export interface ApiCollection {
   totalSupply: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** A fungible coin (ERC-20 today; SPL/etc. later). Distinct from ApiCollection:
+ *  a coin has a supply + decimals + a market price (read live from Ekubo), no
+ *  tokens, no orders. Served by getCoins()/getCoin() (spec 2026-06-14). */
+export interface ApiCoin {
+  id: string;
+  chain: string;
+  contractAddress: string;
+  standard: "ERC20";
+  /** "creator-coin" | "external-erc20" */
+  service: string;
+  name: string | null;
+  symbol: string | null;
+  decimals: number;
+  /** Fungible supply as a decimal string — NOT an item count. */
+  totalSupply: string | null;
+  image: string | null;
+  creator: string | null;
+  startBlock: string;
+  isHidden: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiCoinsQuery {
+  page?: number;
+  limit?: number;
+  /** Filter by coin service id ("creator-coin" | "external-erc20"). */
+  service?: string;
 }
 
 // ─── Activities ───────────────────────────────────────────────────────────────
