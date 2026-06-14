@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.38.0] — 2026-06-14
+
+### Changed — Coin / Collection split (BREAKING)
+
+Fungible coins get their own model, distinct from NFT collections (spec `medialane-core/docs/specs/2026-06-14-coin-collection-split-design.md`). A coin is not a collection of NFTs — it has a supply, decimals, and a market price (live from Ekubo), no tokens and no orders.
+
+- **New `ApiCoin` type** + **`client.api.getCoins(opts?)` / `getCoin(contract)`** — coins are served from `/v1/coins`, never `/v1/collections`.
+- **`ApiCollection.standard` narrowed to `"ERC721" | "ERC1155"`** (BREAKING) — `Collection` is NFT-only now; the `"ERC20"`/`"UNKNOWN"` members are gone. Coins read `ApiCoin.standard` (`"ERC20"`).
+- Fetching coins via `getCollections(standard="ERC20")` is **removed** — use `getCoins()`.
+- `getCreatorCoinPrice` / `CreatorCoinService` unchanged (price stays live from Ekubo).
+
 ## [0.37.0] — 2026-06-14
 
 ### Changed — multichain-readiness foundations (BREAKING)

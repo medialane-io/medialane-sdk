@@ -6083,6 +6083,20 @@ var ApiClient = class {
     );
     return res.data;
   }
+  // ─── Coins (fungible — ERC-20 etc.) ───────────────────────────────────────────
+  // Coins are a separate model from Collections (spec 2026-06-14). Price/liquidity
+  // is read live from Ekubo (CreatorCoinService.getPrice), never from these.
+  getCoins(opts = {}) {
+    const params = new URLSearchParams();
+    if (opts.page) params.set("page", String(opts.page));
+    if (opts.limit) params.set("limit", String(opts.limit));
+    if (opts.service) params.set("service", opts.service);
+    const qs = params.toString();
+    return this.get(`/v1/coins${qs ? `?${qs}` : ""}`);
+  }
+  getCoin(contract) {
+    return this.get(`/v1/coins/${this.addr(contract)}`);
+  }
   // ─── Collection Drop ────────────────────────────────────────────────────────
   getDropCollections(opts = {}) {
     return this.getCollections(opts.page ?? 1, opts.limit ?? 20, void 0, opts.sort, "COLLECTION_DROP");
