@@ -1,70 +1,48 @@
 import { z } from 'zod';
 import { hash, cairo, num, Contract, uint256, RpcProvider, TypedDataRevision, shortString, constants } from 'starknet';
+import { keccak_256 } from '@noble/hashes/sha3.js';
+import { base58 } from '@scure/base';
 
 // src/config.ts
 
-// src/constants.ts
-var MARKETPLACE_721_CONTRACT_MAINNET = "0x069cf5391077e3ebdd9cb6aebf90ed530d29f0d6aa34a43f5afae938c0fb565e";
-var MARKETPLACE_721_CLASS_HASH_MAINNET = "0x04c6f952d747ad7ead1b3dad4c1d587837d38f8ec29d6c095a4afa5b5ece5957";
-var MARKETPLACE_721_START_BLOCK_MAINNET = 10350340;
-var MARKETPLACE_1155_CONTRACT_MAINNET = "0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077";
-var MARKETPLACE_1155_CLASS_HASH_MAINNET = "0x02600bb720908f119afe482309d36c39d087587f0df9576454acfb6363e78cd8";
-var MARKETPLACE_1155_START_BLOCK_MAINNET = 10350855;
-var COLLECTION_721_CONTRACT_MAINNET = "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2";
-var IPNFT_CLASS_HASH_MAINNET = "0x27ee4ded786d51bced1e94afec3034d6ffce71c032c45ee1ff283ccfa9db12e";
-var IPCOLLECTION_CLASS_HASH_MAINNET = "0x287ccdff8b6655a2248cfe170d82eae3a35303cd00ef3e751b25ddca26d9095";
-var COLLECTION_721_START_BLOCK_MAINNET = 10046166;
-var DROP_FACTORY_CONTRACT_MAINNET = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
-var POP_FACTORY_CONTRACT_MAINNET = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
-var NFTCOMMENTS_CONTRACT_MAINNET = "0x02cdac70c94447189af0389dfea63f4d5e4154ea8a563de288a5ab1c39e37843";
-var SUPPORTED_TOKENS = [
-  {
-    // Circle-native USDC on Starknet (canonical)
-    symbol: "USDC",
-    address: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb",
-    decimals: 6,
-    listable: true
-  },
-  {
-    symbol: "USDT",
-    address: "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8",
-    decimals: 6,
-    listable: true
-  },
-  {
-    symbol: "ETH",
-    address: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
-    decimals: 18,
-    listable: true
-  },
-  {
-    symbol: "STRK",
-    address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-    decimals: 18,
-    listable: true
-  },
-  {
-    symbol: "WBTC",
-    address: "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
-    decimals: 8,
-    listable: true
+// src/chains.ts
+var CHAINS = ["STARKNET", "ETHEREUM", "SOLANA", "BASE", "BITCOIN"];
+var COORDINATES = {
+  STARKNET: {
+    rpcUrl: "https://rpc.starknet.lava.build",
+    marketplace721: "0x069cf5391077e3ebdd9cb6aebf90ed530d29f0d6aa34a43f5afae938c0fb565e",
+    marketplace721ClassHash: "0x04c6f952d747ad7ead1b3dad4c1d587837d38f8ec29d6c095a4afa5b5ece5957",
+    marketplace721StartBlock: 10350340,
+    marketplace1155: "0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077",
+    marketplace1155ClassHash: "0x02600bb720908f119afe482309d36c39d087587f0df9576454acfb6363e78cd8",
+    marketplace1155StartBlock: 10350855,
+    collection721: "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2",
+    collection721StartBlock: 10046166,
+    ipNftClassHash: "0x27ee4ded786d51bced1e94afec3034d6ffce71c032c45ee1ff283ccfa9db12e",
+    ipCollectionClassHash: "0x287ccdff8b6655a2248cfe170d82eae3a35303cd00ef3e751b25ddca26d9095",
+    collection1155: "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc",
+    collection1155FactoryClassHash: "0x331a69da8655a882ba1fbcb55188b8fa09116521db901bbbaafc9fead0689f8",
+    collection1155ClassHash: "0x4e110b59af240ae6c7742999964c4eae13fb2ed935c47fe97653ec017ebea34",
+    collection1155StartBlock: 10665319,
+    popFactory: "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111",
+    popCollectionClassHash: "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f",
+    dropFactory: "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800",
+    dropCollectionClassHash: "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282",
+    nftComments: "0x02cdac70c94447189af0389dfea63f4d5e4154ea8a563de288a5ab1c39e37843",
+    creatorCoinFactory: "0x50fa807b5274079fb19374673d7bab6d2dc3af7e1032ea43eb6e44bcbde4c3c",
+    creatorCoinEkuboLauncher: "0x4f7fceb5ac10f12f9544a09580592e5bdf1b7f04f48765eecf12286d8ccb7b4",
+    creatorCoinClassHash: "0x743e4c8a5b96bb83bbf4af04edbbb482d5ece89eed9b729a79fb7df0cd0b6b6",
+    creatorCoinFactoryClassHash: "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55",
+    creatorCoinStartBlock: 10474544,
+    ekuboCore: "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b"
   }
-];
-var DEFAULT_CURRENCY = "USDC";
-var SUPPORTED_NETWORKS = ["mainnet"];
-var DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
-var POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
-var DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
-var COLLECTION_1155_CONTRACT_MAINNET = "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc";
-var COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = "0x331a69da8655a882ba1fbcb55188b8fa09116521db901bbbaafc9fead0689f8";
-var COLLECTION_1155_CLASS_HASH_MAINNET = "0x4e110b59af240ae6c7742999964c4eae13fb2ed935c47fe97653ec017ebea34";
-var COLLECTION_1155_START_BLOCK_MAINNET = 10665319;
-var CREATOR_COIN_FACTORY_CONTRACT_MAINNET = "0x50fa807b5274079fb19374673d7bab6d2dc3af7e1032ea43eb6e44bcbde4c3c";
-var CREATOR_COIN_EKUBO_LAUNCHER_MAINNET = "0x4f7fceb5ac10f12f9544a09580592e5bdf1b7f04f48765eecf12286d8ccb7b4";
-var CREATOR_COIN_CLASS_HASH_MAINNET = "0x743e4c8a5b96bb83bbf4af04edbbb482d5ece89eed9b729a79fb7df0cd0b6b6";
-var CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET = "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55";
-var CREATOR_COIN_START_BLOCK_MAINNET = 10474544;
-var EKUBO_CORE_MAINNET = "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b";
+};
+function getCoordinates(chain) {
+  const c = COORDINATES[chain];
+  if (!c) throw new Error(`No coordinates configured for chain "${chain}"`);
+  return c;
+}
+var DEFAULT_CHAIN = "STARKNET";
 var FeeConfigSchema = z.object({
   enabled: z.boolean().default(true),
   fundAddress: z.string().min(1).optional(),
@@ -96,10 +74,13 @@ function buildFeeCall(p, cfg) {
 
 // src/config.ts
 var MedialaneConfigSchema = z.object({
-  network: z.enum(SUPPORTED_NETWORKS).default("mainnet"),
+  // Chain-scoped client (spec 2026-06-13 Decision B): one client per chain,
+  // coordinates resolved from the registry. Replaces the removed `network` axis.
+  chain: z.enum(CHAINS).default(DEFAULT_CHAIN),
   rpcUrl: z.string().url().optional(),
   backendUrl: z.string().url().optional(),
   apiKey: z.string().optional(),
+  // Per-contract overrides remain for tests/forks; default from the registry.
   marketplace721Contract: z.string().optional(),
   marketplaceContract: z.string().optional(),
   marketplace1155Contract: z.string().optional(),
@@ -115,19 +96,20 @@ var MedialaneConfigSchema = z.object({
 });
 function resolveConfig(raw) {
   const parsed = MedialaneConfigSchema.parse(raw);
-  const marketplace721Contract = parsed.marketplace721Contract ?? parsed.marketplaceContract ?? MARKETPLACE_721_CONTRACT_MAINNET;
-  const collection721Contract = parsed.collection721Contract ?? parsed.collectionContract ?? COLLECTION_721_CONTRACT_MAINNET;
+  const coords = getCoordinates(parsed.chain);
+  const marketplace721Contract = parsed.marketplace721Contract ?? parsed.marketplaceContract ?? coords.marketplace721;
+  const collection721Contract = parsed.collection721Contract ?? parsed.collectionContract ?? coords.collection721;
   return {
-    network: parsed.network,
-    rpcUrl: parsed.rpcUrl ?? DEFAULT_RPC_URL,
+    chain: parsed.chain,
+    rpcUrl: parsed.rpcUrl ?? coords.rpcUrl,
     backendUrl: parsed.backendUrl,
     apiKey: parsed.apiKey,
     marketplace721Contract,
     marketplaceContract: marketplace721Contract,
-    marketplace1155Contract: parsed.marketplace1155Contract ?? MARKETPLACE_1155_CONTRACT_MAINNET,
+    marketplace1155Contract: parsed.marketplace1155Contract ?? coords.marketplace1155,
     collection721Contract,
     collectionContract: collection721Contract,
-    collection1155Contract: parsed.collection1155Contract ?? COLLECTION_1155_CONTRACT_MAINNET,
+    collection1155Contract: parsed.collection1155Contract ?? coords.collection1155,
     retryOptions: parsed.retryOptions,
     feeConfig: resolveFeeConfig(parsed.feeConfig)
   };
@@ -4529,6 +4511,68 @@ var IPNftABI = [
 // src/abis/creatorCoinFactory.ts
 var CreatorCoinFactoryABI = [{ "type": "impl", "name": "FactoryImpl", "interface_name": "creator_coin::factory::interface::IFactory" }, { "type": "struct", "name": "core::integer::u256", "members": [{ "name": "low", "type": "core::integer::u128" }, { "name": "high", "type": "core::integer::u128" }] }, { "type": "struct", "name": "core::array::Span::<core::starknet::contract_address::ContractAddress>", "members": [{ "name": "snapshot", "type": "@core::array::Array::<core::starknet::contract_address::ContractAddress>" }] }, { "type": "struct", "name": "core::array::Span::<core::integer::u256>", "members": [{ "name": "snapshot", "type": "@core::array::Array::<core::integer::u256>" }] }, { "type": "struct", "name": "creator_coin::factory::LaunchParameters", "members": [{ "name": "creator_coin_address", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "transfer_restriction_delay", "type": "core::integer::u64" }, { "name": "max_percentage_buy_launch", "type": "core::integer::u16" }, { "name": "quote_address", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "initial_holders", "type": "core::array::Span::<core::starknet::contract_address::ContractAddress>" }, { "name": "initial_holders_amounts", "type": "core::array::Span::<core::integer::u256>" }] }, { "type": "enum", "name": "core::bool", "variants": [{ "name": "False", "type": "()" }, { "name": "True", "type": "()" }] }, { "type": "struct", "name": "ekubo::types::i129::i129", "members": [{ "name": "mag", "type": "core::integer::u128" }, { "name": "sign", "type": "core::bool" }] }, { "type": "struct", "name": "creator_coin::exchanges::ekubo::ekubo_adapter::EkuboPoolParameters", "members": [{ "name": "fee", "type": "core::integer::u128" }, { "name": "tick_spacing", "type": "core::integer::u128" }, { "name": "starting_price", "type": "ekubo::types::i129::i129" }, { "name": "bound", "type": "core::integer::u128" }] }, { "type": "struct", "name": "ekubo::types::keys::PoolKey", "members": [{ "name": "token0", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "token1", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "fee", "type": "core::integer::u128" }, { "name": "tick_spacing", "type": "core::integer::u128" }, { "name": "extension", "type": "core::starknet::contract_address::ContractAddress" }] }, { "type": "struct", "name": "ekubo::types::bounds::Bounds", "members": [{ "name": "lower", "type": "ekubo::types::i129::i129" }, { "name": "upper", "type": "ekubo::types::i129::i129" }] }, { "type": "struct", "name": "creator_coin::exchanges::ekubo::launcher::EkuboLP", "members": [{ "name": "owner", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "quote_address", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "pool_key", "type": "ekubo::types::keys::PoolKey" }, { "name": "bounds", "type": "ekubo::types::bounds::Bounds" }] }, { "type": "enum", "name": "creator_coin::exchanges::SupportedExchanges", "variants": [{ "name": "Jediswap", "type": "()" }, { "name": "Ekubo", "type": "()" }, { "name": "Starkdefi", "type": "()" }] }, { "type": "enum", "name": "creator_coin::token::creator_coin::LiquidityType", "variants": [{ "name": "JediERC20", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "StarkDeFiERC20", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "EkuboNFT", "type": "core::integer::u64" }] }, { "type": "enum", "name": "core::option::Option::<(core::starknet::contract_address::ContractAddress, creator_coin::token::creator_coin::LiquidityType)>", "variants": [{ "name": "Some", "type": "(core::starknet::contract_address::ContractAddress, creator_coin::token::creator_coin::LiquidityType)" }, { "name": "None", "type": "()" }] }, { "type": "interface", "name": "creator_coin::factory::interface::IFactory", "items": [{ "type": "function", "name": "create_creator_coin", "inputs": [{ "name": "owner", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "name", "type": "core::felt252" }, { "name": "symbol", "type": "core::felt252" }, { "name": "initial_supply", "type": "core::integer::u256" }, { "name": "contract_address_salt", "type": "core::felt252" }], "outputs": [{ "type": "core::starknet::contract_address::ContractAddress" }], "state_mutability": "external" }, { "type": "function", "name": "launch_on_jediswap", "inputs": [{ "name": "launch_parameters", "type": "creator_coin::factory::LaunchParameters" }, { "name": "quote_amount", "type": "core::integer::u256" }, { "name": "unlock_time", "type": "core::integer::u64" }], "outputs": [{ "type": "core::starknet::contract_address::ContractAddress" }], "state_mutability": "external" }, { "type": "function", "name": "launch_on_ekubo", "inputs": [{ "name": "launch_parameters", "type": "creator_coin::factory::LaunchParameters" }, { "name": "ekubo_parameters", "type": "creator_coin::exchanges::ekubo::ekubo_adapter::EkuboPoolParameters" }], "outputs": [{ "type": "(core::integer::u64, creator_coin::exchanges::ekubo::launcher::EkuboLP)" }], "state_mutability": "external" }, { "type": "function", "name": "launch_on_starkdefi", "inputs": [{ "name": "launch_parameters", "type": "creator_coin::factory::LaunchParameters" }, { "name": "quote_amount", "type": "core::integer::u256" }, { "name": "unlock_time", "type": "core::integer::u64" }], "outputs": [{ "type": "core::starknet::contract_address::ContractAddress" }], "state_mutability": "external" }, { "type": "function", "name": "exchange_address", "inputs": [{ "name": "exchange", "type": "creator_coin::exchanges::SupportedExchanges" }], "outputs": [{ "type": "core::starknet::contract_address::ContractAddress" }], "state_mutability": "view" }, { "type": "function", "name": "lock_manager_address", "inputs": [], "outputs": [{ "type": "core::starknet::contract_address::ContractAddress" }], "state_mutability": "view" }, { "type": "function", "name": "locked_liquidity", "inputs": [{ "name": "token", "type": "core::starknet::contract_address::ContractAddress" }], "outputs": [{ "type": "core::option::Option::<(core::starknet::contract_address::ContractAddress, creator_coin::token::creator_coin::LiquidityType)>" }], "state_mutability": "view" }, { "type": "function", "name": "is_creator_coin", "inputs": [{ "name": "address", "type": "core::starknet::contract_address::ContractAddress" }], "outputs": [{ "type": "core::bool" }], "state_mutability": "view" }, { "type": "function", "name": "ekubo_core_address", "inputs": [], "outputs": [{ "type": "core::starknet::contract_address::ContractAddress" }], "state_mutability": "view" }] }, { "type": "struct", "name": "core::array::Span::<(creator_coin::exchanges::SupportedExchanges, core::starknet::contract_address::ContractAddress)>", "members": [{ "name": "snapshot", "type": "@core::array::Array::<(creator_coin::exchanges::SupportedExchanges, core::starknet::contract_address::ContractAddress)>" }] }, { "type": "struct", "name": "core::array::Span::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress)>", "members": [{ "name": "snapshot", "type": "@core::array::Array::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress)>" }] }, { "type": "constructor", "name": "constructor", "inputs": [{ "name": "creator_coin_class_hash", "type": "core::starknet::class_hash::ClassHash" }, { "name": "lock_manager_address", "type": "core::starknet::contract_address::ContractAddress" }, { "name": "exchanges", "type": "core::array::Span::<(creator_coin::exchanges::SupportedExchanges, core::starknet::contract_address::ContractAddress)>" }, { "name": "migrated_tokens", "type": "core::array::Span::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress)>" }] }, { "type": "event", "name": "creator_coin::factory::factory::Factory::CreatorCoinCreated", "kind": "struct", "members": [{ "name": "owner", "type": "core::starknet::contract_address::ContractAddress", "kind": "data" }, { "name": "name", "type": "core::felt252", "kind": "data" }, { "name": "symbol", "type": "core::felt252", "kind": "data" }, { "name": "initial_supply", "type": "core::integer::u256", "kind": "data" }, { "name": "creator_coin_address", "type": "core::starknet::contract_address::ContractAddress", "kind": "data" }] }, { "type": "event", "name": "creator_coin::factory::factory::Factory::CreatorCoinLaunched", "kind": "struct", "members": [{ "name": "creator_coin_address", "type": "core::starknet::contract_address::ContractAddress", "kind": "data" }, { "name": "quote_token", "type": "core::starknet::contract_address::ContractAddress", "kind": "data" }, { "name": "exchange_name", "type": "core::felt252", "kind": "data" }] }, { "type": "event", "name": "creator_coin::factory::factory::Factory::Event", "kind": "enum", "variants": [{ "name": "CreatorCoinCreated", "type": "creator_coin::factory::factory::Factory::CreatorCoinCreated", "kind": "nested" }, { "name": "CreatorCoinLaunched", "type": "creator_coin::factory::factory::Factory::CreatorCoinLaunched", "kind": "nested" }] }];
 
+// src/constants.ts
+var SN = getCoordinates("STARKNET");
+var MARKETPLACE_721_CONTRACT_MAINNET = SN.marketplace721;
+var MARKETPLACE_721_CLASS_HASH_MAINNET = SN.marketplace721ClassHash;
+var MARKETPLACE_721_START_BLOCK_MAINNET = SN.marketplace721StartBlock;
+var MARKETPLACE_1155_CONTRACT_MAINNET = SN.marketplace1155;
+var MARKETPLACE_1155_CLASS_HASH_MAINNET = SN.marketplace1155ClassHash;
+var MARKETPLACE_1155_START_BLOCK_MAINNET = SN.marketplace1155StartBlock;
+var COLLECTION_721_CONTRACT_MAINNET = SN.collection721;
+var IPNFT_CLASS_HASH_MAINNET = SN.ipNftClassHash;
+var IPCOLLECTION_CLASS_HASH_MAINNET = SN.ipCollectionClassHash;
+var COLLECTION_721_START_BLOCK_MAINNET = SN.collection721StartBlock;
+var DROP_FACTORY_CONTRACT_MAINNET = SN.dropFactory;
+var POP_FACTORY_CONTRACT_MAINNET = SN.popFactory;
+var NFTCOMMENTS_CONTRACT_MAINNET = SN.nftComments;
+var SUPPORTED_TOKENS = [
+  {
+    // Circle-native USDC on Starknet (canonical)
+    symbol: "USDC",
+    address: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb",
+    decimals: 6,
+    listable: true
+  },
+  {
+    symbol: "USDT",
+    address: "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8",
+    decimals: 6,
+    listable: true
+  },
+  {
+    symbol: "ETH",
+    address: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+    decimals: 18,
+    listable: true
+  },
+  {
+    symbol: "STRK",
+    address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    decimals: 18,
+    listable: true
+  },
+  {
+    symbol: "WBTC",
+    address: "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
+    decimals: 8,
+    listable: true
+  }
+];
+var DEFAULT_CURRENCY = "USDC";
+var POP_COLLECTION_CLASS_HASH_MAINNET = SN.popCollectionClassHash;
+var DROP_COLLECTION_CLASS_HASH_MAINNET = SN.dropCollectionClassHash;
+var COLLECTION_1155_CONTRACT_MAINNET = SN.collection1155;
+var COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = SN.collection1155FactoryClassHash;
+var COLLECTION_1155_CLASS_HASH_MAINNET = SN.collection1155ClassHash;
+var COLLECTION_1155_START_BLOCK_MAINNET = SN.collection1155StartBlock;
+var CREATOR_COIN_FACTORY_CONTRACT_MAINNET = SN.creatorCoinFactory;
+var CREATOR_COIN_EKUBO_LAUNCHER_MAINNET = SN.creatorCoinEkuboLauncher;
+var CREATOR_COIN_CLASS_HASH_MAINNET = SN.creatorCoinClassHash;
+var CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET = SN.creatorCoinFactoryClassHash;
+var CREATOR_COIN_START_BLOCK_MAINNET = SN.creatorCoinStartBlock;
+var EKUBO_CORE_MAINNET = SN.ekuboCore;
+
 // src/utils/bigint.ts
 function stringifyBigInts(obj) {
   if (typeof obj === "bigint") {
@@ -4669,7 +4713,10 @@ function toSignatureArray(sig) {
   const s = sig;
   return [s.r.toString(), s.s.toString()];
 }
-function getChainId(_config) {
+function getChainId(config) {
+  if (config.chain !== "STARKNET") {
+    throw new Error(`SNIP-12 signing is Starknet-only; got chain "${config.chain}"`);
+  }
   return constants.StarknetChainId.SN_MAIN;
 }
 function resolveToken(currency) {
@@ -4736,7 +4783,7 @@ async function createListing(account, params, config) {
     salt: generateSalt(),
     counter
   };
-  const chainId = getChainId();
+  const chainId = getChainId(config);
   const typedData = stringifyBigInts(buildOrderTypedData(orderParams, chainId));
   const signature = await account.signMessage(typedData);
   const signatureArray = toSignatureArray(signature);
@@ -4818,7 +4865,7 @@ async function makeOffer(account, params, config) {
     salt: generateSalt(),
     counter
   };
-  const chainId = getChainId();
+  const chainId = getChainId(config);
   const typedData = stringifyBigInts(buildOrderTypedData(orderParams, chainId));
   const signature = await account.signMessage(typedData);
   const signatureArray = toSignatureArray(signature);
@@ -4885,7 +4932,7 @@ async function fulfillOrder(account, params, config) {
 async function cancelOrder(account, params, config) {
   const { orderHash } = params;
   const { contract, provider } = makeContract(config);
-  const chainId = getChainId();
+  const chainId = getChainId(config);
   const cancelParams = {
     order_hash: orderHash,
     offerer: account.address
@@ -5071,7 +5118,7 @@ async function createListing1155(account, params, config) {
   const priceWei = parseAmount(pricePerUnit, token.decimals);
   const now = Math.floor(Date.now() / 1e3);
   const endTime = now + durationSeconds;
-  const chainId = getChainId();
+  const chainId = getChainId(config);
   const counter = (await contract.get_counter(account.address)).toString();
   const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
   const orderParams = {
@@ -5171,7 +5218,7 @@ async function cancelOrder1155(account, params, config) {
   const { orderHash } = params;
   const contract = getContract(config);
   const provider = getProvider(config);
-  const chainId = getChainId();
+  const chainId = getChainId(config);
   const cancelParams = {
     order_hash: orderHash,
     offerer: account.address
@@ -5205,7 +5252,7 @@ async function makeOffer1155(account, params, config) {
   } = params;
   const contract = getContract(config);
   const provider = getProvider(config);
-  const chainId = getChainId();
+  const chainId = getChainId(config);
   const token = resolveToken(currency);
   const priceWei = parseAmount(price, token.decimals);
   const now = Math.floor(Date.now() / 1e3);
@@ -5387,12 +5434,46 @@ var Medialane1155Module = class {
     return build1155CancellationTypedData(params, chainId);
   }
 };
-function normalizeAddress(address) {
+function normalizeAddress(chain, address) {
+  switch (chain) {
+    case "STARKNET":
+      return normalizeStarknet(address);
+    case "ETHEREUM":
+    case "BASE":
+      return normalizeEvm(address);
+    case "SOLANA":
+      return normalizeSolana(address);
+    case "BITCOIN":
+      throw new Error("BITCOIN address normalization not implemented");
+  }
+}
+function normalizeStarknet(address) {
   try {
     const hex = num.toHex(BigInt(address));
     return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
   } catch {
-    throw new Error(`Invalid Starknet address: "${address}"`);
+    throw new Error(`Invalid STARKNET address: "${address}"`);
+  }
+}
+function normalizeEvm(address) {
+  const m = /^0x([0-9a-fA-F]{40})$/.exec(address);
+  if (!m) throw new Error(`Invalid ETHEREUM/BASE address: "${address}"`);
+  const lower = m[1].toLowerCase();
+  const hash2 = keccak_256(new TextEncoder().encode(lower));
+  let out = "0x";
+  for (let i = 0; i < 40; i++) {
+    const nibble = hash2[i >> 1] >> (i % 2 === 0 ? 4 : 0) & 15;
+    out += nibble >= 8 ? lower[i].toUpperCase() : lower[i];
+  }
+  return out;
+}
+function normalizeSolana(address) {
+  try {
+    const bytes = base58.decode(address);
+    if (bytes.length !== 32) throw new Error("not a 32-byte key");
+    return address;
+  } catch {
+    throw new Error(`Invalid SOLANA address: "${address}"`);
   }
 }
 function normalizeHash(hash2) {
@@ -5400,11 +5481,11 @@ function normalizeHash(hash2) {
     const hex = num.toHex(BigInt(hash2));
     return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
   } catch {
-    throw new Error(`Invalid Starknet hash: "${hash2}"`);
+    throw new Error(`Invalid hash: "${hash2}"`);
   }
 }
-function shortenAddress(address, chars = 4) {
-  const norm = normalizeAddress(address);
+function shortenAddress(chain, address, chars = 4) {
+  const norm = normalizeAddress(chain, address);
   return `${norm.slice(0, chars + 2)}...${norm.slice(-chars)}`;
 }
 
@@ -5458,10 +5539,15 @@ var MedialaneApiError = class extends Error {
   }
 };
 var ApiClient = class {
-  constructor(baseUrl, apiKey, retryOptions) {
+  constructor(baseUrl, apiKey, retryOptions, chain = "STARKNET") {
     this.baseUrl = baseUrl;
+    this.chain = chain;
     this.baseHeaders = apiKey ? { "x-api-key": apiKey } : {};
     this.retryOptions = retryOptions;
+  }
+  /** Normalize an address for this client's chain (chain-scoped — Decision B). */
+  addr(a) {
+    return normalizeAddress(this.chain, a);
   }
   async request(path, init) {
     const url = `${this.baseUrl.replace(/\/$/, "")}${path}`;
@@ -5524,7 +5610,7 @@ var ApiClient = class {
     if (query.sort) params.set("sort", query.sort);
     if (query.page !== void 0) params.set("page", String(query.page));
     if (query.limit !== void 0) params.set("limit", String(query.limit));
-    if (query.offerer) params.set("offerer", normalizeAddress(query.offerer));
+    if (query.offerer) params.set("offerer", this.addr(query.offerer));
     if (query.minPrice) params.set("minPrice", query.minPrice);
     if (query.maxPrice) params.set("maxPrice", query.maxPrice);
     const qs = params.toString();
@@ -5534,11 +5620,11 @@ var ApiClient = class {
     return this.get(`/v1/orders/${orderHash}`);
   }
   getActiveOrdersForToken(contract, tokenId) {
-    return this.get(`/v1/orders/token/${normalizeAddress(contract)}/${tokenId}`);
+    return this.get(`/v1/orders/token/${this.addr(contract)}/${tokenId}`);
   }
   getOrdersByUser(address, page = 1, limit = 20) {
     return this.get(
-      `/v1/orders/user/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+      `/v1/orders/user/${this.addr(address)}?page=${page}&limit=${limit}`
     );
   }
   // ─── Tokens ────────────────────────────────────────────────────────────────
@@ -5549,7 +5635,7 @@ var ApiClient = class {
   }
   getTokensByOwner(address, page = 1, limit = 20) {
     return this.get(
-      `/v1/tokens/owned/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+      `/v1/tokens/owned/${this.addr(address)}?page=${page}&limit=${limit}`
     );
   }
   getTokenHistory(contract, tokenId, page = 1, limit = 20) {
@@ -5566,15 +5652,15 @@ var ApiClient = class {
     return this.get(`/v1/collections?${params}`);
   }
   getCollectionsByOwner(owner, page = 1, limit = 50) {
-    const params = new URLSearchParams({ owner: normalizeAddress(owner), page: String(page), limit: String(limit) });
+    const params = new URLSearchParams({ owner: this.addr(owner), page: String(page), limit: String(limit) });
     return this.get(`/v1/collections?${params}`);
   }
   getCollection(contract) {
-    return this.get(`/v1/collections/${normalizeAddress(contract)}`);
+    return this.get(`/v1/collections/${this.addr(contract)}`);
   }
   getCollectionTokens(contract, page = 1, limit = 20) {
     return this.get(
-      `/v1/collections/${normalizeAddress(contract)}/tokens?page=${page}&limit=${limit}`
+      `/v1/collections/${this.addr(contract)}/tokens?page=${page}&limit=${limit}`
     );
   }
   // ─── Activities ────────────────────────────────────────────────────────────
@@ -5588,7 +5674,7 @@ var ApiClient = class {
   }
   getActivitiesByAddress(address, page = 1, limit = 20) {
     return this.get(
-      `/v1/activities/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+      `/v1/activities/${this.addr(address)}?page=${page}&limit=${limit}`
     );
   }
   // ─── Comments ──────────────────────────────────────────────────────────────
@@ -5598,7 +5684,7 @@ var ApiClient = class {
     if (opts.limit !== void 0) params.set("limit", String(opts.limit));
     const qs = params.toString();
     return this.get(
-      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/comments${qs ? `?${qs}` : ""}`
+      `/v1/tokens/${this.addr(contract)}/${tokenId}/comments${qs ? `?${qs}` : ""}`
     );
   }
   // ─── Search ────────────────────────────────────────────────────────────────
@@ -5736,7 +5822,7 @@ var ApiClient = class {
   }
   // ─── Collection Profiles ────────────────────────────────────────────────────
   async getCollectionProfile(contractAddress) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
     return this.checkResponse(res, { allow404: true });
   }
@@ -5744,7 +5830,7 @@ var ApiClient = class {
    * Update collection profile. Requires Clerk JWT for ownership check.
    */
   async updateCollectionProfile(contractAddress, data, clerkToken) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/profile`;
     const res = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -5757,7 +5843,7 @@ var ApiClient = class {
     return this.checkResponse(res);
   }
   async getGatedContent(contractAddress, clerkToken) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/gated-content`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/gated-content`;
     const res = await fetch(url, {
       headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` }
     });
@@ -5775,7 +5861,7 @@ var ApiClient = class {
     return this.checkResponse(res);
   }
   async getCreatorProfile(walletAddress) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${this.addr(walletAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
     return this.checkResponse(res, { allow404: true });
   }
@@ -5789,7 +5875,7 @@ var ApiClient = class {
    * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
    */
   async updateCreatorProfile(walletAddress, data, clerkToken) {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${this.addr(walletAddress)}/profile`;
     const res = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -5889,7 +5975,7 @@ var ApiClient = class {
     if (opts.limit !== void 0) params.set("limit", String(opts.limit));
     const qs = params.toString();
     return this.get(
-      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/remixes${qs ? `?${qs}` : ""}`
+      `/v1/tokens/${this.addr(contract)}/${tokenId}/remixes${qs ? `?${qs}` : ""}`
     );
   }
   /**
@@ -5984,14 +6070,14 @@ var ApiClient = class {
   }
   async getPopEligibility(collection, wallet) {
     const res = await this.get(
-      `/v1/pop/eligibility/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
+      `/v1/pop/eligibility/${this.addr(collection)}/${this.addr(wallet)}`
     );
     return res.data;
   }
   async getPopEligibilityBatch(collection, wallets) {
-    const params = new URLSearchParams({ wallets: wallets.map(normalizeAddress).join(",") });
+    const params = new URLSearchParams({ wallets: wallets.map((w) => this.addr(w)).join(",") });
     const res = await this.get(
-      `/v1/pop/eligibility/${normalizeAddress(collection)}?${params}`
+      `/v1/pop/eligibility/${this.addr(collection)}?${params}`
     );
     return res.data;
   }
@@ -6001,7 +6087,7 @@ var ApiClient = class {
   }
   async getDropMintStatus(collection, wallet) {
     const res = await this.get(
-      `/v1/drop/mint-status/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
+      `/v1/drop/mint-status/${this.addr(collection)}/${this.addr(wallet)}`
     );
     return res.data;
   }
@@ -6011,7 +6097,7 @@ var PopService = class {
     this.factoryAddress = POP_FACTORY_CONTRACT_MAINNET;
   }
   _collection(address, account) {
-    return new Contract(POPCollectionABI, normalizeAddress(address), account);
+    return new Contract(POPCollectionABI, normalizeAddress("STARKNET", address), account);
   }
   async claim(account, collectionAddress) {
     const call = this._collection(collectionAddress, account).populate("claim", []);
@@ -6087,7 +6173,7 @@ var DropService = class {
     this.config = config;
   }
   _collection(address, account) {
-    return new Contract(DropCollectionABI, normalizeAddress(address), account);
+    return new Contract(DropCollectionABI, normalizeAddress("STARKNET", address), account);
   }
   async claim(account, collectionAddress, quantity = 1) {
     const collection = this._collection(collectionAddress, account);
@@ -6170,14 +6256,14 @@ var ERC1155CollectionService = class {
   _factory(account) {
     return new Contract(
       IPCollection1155FactoryABI,
-      normalizeAddress(this.factoryAddress),
+      normalizeAddress("STARKNET", this.factoryAddress),
       account
     );
   }
   _collection(address, account) {
     return new Contract(
       IPCollection1155ABI,
-      normalizeAddress(address),
+      normalizeAddress("STARKNET", address),
       account
     );
   }
@@ -6299,7 +6385,7 @@ async function getCreatorCoinPrice(coinAddress, provider) {
   if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return null;
   const fee = r[2];
   const tickSpacing = r[3];
-  const quoteToken = normalizeAddress("0x" + BigInt(r[7]).toString(16));
+  const quoteToken = normalizeAddress("STARKNET", "0x" + BigInt(r[7]).toString(16));
   const token = getTokenByAddress(quoteToken);
   const quoteDecimals = token?.decimals ?? 18;
   const ci = BigInt(coinAddress);
@@ -6367,20 +6453,20 @@ function buildLaunchOnEkuboCalls(params) {
 }
 var CREATOR_COIN_CREATED_SELECTOR = hash.getSelectorFromName("CreatorCoinCreated");
 function parseCreatorCoinCreated(receipt) {
-  const factory = normalizeAddress(CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
+  const factory = normalizeAddress("STARKNET", CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
   for (const ev of receipt?.events ?? []) {
     let from;
     try {
-      from = normalizeAddress(ev.from_address ?? "");
+      from = normalizeAddress("STARKNET", ev.from_address ?? "");
     } catch {
       continue;
     }
     if (from !== factory) continue;
     const k0 = ev.keys?.[0];
-    if (!k0 || normalizeAddress(k0) !== normalizeAddress(CREATOR_COIN_CREATED_SELECTOR)) continue;
+    if (!k0 || normalizeAddress("STARKNET", k0) !== normalizeAddress("STARKNET", CREATOR_COIN_CREATED_SELECTOR)) continue;
     const data = ev.data ?? [];
     if (data.length < 1) continue;
-    return normalizeAddress(data[data.length - 1]);
+    return normalizeAddress("STARKNET", data[data.length - 1]);
   }
   throw new Error("Coin deployed but the coin address could not be read from the receipt");
 }
@@ -6450,11 +6536,11 @@ var MedialaneClient = class {
         }
       });
     } else {
-      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions);
+      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions, this.config.chain);
     }
   }
-  get network() {
-    return this.config.network;
+  get chain() {
+    return this.config.chain;
   }
   get rpcUrl() {
     return this.config.rpcUrl;
@@ -6516,8 +6602,10 @@ var SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: COLLECTION_721_CONTRACT_MAINNET,
-      startBlock: COLLECTION_721_START_BLOCK_MAINNET
+      STARKNET: {
+        factoryAddress: COLLECTION_721_CONTRACT_MAINNET,
+        startBlock: COLLECTION_721_START_BLOCK_MAINNET
+      }
     },
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
@@ -6539,7 +6627,7 @@ var SERVICES = {
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
     // No factory — single shared contract. Events declared when the genesis
-    // contract address is wired into onchain.factoryAddress here.
+    // contract address is wired into onchain.STARKNET.factoryAddress here.
     metadataSchema: { licenseDefault: "CC BY-SA" }
   },
   "mip-erc1155": {
@@ -6549,9 +6637,11 @@ var SERVICES = {
     standard: "ERC1155",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: COLLECTION_1155_CONTRACT_MAINNET,
-      classHash: COLLECTION_1155_CLASS_HASH_MAINNET,
-      startBlock: COLLECTION_1155_START_BLOCK_MAINNET
+      STARKNET: {
+        factoryAddress: COLLECTION_1155_CONTRACT_MAINNET,
+        classHash: COLLECTION_1155_CLASS_HASH_MAINNET,
+        startBlock: COLLECTION_1155_START_BLOCK_MAINNET
+      }
     },
     uiVariant: "edition",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
@@ -6567,8 +6657,10 @@ var SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: POP_FACTORY_CONTRACT_MAINNET,
-      classHash: POP_COLLECTION_CLASS_HASH_MAINNET
+      STARKNET: {
+        factoryAddress: POP_FACTORY_CONTRACT_MAINNET,
+        classHash: POP_COLLECTION_CLASS_HASH_MAINNET
+      }
     },
     uiVariant: "pop",
     capabilities: ["claim", "transfer"],
@@ -6585,8 +6677,10 @@ var SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: DROP_FACTORY_CONTRACT_MAINNET,
-      classHash: DROP_COLLECTION_CLASS_HASH_MAINNET
+      STARKNET: {
+        factoryAddress: DROP_FACTORY_CONTRACT_MAINNET,
+        classHash: DROP_COLLECTION_CLASS_HASH_MAINNET
+      }
     },
     uiVariant: "drop",
     capabilities: ["claim", "list", "buy", "make_offer", "cancel", "transfer"],
@@ -6603,9 +6697,11 @@ var SERVICES = {
     standard: "ERC20",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
-      classHash: CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
-      startBlock: CREATOR_COIN_START_BLOCK_MAINNET
+      STARKNET: {
+        factoryAddress: CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
+        classHash: CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
+        startBlock: CREATOR_COIN_START_BLOCK_MAINNET
+      }
     },
     uiVariant: "coin",
     // `swap` is a UI affordance (05 §III): the marketplace renders an embedded
@@ -6625,9 +6721,11 @@ var SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: MARKETPLACE_721_CONTRACT_MAINNET,
-      classHash: MARKETPLACE_721_CLASS_HASH_MAINNET,
-      startBlock: MARKETPLACE_721_START_BLOCK_MAINNET
+      STARKNET: {
+        factoryAddress: MARKETPLACE_721_CONTRACT_MAINNET,
+        classHash: MARKETPLACE_721_CLASS_HASH_MAINNET,
+        startBlock: MARKETPLACE_721_START_BLOCK_MAINNET
+      }
     },
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel"],
@@ -6644,9 +6742,11 @@ var SERVICES = {
     standard: "ERC1155",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: MARKETPLACE_1155_CONTRACT_MAINNET,
-      classHash: MARKETPLACE_1155_CLASS_HASH_MAINNET,
-      startBlock: MARKETPLACE_1155_START_BLOCK_MAINNET
+      STARKNET: {
+        factoryAddress: MARKETPLACE_1155_CONTRACT_MAINNET,
+        classHash: MARKETPLACE_1155_CLASS_HASH_MAINNET,
+        startBlock: MARKETPLACE_1155_START_BLOCK_MAINNET
+      }
     },
     uiVariant: "edition",
     capabilities: ["list", "buy", "make_offer", "cancel"],
@@ -6699,6 +6799,6 @@ function getServicesByCapability(cap) {
   );
 }
 
-export { ApiClient, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, CollectionRegistryABI, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_RPC_URL, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, LAUNCH_PRICE_QUOTE_PER_COIN, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, PopService, SUPPORTED_NETWORKS, SUPPORTED_TOKENS, VALIDATED_EKUBO_PARAMS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createFailoverFetch, encodeByteArray, fdvHuman, formatAmount, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, parseCreatorCoinCreated, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol };
+export { ApiClient, CHAINS, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, COLLECTION_1155_CLASS_HASH_MAINNET, COLLECTION_1155_CONTRACT_MAINNET, COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET, COLLECTION_1155_START_BLOCK_MAINNET, COLLECTION_721_CONTRACT_MAINNET, COLLECTION_721_START_BLOCK_MAINNET, CREATOR_COIN_CLASS_HASH_MAINNET, CREATOR_COIN_EKUBO_LAUNCHER_MAINNET, CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET, CREATOR_COIN_FACTORY_CONTRACT_MAINNET, CREATOR_COIN_START_BLOCK_MAINNET, CollectionRegistryABI, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_CHAIN, DROP_COLLECTION_CLASS_HASH_MAINNET, DROP_FACTORY_CONTRACT_MAINNET, DropCollectionABI, DropFactoryABI, DropService, EKUBO_CORE_MAINNET, ERC1155CollectionService, FeeConfigSchema, IPCOLLECTION_CLASS_HASH_MAINNET, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNFT_CLASS_HASH_MAINNET, IPNftABI, LAUNCH_PRICE_QUOTE_PER_COIN, MARKETPLACE_1155_CLASS_HASH_MAINNET, MARKETPLACE_1155_CONTRACT_MAINNET, MARKETPLACE_1155_START_BLOCK_MAINNET, MARKETPLACE_721_CLASS_HASH_MAINNET, MARKETPLACE_721_CONTRACT_MAINNET, MARKETPLACE_721_START_BLOCK_MAINNET, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, NFTCOMMENTS_CONTRACT_MAINNET, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, POP_COLLECTION_CLASS_HASH_MAINNET, POP_FACTORY_CONTRACT_MAINNET, PUBLIC_RPC_FALLBACKS, PopService, SUPPORTED_TOKENS, VALIDATED_EKUBO_PARAMS, build1155CancellationTypedData, build1155OrderTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createFailoverFetch, encodeByteArray, fdvHuman, formatAmount, getCoordinates, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAmount, parseCreatorCoinCreated, resolveConfig, resolveFeeConfig, shortenAddress, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

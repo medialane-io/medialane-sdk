@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.37.0] — 2026-06-14
+
+### Changed — multichain-readiness foundations (BREAKING)
+
+Chain becomes a first-class axis in the SDK (spec `medialane-core/docs/specs/2026-06-13-multichain-readiness-design.md`, Phase 1). Starknet behavior is unchanged; the changes are structural so other chains slot in by registering coordinates (litmus test). **Not published** in this change set — it lives on `feat/multichain-readiness` until a deliberate publish + consumer migration.
+
+- **New `chains.ts` — `coordinates[chain]` registry** is the single source of per-chain service coordinates. Exports `CHAINS`, `getCoordinates(chain)`, `DEFAULT_CHAIN`, and types `Chain` / `ChainCoordinates`. The flat `*_MAINNET` constants keep their names/values but now derive from this registry.
+- **`MedialaneConfig.chain` replaces `network`** (BREAKING). The client is chain-scoped — one per chain — and resolves coordinates from the registry. The `client.network` getter is now `client.chain`.
+- **`ServiceDefinition.onchain` is per-chain** (BREAKING) — `Partial<Record<Chain, { factoryAddress?; classHash?; startBlock? }>>`. Read `service.onchain?.STARKNET?.factoryAddress` instead of `service.onchain?.factoryAddress`.
+- **Removed `SUPPORTED_NETWORKS`, `DEFAULT_RPC_URL`, and type `Network`** (BREAKING) — Medialane is mainnet-only, so coordinates key by chain alone (refines `decisions.md` D-9).
+- **`getChainId(config)` throws for non-Starknet** — SNIP-12 signing is Starknet-only; other-chain signing arrives behind the verify seam (spec §3.4).
+
 ## [0.33.0] — 2026-06-05
 
 ### Changed — finish the identity-model cutover (walletType is no longer an enum)

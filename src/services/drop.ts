@@ -29,7 +29,7 @@ export class DropService {
   }
 
   private _collection(address: string, account: AccountInterface) {
-    return new Contract(DropCollectionABI as any, normalizeAddress(address), account as any);
+    return new Contract(DropCollectionABI as any, normalizeAddress("STARKNET",address), account as any);
   }
 
   async claim(

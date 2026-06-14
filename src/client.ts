@@ -68,12 +68,12 @@ export class MedialaneClient {
         },
       });
     } else {
-      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions);
+      this.api = new ApiClient(this.config.backendUrl, this.config.apiKey, this.config.retryOptions, this.config.chain);
     }
   }
 
-  get network() {
-    return this.config.network;
+  get chain() {
+    return this.config.chain;
   }
 
   get rpcUrl() {

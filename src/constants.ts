@@ -1,48 +1,45 @@
+import { getCoordinates } from "./chains.js";
+
+// Per-chain coordinates live in chains.ts (the single source — spec 2026-06-13
+// §3.1). These flat *_MAINNET consts are kept as a stable export surface and
+// derive from the Starknet registry entry so there is exactly one source.
+const SN = getCoordinates("STARKNET");
+
 /** Medialane721 marketplace venue — immutable, ownerless (redesign, deployed 2026-05-31). */
-export const MARKETPLACE_721_CONTRACT_MAINNET =
-  "0x069cf5391077e3ebdd9cb6aebf90ed530d29f0d6aa34a43f5afae938c0fb565e";
+export const MARKETPLACE_721_CONTRACT_MAINNET = SN.marketplace721!;
 
 /** Class hash of the Medialane721 venue. */
-export const MARKETPLACE_721_CLASS_HASH_MAINNET =
-  "0x04c6f952d747ad7ead1b3dad4c1d587837d38f8ec29d6c095a4afa5b5ece5957";
+export const MARKETPLACE_721_CLASS_HASH_MAINNET = SN.marketplace721ClassHash!;
 
 /** First mainnet block for the Medialane721 venue deployment. */
-export const MARKETPLACE_721_START_BLOCK_MAINNET = 10350340;
+export const MARKETPLACE_721_START_BLOCK_MAINNET = SN.marketplace721StartBlock!;
 
 /** Medialane1155 marketplace venue — immutable, ownerless (redesign, deployed 2026-05-31). */
-export const MARKETPLACE_1155_CONTRACT_MAINNET =
-  "0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077";
+export const MARKETPLACE_1155_CONTRACT_MAINNET = SN.marketplace1155!;
 
 /** Class hash of the Medialane1155 venue. */
-export const MARKETPLACE_1155_CLASS_HASH_MAINNET =
-  "0x02600bb720908f119afe482309d36c39d087587f0df9576454acfb6363e78cd8";
+export const MARKETPLACE_1155_CLASS_HASH_MAINNET = SN.marketplace1155ClassHash!;
 
 /** First mainnet block for the Medialane1155 venue deployment. */
-export const MARKETPLACE_1155_START_BLOCK_MAINNET = 10350855;
+export const MARKETPLACE_1155_START_BLOCK_MAINNET = SN.marketplace1155StartBlock!;
 
-export const COLLECTION_721_CONTRACT_MAINNET =
-  "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2";
+export const COLLECTION_721_CONTRACT_MAINNET = SN.collection721!;
 
 /** Class hash of the IPNft (per-collection ERC-721) implementation. */
-export const IPNFT_CLASS_HASH_MAINNET =
-  "0x27ee4ded786d51bced1e94afec3034d6ffce71c032c45ee1ff283ccfa9db12e";
+export const IPNFT_CLASS_HASH_MAINNET = SN.ipNftClassHash!;
 
 /** Class hash of the IPCollection registry. */
-export const IPCOLLECTION_CLASS_HASH_MAINNET =
-  "0x287ccdff8b6655a2248cfe170d82eae3a35303cd00ef3e751b25ddca26d9095";
+export const IPCOLLECTION_CLASS_HASH_MAINNET = SN.ipCollectionClassHash!;
 
 /** First mainnet block for the current MIP IPCollection registry deployment. */
-export const COLLECTION_721_START_BLOCK_MAINNET = 10046166;
+export const COLLECTION_721_START_BLOCK_MAINNET = SN.collection721StartBlock!;
 
-export const DROP_FACTORY_CONTRACT_MAINNET =
-  "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800";
+export const DROP_FACTORY_CONTRACT_MAINNET = SN.dropFactory!;
 
-export const POP_FACTORY_CONTRACT_MAINNET =
-  "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111";
+export const POP_FACTORY_CONTRACT_MAINNET = SN.popFactory!;
 
 /** NFTComments on-chain comment system — immutable, no admin key. */
-export const NFTCOMMENTS_CONTRACT_MAINNET =
-  "0x02cdac70c94447189af0389dfea63f4d5e4154ea8a563de288a5ab1c39e37843";
+export const NFTCOMMENTS_CONTRACT_MAINNET = SN.nftComments!;
 
 export const SUPPORTED_TOKENS = [
   {
@@ -88,53 +85,40 @@ export type SupportedTokenSymbol = (typeof SUPPORTED_TOKENS)[number]["symbol"];
 /** Default currency for listings and offers — Circle-native USDC on Starknet. */
 export const DEFAULT_CURRENCY: SupportedTokenSymbol = "USDC";
 
-export const SUPPORTED_NETWORKS = ["mainnet"] as const;
-export type Network = (typeof SUPPORTED_NETWORKS)[number];
+export const POP_COLLECTION_CLASS_HASH_MAINNET = SN.popCollectionClassHash!;
 
-export const DEFAULT_RPC_URL = "https://rpc.starknet.lava.build";
-
-export const POP_COLLECTION_CLASS_HASH_MAINNET = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f";
-
-export const DROP_COLLECTION_CLASS_HASH_MAINNET = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282";
+export const DROP_COLLECTION_CLASS_HASH_MAINNET = SN.dropCollectionClassHash!;
 
 /** IPCollectionFactory v0.3.0 (deployed mainnet 2026-06-10): sequential on-chain
  *  edition ids, ownerless/immutable. New collections deploy from here. */
-export const COLLECTION_1155_CONTRACT_MAINNET =
-  "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc";
+export const COLLECTION_1155_CONTRACT_MAINNET = SN.collection1155!;
 
 /** Class hash of the IPCollectionFactory v0.3.0 implementation. */
-export const COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET =
-  "0x331a69da8655a882ba1fbcb55188b8fa09116521db901bbbaafc9fead0689f8";
+export const COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET = SN.collection1155FactoryClassHash!;
 
 /** Class hash of the IPCollection ERC-1155 v0.3.0 implementation. */
-export const COLLECTION_1155_CLASS_HASH_MAINNET =
-  "0x4e110b59af240ae6c7742999964c4eae13fb2ed935c47fe97653ec017ebea34";
+export const COLLECTION_1155_CLASS_HASH_MAINNET = SN.collection1155ClassHash!;
 
 /** First mainnet block of the v0.3.0 ERC-1155 factory deployment. */
-export const COLLECTION_1155_START_BLOCK_MAINNET = 10665319;
+export const COLLECTION_1155_START_BLOCK_MAINNET = SN.collection1155StartBlock!;
 
 // ─── Creator Coin ────────────────────────────────────────────────────────────
 // Faithful fork of unruggable.meme, Ekubo-only, deployed mainnet 2026-06-04.
 
 /** Creator Coin Factory — entrypoint: create_creator_coin + launch_on_ekubo. */
-export const CREATOR_COIN_FACTORY_CONTRACT_MAINNET =
-  "0x50fa807b5274079fb19374673d7bab6d2dc3af7e1032ea43eb6e44bcbde4c3c";
+export const CREATOR_COIN_FACTORY_CONTRACT_MAINNET = SN.creatorCoinFactory!;
 
 /** EkuboLauncher — permanently holds (locks) each Creator Coin's LP position. */
-export const CREATOR_COIN_EKUBO_LAUNCHER_MAINNET =
-  "0x4f7fceb5ac10f12f9544a09580592e5bdf1b7f04f48765eecf12286d8ccb7b4";
+export const CREATOR_COIN_EKUBO_LAUNCHER_MAINNET = SN.creatorCoinEkuboLauncher!;
 
 /** Class hash of the per-coin CreatorCoin ERC-20 the Factory deploys. */
-export const CREATOR_COIN_CLASS_HASH_MAINNET =
-  "0x743e4c8a5b96bb83bbf4af04edbbb482d5ece89eed9b729a79fb7df0cd0b6b6";
+export const CREATOR_COIN_CLASS_HASH_MAINNET = SN.creatorCoinClassHash!;
 
 /** Class hash of the Creator Coin Factory. */
-export const CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET =
-  "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55";
+export const CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET = SN.creatorCoinFactoryClassHash!;
 
 /** First mainnet block of the Factory deployment. */
-export const CREATOR_COIN_START_BLOCK_MAINNET = 10474544;
+export const CREATOR_COIN_START_BLOCK_MAINNET = SN.creatorCoinStartBlock!;
 
 /** Ekubo Core (Starknet mainnet) — Creator Coin pools live here; read spot price via `get_pool_price`. */
-export const EKUBO_CORE_MAINNET =
-  "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b";
+export const EKUBO_CORE_MAINNET = SN.ekuboCore!;

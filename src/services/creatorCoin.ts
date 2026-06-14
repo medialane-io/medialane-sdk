@@ -99,7 +99,7 @@ export async function getCreatorCoinPrice(
   const fee = r[2];
   const tickSpacing = r[3];
   // Zero-pad to 64 hex so it matches SUPPORTED_TOKENS (the RPC returns it unpadded).
-  const quoteToken = normalizeAddress("0x" + BigInt(r[7]).toString(16));
+  const quoteToken = normalizeAddress("STARKNET","0x" + BigInt(r[7]).toString(16));
   const token = getTokenByAddress(quoteToken);
   const quoteDecimals = token?.decimals ?? 18;
 
@@ -202,20 +202,20 @@ const CREATOR_COIN_CREATED_SELECTOR = hash.getSelectorFromName("CreatorCoinCreat
  * Throws when the receipt carries no matching Factory event.
  */
 export function parseCreatorCoinCreated(receipt: CreatorCoinReceiptLike): string {
-  const factory = normalizeAddress(CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
+  const factory = normalizeAddress("STARKNET",CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
   for (const ev of receipt?.events ?? []) {
     let from: string;
     try {
-      from = normalizeAddress(ev.from_address ?? "");
+      from = normalizeAddress("STARKNET",ev.from_address ?? "");
     } catch {
       continue;
     }
     if (from !== factory) continue;
     const k0 = ev.keys?.[0];
-    if (!k0 || normalizeAddress(k0) !== normalizeAddress(CREATOR_COIN_CREATED_SELECTOR)) continue;
+    if (!k0 || normalizeAddress("STARKNET",k0) !== normalizeAddress("STARKNET",CREATOR_COIN_CREATED_SELECTOR)) continue;
     const data = ev.data ?? [];
     if (data.length < 1) continue;
-    return normalizeAddress(data[data.length - 1]); // coin_address is last
+    return normalizeAddress("STARKNET",data[data.length - 1]); // coin_address is last
   }
   throw new Error("Coin deployed but the coin address could not be read from the receipt");
 }

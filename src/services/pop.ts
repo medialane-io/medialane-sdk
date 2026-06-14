@@ -16,7 +16,7 @@ export class PopService {
   }
 
   private _collection(address: string, account: AccountInterface) {
-    return new Contract(POPCollectionABI as any, normalizeAddress(address), account as any);
+    return new Contract(POPCollectionABI as any, normalizeAddress("STARKNET",address), account as any);
   }
 
   async claim(account: AccountInterface, collectionAddress: string): Promise<TxResult> {

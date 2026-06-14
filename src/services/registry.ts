@@ -23,10 +23,11 @@ import {
 /**
  * The Medialane service registry (05-service-model §II, §VI).
  * Canonical long-form IDs (01-core-model §III). SDK-resident in v1;
- * on-chain registry in year 2 (08-dao-governance §IV).
+ * on-chain registry later (08-dao-governance §IV).
  *
- * Year-2 forward-compat: cross-account identity uses the future `AccountID`
- * contract (07-identity-model §IV) — no field here yet, intentionally.
+ * `onchain` is keyed per chain (spec 2026-06-13 §3.1, Decision A): the SDK
+ * registry is the single source of a service's coordinates on each chain.
+ * Only STARKNET is populated today; adding a chain adds a key here.
  *
  * Phase 2B.2 of the service-model refactor. `ip-erc721` has no dedicated
  * on-chain constant in src/constants.ts, so its `onchain` is omitted rather
@@ -40,8 +41,10 @@ const SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: COLLECTION_721_CONTRACT_MAINNET,
-      startBlock: COLLECTION_721_START_BLOCK_MAINNET,
+      STARKNET: {
+        factoryAddress: COLLECTION_721_CONTRACT_MAINNET,
+        startBlock: COLLECTION_721_START_BLOCK_MAINNET,
+      },
     },
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
@@ -63,7 +66,7 @@ const SERVICES = {
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
     // No factory — single shared contract. Events declared when the genesis
-    // contract address is wired into onchain.factoryAddress here.
+    // contract address is wired into onchain.STARKNET.factoryAddress here.
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },
   "mip-erc1155": {
@@ -73,9 +76,11 @@ const SERVICES = {
     standard: "ERC1155",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: COLLECTION_1155_CONTRACT_MAINNET,
-      classHash: COLLECTION_1155_CLASS_HASH_MAINNET,
-      startBlock: COLLECTION_1155_START_BLOCK_MAINNET,
+      STARKNET: {
+        factoryAddress: COLLECTION_1155_CONTRACT_MAINNET,
+        classHash: COLLECTION_1155_CLASS_HASH_MAINNET,
+        startBlock: COLLECTION_1155_START_BLOCK_MAINNET,
+      },
     },
     uiVariant: "edition",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
@@ -91,8 +96,10 @@ const SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: POP_FACTORY_CONTRACT_MAINNET,
-      classHash: POP_COLLECTION_CLASS_HASH_MAINNET,
+      STARKNET: {
+        factoryAddress: POP_FACTORY_CONTRACT_MAINNET,
+        classHash: POP_COLLECTION_CLASS_HASH_MAINNET,
+      },
     },
     uiVariant: "pop",
     capabilities: ["claim", "transfer"],
@@ -109,8 +116,10 @@ const SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: DROP_FACTORY_CONTRACT_MAINNET,
-      classHash: DROP_COLLECTION_CLASS_HASH_MAINNET,
+      STARKNET: {
+        factoryAddress: DROP_FACTORY_CONTRACT_MAINNET,
+        classHash: DROP_COLLECTION_CLASS_HASH_MAINNET,
+      },
     },
     uiVariant: "drop",
     capabilities: ["claim", "list", "buy", "make_offer", "cancel", "transfer"],
@@ -128,9 +137,11 @@ const SERVICES = {
     standard: "ERC20",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
-      classHash: CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
-      startBlock: CREATOR_COIN_START_BLOCK_MAINNET,
+      STARKNET: {
+        factoryAddress: CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
+        classHash: CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
+        startBlock: CREATOR_COIN_START_BLOCK_MAINNET,
+      },
     },
     uiVariant: "coin",
     // `swap` is a UI affordance (05 §III): the marketplace renders an embedded
@@ -150,9 +161,11 @@ const SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: MARKETPLACE_721_CONTRACT_MAINNET,
-      classHash: MARKETPLACE_721_CLASS_HASH_MAINNET,
-      startBlock: MARKETPLACE_721_START_BLOCK_MAINNET,
+      STARKNET: {
+        factoryAddress: MARKETPLACE_721_CONTRACT_MAINNET,
+        classHash: MARKETPLACE_721_CLASS_HASH_MAINNET,
+        startBlock: MARKETPLACE_721_START_BLOCK_MAINNET,
+      },
     },
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel"],
@@ -169,9 +182,11 @@ const SERVICES = {
     standard: "ERC1155",
     provenance: "MEDIALANE",
     onchain: {
-      factoryAddress: MARKETPLACE_1155_CONTRACT_MAINNET,
-      classHash: MARKETPLACE_1155_CLASS_HASH_MAINNET,
-      startBlock: MARKETPLACE_1155_START_BLOCK_MAINNET,
+      STARKNET: {
+        factoryAddress: MARKETPLACE_1155_CONTRACT_MAINNET,
+        classHash: MARKETPLACE_1155_CLASS_HASH_MAINNET,
+        startBlock: MARKETPLACE_1155_START_BLOCK_MAINNET,
+      },
     },
     uiVariant: "edition",
     capabilities: ["list", "buy", "make_offer", "cancel"],

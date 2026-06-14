@@ -1,4 +1,5 @@
 import { normalizeAddress } from "../utils/address.js";
+import type { Chain } from "../chains.js";
 import type { MedialaneErrorCode } from "../types/errors.js";
 import { withRetry, type RetryOptions } from "../utils/retry.js";
 import type {
@@ -79,10 +80,16 @@ export class ApiClient {
   constructor(
     private readonly baseUrl: string,
     apiKey?: string,
-    retryOptions?: RetryOptions
+    retryOptions?: RetryOptions,
+    private readonly chain: Chain = "STARKNET"
   ) {
     this.baseHeaders = apiKey ? { "x-api-key": apiKey } : {};
     this.retryOptions = retryOptions;
+  }
+
+  /** Normalize an address for this client's chain (chain-scoped — Decision B). */
+  private addr(a: string): string {
+    return normalizeAddress(this.chain, a);
   }
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -156,7 +163,7 @@ export class ApiClient {
     if (query.sort) params.set("sort", query.sort);
     if (query.page !== undefined) params.set("page", String(query.page));
     if (query.limit !== undefined) params.set("limit", String(query.limit));
-    if (query.offerer) params.set("offerer", normalizeAddress(query.offerer));
+    if (query.offerer) params.set("offerer", this.addr(query.offerer));
     if (query.minPrice) params.set("minPrice", query.minPrice);
     if (query.maxPrice) params.set("maxPrice", query.maxPrice);
     const qs = params.toString();
@@ -168,12 +175,12 @@ export class ApiClient {
   }
 
   getActiveOrdersForToken(contract: string, tokenId: string): Promise<ApiResponse<ApiOrder[]>> {
-    return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/token/${normalizeAddress(contract)}/${tokenId}`);
+    return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/token/${this.addr(contract)}/${tokenId}`);
   }
 
   getOrdersByUser(address: string, page = 1, limit = 20): Promise<ApiResponse<ApiOrder[]>> {
     return this.get<ApiResponse<ApiOrder[]>>(
-      `/v1/orders/user/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+      `/v1/orders/user/${this.addr(address)}?page=${page}&limit=${limit}`
     );
   }
 
@@ -187,7 +194,7 @@ export class ApiClient {
 
   getTokensByOwner(address: string, page = 1, limit = 20): Promise<ApiResponse<ApiToken[]>> {
     return this.get<ApiResponse<ApiToken[]>>(
-      `/v1/tokens/owned/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+      `/v1/tokens/owned/${this.addr(address)}?page=${page}&limit=${limit}`
     );
   }
 
@@ -219,12 +226,12 @@ export class ApiClient {
   }
 
   getCollectionsByOwner(owner: string, page = 1, limit = 50): Promise<ApiResponse<ApiCollection[]>> {
-    const params = new URLSearchParams({ owner: normalizeAddress(owner), page: String(page), limit: String(limit) });
+    const params = new URLSearchParams({ owner: this.addr(owner), page: String(page), limit: String(limit) });
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
   }
 
   getCollection(contract: string): Promise<ApiResponse<ApiCollection>> {
-    return this.get<ApiResponse<ApiCollection>>(`/v1/collections/${normalizeAddress(contract)}`);
+    return this.get<ApiResponse<ApiCollection>>(`/v1/collections/${this.addr(contract)}`);
   }
 
   getCollectionTokens(
@@ -233,7 +240,7 @@ export class ApiClient {
     limit = 20
   ): Promise<ApiResponse<ApiToken[]>> {
     return this.get<ApiResponse<ApiToken[]>>(
-      `/v1/collections/${normalizeAddress(contract)}/tokens?page=${page}&limit=${limit}`
+      `/v1/collections/${this.addr(contract)}/tokens?page=${page}&limit=${limit}`
     );
   }
 
@@ -254,7 +261,7 @@ export class ApiClient {
     limit = 20
   ): Promise<ApiResponse<ApiActivity[]>> {
     return this.get<ApiResponse<ApiActivity[]>>(
-      `/v1/activities/${normalizeAddress(address)}?page=${page}&limit=${limit}`
+      `/v1/activities/${this.addr(address)}?page=${page}&limit=${limit}`
     );
   }
 
@@ -270,7 +277,7 @@ export class ApiClient {
     if (opts.limit !== undefined) params.set("limit", String(opts.limit));
     const qs = params.toString();
     return this.get<ApiResponse<ApiComment[]>>(
-      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/comments${qs ? `?${qs}` : ""}`
+      `/v1/tokens/${this.addr(contract)}/${tokenId}/comments${qs ? `?${qs}` : ""}`
     );
   }
 
@@ -463,7 +470,7 @@ export class ApiClient {
   // ─── Collection Profiles ────────────────────────────────────────────────────
 
   async getCollectionProfile(contractAddress: string): Promise<ApiCollectionProfile | null> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
     return this.checkResponse<ApiCollectionProfile>(res, { allow404: true });
   }
@@ -476,7 +483,7 @@ export class ApiClient {
     data: Partial<Omit<ApiCollectionProfile, "contractAddress" | "chain" | "updatedBy" | "updatedAt">>,
     clerkToken: string
   ): Promise<ApiCollectionProfile> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/profile`;
     const res = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -493,7 +500,7 @@ export class ApiClient {
     contractAddress: string,
     clerkToken: string
   ): Promise<{ title: string; url: string; type: string } | null> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${normalizeAddress(contractAddress)}/gated-content`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/gated-content`;
     const res = await fetch(url, {
       headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` },
     });
@@ -514,7 +521,7 @@ export class ApiClient {
   }
 
   async getCreatorProfile(walletAddress: string): Promise<ApiCreatorProfile | null> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${this.addr(walletAddress)}/profile`;
     const res = await fetch(url, { headers: this.baseHeaders });
     return this.checkResponse<ApiCreatorProfile>(res, { allow404: true });
   }
@@ -534,7 +541,7 @@ export class ApiClient {
     data: Partial<Omit<ApiCreatorProfile, "walletAddress" | "chain" | "updatedAt">>,
     clerkToken: string
   ): Promise<ApiCreatorProfile> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${normalizeAddress(walletAddress)}/profile`;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${this.addr(walletAddress)}/profile`;
     const res = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -685,7 +692,7 @@ export class ApiClient {
     if (opts.limit !== undefined) params.set("limit", String(opts.limit));
     const qs = params.toString();
     return this.get<ApiResponse<ApiPublicRemix[]>>(
-      `/v1/tokens/${normalizeAddress(contract)}/${tokenId}/remixes${qs ? `?${qs}` : ""}`
+      `/v1/tokens/${this.addr(contract)}/${tokenId}/remixes${qs ? `?${qs}` : ""}`
     );
   }
 
@@ -807,15 +814,15 @@ export class ApiClient {
 
   async getPopEligibility(collection: string, wallet: string): Promise<PopClaimStatus> {
     const res = await this.get<{ data: PopClaimStatus }>(
-      `/v1/pop/eligibility/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
+      `/v1/pop/eligibility/${this.addr(collection)}/${this.addr(wallet)}`
     );
     return res.data;
   }
 
   async getPopEligibilityBatch(collection: string, wallets: string[]): Promise<PopBatchEligibilityItem[]> {
-    const params = new URLSearchParams({ wallets: wallets.map(normalizeAddress).join(",") });
+    const params = new URLSearchParams({ wallets: wallets.map((w) => this.addr(w)).join(",") });
     const res = await this.get<{ data: PopBatchEligibilityItem[] }>(
-      `/v1/pop/eligibility/${normalizeAddress(collection)}?${params}`
+      `/v1/pop/eligibility/${this.addr(collection)}?${params}`
     );
     return res.data;
   }
@@ -828,7 +835,7 @@ export class ApiClient {
 
   async getDropMintStatus(collection: string, wallet: string): Promise<DropMintStatus> {
     const res = await this.get<{ data: DropMintStatus }>(
-      `/v1/drop/mint-status/${normalizeAddress(collection)}/${normalizeAddress(wallet)}`
+      `/v1/drop/mint-status/${this.addr(collection)}/${this.addr(wallet)}`
     );
     return res.data;
   }
