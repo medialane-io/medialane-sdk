@@ -703,6 +703,7 @@ interface ApiCoin {
     decimals: number;
     /** Fungible supply as a decimal string — NOT an item count. */
     totalSupply: string | null;
+    description: string | null;
     image: string | null;
     creator: string | null;
     startBlock: string;
