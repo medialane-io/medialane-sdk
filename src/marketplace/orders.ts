@@ -343,12 +343,19 @@ export async function mint(
   params: MintParams,
   config: ResolvedConfig
 ): Promise<TxResult> {
-  const { collectionId, recipient, tokenUri, collectionContract } = params;
+  const { collectionId, recipient, tokenUri, royaltyBps, collectionContract } = params;
   const provider = getProvider(config);
   const contractAddress = collectionContract ?? config.collectionContract;
 
   const id = cairo.uint256(collectionId);
-  const calldata = [id.low.toString(), id.high.toString(), recipient, ...encodeByteArray(tokenUri)];
+  // mint(collection_id: u256, recipient, token_uri: ByteArray, royalty_bps: u128)
+  const calldata = [
+    id.low.toString(),
+    id.high.toString(),
+    recipient,
+    ...encodeByteArray(tokenUri),
+    royaltyBps.toString(),
+  ];
 
   try {
     const tx = await account.execute([{ contractAddress, entrypoint: "mint", calldata }]);

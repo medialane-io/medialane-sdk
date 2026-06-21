@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -98,6 +98,7 @@ src/
 > - **v0.35.0 (drop legacy ERC-1155 constants)**: removed `COLLECTION_1155_CONTRACT_LEGACY_MAINNET` + `COLLECTION_1155_START_BLOCK_LEGACY_MAINNET`. Medialane keeps no legacy protocol support — prior-version (v0.2.0) collections were reclassified `external-erc1155` (read-only) on the 2026-06-10 cutover, so the SDK no longer carries the retired factory address.
 > - **v0.37.0 (multichain-readiness foundations — BREAKING, Phase 1)**: `chain` is now a first-class axis. New `chains.ts` holds the **`coordinates[chain]` registry** (single source of per-chain service coordinates; exports `CHAINS`/`getCoordinates`/`DEFAULT_CHAIN`/`Chain`/`ChainCoordinates`). The flat `*_MAINNET` constants stay (same names/values) but **derive** from it. **`MedialaneConfig.chain` replaces `network`** (client is chain-scoped; `client.network`→`client.chain`); **`ServiceDefinition.onchain` is per-chain** (`Partial<Record<Chain,…>>` — read `.onchain?.STARKNET?.factoryAddress`); **removed `SUPPORTED_NETWORKS`/`DEFAULT_RPC_URL`/`Network`** (mainnet-only, coordinates key by chain — refines `D-9`); **`getChainId(config)` throws for non-Starknet**. Starknet behavior unchanged. **Published to npm + merged to `main` 2026-06-14** (backend on 0.37.0, deployed to prod). Spec: `medialane-core/docs/specs/2026-06-13-multichain-readiness-design.md`.
 > - **v0.38.0 (Coin / Collection split — BREAKING)**: fungible coins are now their own model, not `Collection` rows. New **`ApiCoin`** type + **`client.api.getCoins(opts?)` / `getCoin(contract)`** (served from `/v1/coins`). **`ApiCollection.standard` narrowed to `"ERC721" | "ERC1155"`** (`Collection` is NFT-only; `ERC20`/`UNKNOWN` removed). The `getCollections(standard="ERC20")` coin path is gone — use `getCoins()`. `getCreatorCoinPrice`/`CreatorCoinService` unchanged (price live from Ekubo). Spec: `medialane-core/docs/specs/2026-06-14-coin-collection-split-design.md`.
+> - **v0.39.0 (MIP v0.4.0 — creator royalties, BREAKING)**: the MIP-Collections-ERC721 registry was redeployed on Starknet with per-token EIP-2981 royalties. **New `chains.ts` Starknet coordinates** (and the derived `*_MAINNET` constants): `collection721` → `0x0558c9b6…aeef2`, `ipNftClassHash` → `0x040551f0…`, `ipCollectionClassHash` → `0x063d4ac4…`, `collection721StartBlock` → `11002817`. The retired `0x0322cb71…` registry is **dropped** (Medialane keeps no legacy protocol support; prior collections reclassify `external-erc721` read-only). **ABIs regenerated** from the deployed artifacts: `IPCollectionABI` — `mint`/`batch_mint` take `royalty_bps` (u128 / `Array<u128>`), token ops take explicit `(collection_id, token_id): u256` (the `"collection_id:token_id"` string form is gone), `transfer_token` drops `from`, `CollectionStats.total_transfers` → `protocol_routed_transfers`, plus `version()` and richer batch events; `IPNftABI` gains `royalty_info`/`token_royalty`/`default_royalty`/`supports_interface`/`version`. **`MintParams.royaltyBps` + `CreateMintIntentParams.royaltyBps` are now required** (bps 0–10_000; receiver = immutable creator); `marketplace.mint` appends `royalty_bps` to calldata and `createMintIntent` forwards it to the backend `/mint` builder. Contract: `mediolano-contracts` MIP v0.4.0. Plan: `medialane-core/docs/plans/2026-06-20-mip-v0.4.0-platform-migration.md`.
 
 ---
 
@@ -343,10 +344,10 @@ MARKETPLACE_721_START_BLOCK_MAINNET         = 10350340
 MARKETPLACE_1155_CONTRACT_MAINNET           = "0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077"  // Medialane1155 redesign (2026-05-31)
 MARKETPLACE_1155_CLASS_HASH_MAINNET         = "0x02600bb720908f119afe482309d36c39d087587f0df9576454acfb6363e78cd8"
 MARKETPLACE_1155_START_BLOCK_MAINNET        = 10350855
-COLLECTION_721_CONTRACT_MAINNET             = "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2"  // MIP v0.3.0 (2026-05-22)
-COLLECTION_721_START_BLOCK_MAINNET          = 10046166
-IPNFT_CLASS_HASH_MAINNET                    = "0x27ee4ded786d51bced1e94afec3034d6ffce71c032c45ee1ff283ccfa9db12e"
-IPCOLLECTION_CLASS_HASH_MAINNET             = "0x287ccdff8b6655a2248cfe170d82eae3a35303cd00ef3e751b25ddca26d9095"
+COLLECTION_721_CONTRACT_MAINNET             = "0x0558c9b6ea4d403df6d765fb77be55702c572f0a811f037c6c4209fe1e5aeef2"  // MIP v0.4.0 — royalties (2026-06-20)
+COLLECTION_721_START_BLOCK_MAINNET          = 11002817
+IPNFT_CLASS_HASH_MAINNET                    = "0x040551f0d009a6d665ddff980a375dfccc71a8928c8bfcc9ab56244bc4464fab"
+IPCOLLECTION_CLASS_HASH_MAINNET             = "0x063d4ac4ae317fd155216bf1b8a4d3a63172ff72965b9ac48dd5add0c2d32b70"
 COLLECTION_1155_CONTRACT_MAINNET            = "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc"  // v0.3.0 ownerless factory (2026-06-10)
 COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET  = "0x331a69da8655a882ba1fbcb55188b8fa09116521db901bbbaafc9fead0689f8"
 COLLECTION_1155_CLASS_HASH_MAINNET          = "0x4e110b59af240ae6c7742999964c4eae13fb2ed935c47fe97653ec017ebea34"

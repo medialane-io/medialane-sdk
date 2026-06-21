@@ -18,10 +18,10 @@ var COORDINATES = {
     marketplace1155: "0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077",
     marketplace1155ClassHash: "0x02600bb720908f119afe482309d36c39d087587f0df9576454acfb6363e78cd8",
     marketplace1155StartBlock: 10350855,
-    collection721: "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2",
-    collection721StartBlock: 10046166,
-    ipNftClassHash: "0x27ee4ded786d51bced1e94afec3034d6ffce71c032c45ee1ff283ccfa9db12e",
-    ipCollectionClassHash: "0x287ccdff8b6655a2248cfe170d82eae3a35303cd00ef3e751b25ddca26d9095",
+    collection721: "0x0558c9b6ea4d403df6d765fb77be55702c572f0a811f037c6c4209fe1e5aeef2",
+    collection721StartBlock: 11002817,
+    ipNftClassHash: "0x040551f0d009a6d665ddff980a375dfccc71a8928c8bfcc9ab56244bc4464fab",
+    ipCollectionClassHash: "0x063d4ac4ae317fd155216bf1b8a4d3a63172ff72965b9ac48dd5add0c2d32b70",
     collection1155: "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc",
     collection1155FactoryClassHash: "0x331a69da8655a882ba1fbcb55188b8fa09116521db901bbbaafc9fead0689f8",
     collection1155ClassHash: "0x4e110b59af240ae6c7742999964c4eae13fb2ed935c47fe97653ec017ebea34",
@@ -2998,7 +2998,7 @@ var IPCollectionABI = [
         "type": "core::integer::u256"
       },
       {
-        "name": "total_transfers",
+        "name": "protocol_routed_transfers",
         "type": "core::integer::u256"
       },
       {
@@ -3088,6 +3088,10 @@ var IPCollectionABI = [
           {
             "name": "token_uri",
             "type": "core::byte_array::ByteArray"
+          },
+          {
+            "name": "royalty_bps",
+            "type": "core::integer::u128"
           }
         ],
         "outputs": [
@@ -3112,6 +3116,10 @@ var IPCollectionABI = [
           {
             "name": "token_uris",
             "type": "core::array::Array::<core::byte_array::ByteArray>"
+          },
+          {
+            "name": "royalty_bps",
+            "type": "core::array::Array::<core::integer::u128>"
           }
         ],
         "outputs": [
@@ -3142,8 +3150,12 @@ var IPCollectionABI = [
         "name": "archive",
         "inputs": [
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [],
@@ -3154,8 +3166,12 @@ var IPCollectionABI = [
         "name": "batch_archive",
         "inputs": [
           {
-            "name": "tokens",
-            "type": "core::array::Array::<core::byte_array::ByteArray>"
+            "name": "collection_ids",
+            "type": "core::array::Array::<core::integer::u256>"
+          },
+          {
+            "name": "token_ids",
+            "type": "core::array::Array::<core::integer::u256>"
           }
         ],
         "outputs": [],
@@ -3166,16 +3182,16 @@ var IPCollectionABI = [
         "name": "transfer_token",
         "inputs": [
           {
-            "name": "from",
-            "type": "core::starknet::contract_address::ContractAddress"
-          },
-          {
             "name": "to",
             "type": "core::starknet::contract_address::ContractAddress"
           },
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [],
@@ -3194,8 +3210,12 @@ var IPCollectionABI = [
             "type": "core::starknet::contract_address::ContractAddress"
           },
           {
-            "name": "tokens",
-            "type": "core::array::Array::<core::byte_array::ByteArray>"
+            "name": "collection_ids",
+            "type": "core::array::Array::<core::integer::u256>"
+          },
+          {
+            "name": "token_ids",
+            "type": "core::array::Array::<core::integer::u256>"
           }
         ],
         "outputs": [],
@@ -3266,6 +3286,17 @@ var IPCollectionABI = [
       },
       {
         "type": "function",
+        "name": "version",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
         "name": "is_valid_collection",
         "inputs": [
           {
@@ -3321,8 +3352,12 @@ var IPCollectionABI = [
         "name": "get_token",
         "inputs": [
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [
@@ -3337,8 +3372,12 @@ var IPCollectionABI = [
         "name": "is_valid_token",
         "inputs": [
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [
@@ -3353,8 +3392,12 @@ var IPCollectionABI = [
         "name": "is_transferable_token",
         "inputs": [
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [
@@ -3459,6 +3502,11 @@ var IPCollectionABI = [
         "name": "metadata_uri",
         "type": "core::byte_array::ByteArray",
         "kind": "data"
+      },
+      {
+        "name": "royalty_bps",
+        "type": "core::integer::u128",
+        "kind": "data"
       }
     ]
   },
@@ -3480,6 +3528,11 @@ var IPCollectionABI = [
       {
         "name": "owners",
         "type": "core::array::Array::<core::starknet::contract_address::ContractAddress>",
+        "kind": "data"
+      },
+      {
+        "name": "metadata_uris",
+        "type": "core::array::Array::<core::byte_array::ByteArray>",
         "kind": "data"
       },
       {
@@ -3527,8 +3580,13 @@ var IPCollectionABI = [
     "kind": "struct",
     "members": [
       {
-        "name": "tokens",
-        "type": "core::array::Array::<core::byte_array::ByteArray>",
+        "name": "collection_ids",
+        "type": "core::array::Span::<core::integer::u256>",
+        "kind": "data"
+      },
+      {
+        "name": "token_ids",
+        "type": "core::array::Span::<core::integer::u256>",
         "kind": "data"
       },
       {
@@ -3596,8 +3654,13 @@ var IPCollectionABI = [
         "kind": "data"
       },
       {
-        "name": "tokens",
-        "type": "core::array::Array::<core::byte_array::ByteArray>",
+        "name": "collection_ids",
+        "type": "core::array::Span::<core::integer::u256>",
+        "kind": "data"
+      },
+      {
+        "name": "token_ids",
+        "type": "core::array::Span::<core::integer::u256>",
         "kind": "data"
       },
       {
@@ -3823,6 +3886,10 @@ var IPNftABI = [
           {
             "name": "creator",
             "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "royalty_bps",
+            "type": "core::integer::u128"
           }
         ],
         "outputs": [],
@@ -3874,6 +3941,17 @@ var IPNftABI = [
         "outputs": [
           {
             "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "version",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
           }
         ],
         "state_mutability": "view"
@@ -4361,6 +4439,75 @@ var IPNftABI = [
     ]
   },
   {
+    "type": "impl",
+    "name": "ERC2981Impl",
+    "interface_name": "openzeppelin_token::common::erc2981::interface::IERC2981"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::common::erc2981::interface::IERC2981",
+    "items": [
+      {
+        "type": "function",
+        "name": "royalty_info",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "sale_price",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u256)"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "ERC2981InfoImpl",
+    "interface_name": "openzeppelin_token::common::erc2981::interface::IERC2981Info"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::common::erc2981::interface::IERC2981Info",
+    "items": [
+      {
+        "type": "function",
+        "name": "default_royalty",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u128, core::integer::u128)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "token_royalty",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u128, core::integer::u128)"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
     "type": "constructor",
     "name": "constructor",
     "inputs": [
@@ -4488,6 +4635,12 @@ var IPNftABI = [
   },
   {
     "type": "event",
+    "name": "openzeppelin_token::common::erc2981::erc2981::ERC2981Component::Event",
+    "kind": "enum",
+    "variants": []
+  },
+  {
+    "type": "event",
     "name": "ip_collection_erc_721::IPNft::IPNft::Event",
     "kind": "enum",
     "variants": [
@@ -4504,6 +4657,11 @@ var IPNftABI = [
       {
         "name": "ERC721EnumerableEvent",
         "type": "openzeppelin_token::erc721::extensions::erc721_enumerable::erc721_enumerable::ERC721EnumerableComponent::Event",
+        "kind": "flat"
+      },
+      {
+        "name": "ERC2981Event",
+        "type": "openzeppelin_token::common::erc2981::erc2981::ERC2981Component::Event",
         "kind": "flat"
       }
     ]
@@ -4958,11 +5116,17 @@ async function cancelOrder(account, params, config) {
   }
 }
 async function mint(account, params, config) {
-  const { collectionId, recipient, tokenUri, collectionContract } = params;
+  const { collectionId, recipient, tokenUri, royaltyBps, collectionContract } = params;
   const provider = getProvider(config);
   const contractAddress = collectionContract ?? config.collectionContract;
   const id = starknet.cairo.uint256(collectionId);
-  const calldata = [id.low.toString(), id.high.toString(), recipient, ...encodeByteArray(tokenUri)];
+  const calldata = [
+    id.low.toString(),
+    id.high.toString(),
+    recipient,
+    ...encodeByteArray(tokenUri),
+    royaltyBps.toString()
+  ];
   try {
     const tx = await account.execute([{ contractAddress, entrypoint: "mint", calldata }]);
     await provider.waitForTransaction(tx.transaction_hash);

@@ -1,4 +1,5 @@
-export const IPCollectionABI = [
+export const IPCollectionABI =
+[
   {
     "type": "impl",
     "name": "IPCollectionImpl",
@@ -99,7 +100,7 @@ export const IPCollectionABI = [
         "type": "core::integer::u256"
       },
       {
-        "name": "total_transfers",
+        "name": "protocol_routed_transfers",
         "type": "core::integer::u256"
       },
       {
@@ -189,6 +190,10 @@ export const IPCollectionABI = [
           {
             "name": "token_uri",
             "type": "core::byte_array::ByteArray"
+          },
+          {
+            "name": "royalty_bps",
+            "type": "core::integer::u128"
           }
         ],
         "outputs": [
@@ -213,6 +218,10 @@ export const IPCollectionABI = [
           {
             "name": "token_uris",
             "type": "core::array::Array::<core::byte_array::ByteArray>"
+          },
+          {
+            "name": "royalty_bps",
+            "type": "core::array::Array::<core::integer::u128>"
           }
         ],
         "outputs": [
@@ -243,8 +252,12 @@ export const IPCollectionABI = [
         "name": "archive",
         "inputs": [
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [],
@@ -255,8 +268,12 @@ export const IPCollectionABI = [
         "name": "batch_archive",
         "inputs": [
           {
-            "name": "tokens",
-            "type": "core::array::Array::<core::byte_array::ByteArray>"
+            "name": "collection_ids",
+            "type": "core::array::Array::<core::integer::u256>"
+          },
+          {
+            "name": "token_ids",
+            "type": "core::array::Array::<core::integer::u256>"
           }
         ],
         "outputs": [],
@@ -267,16 +284,16 @@ export const IPCollectionABI = [
         "name": "transfer_token",
         "inputs": [
           {
-            "name": "from",
-            "type": "core::starknet::contract_address::ContractAddress"
-          },
-          {
             "name": "to",
             "type": "core::starknet::contract_address::ContractAddress"
           },
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [],
@@ -295,8 +312,12 @@ export const IPCollectionABI = [
             "type": "core::starknet::contract_address::ContractAddress"
           },
           {
-            "name": "tokens",
-            "type": "core::array::Array::<core::byte_array::ByteArray>"
+            "name": "collection_ids",
+            "type": "core::array::Array::<core::integer::u256>"
+          },
+          {
+            "name": "token_ids",
+            "type": "core::array::Array::<core::integer::u256>"
           }
         ],
         "outputs": [],
@@ -367,6 +388,17 @@ export const IPCollectionABI = [
       },
       {
         "type": "function",
+        "name": "version",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
         "name": "is_valid_collection",
         "inputs": [
           {
@@ -422,8 +454,12 @@ export const IPCollectionABI = [
         "name": "get_token",
         "inputs": [
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [
@@ -438,8 +474,12 @@ export const IPCollectionABI = [
         "name": "is_valid_token",
         "inputs": [
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [
@@ -454,8 +494,12 @@ export const IPCollectionABI = [
         "name": "is_transferable_token",
         "inputs": [
           {
-            "name": "token",
-            "type": "core::byte_array::ByteArray"
+            "name": "collection_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [
@@ -560,6 +604,11 @@ export const IPCollectionABI = [
         "name": "metadata_uri",
         "type": "core::byte_array::ByteArray",
         "kind": "data"
+      },
+      {
+        "name": "royalty_bps",
+        "type": "core::integer::u128",
+        "kind": "data"
       }
     ]
   },
@@ -581,6 +630,11 @@ export const IPCollectionABI = [
       {
         "name": "owners",
         "type": "core::array::Array::<core::starknet::contract_address::ContractAddress>",
+        "kind": "data"
+      },
+      {
+        "name": "metadata_uris",
+        "type": "core::array::Array::<core::byte_array::ByteArray>",
         "kind": "data"
       },
       {
@@ -628,8 +682,13 @@ export const IPCollectionABI = [
     "kind": "struct",
     "members": [
       {
-        "name": "tokens",
-        "type": "core::array::Array::<core::byte_array::ByteArray>",
+        "name": "collection_ids",
+        "type": "core::array::Span::<core::integer::u256>",
+        "kind": "data"
+      },
+      {
+        "name": "token_ids",
+        "type": "core::array::Span::<core::integer::u256>",
         "kind": "data"
       },
       {
@@ -697,8 +756,13 @@ export const IPCollectionABI = [
         "kind": "data"
       },
       {
-        "name": "tokens",
-        "type": "core::array::Array::<core::byte_array::ByteArray>",
+        "name": "collection_ids",
+        "type": "core::array::Span::<core::integer::u256>",
+        "kind": "data"
+      },
+      {
+        "name": "token_ids",
+        "type": "core::array::Span::<core::integer::u256>",
         "kind": "data"
       },
       {
@@ -761,4 +825,3 @@ export const IPCollectionABI = [
     ]
   }
 ] as const;
-

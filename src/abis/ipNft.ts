@@ -1,4 +1,5 @@
-export const IPNftABI = [
+export const IPNftABI =
+[
   {
     "type": "impl",
     "name": "ERC721Metadata",
@@ -159,6 +160,10 @@ export const IPNftABI = [
           {
             "name": "creator",
             "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "royalty_bps",
+            "type": "core::integer::u128"
           }
         ],
         "outputs": [],
@@ -210,6 +215,17 @@ export const IPNftABI = [
         "outputs": [
           {
             "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "version",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
           }
         ],
         "state_mutability": "view"
@@ -697,6 +713,75 @@ export const IPNftABI = [
     ]
   },
   {
+    "type": "impl",
+    "name": "ERC2981Impl",
+    "interface_name": "openzeppelin_token::common::erc2981::interface::IERC2981"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::common::erc2981::interface::IERC2981",
+    "items": [
+      {
+        "type": "function",
+        "name": "royalty_info",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "sale_price",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u256)"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "ERC2981InfoImpl",
+    "interface_name": "openzeppelin_token::common::erc2981::interface::IERC2981Info"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::common::erc2981::interface::IERC2981Info",
+    "items": [
+      {
+        "type": "function",
+        "name": "default_royalty",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u128, core::integer::u128)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "token_royalty",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u128, core::integer::u128)"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
     "type": "constructor",
     "name": "constructor",
     "inputs": [
@@ -824,6 +909,12 @@ export const IPNftABI = [
   },
   {
     "type": "event",
+    "name": "openzeppelin_token::common::erc2981::erc2981::ERC2981Component::Event",
+    "kind": "enum",
+    "variants": []
+  },
+  {
+    "type": "event",
     "name": "ip_collection_erc_721::IPNft::IPNft::Event",
     "kind": "enum",
     "variants": [
@@ -841,8 +932,12 @@ export const IPNftABI = [
         "name": "ERC721EnumerableEvent",
         "type": "openzeppelin_token::erc721::extensions::erc721_enumerable::erc721_enumerable::ERC721EnumerableComponent::Event",
         "kind": "flat"
+      },
+      {
+        "name": "ERC2981Event",
+        "type": "openzeppelin_token::common::erc2981::erc2981::ERC2981Component::Event",
+        "kind": "flat"
       }
     ]
   }
 ] as const;
-

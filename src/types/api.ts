@@ -556,6 +556,11 @@ export interface CreateMintIntentParams {
   collectionId: string;
   recipient: string;
   tokenUri: string;
+  /**
+   * EIP-2981 secondary-sale royalty in basis points (0–10_000). Set once at mint;
+   * receiver is the immutable creator. Required since MIP v0.4.0 — pass 0 for none.
+   */
+  royaltyBps: number;
   /** Optional: override the default collection contract address */
   collectionContract?: string;
 }
