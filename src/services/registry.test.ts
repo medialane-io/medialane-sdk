@@ -4,7 +4,7 @@ import { getService } from "./registry.js";
 test("mip-erc721 exposes Starknet onchain coordinates", () => {
   const svc = getService("mip-erc721")!;
   expect(svc.onchain?.STARKNET?.factoryAddress).toBe(
-    "0x0322cb7119955e01ac778d40976eb3ba50540bb0899f812d612f9c7e63e49fd2",
+    "0x0558c9b6ea4d403df6d765fb77be55702c572f0a811f037c6c4209fe1e5aeef2",
   );
 });
 

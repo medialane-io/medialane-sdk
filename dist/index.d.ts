@@ -260,6 +260,12 @@ interface MintParams {
     collectionId: string;
     recipient: string;
     tokenUri: string;
+    /**
+     * EIP-2981 secondary-sale royalty in basis points (0–10_000). Set once at mint;
+     * the receiver is the immutable creator (the minting collection owner). Required
+     * since MIP v0.4.0 — pass 0 for no royalty.
+     */
+    royaltyBps: number;
     /** Optional: override the collection contract from config */
     collectionContract?: string;
 }
@@ -883,6 +889,11 @@ interface CreateMintIntentParams {
     collectionId: string;
     recipient: string;
     tokenUri: string;
+    /**
+     * EIP-2981 secondary-sale royalty in basis points (0–10_000). Set once at mint;
+     * receiver is the immutable creator. Required since MIP v0.4.0 — pass 0 for none.
+     */
+    royaltyBps: number;
     /** Optional: override the default collection contract address */
     collectionContract?: string;
 }
@@ -4097,7 +4108,7 @@ declare const IPCollectionABI: readonly [{
         readonly name: "total_archived";
         readonly type: "core::integer::u256";
     }, {
-        readonly name: "total_transfers";
+        readonly name: "protocol_routed_transfers";
         readonly type: "core::integer::u256";
     }, {
         readonly name: "last_mint_time";
@@ -4163,6 +4174,9 @@ declare const IPCollectionABI: readonly [{
         }, {
             readonly name: "token_uri";
             readonly type: "core::byte_array::ByteArray";
+        }, {
+            readonly name: "royalty_bps";
+            readonly type: "core::integer::u128";
         }];
         readonly outputs: readonly [{
             readonly type: "core::integer::u256";
@@ -4180,6 +4194,9 @@ declare const IPCollectionABI: readonly [{
         }, {
             readonly name: "token_uris";
             readonly type: "core::array::Array::<core::byte_array::ByteArray>";
+        }, {
+            readonly name: "royalty_bps";
+            readonly type: "core::array::Array::<core::integer::u128>";
         }];
         readonly outputs: readonly [{
             readonly type: "core::array::Span::<core::integer::u256>";
@@ -4201,8 +4218,11 @@ declare const IPCollectionABI: readonly [{
         readonly type: "function";
         readonly name: "archive";
         readonly inputs: readonly [{
-            readonly name: "token";
-            readonly type: "core::byte_array::ByteArray";
+            readonly name: "collection_id";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
         }];
         readonly outputs: readonly [];
         readonly state_mutability: "external";
@@ -4210,8 +4230,11 @@ declare const IPCollectionABI: readonly [{
         readonly type: "function";
         readonly name: "batch_archive";
         readonly inputs: readonly [{
-            readonly name: "tokens";
-            readonly type: "core::array::Array::<core::byte_array::ByteArray>";
+            readonly name: "collection_ids";
+            readonly type: "core::array::Array::<core::integer::u256>";
+        }, {
+            readonly name: "token_ids";
+            readonly type: "core::array::Array::<core::integer::u256>";
         }];
         readonly outputs: readonly [];
         readonly state_mutability: "external";
@@ -4219,14 +4242,14 @@ declare const IPCollectionABI: readonly [{
         readonly type: "function";
         readonly name: "transfer_token";
         readonly inputs: readonly [{
-            readonly name: "from";
-            readonly type: "core::starknet::contract_address::ContractAddress";
-        }, {
             readonly name: "to";
             readonly type: "core::starknet::contract_address::ContractAddress";
         }, {
-            readonly name: "token";
-            readonly type: "core::byte_array::ByteArray";
+            readonly name: "collection_id";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
         }];
         readonly outputs: readonly [];
         readonly state_mutability: "external";
@@ -4240,8 +4263,11 @@ declare const IPCollectionABI: readonly [{
             readonly name: "to";
             readonly type: "core::starknet::contract_address::ContractAddress";
         }, {
-            readonly name: "tokens";
-            readonly type: "core::array::Array::<core::byte_array::ByteArray>";
+            readonly name: "collection_ids";
+            readonly type: "core::array::Array::<core::integer::u256>";
+        }, {
+            readonly name: "token_ids";
+            readonly type: "core::array::Array::<core::integer::u256>";
         }];
         readonly outputs: readonly [];
         readonly state_mutability: "external";
@@ -4291,6 +4317,14 @@ declare const IPCollectionABI: readonly [{
         readonly state_mutability: "view";
     }, {
         readonly type: "function";
+        readonly name: "version";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly type: "core::byte_array::ByteArray";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
         readonly name: "is_valid_collection";
         readonly inputs: readonly [{
             readonly name: "collection_id";
@@ -4329,8 +4363,11 @@ declare const IPCollectionABI: readonly [{
         readonly type: "function";
         readonly name: "get_token";
         readonly inputs: readonly [{
-            readonly name: "token";
-            readonly type: "core::byte_array::ByteArray";
+            readonly name: "collection_id";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
         }];
         readonly outputs: readonly [{
             readonly type: "ip_collection_erc_721::types::TokenData";
@@ -4340,8 +4377,11 @@ declare const IPCollectionABI: readonly [{
         readonly type: "function";
         readonly name: "is_valid_token";
         readonly inputs: readonly [{
-            readonly name: "token";
-            readonly type: "core::byte_array::ByteArray";
+            readonly name: "collection_id";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
         }];
         readonly outputs: readonly [{
             readonly type: "core::bool";
@@ -4351,8 +4391,11 @@ declare const IPCollectionABI: readonly [{
         readonly type: "function";
         readonly name: "is_transferable_token";
         readonly inputs: readonly [{
-            readonly name: "token";
-            readonly type: "core::byte_array::ByteArray";
+            readonly name: "collection_id";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
         }];
         readonly outputs: readonly [{
             readonly type: "core::bool";
@@ -4432,6 +4475,10 @@ declare const IPCollectionABI: readonly [{
         readonly name: "metadata_uri";
         readonly type: "core::byte_array::ByteArray";
         readonly kind: "data";
+    }, {
+        readonly name: "royalty_bps";
+        readonly type: "core::integer::u128";
+        readonly kind: "data";
     }];
 }, {
     readonly type: "event";
@@ -4448,6 +4495,10 @@ declare const IPCollectionABI: readonly [{
     }, {
         readonly name: "owners";
         readonly type: "core::array::Array::<core::starknet::contract_address::ContractAddress>";
+        readonly kind: "data";
+    }, {
+        readonly name: "metadata_uris";
+        readonly type: "core::array::Array::<core::byte_array::ByteArray>";
         readonly kind: "data";
     }, {
         readonly name: "operator";
@@ -4484,8 +4535,12 @@ declare const IPCollectionABI: readonly [{
     readonly name: "ip_collection_erc_721::IPCollection::IPCollection::TokenArchivedBatch";
     readonly kind: "struct";
     readonly members: readonly [{
-        readonly name: "tokens";
-        readonly type: "core::array::Array::<core::byte_array::ByteArray>";
+        readonly name: "collection_ids";
+        readonly type: "core::array::Span::<core::integer::u256>";
+        readonly kind: "data";
+    }, {
+        readonly name: "token_ids";
+        readonly type: "core::array::Span::<core::integer::u256>";
         readonly kind: "data";
     }, {
         readonly name: "operator";
@@ -4538,8 +4593,12 @@ declare const IPCollectionABI: readonly [{
         readonly type: "core::starknet::contract_address::ContractAddress";
         readonly kind: "data";
     }, {
-        readonly name: "tokens";
-        readonly type: "core::array::Array::<core::byte_array::ByteArray>";
+        readonly name: "collection_ids";
+        readonly type: "core::array::Span::<core::integer::u256>";
+        readonly kind: "data";
+    }, {
+        readonly name: "token_ids";
+        readonly type: "core::array::Span::<core::integer::u256>";
         readonly kind: "data";
     }, {
         readonly name: "operator";
@@ -4705,6 +4764,9 @@ declare const IPNftABI: readonly [{
         }, {
             readonly name: "creator";
             readonly type: "core::starknet::contract_address::ContractAddress";
+        }, {
+            readonly name: "royalty_bps";
+            readonly type: "core::integer::u128";
         }];
         readonly outputs: readonly [];
         readonly state_mutability: "external";
@@ -4742,6 +4804,14 @@ declare const IPNftABI: readonly [{
         readonly inputs: readonly [];
         readonly outputs: readonly [{
             readonly type: "core::starknet::contract_address::ContractAddress";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "version";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly type: "core::byte_array::ByteArray";
         }];
         readonly state_mutability: "view";
     }, {
@@ -5088,6 +5158,55 @@ declare const IPNftABI: readonly [{
         readonly state_mutability: "view";
     }];
 }, {
+    readonly type: "impl";
+    readonly name: "ERC2981Impl";
+    readonly interface_name: "openzeppelin_token::common::erc2981::interface::IERC2981";
+}, {
+    readonly type: "interface";
+    readonly name: "openzeppelin_token::common::erc2981::interface::IERC2981";
+    readonly items: readonly [{
+        readonly type: "function";
+        readonly name: "royalty_info";
+        readonly inputs: readonly [{
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "sale_price";
+            readonly type: "core::integer::u256";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "(core::starknet::contract_address::ContractAddress, core::integer::u256)";
+        }];
+        readonly state_mutability: "view";
+    }];
+}, {
+    readonly type: "impl";
+    readonly name: "ERC2981InfoImpl";
+    readonly interface_name: "openzeppelin_token::common::erc2981::interface::IERC2981Info";
+}, {
+    readonly type: "interface";
+    readonly name: "openzeppelin_token::common::erc2981::interface::IERC2981Info";
+    readonly items: readonly [{
+        readonly type: "function";
+        readonly name: "default_royalty";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly type: "(core::starknet::contract_address::ContractAddress, core::integer::u128, core::integer::u128)";
+        }];
+        readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "token_royalty";
+        readonly inputs: readonly [{
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "(core::starknet::contract_address::ContractAddress, core::integer::u128, core::integer::u128)";
+        }];
+        readonly state_mutability: "view";
+    }];
+}, {
     readonly type: "constructor";
     readonly name: "constructor";
     readonly inputs: readonly [{
@@ -5186,6 +5305,11 @@ declare const IPNftABI: readonly [{
     readonly variants: readonly [];
 }, {
     readonly type: "event";
+    readonly name: "openzeppelin_token::common::erc2981::erc2981::ERC2981Component::Event";
+    readonly kind: "enum";
+    readonly variants: readonly [];
+}, {
+    readonly type: "event";
     readonly name: "ip_collection_erc_721::IPNft::IPNft::Event";
     readonly kind: "enum";
     readonly variants: readonly [{
@@ -5199,6 +5323,10 @@ declare const IPNftABI: readonly [{
     }, {
         readonly name: "ERC721EnumerableEvent";
         readonly type: "openzeppelin_token::erc721::extensions::erc721_enumerable::erc721_enumerable::ERC721EnumerableComponent::Event";
+        readonly kind: "flat";
+    }, {
+        readonly name: "ERC2981Event";
+        readonly type: "openzeppelin_token::common::erc2981::erc2981::ERC2981Component::Event";
         readonly kind: "flat";
     }];
 }];
