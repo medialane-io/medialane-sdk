@@ -159,7 +159,7 @@ flows, and read `OrderFulfilled.fulfiller` (the `OrderDetails.fulfiller` field i
 
 ### Runtime impact
 
-None — these fields are already returned by the backend; the SDK was simply not typing them, forcing consumers (`medialane-io`, `medialane-dapp`) to use `as any` casts. Adding the typed declarations unblocks ~3 `as any` removals in io's follow-up Batch D.2 sweep.
+None — these fields are already returned by the backend; the SDK was simply not typing them, forcing consumers (`medialane-io`, `medialane-starknet`) to use `as any` casts. Adding the typed declarations unblocks ~3 `as any` removals in io's follow-up Batch D.2 sweep.
 
 ### Verification
 

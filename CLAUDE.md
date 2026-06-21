@@ -441,7 +441,7 @@ DEFAULT_RPC_URLS = {
 - `DROP_FACTORY_CONTRACT_MAINNET` and `DROP_COLLECTION_CLASS_HASH_MAINNET` constants exported
 
 **v0.14.2 — registerUser:**
-- `client.api.registerUser({ walletAddress, walletType?, appSource?, chain? })` — wraps `POST /v1/users/register` (tenant API key, no Clerk JWT). Returns `{ accountId, publicId, walletAddress, chain, walletType, appSource, createdAt }`. Idempotent on the backend. Used by medialane-dapp to silently register web3 wallet connections.
+- `client.api.registerUser({ walletAddress, walletType?, appSource?, chain? })` — wraps `POST /v1/users/register` (tenant API key, no Clerk JWT). Returns `{ accountId, publicId, walletAddress, chain, walletType, appSource, createdAt }`. Idempotent on the backend. Used by medialane-starknet to silently register web3 wallet connections.
 
 **v0.14.1 — upsertMyWallet metadata:**
 - `ApiWalletType` union: `"ARGENT" | "BRAAVOS" | "CARTRIDGE" | "PRIVY" | "CHIPIPAY" | "INJECTED" | "UNKNOWN"`
@@ -454,7 +454,7 @@ DEFAULT_RPC_URLS = {
 **v0.13.0 — service-model cleanup (BREAKING, 2026-05-18):**
 - **Removed** `CollectionSource` type, `ApiCollection.source`, `ApiCollectionsQuery.source` (backend dropped the `Collection.source` column + `CollectionSource` enum in Phase 2D.4). Use `ApiCollection.service: string | null` / `getService()`.
 - `getCollections(page?, limit?, isKnown?, sort?, service?)` — the `source?` positional param was removed; `service` moved from the 6th arg to the 5th. Consumer migration: `getCollections(p,l,k,sort,undefined,service)` → `getCollections(p,l,k,sort,service)`.
-- Published to npm; medialane-io + medialane-dapp on 0.13.0.
+- Published to npm; medialane-io + medialane-starknet on 0.13.0.
 
 **v0.12.0 — service-model registry:** `ApiCollection.service`, `getService()`/`getServiceConfig()` registry, `?service=` query support (additive; `source` deprecated then removed in 0.13.0).
 
@@ -462,7 +462,7 @@ DEFAULT_RPC_URLS = {
 - `IPCollectionABI` (full) — exports the audited MIP-Collections-ERC721 registry surface (`create_collection`, `mint`, `archive`, `transfer_collection_ownership`, `get_collection`, `is_transferable_token`, etc.)
 - `IPNftABI` (full) — exports the per-collection ERC-721 surface (`get_full_token_data`, `get_token_creator`, `get_token_registered_at`, archive, …)
 - `CollectionRegistryABI` (the minimal subset for `list_user_collections` + `get_collection`) is now `@deprecated`. Existing consumers continue to work; new code should import `IPCollectionABI` instead.
-- Consumed by `medialane-dapp` and `medialane-io` to eliminate duplicate local ABI files. The SDK is now the single source of truth for all MIP / Medialane Cairo ABIs.
+- Consumed by `medialane-starknet` and `medialane-io` to eliminate duplicate local ABI files. The SDK is now the single source of truth for all MIP / Medialane Cairo ABIs.
 
 **v0.10.0 — Collection slug claims:**
 - `ApiCollectionProfile.slug: string | null` — approved vanity slug set by admin on claim approval
