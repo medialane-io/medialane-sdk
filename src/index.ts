@@ -22,6 +22,9 @@ export { MarketplaceModule, MedialaneError } from "./marketplace/index.js";
 export { Medialane1155Module } from "./marketplace1155/index.js";
 export { ApiClient, MedialaneApiError } from "./api/client.js";
 
+// Admin signed-request auth (portal/agent ↔ backend wire format — single source)
+export * from "./admin-auth/index.js";
+
 // Types
 export * from "./types/index.js";
 export type { MedialaneErrorCode } from "./types/errors.js";
