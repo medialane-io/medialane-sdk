@@ -2,6 +2,20 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.40.0] — 2026-06-22
+
+### Added — Admin signed-request auth
+
+A wire format for authorizing privileged requests with an unforgeable Starknet signature instead of a shared secret (spec `medialane-core/docs/specs/2026-06-22-portal-admin-signed-request-auth-design.md`). Single source for both signer (portal/agent) and verifier (backend).
+
+- **`createAdminSessionGrant(signTypedData, opts)`** — one wallet SNIP-12 signature authorizes an ephemeral session keypair (scope `admin-api`, TTL). The private key never leaves the caller.
+- **`signAdminRequest(sessionPrivateKey, req)` / `verifyAdminRequestSig(sessionPublicKey, req, sig)`** — per-request signatures over the canonical `adminRequestDigest` (binds method+path+query+body+nonce+ts).
+- **`buildAdminSessionTypedData` / `sessionKeyHashOf`** — the grant typed data + session-key commitment, rebuilt identically on the backend.
+- **`encodeAdminHeaders` / `parseAdminHeaders` / `ADMIN_HEADERS` / `randomNonce`** — the `x-ml-admin-*` header codec.
+- New types: `AdminGrant`, `AdminSession`, `AdminRequest`, `AdminRequestSig`, `ParsedAdminHeaders`, `CreateGrantOpts`, `AdminSessionTypedDataInput`, `ADMIN_SCOPE`.
+
+Additive — no existing exports changed.
+
 ## [0.38.0] — 2026-06-14
 
 ### Changed — Coin / Collection split (BREAKING)
