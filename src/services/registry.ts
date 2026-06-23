@@ -1,24 +1,10 @@
 import type { ServiceDefinition, ServiceCapability } from "../types/api.js";
-import {
-  COLLECTION_721_CONTRACT_MAINNET,
-  COLLECTION_721_START_BLOCK_MAINNET,
-  COLLECTION_1155_CONTRACT_MAINNET,
-  COLLECTION_1155_CLASS_HASH_MAINNET,
-  COLLECTION_1155_START_BLOCK_MAINNET,
-  POP_FACTORY_CONTRACT_MAINNET,
-  POP_COLLECTION_CLASS_HASH_MAINNET,
-  DROP_FACTORY_CONTRACT_MAINNET,
-  DROP_COLLECTION_CLASS_HASH_MAINNET,
-  MARKETPLACE_721_CONTRACT_MAINNET,
-  MARKETPLACE_721_CLASS_HASH_MAINNET,
-  MARKETPLACE_721_START_BLOCK_MAINNET,
-  MARKETPLACE_1155_CONTRACT_MAINNET,
-  MARKETPLACE_1155_CLASS_HASH_MAINNET,
-  MARKETPLACE_1155_START_BLOCK_MAINNET,
-  CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
-  CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
-  CREATOR_COIN_START_BLOCK_MAINNET,
-} from "../constants.js";
+import { getCoordinates } from "../chains.js";
+
+// The registry re-projects a service's chain coordinates into the generic
+// `onchain` shape (factoryAddress/classHash/startBlock). Single source = the
+// chain registry. Only STARKNET is populated today.
+const SN = getCoordinates("STARKNET");
 
 /**
  * The Medialane service registry (05-service-model §II, §VI).
@@ -42,8 +28,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: COLLECTION_721_CONTRACT_MAINNET,
-        startBlock: COLLECTION_721_START_BLOCK_MAINNET,
+        factoryAddress: SN.collection721!,
+        startBlock: SN.collection721StartBlock!,
       },
     },
     uiVariant: "standard",
@@ -77,9 +63,9 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: COLLECTION_1155_CONTRACT_MAINNET,
-        classHash: COLLECTION_1155_CLASS_HASH_MAINNET,
-        startBlock: COLLECTION_1155_START_BLOCK_MAINNET,
+        factoryAddress: SN.collection1155!,
+        classHash: SN.collection1155ClassHash!,
+        startBlock: SN.collection1155StartBlock!,
       },
     },
     uiVariant: "edition",
@@ -97,8 +83,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: POP_FACTORY_CONTRACT_MAINNET,
-        classHash: POP_COLLECTION_CLASS_HASH_MAINNET,
+        factoryAddress: SN.popFactory!,
+        classHash: SN.popCollectionClassHash!,
       },
     },
     uiVariant: "pop",
@@ -117,8 +103,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: DROP_FACTORY_CONTRACT_MAINNET,
-        classHash: DROP_COLLECTION_CLASS_HASH_MAINNET,
+        factoryAddress: SN.dropFactory!,
+        classHash: SN.dropCollectionClassHash!,
       },
     },
     uiVariant: "drop",
@@ -138,9 +124,9 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
-        classHash: CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
-        startBlock: CREATOR_COIN_START_BLOCK_MAINNET,
+        factoryAddress: SN.creatorCoinFactory!,
+        classHash: SN.creatorCoinFactoryClassHash!,
+        startBlock: SN.creatorCoinStartBlock!,
       },
     },
     uiVariant: "coin",
@@ -162,9 +148,9 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: MARKETPLACE_721_CONTRACT_MAINNET,
-        classHash: MARKETPLACE_721_CLASS_HASH_MAINNET,
-        startBlock: MARKETPLACE_721_START_BLOCK_MAINNET,
+        factoryAddress: SN.marketplace721!,
+        classHash: SN.marketplace721ClassHash!,
+        startBlock: SN.marketplace721StartBlock!,
       },
     },
     uiVariant: "standard",
@@ -183,9 +169,9 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: MARKETPLACE_1155_CONTRACT_MAINNET,
-        classHash: MARKETPLACE_1155_CLASS_HASH_MAINNET,
-        startBlock: MARKETPLACE_1155_START_BLOCK_MAINNET,
+        factoryAddress: SN.marketplace1155!,
+        classHash: SN.marketplace1155ClassHash!,
+        startBlock: SN.marketplace1155StartBlock!,
       },
     },
     uiVariant: "edition",

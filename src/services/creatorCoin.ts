@@ -1,7 +1,7 @@
 import { Contract, RpcProvider, hash, uint256, type AccountInterface, type Call, type ProviderInterface } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import { CreatorCoinFactoryABI } from "../abis/index.js";
-import { CREATOR_COIN_FACTORY_CONTRACT_MAINNET, EKUBO_CORE_MAINNET } from "../constants.js";
+import { getCoordinates } from "../chains.js";
 import { getTokenByAddress } from "../utils/token.js";
 import { normalizeAddress } from "../utils/address.js";
 import type { TxResult } from "../types/marketplace.js";
@@ -110,7 +110,7 @@ export async function getCreatorCoinPrice(
 
   // Core.get_pool_price(PoolKey{token0,token1,fee,tick_spacing,extension}) -> PoolPrice{sqrt_ratio:u256, tick:i129}
   const pp = await provider.callContract({
-    contractAddress: EKUBO_CORE_MAINNET,
+    contractAddress: getCoordinates("STARKNET").ekuboCore!,
     entrypoint: "get_pool_price",
     calldata: [t0, t1, fee, tickSpacing, "0x0"],
   });
@@ -136,7 +136,7 @@ function factoryContract(): Contract {
   if (!_factoryContract) {
     _factoryContract = new Contract(
       CreatorCoinFactoryABI as any,
-      CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
+      getCoordinates("STARKNET").creatorCoinFactory!,
     );
   }
   return _factoryContract;
@@ -182,7 +182,7 @@ export function buildLaunchOnEkuboCalls(params: EkuboLaunchParams): Call[] {
     calls.push({
       contractAddress: params.quoteToken,
       entrypoint: "transfer",
-      calldata: [CREATOR_COIN_FACTORY_CONTRACT_MAINNET, amt.low, amt.high],
+      calldata: [getCoordinates("STARKNET").creatorCoinFactory!, amt.low, amt.high],
     });
   }
   calls.push(factoryContract().populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
@@ -202,7 +202,7 @@ const CREATOR_COIN_CREATED_SELECTOR = hash.getSelectorFromName("CreatorCoinCreat
  * Throws when the receipt carries no matching Factory event.
  */
 export function parseCreatorCoinCreated(receipt: CreatorCoinReceiptLike): string {
-  const factory = normalizeAddress("STARKNET",CREATOR_COIN_FACTORY_CONTRACT_MAINNET);
+  const factory = normalizeAddress("STARKNET",getCoordinates("STARKNET").creatorCoinFactory!);
   for (const ev of receipt?.events ?? []) {
     let from: string;
     try {
@@ -229,7 +229,7 @@ export class CreatorCoinService {
   private readonly config: ResolvedConfig;
 
   constructor(config: ResolvedConfig) {
-    this.factoryAddress = CREATOR_COIN_FACTORY_CONTRACT_MAINNET;
+    this.factoryAddress = getCoordinates(config.chain).creatorCoinFactory!;
     this.config = config;
   }
 
