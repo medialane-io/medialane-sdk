@@ -5,13 +5,13 @@ Guidance for Claude Code when working in this repository.
 ## Commands
 
 ```bash
-~/.bun/bin/bun run build      # tsup → dist/ (ESM + CJS dual output)
-~/.bun/bin/bun run dev        # tsup --watch
-~/.bun/bin/bun run typecheck  # tsc --noEmit (no emit, type errors only)
+bun run build      # tsup → dist/ (ESM + CJS dual output)
+bun run dev        # tsup --watch
+bun run typecheck  # tsc --noEmit (no emit, type errors only)
 ```
 
-No test runner configured. Always run `typecheck` after significant changes.
-Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
+Run `bun test` (bun's runner; ~37 tests) and `typecheck` after significant changes.
+`bun` must be on PATH (standalone install or nvm/Volta); if it isn't, use the absolute path to your bun binary.
 
 ---
 
@@ -505,7 +505,7 @@ network/Sepolia axis.
 
 ## Key Conventions
 
-- **Runtime**: Bun. `~/.bun/bin/bun`, never `node`/`npm`/`npx`.
+- **Runtime**: Bun. `bun`, never `node`/`npm`/`npx`.
 - **Imports**: Use `.js` extension (ESM resolution via tsup).
 - **Address normalization**: `normalizeAddress(chain, address)` is chain-dispatched (Starknet pad / EVM EIP-55 / Solana base58; Bitcoin throws). `ApiClient` is chain-scoped and normalizes internally via `this.addr()` using its `config.chain` — callers pass any valid format. Cairo-only services pass `"STARKNET"` explicitly.
 - **No side effects at import time** — config and contract instances are lazy/cached.
