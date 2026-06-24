@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.39.0",
+  "version": "0.41.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -99,6 +99,7 @@ src/
 > - **v0.37.0 (multichain-readiness foundations — BREAKING, Phase 1)**: `chain` is now a first-class axis. New `chains.ts` holds the **`coordinates[chain]` registry** (single source of per-chain service coordinates; exports `CHAINS`/`getCoordinates`/`DEFAULT_CHAIN`/`Chain`/`ChainCoordinates`). The flat `*_MAINNET` constants stay (same names/values) but **derive** from it. **`MedialaneConfig.chain` replaces `network`** (client is chain-scoped; `client.network`→`client.chain`); **`ServiceDefinition.onchain` is per-chain** (`Partial<Record<Chain,…>>` — read `.onchain?.STARKNET?.factoryAddress`); **removed `SUPPORTED_NETWORKS`/`DEFAULT_RPC_URL`/`Network`** (mainnet-only, coordinates key by chain — refines `D-9`); **`getChainId(config)` throws for non-Starknet**. Starknet behavior unchanged. **Published to npm + merged to `main` 2026-06-14** (backend on 0.37.0, deployed to prod). Spec: `medialane-core/docs/specs/2026-06-13-multichain-readiness-design.md`.
 > - **v0.38.0 (Coin / Collection split — BREAKING)**: fungible coins are now their own model, not `Collection` rows. New **`ApiCoin`** type + **`client.api.getCoins(opts?)` / `getCoin(contract)`** (served from `/v1/coins`). **`ApiCollection.standard` narrowed to `"ERC721" | "ERC1155"`** (`Collection` is NFT-only; `ERC20`/`UNKNOWN` removed). The `getCollections(standard="ERC20")` coin path is gone — use `getCoins()`. `getCreatorCoinPrice`/`CreatorCoinService` unchanged (price live from Ekubo). Spec: `medialane-core/docs/specs/2026-06-14-coin-collection-split-design.md`.
 > - **v0.39.0 (MIP v0.4.0 — creator royalties, BREAKING)**: the MIP-Collections-ERC721 registry was redeployed on Starknet with per-token EIP-2981 royalties. **New `chains.ts` Starknet coordinates** (and the derived `*_MAINNET` constants): `collection721` → `0x0558c9b6…aeef2`, `ipNftClassHash` → `0x040551f0…`, `ipCollectionClassHash` → `0x063d4ac4…`, `collection721StartBlock` → `11002817`. The retired `0x0322cb71…` registry is **dropped** (Medialane keeps no legacy protocol support; prior collections reclassify `external-erc721` read-only). **ABIs regenerated** from the deployed artifacts: `IPCollectionABI` — `mint`/`batch_mint` take `royalty_bps` (u128 / `Array<u128>`), token ops take explicit `(collection_id, token_id): u256` (the `"collection_id:token_id"` string form is gone), `transfer_token` drops `from`, `CollectionStats.total_transfers` → `protocol_routed_transfers`, plus `version()` and richer batch events; `IPNftABI` gains `royalty_info`/`token_royalty`/`default_royalty`/`supports_interface`/`version`. **`MintParams.royaltyBps` + `CreateMintIntentParams.royaltyBps` are now required** (bps 0–10_000; receiver = immutable creator); `marketplace.mint` appends `royalty_bps` to calldata and `createMintIntent` forwards it to the backend `/mint` builder. Contract: `mediolano-contracts` MIP v0.4.0. Plan: `medialane-core/docs/plans/2026-06-20-mip-v0.4.0-platform-migration.md`.
+> - **v0.41.0 (BREAKING — killed the `*_MAINNET` constant debt)**: removed **all** flat `*_MAINNET` address / class-hash / start-block exports from `constants.ts` + `index.ts`. **`getCoordinates(chain)` (`chains.ts`) is now the sole source** of every contract address. Migrate `X_MAINNET` → `getCoordinates(chain).<field>` (e.g. `MARKETPLACE_721_CONTRACT_MAINNET` → `getCoordinates("STARKNET").marketplace721`); `EKUBO_CORE_MAINNET` → `.ekuboCore`, etc. SDK-internal services (`registry`, `pop`, `drop`, `erc1155collection`, `creatorCoin`) resolve from the config's chain. `constants.ts` now holds only `SUPPORTED_TOKENS`/`DEFAULT_CURRENCY`. No behavior change — Starknet addresses are identical (they already derived from the registry). Also **removed dead deprecated exports** (verified unused across apps + backend + SDK): `CollectionRegistryABI` (superseded by `IPCollectionABI` since v0.11.0) and `ApiWalletType` (identity model folded walletType into `Identity.provider`). Kept for now (still consumed): `ApiToken.owner` (io fallback) + the `MEDIALANE_DAPP` alias (backend still normalizes it) — removed in a later phase once consumers drop them. Audit + plan: `medialane-core/docs/specs/2026-06-23-platform-standardization-audit.md`, `medialane-core/docs/plans/2026-06-23-kill-mainnet-constant-debt.md`.
 
 ---
 
@@ -335,38 +336,26 @@ On-chain Collection Drop interactions. All require a starknet.js `AccountInterfa
 
 ---
 
-## Constants (`src/constants.ts`)
+## Addresses — `getCoordinates(chain)` (`src/chains.ts`)
+
+Every contract address, class hash, and start block lives in the **per-chain
+coordinate registry** — the single source. There are **no flat `*_MAINNET`
+constants** (removed v0.41.0). Read them per chain:
 
 ```ts
-MARKETPLACE_721_CONTRACT_MAINNET            = "0x069cf5391077e3ebdd9cb6aebf90ed530d29f0d6aa34a43f5afae938c0fb565e"  // Medialane721 redesign (2026-05-31)
-MARKETPLACE_721_CLASS_HASH_MAINNET          = "0x04c6f952d747ad7ead1b3dad4c1d587837d38f8ec29d6c095a4afa5b5ece5957"
-MARKETPLACE_721_START_BLOCK_MAINNET         = 10350340
-MARKETPLACE_1155_CONTRACT_MAINNET           = "0x040cd7b3e73bb3c892166e34bdc01d1797f97ecbc356c23f1cf38033cacf0077"  // Medialane1155 redesign (2026-05-31)
-MARKETPLACE_1155_CLASS_HASH_MAINNET         = "0x02600bb720908f119afe482309d36c39d087587f0df9576454acfb6363e78cd8"
-MARKETPLACE_1155_START_BLOCK_MAINNET        = 10350855
-COLLECTION_721_CONTRACT_MAINNET             = "0x0558c9b6ea4d403df6d765fb77be55702c572f0a811f037c6c4209fe1e5aeef2"  // MIP v0.4.0 — royalties (2026-06-20)
-COLLECTION_721_START_BLOCK_MAINNET          = 11002817
-IPNFT_CLASS_HASH_MAINNET                    = "0x040551f0d009a6d665ddff980a375dfccc71a8928c8bfcc9ab56244bc4464fab"
-IPCOLLECTION_CLASS_HASH_MAINNET             = "0x063d4ac4ae317fd155216bf1b8a4d3a63172ff72965b9ac48dd5add0c2d32b70"
-COLLECTION_1155_CONTRACT_MAINNET            = "0x0083543c3ee15040a419fc539fa6889f5b956e7d071bcfa97842cb0ae42ad6cc"  // v0.3.0 ownerless factory (2026-06-10)
-COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET  = "0x331a69da8655a882ba1fbcb55188b8fa09116521db901bbbaafc9fead0689f8"
-COLLECTION_1155_CLASS_HASH_MAINNET          = "0x4e110b59af240ae6c7742999964c4eae13fb2ed935c47fe97653ec017ebea34"
-COLLECTION_1155_START_BLOCK_MAINNET         = 10665319
-POP_FACTORY_CONTRACT_MAINNET                = "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111"
-POP_COLLECTION_CLASS_HASH_MAINNET           = "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f"
-DROP_FACTORY_CONTRACT_MAINNET               = "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800"
-DROP_COLLECTION_CLASS_HASH_MAINNET          = "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282"
-NFTCOMMENTS_CONTRACT_MAINNET                = "0x02cdac70c94447189af0389dfea63f4d5e4154ea8a563de288a5ab1c39e37843"  // fix: 0.24.1 — previous 0x024f97… was undeployed
+import { getCoordinates } from "@medialane/sdk";
+const SN = getCoordinates("STARKNET");
+SN.marketplace721      // "0x069cf5…"  (was MARKETPLACE_721_CONTRACT_MAINNET)
+SN.collection721       // "0x0558c9b6…"  MIP v0.4.0 royalties
+SN.collection1155      // "0x0083543c…"  v0.3.0 ownerless factory
+SN.popFactory          // SN.dropFactory, SN.nftComments,
+SN.creatorCoinFactory  // SN.ekuboCore, SN.rpcUrl, …all fields in ChainCoordinates
 ```
 
-> Deprecated short-name aliases (`MARKETPLACE_CONTRACT_MAINNET`, `COLLECTION_CONTRACT_MAINNET`, `ERC1155_FACTORY_CONTRACT_MAINNET`, etc.) were removed in **v0.16.0** — use the canonical `*_721_*` / `*_1155_*` names.
-
-```ts
-DEFAULT_RPC_URLS = {
-  mainnet: "https://rpc.starknet.lava.build",
-  sepolia: "https://rpc.starknet-sepolia.lava.build",
-}
-```
+`ChainCoordinates` (the full field list) + the populated Starknet values are in
+`src/chains.ts`. Adding a chain = adding an entry there (the §7 litmus test).
+`getCoordinates(chain)` throws for an unconfigured chain. Mainnet-only — no
+network/Sepolia axis.
 
 **SUPPORTED_TOKENS** (5 tokens — v0.4.2):
 

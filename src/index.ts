@@ -29,34 +29,11 @@ export * from "./admin-auth/index.js";
 export * from "./types/index.js";
 export type { MedialaneErrorCode } from "./types/errors.js";
 
-// Constants
+// Token config (addresses/class-hashes/start-blocks come from the chain
+// registry — getCoordinates(chain), exported below)
 export {
-  MARKETPLACE_721_CONTRACT_MAINNET,
-  MARKETPLACE_721_CLASS_HASH_MAINNET,
-  MARKETPLACE_721_START_BLOCK_MAINNET,
-  MARKETPLACE_1155_CONTRACT_MAINNET,
-  MARKETPLACE_1155_CLASS_HASH_MAINNET,
-  MARKETPLACE_1155_START_BLOCK_MAINNET,
-  COLLECTION_721_CONTRACT_MAINNET,
-  COLLECTION_721_START_BLOCK_MAINNET,
-  IPNFT_CLASS_HASH_MAINNET,
-  IPCOLLECTION_CLASS_HASH_MAINNET,
-  POP_FACTORY_CONTRACT_MAINNET,
-  POP_COLLECTION_CLASS_HASH_MAINNET,
-  DROP_FACTORY_CONTRACT_MAINNET,
-  DROP_COLLECTION_CLASS_HASH_MAINNET,
-  COLLECTION_1155_CONTRACT_MAINNET,
-  COLLECTION_1155_FACTORY_CLASS_HASH_MAINNET,
-  COLLECTION_1155_CLASS_HASH_MAINNET,
-  COLLECTION_1155_START_BLOCK_MAINNET,
-  NFTCOMMENTS_CONTRACT_MAINNET,
-  CREATOR_COIN_FACTORY_CONTRACT_MAINNET,
-  CREATOR_COIN_EKUBO_LAUNCHER_MAINNET,
-  CREATOR_COIN_CLASS_HASH_MAINNET,
-  CREATOR_COIN_FACTORY_CLASS_HASH_MAINNET,
-  CREATOR_COIN_START_BLOCK_MAINNET,
-  EKUBO_CORE_MAINNET,
   SUPPORTED_TOKENS,
+  DEFAULT_CURRENCY,
   type SupportedTokenSymbol,
 } from "./constants.js";
 
@@ -70,7 +47,7 @@ export {
 } from "./chains.js";
 
 // ABI
-export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, CollectionRegistryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI } from "./abis/index.js";
+export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI } from "./abis/index.js";
 
 // Services
 export { PopService } from "./services/pop.js";

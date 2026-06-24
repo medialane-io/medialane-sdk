@@ -2,7 +2,7 @@ import { Contract, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import { normalizeAddress } from "../utils/address.js";
 import { POPCollectionABI, POPFactoryABI } from "../abis/index.js";
-import { POP_FACTORY_CONTRACT_MAINNET } from "../constants.js";
+import { getCoordinates } from "../chains.js";
 import type { CreatePopCollectionParams } from "../types/services.js";
 import type { TxResult } from "../types/marketplace.js";
 
@@ -11,8 +11,8 @@ export type { CreatePopCollectionParams };
 export class PopService {
   private readonly factoryAddress: string;
 
-  constructor(_config: ResolvedConfig) {
-    this.factoryAddress = POP_FACTORY_CONTRACT_MAINNET;
+  constructor(config: ResolvedConfig) {
+    this.factoryAddress = getCoordinates(config.chain).popFactory!;
   }
 
   private _collection(address: string, account: AccountInterface) {
