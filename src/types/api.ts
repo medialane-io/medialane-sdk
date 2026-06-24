@@ -829,15 +829,6 @@ export interface ApiCreatorListResult {
 
 // ─── User Wallet ───────────────────────────────────────────────────────────────
 
-export type ApiWalletType =
-  | "ARGENT"
-  | "BRAAVOS"
-  | "CARTRIDGE"
-  | "PRIVY"
-  | "CHIPIPAY"
-  | "INJECTED"
-  | "UNKNOWN";
-
 export type ApiAppSource =
   | "MEDIALANE_STARKNET" // the Starknet dapp (renamed from MEDIALANE_DAPP — the platform is multichain)
   | "MEDIALANE_IO"

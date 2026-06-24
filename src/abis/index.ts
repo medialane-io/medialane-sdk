@@ -5,7 +5,6 @@ export { POPCollectionABI } from "./popCollection.js";
 export { POPFactoryABI } from "./popFactory.js";
 export { DropCollectionABI } from "./dropCollection.js";
 export { DropFactoryABI } from "./dropFactory.js";
-export { CollectionRegistryABI } from "./collectionRegistry.js";
 export { Medialane1155ABI } from "./medialane1155.js";
 export { IPCollection1155FactoryABI } from "./ipCollection1155Factory.js";
 export { IPCollection1155ABI } from "./ipCollection1155.js";
