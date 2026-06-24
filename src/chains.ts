@@ -10,31 +10,31 @@ export type Chain = (typeof CHAINS)[number];
  *  optional because not every service exists on every chain. */
 export interface ChainCoordinates {
   rpcUrl: string;
-  marketplace721?: string;
-  marketplace721ClassHash?: string;
+  marketplace721?: `0x${string}`;
+  marketplace721ClassHash?: `0x${string}`;
   marketplace721StartBlock?: number;
-  marketplace1155?: string;
-  marketplace1155ClassHash?: string;
+  marketplace1155?: `0x${string}`;
+  marketplace1155ClassHash?: `0x${string}`;
   marketplace1155StartBlock?: number;
-  collection721?: string;
+  collection721?: `0x${string}`;
   collection721StartBlock?: number;
-  ipNftClassHash?: string;
-  ipCollectionClassHash?: string;
-  collection1155?: string;
-  collection1155FactoryClassHash?: string;
-  collection1155ClassHash?: string;
+  ipNftClassHash?: `0x${string}`;
+  ipCollectionClassHash?: `0x${string}`;
+  collection1155?: `0x${string}`;
+  collection1155FactoryClassHash?: `0x${string}`;
+  collection1155ClassHash?: `0x${string}`;
   collection1155StartBlock?: number;
-  popFactory?: string;
-  popCollectionClassHash?: string;
-  dropFactory?: string;
-  dropCollectionClassHash?: string;
-  nftComments?: string;
-  creatorCoinFactory?: string;
-  creatorCoinEkuboLauncher?: string;
-  creatorCoinClassHash?: string;
-  creatorCoinFactoryClassHash?: string;
+  popFactory?: `0x${string}`;
+  popCollectionClassHash?: `0x${string}`;
+  dropFactory?: `0x${string}`;
+  dropCollectionClassHash?: `0x${string}`;
+  nftComments?: `0x${string}`;
+  creatorCoinFactory?: `0x${string}`;
+  creatorCoinEkuboLauncher?: `0x${string}`;
+  creatorCoinClassHash?: `0x${string}`;
+  creatorCoinFactoryClassHash?: `0x${string}`;
   creatorCoinStartBlock?: number;
-  ekuboCore?: string;
+  ekuboCore?: `0x${string}`;
 }
 
 /** Coordinates per chain. Only STARKNET is populated today; adding a chain
