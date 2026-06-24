@@ -1,7 +1,43 @@
-// Contract addresses, class hashes, and start blocks live in the per-chain
-// registry (chains.ts → getCoordinates(chain)) — the single source. This file
-// holds only chain-agnostic token config.
+import { getCoordinates } from "./chains.js";
 
+// Flat per-chain contract constants. Chain-named (each contract is deployed on a
+// specific chain), derived from the chains.ts registry so there is one source.
+const SN = getCoordinates("STARKNET");
+
+// ── Marketplace ───────────────────────────────────────────────────────────────
+export const STARKNET_MARKETPLACE_721_CONTRACT = SN.marketplace721!;
+export const STARKNET_MARKETPLACE_721_CLASS_HASH = SN.marketplace721ClassHash!;
+export const STARKNET_MARKETPLACE_721_START_BLOCK = SN.marketplace721StartBlock!;
+export const STARKNET_MARKETPLACE_1155_CONTRACT = SN.marketplace1155!;
+export const STARKNET_MARKETPLACE_1155_CLASS_HASH = SN.marketplace1155ClassHash!;
+export const STARKNET_MARKETPLACE_1155_START_BLOCK = SN.marketplace1155StartBlock!;
+
+// ── Collections ───────────────────────────────────────────────────────────────
+export const STARKNET_COLLECTION_721_CONTRACT = SN.collection721!;
+export const STARKNET_COLLECTION_721_START_BLOCK = SN.collection721StartBlock!;
+export const STARKNET_IPNFT_CLASS_HASH = SN.ipNftClassHash!;
+export const STARKNET_IPCOLLECTION_CLASS_HASH = SN.ipCollectionClassHash!;
+export const STARKNET_COLLECTION_1155_CONTRACT = SN.collection1155!;
+export const STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH = SN.collection1155FactoryClassHash!;
+export const STARKNET_COLLECTION_1155_CLASS_HASH = SN.collection1155ClassHash!;
+export const STARKNET_COLLECTION_1155_START_BLOCK = SN.collection1155StartBlock!;
+
+// ── POP / Drop / Comments ─────────────────────────────────────────────────────
+export const STARKNET_POP_FACTORY_CONTRACT = SN.popFactory!;
+export const STARKNET_POP_COLLECTION_CLASS_HASH = SN.popCollectionClassHash!;
+export const STARKNET_DROP_FACTORY_CONTRACT = SN.dropFactory!;
+export const STARKNET_DROP_COLLECTION_CLASS_HASH = SN.dropCollectionClassHash!;
+export const STARKNET_NFTCOMMENTS_CONTRACT = SN.nftComments!;
+
+// ── Creator Coin (Ekubo) ──────────────────────────────────────────────────────
+export const STARKNET_CREATOR_COIN_FACTORY_CONTRACT = SN.creatorCoinFactory!;
+export const STARKNET_CREATOR_COIN_EKUBO_LAUNCHER = SN.creatorCoinEkuboLauncher!;
+export const STARKNET_CREATOR_COIN_CLASS_HASH = SN.creatorCoinClassHash!;
+export const STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH = SN.creatorCoinFactoryClassHash!;
+export const STARKNET_CREATOR_COIN_START_BLOCK = SN.creatorCoinStartBlock!;
+export const STARKNET_EKUBO_CORE = SN.ekuboCore!;
+
+// ── Tokens (chain-agnostic) ───────────────────────────────────────────────────
 export const SUPPORTED_TOKENS = [
   {
     // Circle-native USDC on Starknet (canonical)
