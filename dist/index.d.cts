@@ -8,31 +8,31 @@ type Chain = (typeof CHAINS)[number];
  *  optional because not every service exists on every chain. */
 interface ChainCoordinates {
     rpcUrl: string;
-    marketplace721?: string;
-    marketplace721ClassHash?: string;
+    marketplace721?: `0x${string}`;
+    marketplace721ClassHash?: `0x${string}`;
     marketplace721StartBlock?: number;
-    marketplace1155?: string;
-    marketplace1155ClassHash?: string;
+    marketplace1155?: `0x${string}`;
+    marketplace1155ClassHash?: `0x${string}`;
     marketplace1155StartBlock?: number;
-    collection721?: string;
+    collection721?: `0x${string}`;
     collection721StartBlock?: number;
-    ipNftClassHash?: string;
-    ipCollectionClassHash?: string;
-    collection1155?: string;
-    collection1155FactoryClassHash?: string;
-    collection1155ClassHash?: string;
+    ipNftClassHash?: `0x${string}`;
+    ipCollectionClassHash?: `0x${string}`;
+    collection1155?: `0x${string}`;
+    collection1155FactoryClassHash?: `0x${string}`;
+    collection1155ClassHash?: `0x${string}`;
     collection1155StartBlock?: number;
-    popFactory?: string;
-    popCollectionClassHash?: string;
-    dropFactory?: string;
-    dropCollectionClassHash?: string;
-    nftComments?: string;
-    creatorCoinFactory?: string;
-    creatorCoinEkuboLauncher?: string;
-    creatorCoinClassHash?: string;
-    creatorCoinFactoryClassHash?: string;
+    popFactory?: `0x${string}`;
+    popCollectionClassHash?: `0x${string}`;
+    dropFactory?: `0x${string}`;
+    dropCollectionClassHash?: `0x${string}`;
+    nftComments?: `0x${string}`;
+    creatorCoinFactory?: `0x${string}`;
+    creatorCoinEkuboLauncher?: `0x${string}`;
+    creatorCoinClassHash?: `0x${string}`;
+    creatorCoinFactoryClassHash?: `0x${string}`;
     creatorCoinStartBlock?: number;
-    ekuboCore?: string;
+    ekuboCore?: `0x${string}`;
 }
 declare function getCoordinates(chain: Chain): ChainCoordinates;
 declare const DEFAULT_CHAIN: Chain;
@@ -287,6 +287,8 @@ interface OrderDetails {
     start_time: bigint;
     end_time: bigint;
     order_status: string;
+    /** The offerer's bulk-cancel epoch at registration; re-checked at fulfilment. */
+    counter: string;
     /** ERC-1155 only — units still available. */
     remaining_amount?: string;
 }
@@ -1857,6 +1859,31 @@ interface ParsedAdminHeaders {
 /** Parse + shape-check the headers on the backend. Returns null if malformed. */
 declare function parseAdminHeaders(get: (name: string) => string | null | undefined): ParsedAdminHeaders | null;
 
+declare const STARKNET_MARKETPLACE_721_CONTRACT: `0x${string}`;
+declare const STARKNET_MARKETPLACE_721_CLASS_HASH: `0x${string}`;
+declare const STARKNET_MARKETPLACE_721_START_BLOCK: number;
+declare const STARKNET_MARKETPLACE_1155_CONTRACT: `0x${string}`;
+declare const STARKNET_MARKETPLACE_1155_CLASS_HASH: `0x${string}`;
+declare const STARKNET_MARKETPLACE_1155_START_BLOCK: number;
+declare const STARKNET_COLLECTION_721_CONTRACT: `0x${string}`;
+declare const STARKNET_COLLECTION_721_START_BLOCK: number;
+declare const STARKNET_IPNFT_CLASS_HASH: `0x${string}`;
+declare const STARKNET_IPCOLLECTION_CLASS_HASH: `0x${string}`;
+declare const STARKNET_COLLECTION_1155_CONTRACT: `0x${string}`;
+declare const STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH: `0x${string}`;
+declare const STARKNET_COLLECTION_1155_CLASS_HASH: `0x${string}`;
+declare const STARKNET_COLLECTION_1155_START_BLOCK: number;
+declare const STARKNET_POP_FACTORY_CONTRACT: `0x${string}`;
+declare const STARKNET_POP_COLLECTION_CLASS_HASH: `0x${string}`;
+declare const STARKNET_DROP_FACTORY_CONTRACT: `0x${string}`;
+declare const STARKNET_DROP_COLLECTION_CLASS_HASH: `0x${string}`;
+declare const STARKNET_NFTCOMMENTS_CONTRACT: `0x${string}`;
+declare const STARKNET_CREATOR_COIN_FACTORY_CONTRACT: `0x${string}`;
+declare const STARKNET_CREATOR_COIN_EKUBO_LAUNCHER: `0x${string}`;
+declare const STARKNET_CREATOR_COIN_CLASS_HASH: `0x${string}`;
+declare const STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH: `0x${string}`;
+declare const STARKNET_CREATOR_COIN_START_BLOCK: number;
+declare const STARKNET_EKUBO_CORE: `0x${string}`;
 declare const SUPPORTED_TOKENS: readonly [{
     readonly symbol: "USDC";
     readonly address: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb";
@@ -2027,6 +2054,9 @@ declare const IPMarketplaceABI: readonly [{
     }, {
         readonly name: "order_status";
         readonly type: "medialane_marketplace_erc721::core::types::OrderStatus";
+    }, {
+        readonly name: "counter";
+        readonly type: "core::felt252";
     }];
 }, {
     readonly type: "interface";
@@ -2916,6 +2946,9 @@ declare const Medialane1155ABI: readonly [{
         readonly type: "medialane_marketplace_erc1155::core::types::OrderStatus";
     }, {
         readonly name: "remaining_amount";
+        readonly type: "core::felt252";
+    }, {
+        readonly name: "counter";
         readonly type: "core::felt252";
     }];
 }, {
@@ -4283,9 +4316,6 @@ declare const IPCollectionABI: readonly [{
         readonly type: "function";
         readonly name: "batch_transfer";
         readonly inputs: readonly [{
-            readonly name: "from";
-            readonly type: "core::starknet::contract_address::ContractAddress";
-        }, {
             readonly name: "to";
             readonly type: "core::starknet::contract_address::ContractAddress";
         }, {
@@ -5774,7 +5804,7 @@ declare const SERVICES: {
         readonly provenance: "MEDIALANE";
         readonly onchain: {
             readonly STARKNET: {
-                readonly factoryAddress: string;
+                readonly factoryAddress: `0x${string}`;
                 readonly startBlock: number;
             };
         };
@@ -5808,8 +5838,8 @@ declare const SERVICES: {
         readonly provenance: "MEDIALANE";
         readonly onchain: {
             readonly STARKNET: {
-                readonly factoryAddress: string;
-                readonly classHash: string;
+                readonly factoryAddress: `0x${string}`;
+                readonly classHash: `0x${string}`;
                 readonly startBlock: number;
             };
         };
@@ -5831,8 +5861,8 @@ declare const SERVICES: {
         readonly provenance: "MEDIALANE";
         readonly onchain: {
             readonly STARKNET: {
-                readonly factoryAddress: string;
-                readonly classHash: string;
+                readonly factoryAddress: `0x${string}`;
+                readonly classHash: `0x${string}`;
             };
         };
         readonly uiVariant: "pop";
@@ -5857,8 +5887,8 @@ declare const SERVICES: {
         readonly provenance: "MEDIALANE";
         readonly onchain: {
             readonly STARKNET: {
-                readonly factoryAddress: string;
-                readonly classHash: string;
+                readonly factoryAddress: `0x${string}`;
+                readonly classHash: `0x${string}`;
             };
         };
         readonly uiVariant: "drop";
@@ -5883,8 +5913,8 @@ declare const SERVICES: {
         readonly provenance: "MEDIALANE";
         readonly onchain: {
             readonly STARKNET: {
-                readonly factoryAddress: string;
-                readonly classHash: string;
+                readonly factoryAddress: `0x${string}`;
+                readonly classHash: `0x${string}`;
                 readonly startBlock: number;
             };
         };
@@ -5906,8 +5936,8 @@ declare const SERVICES: {
         readonly provenance: "MEDIALANE";
         readonly onchain: {
             readonly STARKNET: {
-                readonly factoryAddress: string;
-                readonly classHash: string;
+                readonly factoryAddress: `0x${string}`;
+                readonly classHash: `0x${string}`;
                 readonly startBlock: number;
             };
         };
@@ -5932,8 +5962,8 @@ declare const SERVICES: {
         readonly provenance: "MEDIALANE";
         readonly onchain: {
             readonly STARKNET: {
-                readonly factoryAddress: string;
-                readonly classHash: string;
+                readonly factoryAddress: `0x${string}`;
+                readonly classHash: `0x${string}`;
                 readonly startBlock: number;
             };
         };
@@ -6136,4 +6166,4 @@ declare function build1155OrderTypedData(message: Record<string, unknown>, chain
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 
-export { ADMIN_HEADERS, ADMIN_SCOPE, type ActivityType, type AddSupplyParams, type AdminGrant, type AdminRequest, type AdminRequestSig, type AdminSession, type AdminSessionTypedDataInput, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCoin, type ApiCoinsQuery, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintEditionParams, type BuildFeeCallParams, CHAINS, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type Chain, type ChainCoordinates, type ClaimConditions, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateCreatorCoinParams, type CreateDropParams, type CreateGrantOpts, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, CreatorCoinFactoryABI, type CreatorCoinPrice, type CreatorCoinReceiptLike, CreatorCoinService, DEFAULT_CHAIN, DEFAULT_CURRENCY, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EkuboLaunchParams, type EkuboPoolParams, type EnforcementDeclaration, type FailoverFetchOptions, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNftABI, type IPType, type IntentCall, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, LAUNCH_PRICE_QUOTE_PER_COIN, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintEditionParams, type MintParams, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, PUBLIC_RPC_FALLBACKS, type ParsedAdminHeaders, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, VALIDATED_EKUBO_PARAMS, type WebhookEventType, type WebhookStatus, adminRequestDigest, build1155CancellationTypedData, build1155OrderTypedData, buildAdminSessionTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createAdminSessionGrant, createFailoverFetch, encodeAdminHeaders, encodeByteArray, fdvHuman, formatAmount, getCoordinates, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAdminHeaders, parseAmount, parseCreatorCoinCreated, randomNonce, resolveConfig, resolveFeeConfig, sessionKeyHashOf, shortenAddress, signAdminRequest, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol, verifyAdminRequestSig };
+export { ADMIN_HEADERS, ADMIN_SCOPE, type ActivityType, type AddSupplyParams, type AdminGrant, type AdminRequest, type AdminRequestSig, type AdminSession, type AdminSessionTypedDataInput, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCoin, type ApiCoinsQuery, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintEditionParams, type BuildFeeCallParams, CHAINS, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type Chain, type ChainCoordinates, type ClaimConditions, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateCreatorCoinParams, type CreateDropParams, type CreateGrantOpts, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, CreatorCoinFactoryABI, type CreatorCoinPrice, type CreatorCoinReceiptLike, CreatorCoinService, DEFAULT_CHAIN, DEFAULT_CURRENCY, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EkuboLaunchParams, type EkuboPoolParams, type EnforcementDeclaration, type FailoverFetchOptions, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNftABI, type IPType, type IntentCall, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, LAUNCH_PRICE_QUOTE_PER_COIN, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintEditionParams, type MintParams, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, PUBLIC_RPC_FALLBACKS, type ParsedAdminHeaders, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, STARKNET_COLLECTION_1155_CLASS_HASH, STARKNET_COLLECTION_1155_CONTRACT, STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH, STARKNET_COLLECTION_1155_START_BLOCK, STARKNET_COLLECTION_721_CONTRACT, STARKNET_COLLECTION_721_START_BLOCK, STARKNET_CREATOR_COIN_CLASS_HASH, STARKNET_CREATOR_COIN_EKUBO_LAUNCHER, STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH, STARKNET_CREATOR_COIN_FACTORY_CONTRACT, STARKNET_CREATOR_COIN_START_BLOCK, STARKNET_DROP_COLLECTION_CLASS_HASH, STARKNET_DROP_FACTORY_CONTRACT, STARKNET_EKUBO_CORE, STARKNET_IPCOLLECTION_CLASS_HASH, STARKNET_IPNFT_CLASS_HASH, STARKNET_MARKETPLACE_1155_CLASS_HASH, STARKNET_MARKETPLACE_1155_CONTRACT, STARKNET_MARKETPLACE_1155_START_BLOCK, STARKNET_MARKETPLACE_721_CLASS_HASH, STARKNET_MARKETPLACE_721_CONTRACT, STARKNET_MARKETPLACE_721_START_BLOCK, STARKNET_NFTCOMMENTS_CONTRACT, STARKNET_POP_COLLECTION_CLASS_HASH, STARKNET_POP_FACTORY_CONTRACT, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, VALIDATED_EKUBO_PARAMS, type WebhookEventType, type WebhookStatus, adminRequestDigest, build1155CancellationTypedData, build1155OrderTypedData, buildAdminSessionTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createAdminSessionGrant, createFailoverFetch, encodeAdminHeaders, encodeByteArray, fdvHuman, formatAmount, getCoordinates, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getTokenByAddress, getTokenBySymbol, isServiceId, isTransientRpcError, listServices, normalizeAddress, normalizeHash, parseAdminHeaders, parseAmount, parseCreatorCoinCreated, randomNonce, resolveConfig, resolveFeeConfig, sessionKeyHashOf, shortenAddress, signAdminRequest, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol, verifyAdminRequestSig };

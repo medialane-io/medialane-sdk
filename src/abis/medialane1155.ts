@@ -194,6 +194,10 @@ export const Medialane1155ABI = [
       {
         "name": "remaining_amount",
         "type": "core::felt252"
+      },
+      {
+        "name": "counter",
+        "type": "core::felt252"
       }
     ]
   },

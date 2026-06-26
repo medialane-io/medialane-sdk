@@ -50,8 +50,8 @@ const ORDER_CANCELLATION = [
  * update only this lookup — every builder reads through it.
  */
 const DOMAIN_VERSION: Record<"erc721" | "erc1155", string> = {
-  erc721: "4",
-  erc1155: "3",
+  erc721: "5",
+  erc1155: "4",
 };
 
 function buildDomain(standard: "erc721" | "erc1155", chainId: constants.StarknetChainId | string) {
