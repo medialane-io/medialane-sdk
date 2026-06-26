@@ -115,6 +115,8 @@ export interface OrderDetails {
   start_time: bigint;
   end_time: bigint;
   order_status: string;
+  /** The offerer's bulk-cancel epoch at registration; re-checked at fulfilment. */
+  counter: string;
   /** ERC-1155 only — units still available. */
   remaining_amount?: string;
 }

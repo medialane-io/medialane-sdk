@@ -304,10 +304,6 @@ export const IPCollectionABI =
         "name": "batch_transfer",
         "inputs": [
           {
-            "name": "from",
-            "type": "core::starknet::contract_address::ContractAddress"
-          },
-          {
             "name": "to",
             "type": "core::starknet::contract_address::ContractAddress"
           },

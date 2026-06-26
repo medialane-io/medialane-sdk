@@ -190,6 +190,10 @@ export const IPMarketplaceABI = [
       {
         "name": "order_status",
         "type": "medialane_marketplace_erc721::core::types::OrderStatus"
+      },
+      {
+        "name": "counter",
+        "type": "core::felt252"
       }
     ]
   },
