@@ -2,6 +2,29 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.44.0] — 2026-07-01
+
+### Added — SIWS client protocol (single source)
+
+`medialane-starknet` and `medialane-io` each maintained their own copy of the
+SIWS (Sign-In With Starknet) client logic — nonce request, sign, verify,
+localStorage cache with expiry-awareness. Promoted into the SDK as the single
+source (medialane-core/docs/specs/2026-06-30-remove-clerk-from-backend-
+design.md §IX); both apps now re-export thin wrappers instead of duplicating
+the protocol.
+
+- **`requestSiwsToken({ backendUrl, walletAddress, signer })`** — request a
+  nonce, sign it via `signer.signMessage(typedData)`, verify with the backend,
+  cache the resulting token. Returns the `siws_...` token.
+- **`getStoredSiwsToken(address)` / `storeSiwsToken(address, token)` /
+  `isSiwsTokenValid(token)` / `getSiwsStorageKey(address)`** — the
+  localStorage cache, expiry-aware (browser-only; no-ops server-side).
+- **`normalizeSiwsSignature(signature)`** — normalizes `string[] | { r, s } |
+  other` signer return shapes into the `string[]` the backend expects.
+- New types: `SiwsSigner`, `RequestSiwsTokenArgs`.
+
+Additive — no existing exports changed.
+
 ## [0.40.0] — 2026-06-22
 
 ### Added — Admin signed-request auth

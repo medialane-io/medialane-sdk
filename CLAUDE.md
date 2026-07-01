@@ -20,7 +20,7 @@ Always use `~/.bun/bin/bun` — bun is not in PATH by default on this machine.
 ```json
 {
   "name": "@medialane/sdk",
-  "version": "0.41.0",
+  "version": "0.44.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts"
@@ -103,6 +103,7 @@ src/
 > - **v0.42.0 (chain-named contract constants)**: flat contract constants are back, **chain-named** — the contract is deployed on a specific chain, so the var carries it: `STARKNET_MARKETPLACE_721_CONTRACT`, `STARKNET_COLLECTION_721_CONTRACT`, `STARKNET_NFTCOMMENTS_CONTRACT`, `STARKNET_*_CLASS_HASH` / `_START_BLOCK`, etc. (the old `*_MAINNET` set, renamed `_MAINNET` suffix → `STARKNET_` prefix). Still derived from `chains.ts` (one source). Consumers import the named constant — no `getCoordinates()` calls and **no contract-address env vars** in app/backend code. This is the standard backend + io + dapp all adopted (2026-06-25); tokens single-source from `SUPPORTED_TOKENS`/`getTokenBySymbol` (native USDC canonical).
 > - **v0.42.1 (typed addresses)**: `ChainCoordinates` address / class-hash fields are typed `` `0x${string}` `` (start blocks `number`, `rpcUrl: string`), so the derived `STARKNET_*` constants carry the right literal type and consumers need no per-app `as 0x${string}` casts.
 > - **v0.43.0 (core protocol redeploy — BREAKING)**: all four core protocols redeployed to Starknet mainnet (2026-06-26). **New `chains.ts` Starknet coordinates** (and derived `STARKNET_*` constants): `marketplace721` → `0x03eda9a2…`, `marketplace1155` → `0x07c4ce1c…`, `collection721` (MIP registry) → `0x0225c3ae…`, `collection1155` (IP-1155 factory) → `0x01536897…`, plus all class hashes — including the now-changed `ipNftClassHash` (`0x012d3ae4…`) and `collection1155FactoryClassHash` (`0x04eb6b41…`) — and new start blocks. **SNIP-12 domain versions bumped — ERC-721 `4 → 5`, ERC-1155 `3 → 4`** (`signing.ts`); orders signed against the prior deployment no longer validate. **ABIs regenerated** from the deployed artifacts: `IPMarketplaceABI` + `Medialane1155ABI` — `OrderDetails` / `get_order_details` now carry `counter` (the offerer's bulk-cancel epoch, re-checked at fulfilment so `increment_counter` invalidates already-registered orders); `IPCollectionABI` — `batch_transfer` drops `from` (sender derived on-chain). `OrderDetails` type gains required `counter`. No `client.*` API-surface change. Deploy record: `medialane-core/docs/specs/2026-06-25-collections-marketplaces-remediation-runbook.md`.
+> - **v0.44.0 (SIWS client protocol — single source)**: new `src/siws/` module — `requestSiwsToken({ backendUrl, walletAddress, signer })`, `getStoredSiwsToken`/`storeSiwsToken`/`isSiwsTokenValid`/`getSiwsStorageKey` (localStorage cache, expiry-aware, browser-only), `normalizeSiwsSignature`, types `SiwsSigner`/`RequestSiwsTokenArgs`. Promotes logic that `medialane-starknet` and `medialane-io` each duplicated — both now re-export thin wrappers instead. Additive. Spec: `medialane-core/docs/specs/2026-06-30-remove-clerk-from-backend-design.md` §IX.
 
 ---
 

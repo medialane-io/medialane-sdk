@@ -6825,6 +6825,95 @@ function parseAdminHeaders(get) {
   }
 }
 
+// src/siws/client.ts
+var STORAGE_PREFIX = "ml_siws_";
+function decodeBase64url(str) {
+  const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = "=".repeat((4 - base64.length % 4) % 4);
+  return atob(base64 + padding);
+}
+function readTokenExpiry(token) {
+  try {
+    if (!token.startsWith("siws_")) return null;
+    const inner = token.slice(5);
+    const dot = inner.lastIndexOf(".");
+    if (dot === -1) return null;
+    const data = JSON.parse(decodeBase64url(inner.slice(0, dot)));
+    return typeof data.exp === "number" ? data.exp : null;
+  } catch {
+    return null;
+  }
+}
+function getSiwsStorageKey(address) {
+  return `${STORAGE_PREFIX}${address.toLowerCase()}`;
+}
+function isSiwsTokenValid(token) {
+  if (!token?.startsWith("siws_")) return false;
+  const expiry = readTokenExpiry(token);
+  return Boolean(expiry && expiry > Math.floor(Date.now() / 1e3));
+}
+function getStoredSiwsToken(address) {
+  if (typeof window === "undefined") return null;
+  const key = getSiwsStorageKey(address);
+  const token = localStorage.getItem(key);
+  if (isSiwsTokenValid(token)) return token;
+  localStorage.removeItem(key);
+  return null;
+}
+function storeSiwsToken(address, token) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(getSiwsStorageKey(address), token);
+}
+function normalizeSiwsSignature(signature) {
+  if (Array.isArray(signature)) {
+    return signature.map(String);
+  }
+  if (signature && typeof signature === "object") {
+    const { r, s } = signature;
+    if (r !== void 0 && s !== void 0) {
+      return [String(r), String(s)];
+    }
+  }
+  return [String(signature)];
+}
+async function requestSiwsToken({
+  backendUrl,
+  walletAddress,
+  signer
+}) {
+  const base = backendUrl.replace(/\/$/, "");
+  const nonceRes = await fetch(`${base}/v1/auth/siws/nonce`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ walletAddress })
+  });
+  if (!nonceRes.ok) {
+    throw new Error("Failed to prepare wallet sign-in");
+  }
+  const { nonce, typedData } = await nonceRes.json();
+  const signature = normalizeSiwsSignature(await signer.signMessage(typedData));
+  const verifyRes = await fetch(`${base}/v1/auth/siws/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ walletAddress, nonce, signature })
+  });
+  if (!verifyRes.ok) {
+    let backendMessage;
+    try {
+      const body = await verifyRes.json();
+      if (body?.message) backendMessage = body.message;
+    } catch {
+    }
+    throw new Error(backendMessage ?? "Wallet sign-in failed");
+  }
+  const { token } = await verifyRes.json();
+  if (!isSiwsTokenValid(token)) {
+    throw new Error("Wallet sign-in returned an invalid token");
+  }
+  storeSiwsToken(walletAddress, token);
+  return token;
+}
+
 // src/types/api.ts
 var OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"];
 
@@ -7156,22 +7245,28 @@ exports.getCreatorCoinPrice = getCreatorCoinPrice;
 exports.getListableTokens = getListableTokens;
 exports.getService = getService;
 exports.getServicesByCapability = getServicesByCapability;
+exports.getSiwsStorageKey = getSiwsStorageKey;
+exports.getStoredSiwsToken = getStoredSiwsToken;
 exports.getTokenByAddress = getTokenByAddress;
 exports.getTokenBySymbol = getTokenBySymbol;
 exports.isServiceId = isServiceId;
+exports.isSiwsTokenValid = isSiwsTokenValid;
 exports.isTransientRpcError = isTransientRpcError;
 exports.listServices = listServices;
 exports.normalizeAddress = normalizeAddress;
 exports.normalizeHash = normalizeHash;
+exports.normalizeSiwsSignature = normalizeSiwsSignature;
 exports.parseAdminHeaders = parseAdminHeaders;
 exports.parseAmount = parseAmount;
 exports.parseCreatorCoinCreated = parseCreatorCoinCreated;
 exports.randomNonce = randomNonce;
+exports.requestSiwsToken = requestSiwsToken;
 exports.resolveConfig = resolveConfig;
 exports.resolveFeeConfig = resolveFeeConfig;
 exports.sessionKeyHashOf = sessionKeyHashOf;
 exports.shortenAddress = shortenAddress;
 exports.signAdminRequest = signAdminRequest;
+exports.storeSiwsToken = storeSiwsToken;
 exports.stringifyBigInts = stringifyBigInts;
 exports.teamCoinsRaw = teamCoinsRaw;
 exports.u256ToBigInt = u256ToBigInt;

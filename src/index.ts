@@ -25,6 +25,10 @@ export { ApiClient, MedialaneApiError } from "./api/client.js";
 // Admin signed-request auth (portal/agent ↔ backend wire format — single source)
 export * from "./admin-auth/index.js";
 
+// SIWS (Sign-In With Starknet) client protocol — single source for every app
+// that mints a wallet-signed session token (medialane-starknet, medialane-io)
+export * from "./siws/index.js";
+
 // Types
 export * from "./types/index.js";
 export type { MedialaneErrorCode } from "./types/errors.js";
