@@ -29,6 +29,18 @@ export const STARKNET_DROP_FACTORY_CONTRACT = SN.dropFactory!;
 export const STARKNET_DROP_COLLECTION_CLASS_HASH = SN.dropCollectionClassHash!;
 export const STARKNET_NFTCOMMENTS_CONTRACT = SN.nftComments!;
 
+// ── IP Tickets / IP Club / IP Sponsorship ─────────────────────────────────────
+// Not yet deployed — these resolve to `undefined` at runtime until chains.ts's
+// STARKNET coordinates are populated (Phase 3/4 deploy). The `!` assertion
+// mirrors the existing convention above; falsy-guard callers (`if (X && ...)`)
+// still behave correctly regardless.
+export const STARKNET_IP_TICKETS_FACTORY_CONTRACT = SN.ipTicketsFactory!;
+export const STARKNET_IP_TICKET_COLLECTION_CLASS_HASH = SN.ipTicketCollectionClassHash!;
+export const STARKNET_IP_CLUB_REGISTRY_CONTRACT = SN.ipClubRegistry!;
+export const STARKNET_IP_CLUB_NFT_CLASS_HASH = SN.ipClubNftClassHash!;
+export const STARKNET_IP_SPONSORSHIP_CONTRACT = SN.ipSponsorship!;
+export const STARKNET_IP_SPONSORSHIP_LICENSE_CONTRACT = SN.ipSponsorshipLicense!;
+
 // ── Creator Coin (Ekubo) ──────────────────────────────────────────────────────
 export const STARKNET_CREATOR_COIN_FACTORY_CONTRACT = SN.creatorCoinFactory!;
 export const STARKNET_CREATOR_COIN_EKUBO_LAUNCHER = SN.creatorCoinEkuboLauncher!;
