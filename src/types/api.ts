@@ -22,7 +22,8 @@ export type ServiceCapability =
   | "mint" | "claim" | "airdrop"
   | "remix" | "license"
   | "subscribe" | "redeem"
-  | "launch" | "swap";
+  | "launch" | "swap"
+  | "sponsor";
 
 /** A service that bakes enforcement into its own contract declares it here
  *  (04-licensing-model §V, 05-service-model §IV). Absence/all-falsey =

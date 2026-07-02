@@ -404,7 +404,7 @@ type IPType = "Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | 
 type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 /** Bounded capability set (05-service-model §III). Expand the union when a
  *  service needs behavior outside it — never make it free-form. */
-type ServiceCapability = "list" | "buy" | "make_offer" | "cancel" | "transfer" | "burn" | "mint" | "claim" | "airdrop" | "remix" | "license" | "subscribe" | "redeem" | "launch" | "swap";
+type ServiceCapability = "list" | "buy" | "make_offer" | "cancel" | "transfer" | "burn" | "mint" | "claim" | "airdrop" | "remix" | "license" | "subscribe" | "redeem" | "launch" | "swap" | "sponsor";
 /** A service that bakes enforcement into its own contract declares it here
  *  (04-licensing-model §V, 05-service-model §IV). Absence/all-falsey =
  *  soft enforcement (the 00-principles §9 default). */
@@ -8170,6 +8170,62 @@ declare const SERVICES: {
             readonly emittedBy: "instance";
             readonly poll: "slow";
         }];
+        readonly metadataSchema: {
+            readonly licenseDefault: "CC BY-SA";
+        };
+    };
+    readonly "ip-tickets": {
+        readonly id: "ip-tickets";
+        readonly displayName: "IP Tickets";
+        readonly description: "Sell verifiable, redeemable tickets for events and experiences.";
+        readonly standard: "ERC721";
+        readonly provenance: "MEDIALANE";
+        readonly uiVariant: "ticket";
+        readonly capabilities: ["mint", "redeem", "transfer"];
+        readonly events: [{
+            readonly name: "CollectionDeployed";
+            readonly emittedBy: "factory";
+        }];
+        readonly metadataSchema: {
+            readonly licenseDefault: "CC BY-SA";
+        };
+    };
+    readonly "ip-club": {
+        readonly id: "ip-club";
+        readonly displayName: "IP Club";
+        readonly description: "Membership clubs with an on-chain NFT membership card.";
+        readonly standard: "ERC721";
+        readonly provenance: "MEDIALANE";
+        readonly uiVariant: "club";
+        readonly capabilities: ["subscribe", "transfer"];
+        readonly events: [{
+            readonly name: "NewClubCreated";
+            readonly emittedBy: "factory";
+        }];
+        readonly metadataSchema: {
+            readonly licenseDefault: "CC BY-SA";
+        };
+    };
+    readonly "ip-sponsorship": {
+        readonly id: "ip-sponsorship";
+        readonly displayName: "IP Sponsorship";
+        readonly description: "Sponsorship offers and licenses anchored to an existing Medialane asset.";
+        readonly standard: "ERC721";
+        readonly provenance: "MEDIALANE";
+        readonly uiVariant: "standard";
+        readonly capabilities: ["sponsor"];
+        readonly metadataSchema: {
+            readonly licenseDefault: "CC BY-SA";
+        };
+    };
+    readonly "ip-sponsorship-license": {
+        readonly id: "ip-sponsorship-license";
+        readonly displayName: "Sponsorship License Receipt";
+        readonly description: "Non-authoritative receipt NFT minted to a sponsor when a sponsorship bid is accepted.";
+        readonly standard: "ERC721";
+        readonly provenance: "MEDIALANE";
+        readonly uiVariant: "standard";
+        readonly capabilities: ["transfer"];
         readonly metadataSchema: {
             readonly licenseDefault: "CC BY-SA";
         };

@@ -10104,6 +10104,52 @@ var SERVICES = {
     ],
     metadataSchema: { licenseDefault: "CC BY-SA" }
   },
+  "ip-tickets": {
+    id: "ip-tickets",
+    displayName: "IP Tickets",
+    description: "Sell verifiable, redeemable tickets for events and experiences.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    uiVariant: "ticket",
+    capabilities: ["mint", "redeem", "transfer"],
+    events: [
+      { name: "CollectionDeployed", emittedBy: "factory" }
+    ],
+    metadataSchema: { licenseDefault: "CC BY-SA" }
+  },
+  "ip-club": {
+    id: "ip-club",
+    displayName: "IP Club",
+    description: "Membership clubs with an on-chain NFT membership card.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    uiVariant: "club",
+    capabilities: ["subscribe", "transfer"],
+    events: [
+      { name: "NewClubCreated", emittedBy: "factory" }
+    ],
+    metadataSchema: { licenseDefault: "CC BY-SA" }
+  },
+  "ip-sponsorship": {
+    id: "ip-sponsorship",
+    displayName: "IP Sponsorship",
+    description: "Sponsorship offers and licenses anchored to an existing Medialane asset.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    uiVariant: "standard",
+    capabilities: ["sponsor"],
+    metadataSchema: { licenseDefault: "CC BY-SA" }
+  },
+  "ip-sponsorship-license": {
+    id: "ip-sponsorship-license",
+    displayName: "Sponsorship License Receipt",
+    description: "Non-authoritative receipt NFT minted to a sponsor when a sponsorship bid is accepted.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    uiVariant: "standard",
+    capabilities: ["transfer"],
+    metadataSchema: { licenseDefault: "CC BY-SA" }
+  },
   "creator-coin": {
     id: "creator-coin",
     displayName: "Creator Coin",
