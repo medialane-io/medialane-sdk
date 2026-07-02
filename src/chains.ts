@@ -84,8 +84,10 @@ const COORDINATES: Partial<Record<Chain, ChainCoordinates>> = {
     ipClubStartBlock: 11404776,
     ipSponsorship: "0x044d9b9c3bb29b94685b0a3fe27a5e2dfa30a3637ab55979c718ebcd3268bc2f",
     ipSponsorshipStartBlock: 11405085,
-    // ipSponsorshipLicense: pending — user deploying a dedicated ip-erc721/MIP
-    // instance via Voyager, separate from the genesis-mint instance.
+    // Dedicated ip-erc721/MIP instance for sponsorship receipts (class hash
+    // 0x01bd7e39c5135b32b664e34cbbb4eafbd707a0fbc3ec2ef28657f52577d277d7) —
+    // never the genesis-mint instance.
+    ipSponsorshipLicense: "0x06bcfc4e97758a2abf95af4bd49596efdbfd88ccd740caddc56ad0a4bd095839",
   },
 };
 
