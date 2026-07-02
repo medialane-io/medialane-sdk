@@ -9759,6 +9759,71 @@ var TicketService = class {
     return { txHash: res.transaction_hash };
   }
 };
+var ClubService = class {
+  constructor(config) {
+    this.registryAddress = getCoordinates(config.chain).ipClubRegistry;
+  }
+  _registry(account, registryAddress) {
+    const address = registryAddress ?? this.registryAddress;
+    if (!address) {
+      throw new Error("IP-Club registry address not configured for this chain");
+    }
+    return new Contract(IPClubABI, normalizeAddress("STARKNET", address), account);
+  }
+  /** Permissionless — anyone may create a club. The registry deploys its own membership NFT internally. */
+  async createClub(account, params) {
+    const maxMembers = params.maxMembers != null ? new CairoOption(CairoOptionVariant.Some, params.maxMembers) : new CairoOption(CairoOptionVariant.None);
+    const entryFee = params.entryFee != null ? new CairoOption(CairoOptionVariant.Some, cairo.uint256(params.entryFee)) : new CairoOption(CairoOptionVariant.None);
+    const paymentToken = params.paymentToken ? new CairoOption(CairoOptionVariant.Some, params.paymentToken) : new CairoOption(CairoOptionVariant.None);
+    const call = this._registry(account, params.registryAddress).populate("create_club", [
+      params.name,
+      params.symbol,
+      params.metadataUri,
+      maxMembers,
+      entryFee,
+      paymentToken
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /** Reversible — gates new joins only; existing members are never affected. */
+  async setClubOpen(account, params) {
+    const call = this._registry(account, params.registryAddress).populate("set_club_open", [
+      cairo.uint256(params.clubId),
+      params.open
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /** Prepends an ERC-20 approve when the club has an entry fee. */
+  async joinClub(account, params) {
+    const registryAddress = params.registryAddress ?? this.registryAddress;
+    if (!registryAddress) {
+      throw new Error("IP-Club registry address not configured for this chain");
+    }
+    const calls = [];
+    if (params.paymentToken && params.entryFee && BigInt(params.entryFee) > 0n) {
+      const amount = cairo.uint256(params.entryFee);
+      calls.push({
+        contractAddress: params.paymentToken,
+        entrypoint: "approve",
+        calldata: [normalizeAddress("STARKNET", registryAddress), amount.low.toString(), amount.high.toString()]
+      });
+    }
+    calls.push(this._registry(account, registryAddress).populate("join_club", [cairo.uint256(params.clubId)]));
+    const res = await account.execute(calls);
+    return { txHash: res.transaction_hash };
+  }
+  /** Always allowed, open or closed. No fee refund. Burns the caller's membership NFT. */
+  async leaveClub(account, params) {
+    const call = this._registry(account, params.registryAddress).populate("leave_club", [
+      cairo.uint256(params.clubId),
+      cairo.uint256(params.tokenId)
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+};
 
 // src/client.ts
 var MedialaneClient = class {
@@ -9771,7 +9836,8 @@ var MedialaneClient = class {
       drop: new DropService(this.config),
       erc1155Collection: new ERC1155CollectionService(this.config),
       creatorCoin: new CreatorCoinService(this.config),
-      ticket: new TicketService(this.config)
+      ticket: new TicketService(this.config),
+      club: new ClubService(this.config)
     };
     if (!this.config.backendUrl) {
       const sentinel = new ApiClient("https://medialane-sdk-no-backend.invalid", this.config.apiKey);
@@ -10321,6 +10387,6 @@ function getServicesByCapability(cap) {
   );
 }
 
-export { ADMIN_HEADERS, ADMIN_SCOPE, ApiClient, CHAINS, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_CHAIN, DEFAULT_CURRENCY, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, FeeConfigSchema, IPClubABI, IPClubNFTABI, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNftABI, IPSponsorshipABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, LAUNCH_PRICE_QUOTE_PER_COIN, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, PUBLIC_RPC_FALLBACKS, PopService, STARKNET_COLLECTION_1155_CLASS_HASH, STARKNET_COLLECTION_1155_CONTRACT, STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH, STARKNET_COLLECTION_1155_START_BLOCK, STARKNET_COLLECTION_721_CONTRACT, STARKNET_COLLECTION_721_START_BLOCK, STARKNET_CREATOR_COIN_CLASS_HASH, STARKNET_CREATOR_COIN_EKUBO_LAUNCHER, STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH, STARKNET_CREATOR_COIN_FACTORY_CONTRACT, STARKNET_CREATOR_COIN_START_BLOCK, STARKNET_DROP_COLLECTION_CLASS_HASH, STARKNET_DROP_FACTORY_CONTRACT, STARKNET_EKUBO_CORE, STARKNET_IPCOLLECTION_CLASS_HASH, STARKNET_IPNFT_CLASS_HASH, STARKNET_MARKETPLACE_1155_CLASS_HASH, STARKNET_MARKETPLACE_1155_CONTRACT, STARKNET_MARKETPLACE_1155_START_BLOCK, STARKNET_MARKETPLACE_721_CLASS_HASH, STARKNET_MARKETPLACE_721_CONTRACT, STARKNET_MARKETPLACE_721_START_BLOCK, STARKNET_NFTCOMMENTS_CONTRACT, STARKNET_POP_COLLECTION_CLASS_HASH, STARKNET_POP_FACTORY_CONTRACT, SUPPORTED_TOKENS, TicketService, VALIDATED_EKUBO_PARAMS, adminRequestDigest, build1155CancellationTypedData, build1155OrderTypedData, buildAdminSessionTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createAdminSessionGrant, createFailoverFetch, encodeAdminHeaders, encodeByteArray, fdvHuman, formatAmount, getCoordinates, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getSiwsStorageKey, getStoredSiwsToken, getTokenByAddress, getTokenBySymbol, isServiceId, isSiwsTokenValid, isTransientRpcError, listServices, normalizeAddress, normalizeHash, normalizeSiwsSignature, parseAdminHeaders, parseAmount, parseCreatorCoinCreated, randomNonce, requestSiwsToken, resolveConfig, resolveFeeConfig, sessionKeyHashOf, shortenAddress, signAdminRequest, storeSiwsToken, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol, verifyAdminRequestSig };
+export { ADMIN_HEADERS, ADMIN_SCOPE, ApiClient, CHAINS, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, ClubService, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_CHAIN, DEFAULT_CURRENCY, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, FeeConfigSchema, IPClubABI, IPClubNFTABI, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNftABI, IPSponsorshipABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, LAUNCH_PRICE_QUOTE_PER_COIN, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, PUBLIC_RPC_FALLBACKS, PopService, STARKNET_COLLECTION_1155_CLASS_HASH, STARKNET_COLLECTION_1155_CONTRACT, STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH, STARKNET_COLLECTION_1155_START_BLOCK, STARKNET_COLLECTION_721_CONTRACT, STARKNET_COLLECTION_721_START_BLOCK, STARKNET_CREATOR_COIN_CLASS_HASH, STARKNET_CREATOR_COIN_EKUBO_LAUNCHER, STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH, STARKNET_CREATOR_COIN_FACTORY_CONTRACT, STARKNET_CREATOR_COIN_START_BLOCK, STARKNET_DROP_COLLECTION_CLASS_HASH, STARKNET_DROP_FACTORY_CONTRACT, STARKNET_EKUBO_CORE, STARKNET_IPCOLLECTION_CLASS_HASH, STARKNET_IPNFT_CLASS_HASH, STARKNET_MARKETPLACE_1155_CLASS_HASH, STARKNET_MARKETPLACE_1155_CONTRACT, STARKNET_MARKETPLACE_1155_START_BLOCK, STARKNET_MARKETPLACE_721_CLASS_HASH, STARKNET_MARKETPLACE_721_CONTRACT, STARKNET_MARKETPLACE_721_START_BLOCK, STARKNET_NFTCOMMENTS_CONTRACT, STARKNET_POP_COLLECTION_CLASS_HASH, STARKNET_POP_FACTORY_CONTRACT, SUPPORTED_TOKENS, TicketService, VALIDATED_EKUBO_PARAMS, adminRequestDigest, build1155CancellationTypedData, build1155OrderTypedData, buildAdminSessionTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createAdminSessionGrant, createFailoverFetch, encodeAdminHeaders, encodeByteArray, fdvHuman, formatAmount, getCoordinates, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getSiwsStorageKey, getStoredSiwsToken, getTokenByAddress, getTokenBySymbol, isServiceId, isSiwsTokenValid, isTransientRpcError, listServices, normalizeAddress, normalizeHash, normalizeSiwsSignature, parseAdminHeaders, parseAmount, parseCreatorCoinCreated, randomNonce, requestSiwsToken, resolveConfig, resolveFeeConfig, sessionKeyHashOf, shortenAddress, signAdminRequest, storeSiwsToken, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol, verifyAdminRequestSig };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

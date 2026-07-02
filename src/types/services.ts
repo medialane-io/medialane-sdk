@@ -49,3 +49,16 @@ export interface CreateTicketCollectionParams {
   /** ipfs:// or ar:// only — enforced on-chain. */
   metadataUri: string;
 }
+
+// ─── IP Club ───────────────────────────────────────────────────────────────────
+
+export interface CreateClubParams {
+  name: string;
+  symbol: string;
+  /** ipfs:// or ar:// only — enforced on-chain. */
+  metadataUri: string;
+  maxMembers?: number;
+  /** Required (non-zero) with paymentToken set; omit for a free club. */
+  entryFee?: bigint | string;
+  paymentToken?: string;
+}

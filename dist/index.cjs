@@ -9761,6 +9761,71 @@ var TicketService = class {
     return { txHash: res.transaction_hash };
   }
 };
+var ClubService = class {
+  constructor(config) {
+    this.registryAddress = getCoordinates(config.chain).ipClubRegistry;
+  }
+  _registry(account, registryAddress) {
+    const address = registryAddress ?? this.registryAddress;
+    if (!address) {
+      throw new Error("IP-Club registry address not configured for this chain");
+    }
+    return new starknet.Contract(IPClubABI, normalizeAddress("STARKNET", address), account);
+  }
+  /** Permissionless — anyone may create a club. The registry deploys its own membership NFT internally. */
+  async createClub(account, params) {
+    const maxMembers = params.maxMembers != null ? new starknet.CairoOption(starknet.CairoOptionVariant.Some, params.maxMembers) : new starknet.CairoOption(starknet.CairoOptionVariant.None);
+    const entryFee = params.entryFee != null ? new starknet.CairoOption(starknet.CairoOptionVariant.Some, starknet.cairo.uint256(params.entryFee)) : new starknet.CairoOption(starknet.CairoOptionVariant.None);
+    const paymentToken = params.paymentToken ? new starknet.CairoOption(starknet.CairoOptionVariant.Some, params.paymentToken) : new starknet.CairoOption(starknet.CairoOptionVariant.None);
+    const call = this._registry(account, params.registryAddress).populate("create_club", [
+      params.name,
+      params.symbol,
+      params.metadataUri,
+      maxMembers,
+      entryFee,
+      paymentToken
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /** Reversible — gates new joins only; existing members are never affected. */
+  async setClubOpen(account, params) {
+    const call = this._registry(account, params.registryAddress).populate("set_club_open", [
+      starknet.cairo.uint256(params.clubId),
+      params.open
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /** Prepends an ERC-20 approve when the club has an entry fee. */
+  async joinClub(account, params) {
+    const registryAddress = params.registryAddress ?? this.registryAddress;
+    if (!registryAddress) {
+      throw new Error("IP-Club registry address not configured for this chain");
+    }
+    const calls = [];
+    if (params.paymentToken && params.entryFee && BigInt(params.entryFee) > 0n) {
+      const amount = starknet.cairo.uint256(params.entryFee);
+      calls.push({
+        contractAddress: params.paymentToken,
+        entrypoint: "approve",
+        calldata: [normalizeAddress("STARKNET", registryAddress), amount.low.toString(), amount.high.toString()]
+      });
+    }
+    calls.push(this._registry(account, registryAddress).populate("join_club", [starknet.cairo.uint256(params.clubId)]));
+    const res = await account.execute(calls);
+    return { txHash: res.transaction_hash };
+  }
+  /** Always allowed, open or closed. No fee refund. Burns the caller's membership NFT. */
+  async leaveClub(account, params) {
+    const call = this._registry(account, params.registryAddress).populate("leave_club", [
+      starknet.cairo.uint256(params.clubId),
+      starknet.cairo.uint256(params.tokenId)
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+};
 
 // src/client.ts
 var MedialaneClient = class {
@@ -9773,7 +9838,8 @@ var MedialaneClient = class {
       drop: new DropService(this.config),
       erc1155Collection: new ERC1155CollectionService(this.config),
       creatorCoin: new CreatorCoinService(this.config),
-      ticket: new TicketService(this.config)
+      ticket: new TicketService(this.config),
+      club: new ClubService(this.config)
     };
     if (!this.config.backendUrl) {
       const sentinel = new ApiClient("https://medialane-sdk-no-backend.invalid", this.config.apiKey);
@@ -10329,6 +10395,7 @@ exports.ApiClient = ApiClient;
 exports.CHAINS = CHAINS;
 exports.COIN_MAX_SUPPLY = MAX_SUPPLY;
 exports.COIN_MIN_SUPPLY = MIN_SUPPLY;
+exports.ClubService = ClubService;
 exports.CreatorCoinFactoryABI = CreatorCoinFactoryABI;
 exports.CreatorCoinService = CreatorCoinService;
 exports.DEFAULT_CHAIN = DEFAULT_CHAIN;
