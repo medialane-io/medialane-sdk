@@ -11,3 +11,8 @@ export { IPCollection1155ABI } from "./ipCollection1155.js";
 export { IPCollectionABI } from "./ipCollection.js";
 export { IPNftABI } from "./ipNft.js";
 export { CreatorCoinFactoryABI } from "./creatorCoinFactory.js";
+export { IPTicketCollectionABI } from "./ipTicketCollection.js";
+export { IPTicketCollectionFactoryABI } from "./ipTicketCollectionFactory.js";
+export { IPClubABI } from "./ipClub.js";
+export { IPClubNFTABI } from "./ipClubNft.js";
+export { IPSponsorshipABI } from "./ipSponsorship.js";
