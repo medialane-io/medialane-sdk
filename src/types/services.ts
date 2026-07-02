@@ -62,3 +62,18 @@ export interface CreateClubParams {
   entryFee?: bigint | string;
   paymentToken?: string;
 }
+
+// ─── IP Sponsorship ────────────────────────────────────────────────────────────
+
+export interface CreateSponsorshipOfferParams {
+  nftContract: string;
+  tokenId: bigint | string;
+  minAmount: bigint | string;
+  /** Seconds, applied from acceptance (not from offer creation). */
+  duration: number;
+  paymentToken: string;
+  licenseTermsUri: string;
+  transferable: boolean;
+  /** Restricts acceptance to one sponsor address; omit for open bidding. */
+  specificSponsor?: string;
+}

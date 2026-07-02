@@ -8,6 +8,7 @@ import { ERC1155CollectionService } from "./services/erc1155collection.js";
 import { CreatorCoinService } from "./services/creatorCoin.js";
 import { TicketService } from "./services/ticket.js";
 import { ClubService } from "./services/club.js";
+import { SponsorshipService } from "./services/sponsorship.js";
 
 export class MedialaneClient {
   /** On-chain marketplace interactions for ERC-721 assets (create listing, fulfill order, etc.) */
@@ -29,6 +30,7 @@ export class MedialaneClient {
     readonly creatorCoin: CreatorCoinService;
     readonly ticket: TicketService;
     readonly club: ClubService;
+    readonly sponsorship: SponsorshipService;
   };
 
   private readonly config: ResolvedConfig;
@@ -46,6 +48,7 @@ export class MedialaneClient {
       creatorCoin: new CreatorCoinService(this.config),
       ticket: new TicketService(this.config),
       club: new ClubService(this.config),
+      sponsorship: new SponsorshipService(this.config),
     };
 
     if (!this.config.backendUrl) {

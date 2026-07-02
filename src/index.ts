@@ -75,13 +75,14 @@ export {
 } from "./chains.js";
 
 // ABI
-export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, IPClubABI, IPClubNFTABI, IPSponsorshipABI } from "./abis/index.js";
+export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, IPClubABI, IPClubNFTABI, IPSponsorshipABI, IPGenesisABI } from "./abis/index.js";
 
 // Services
 export { PopService } from "./services/pop.js";
 export { DropService } from "./services/drop.js";
 export { TicketService } from "./services/ticket.js";
 export { ClubService } from "./services/club.js";
+export { SponsorshipService } from "./services/sponsorship.js";
 export { ERC1155CollectionService } from "./services/erc1155collection.js";
 export {
   CreatorCoinService,
