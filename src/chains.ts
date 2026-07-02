@@ -76,6 +76,16 @@ const COORDINATES: Partial<Record<Chain, ChainCoordinates>> = {
     creatorCoinFactoryClassHash: "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55",
     creatorCoinStartBlock: 10474544,
     ekuboCore: "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b",
+    ipTicketsFactory: "0x0664c2d6a4da9ee3ff053ceeba7579c01f2fedfd9d2b57b4c07af3734bd4acab",
+    ipTicketCollectionClassHash: "0x086f59c416e365e2bee4ceff9f1dcb96198f2342d50ba4621f60b831863adb6",
+    ipTicketsStartBlock: 11404656,
+    ipClubRegistry: "0x00e189c619b6bb07d78973a149641c59c37eb0716f8584d7520bce12d303eede",
+    ipClubNftClassHash: "0x02bc9b20cca21b04245e9215bf7121f4d7295b195890e449b472b573017fb889",
+    ipClubStartBlock: 11404776,
+    ipSponsorship: "0x044d9b9c3bb29b94685b0a3fe27a5e2dfa30a3637ab55979c718ebcd3268bc2f",
+    ipSponsorshipStartBlock: 11405085,
+    // ipSponsorshipLicense: pending — user deploying a dedicated ip-erc721/MIP
+    // instance via Voyager, separate from the genesis-mint instance.
   },
 };
 
