@@ -33,6 +33,15 @@ interface ChainCoordinates {
     creatorCoinFactoryClassHash?: `0x${string}`;
     creatorCoinStartBlock?: number;
     ekuboCore?: `0x${string}`;
+    ipTicketsFactory?: `0x${string}`;
+    ipTicketCollectionClassHash?: `0x${string}`;
+    ipTicketsStartBlock?: number;
+    ipClubRegistry?: `0x${string}`;
+    ipClubNftClassHash?: `0x${string}`;
+    ipClubStartBlock?: number;
+    ipSponsorship?: `0x${string}`;
+    ipSponsorshipStartBlock?: number;
+    ipSponsorshipLicense?: `0x${string}`;
 }
 declare function getCoordinates(chain: Chain): ChainCoordinates;
 declare const DEFAULT_CHAIN: Chain;
@@ -1413,6 +1422,20 @@ interface CreateDropParams {
     maxSupply: bigint | string;
     initialConditions: ClaimConditions;
 }
+interface CreateTicketCollectionParams {
+    collection: string;
+    /** 0 = free ticket; must be non-zero with paymentToken set otherwise. */
+    price: bigint | string;
+    maxSupply: bigint | string;
+    /** Unix timestamp; must be in the future. */
+    expiration: number;
+    /** Basis points, 0-10000. */
+    royaltyBps: number;
+    /** Required (non-zero) when price > 0; omit for free tickets. */
+    paymentToken?: string;
+    /** ipfs:// or ar:// only — enforced on-chain. */
+    metadataUri: string;
+}
 
 declare class PopService {
     private readonly factoryAddress;
@@ -1709,6 +1732,38 @@ declare class CreatorCoinService {
     getPrice(coinAddress: string): Promise<CreatorCoinPrice | null>;
 }
 
+declare class TicketService {
+    private readonly factoryAddress?;
+    constructor(config: ResolvedConfig);
+    private _collection;
+    /** Deploys a new IPTicketCollection via the factory. Caller becomes its owner. */
+    deployTicketCollection(account: AccountInterface, params: {
+        name: string;
+        symbol: string;
+        factoryAddress?: string;
+    }): Promise<TxResult>;
+    /** Owner-only. Creates a new ticket collection (event/tier) inside the caller's deployed IPTicketCollection. */
+    createTicketCollection(account: AccountInterface, params: CreateTicketCollectionParams): Promise<TxResult>;
+    /** Owner-only. Gates minting only — existing tickets keep access/transfer/redeem. */
+    setCollectionActive(account: AccountInterface, params: {
+        collection: string;
+        collectionId: bigint | string;
+        active: boolean;
+    }): Promise<TxResult>;
+    /** Mints a ticket. Prepends an ERC-20 approve when the collection is paid. */
+    mintTicket(account: AccountInterface, params: {
+        collection: string;
+        collectionId: bigint | string;
+        paymentToken?: string;
+        price?: bigint | string;
+    }): Promise<TxResult>;
+    /** Only the current token owner may redeem. */
+    redeemTicket(account: AccountInterface, params: {
+        collection: string;
+        tokenId: bigint | string;
+    }): Promise<TxResult>;
+}
+
 declare class MedialaneClient {
     /** On-chain marketplace interactions for ERC-721 assets (create listing, fulfill order, etc.) */
     readonly marketplace: MarketplaceModule;
@@ -1724,6 +1779,7 @@ declare class MedialaneClient {
         readonly drop: DropService;
         readonly erc1155Collection: ERC1155CollectionService;
         readonly creatorCoin: CreatorCoinService;
+        readonly ticket: TicketService;
     };
     private readonly config;
     constructor(rawConfig?: MedialaneConfig);
@@ -8491,4 +8547,4 @@ declare function build1155OrderTypedData(message: Record<string, unknown>, chain
 declare function buildCancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 declare function build1155CancellationTypedData(message: Record<string, unknown>, chainId: constants.StarknetChainId | string): TypedData;
 
-export { ADMIN_HEADERS, ADMIN_SCOPE, type ActivityType, type AddSupplyParams, type AdminGrant, type AdminRequest, type AdminRequestSig, type AdminSession, type AdminSessionTypedDataInput, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCoin, type ApiCoinsQuery, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintEditionParams, type BuildFeeCallParams, CHAINS, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type Chain, type ChainCoordinates, type ClaimConditions, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateCreatorCoinParams, type CreateDropParams, type CreateGrantOpts, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateWebhookParams, CreatorCoinFactoryABI, type CreatorCoinPrice, type CreatorCoinReceiptLike, CreatorCoinService, DEFAULT_CHAIN, DEFAULT_CURRENCY, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EkuboLaunchParams, type EkuboPoolParams, type EnforcementDeclaration, type FailoverFetchOptions, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPClubABI, IPClubNFTABI, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNftABI, IPSponsorshipABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, type IPType, type IntentCall, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, LAUNCH_PRICE_QUOTE_PER_COIN, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintEditionParams, type MintParams, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, PUBLIC_RPC_FALLBACKS, type ParsedAdminHeaders, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type RequestSiwsTokenArgs, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, STARKNET_COLLECTION_1155_CLASS_HASH, STARKNET_COLLECTION_1155_CONTRACT, STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH, STARKNET_COLLECTION_1155_START_BLOCK, STARKNET_COLLECTION_721_CONTRACT, STARKNET_COLLECTION_721_START_BLOCK, STARKNET_CREATOR_COIN_CLASS_HASH, STARKNET_CREATOR_COIN_EKUBO_LAUNCHER, STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH, STARKNET_CREATOR_COIN_FACTORY_CONTRACT, STARKNET_CREATOR_COIN_START_BLOCK, STARKNET_DROP_COLLECTION_CLASS_HASH, STARKNET_DROP_FACTORY_CONTRACT, STARKNET_EKUBO_CORE, STARKNET_IPCOLLECTION_CLASS_HASH, STARKNET_IPNFT_CLASS_HASH, STARKNET_MARKETPLACE_1155_CLASS_HASH, STARKNET_MARKETPLACE_1155_CONTRACT, STARKNET_MARKETPLACE_1155_START_BLOCK, STARKNET_MARKETPLACE_721_CLASS_HASH, STARKNET_MARKETPLACE_721_CONTRACT, STARKNET_MARKETPLACE_721_START_BLOCK, STARKNET_NFTCOMMENTS_CONTRACT, STARKNET_POP_COLLECTION_CLASS_HASH, STARKNET_POP_FACTORY_CONTRACT, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SiwsSigner, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, type TxResult, VALIDATED_EKUBO_PARAMS, type WebhookEventType, type WebhookStatus, adminRequestDigest, build1155CancellationTypedData, build1155OrderTypedData, buildAdminSessionTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createAdminSessionGrant, createFailoverFetch, encodeAdminHeaders, encodeByteArray, fdvHuman, formatAmount, getCoordinates, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getSiwsStorageKey, getStoredSiwsToken, getTokenByAddress, getTokenBySymbol, isServiceId, isSiwsTokenValid, isTransientRpcError, listServices, normalizeAddress, normalizeHash, normalizeSiwsSignature, parseAdminHeaders, parseAmount, parseCreatorCoinCreated, randomNonce, requestSiwsToken, resolveConfig, resolveFeeConfig, sessionKeyHashOf, shortenAddress, signAdminRequest, storeSiwsToken, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol, verifyAdminRequestSig };
+export { ADMIN_HEADERS, ADMIN_SCOPE, type ActivityType, type AddSupplyParams, type AdminGrant, type AdminRequest, type AdminRequestSig, type AdminSession, type AdminSessionTypedDataInput, type ApiActivitiesQuery, type ApiActivity, type ApiActivityPrice, type ApiAdminCollectionClaim, type ApiAppSource, type ApiChain, ApiClient, type ApiCoin, type ApiCoinsQuery, type ApiCollection, type ApiCollectionClaim, type ApiCollectionProfile, type ApiCollectionSlugClaim, type ApiCollectionsQuery, type ApiComment, type ApiCounterOffersQuery, type ApiCreatorListResult, type ApiCreatorProfile, type ApiIntent, type ApiIntentCreated, type ApiKeyStatus, type ApiMeta, type ApiMetadataSignedUrl, type ApiMetadataUpload, type ApiOrder, type ApiOrderConsideration, type ApiOrderOffer, type ApiOrderPrice, type ApiOrderTokenMeta, type ApiOrderTxHash, type ApiOrdersQuery, type ApiPortalKey, type ApiPortalKeyCreated, type ApiPortalMe, type ApiPublicRemix, type ApiRemixOffer, type ApiRemixOfferPrice, type ApiRemixOffersQuery, type ApiResponse, type ApiSearchCollectionResult, type ApiSearchCreatorResult, type ApiSearchResult, type ApiSearchTokenResult, type ApiToken, type ApiTokenBalance, type ApiTokenMetadata, type ApiUsageDay, type ApiUserWallet, type ApiWebhookCreated, type ApiWebhookEndpoint, type AutoRemixOfferParams, type BatchMintEditionParams, type BuildFeeCallParams, CHAINS, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, type CancelOrder1155Params, type CancelOrderIntentParams, type CancelOrderParams, type Cancelation, type CartItem, type Chain, type ChainCoordinates, type ClaimConditions, type CollectionSort, type ConfirmRemixOfferParams, type ConfirmSelfRemixParams, type ConsiderationItem, type CreateCollectionIntentParams, type CreateCollectionParams, type CreateCounterOfferIntentParams, type CreateCreatorCoinParams, type CreateDropParams, type CreateGrantOpts, type CreateListing1155Params, type CreateListingIntentParams, type CreateListingParams, type CreateMintIntentParams, type CreatePopCollectionParams, type CreateRemixOfferParams, type CreateTicketCollectionParams, type CreateWebhookParams, CreatorCoinFactoryABI, type CreatorCoinPrice, type CreatorCoinReceiptLike, CreatorCoinService, DEFAULT_CHAIN, DEFAULT_CURRENCY, type DeployCollectionParams, DropCollectionABI, DropFactoryABI, type DropMintStatus, DropService, ERC1155CollectionService, type EkuboLaunchParams, type EkuboPoolParams, type EnforcementDeclaration, type FailoverFetchOptions, type FeeConfig, FeeConfigSchema, type FeeSurface, type FulfillOrder1155Params, type FulfillOrderIntentParams, type FulfillOrderParams, IPClubABI, IPClubNFTABI, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPMarketplaceABI, IPNftABI, IPSponsorshipABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, type IPType, type IntentCall, type IntentStatus, type IntentType, type IpAttribute, type IpNftMetadata, LAUNCH_PRICE_QUOTE_PER_COIN, type MakeOffer1155Params, type MakeOfferIntentParams, type MakeOfferParams, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, type MedialaneConfig, MedialaneError, type MedialaneErrorCode, type MintEditionParams, type MintParams, OPEN_LICENSES, type OfferItem, type OpenLicense, type Order, type OrderDetails, type OrderParameters, type OrderStatus, POPCollectionABI, POPFactoryABI, PUBLIC_RPC_FALLBACKS, type ParsedAdminHeaders, type PopBatchEligibilityItem, type PopClaimStatus, type PopEventType, PopService, type RemixOfferStatus, type RequestSiwsTokenArgs, type ResolvedConfig, type ResolvedFeeConfig, type RetryOptions, STARKNET_COLLECTION_1155_CLASS_HASH, STARKNET_COLLECTION_1155_CONTRACT, STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH, STARKNET_COLLECTION_1155_START_BLOCK, STARKNET_COLLECTION_721_CONTRACT, STARKNET_COLLECTION_721_START_BLOCK, STARKNET_CREATOR_COIN_CLASS_HASH, STARKNET_CREATOR_COIN_EKUBO_LAUNCHER, STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH, STARKNET_CREATOR_COIN_FACTORY_CONTRACT, STARKNET_CREATOR_COIN_START_BLOCK, STARKNET_DROP_COLLECTION_CLASS_HASH, STARKNET_DROP_FACTORY_CONTRACT, STARKNET_EKUBO_CORE, STARKNET_IPCOLLECTION_CLASS_HASH, STARKNET_IPNFT_CLASS_HASH, STARKNET_MARKETPLACE_1155_CLASS_HASH, STARKNET_MARKETPLACE_1155_CONTRACT, STARKNET_MARKETPLACE_1155_START_BLOCK, STARKNET_MARKETPLACE_721_CLASS_HASH, STARKNET_MARKETPLACE_721_CONTRACT, STARKNET_MARKETPLACE_721_START_BLOCK, STARKNET_NFTCOMMENTS_CONTRACT, STARKNET_POP_COLLECTION_CLASS_HASH, STARKNET_POP_FACTORY_CONTRACT, SUPPORTED_TOKENS, type ServiceCapability, type ServiceDefinition, type ServiceEventDeclaration, type ServiceId, type SiwsSigner, type SortOrder, type SupportedToken, type SupportedTokenSymbol, type TenantPlan, TicketService, type TxResult, VALIDATED_EKUBO_PARAMS, type WebhookEventType, type WebhookStatus, adminRequestDigest, build1155CancellationTypedData, build1155OrderTypedData, buildAdminSessionTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createAdminSessionGrant, createFailoverFetch, encodeAdminHeaders, encodeByteArray, fdvHuman, formatAmount, getCoordinates, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getSiwsStorageKey, getStoredSiwsToken, getTokenByAddress, getTokenBySymbol, isServiceId, isSiwsTokenValid, isTransientRpcError, listServices, normalizeAddress, normalizeHash, normalizeSiwsSignature, parseAdminHeaders, parseAmount, parseCreatorCoinCreated, randomNonce, requestSiwsToken, resolveConfig, resolveFeeConfig, sessionKeyHashOf, shortenAddress, signAdminRequest, storeSiwsToken, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol, verifyAdminRequestSig };

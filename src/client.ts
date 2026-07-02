@@ -6,6 +6,7 @@ import { PopService } from "./services/pop.js";
 import { DropService } from "./services/drop.js";
 import { ERC1155CollectionService } from "./services/erc1155collection.js";
 import { CreatorCoinService } from "./services/creatorCoin.js";
+import { TicketService } from "./services/ticket.js";
 
 export class MedialaneClient {
   /** On-chain marketplace interactions for ERC-721 assets (create listing, fulfill order, etc.) */
@@ -25,6 +26,7 @@ export class MedialaneClient {
     readonly drop: DropService;
     readonly erc1155Collection: ERC1155CollectionService;
     readonly creatorCoin: CreatorCoinService;
+    readonly ticket: TicketService;
   };
 
   private readonly config: ResolvedConfig;
@@ -40,6 +42,7 @@ export class MedialaneClient {
       drop: new DropService(this.config),
       erc1155Collection: new ERC1155CollectionService(this.config),
       creatorCoin: new CreatorCoinService(this.config),
+      ticket: new TicketService(this.config),
     };
 
     if (!this.config.backendUrl) {

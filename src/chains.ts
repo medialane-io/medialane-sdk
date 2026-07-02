@@ -35,6 +35,15 @@ export interface ChainCoordinates {
   creatorCoinFactoryClassHash?: `0x${string}`;
   creatorCoinStartBlock?: number;
   ekuboCore?: `0x${string}`;
+  ipTicketsFactory?: `0x${string}`;
+  ipTicketCollectionClassHash?: `0x${string}`;
+  ipTicketsStartBlock?: number;
+  ipClubRegistry?: `0x${string}`;
+  ipClubNftClassHash?: `0x${string}`;
+  ipClubStartBlock?: number;
+  ipSponsorship?: `0x${string}`;
+  ipSponsorshipStartBlock?: number;
+  ipSponsorshipLicense?: `0x${string}`;
 }
 
 /** Coordinates per chain. Only STARKNET is populated today; adding a chain

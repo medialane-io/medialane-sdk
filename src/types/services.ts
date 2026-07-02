@@ -32,3 +32,20 @@ export interface CreateDropParams {
   maxSupply: bigint | string;
   initialConditions: ClaimConditions;
 }
+
+// ─── IP Tickets ────────────────────────────────────────────────────────────────
+
+export interface CreateTicketCollectionParams {
+  collection: string;
+  /** 0 = free ticket; must be non-zero with paymentToken set otherwise. */
+  price: bigint | string;
+  maxSupply: bigint | string;
+  /** Unix timestamp; must be in the future. */
+  expiration: number;
+  /** Basis points, 0-10000. */
+  royaltyBps: number;
+  /** Required (non-zero) when price > 0; omit for free tickets. */
+  paymentToken?: string;
+  /** ipfs:// or ar:// only — enforced on-chain. */
+  metadataUri: string;
+}

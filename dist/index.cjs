@@ -9698,6 +9698,69 @@ var CreatorCoinService = class {
     return getCreatorCoinPrice(coinAddress, new starknet.RpcProvider({ nodeUrl: this.config.rpcUrl }));
   }
 };
+var TicketService = class {
+  constructor(config) {
+    this.factoryAddress = getCoordinates(config.chain).ipTicketsFactory;
+  }
+  _collection(address, account) {
+    return new starknet.Contract(IPTicketCollectionABI, normalizeAddress("STARKNET", address), account);
+  }
+  /** Deploys a new IPTicketCollection via the factory. Caller becomes its owner. */
+  async deployTicketCollection(account, params) {
+    const factoryAddress = params.factoryAddress ?? this.factoryAddress;
+    if (!factoryAddress) {
+      throw new Error("IP-Tickets factory address not configured for this chain");
+    }
+    const factory = new starknet.Contract(IPTicketCollectionFactoryABI, factoryAddress, account);
+    const call = factory.populate("deploy_ticket_collection", [params.name, params.symbol]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /** Owner-only. Creates a new ticket collection (event/tier) inside the caller's deployed IPTicketCollection. */
+  async createTicketCollection(account, params) {
+    const paymentToken = params.paymentToken ? new starknet.CairoOption(starknet.CairoOptionVariant.Some, params.paymentToken) : new starknet.CairoOption(starknet.CairoOptionVariant.None);
+    const call = this._collection(params.collection, account).populate("create_ticket_collection", [
+      starknet.cairo.uint256(params.price),
+      starknet.cairo.uint256(params.maxSupply),
+      params.expiration,
+      params.royaltyBps,
+      paymentToken,
+      params.metadataUri
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /** Owner-only. Gates minting only — existing tickets keep access/transfer/redeem. */
+  async setCollectionActive(account, params) {
+    const call = this._collection(params.collection, account).populate("set_collection_active", [
+      starknet.cairo.uint256(params.collectionId),
+      params.active
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /** Mints a ticket. Prepends an ERC-20 approve when the collection is paid. */
+  async mintTicket(account, params) {
+    const calls = [];
+    if (params.paymentToken && params.price && BigInt(params.price) > 0n) {
+      const amount = starknet.cairo.uint256(params.price);
+      calls.push({
+        contractAddress: params.paymentToken,
+        entrypoint: "approve",
+        calldata: [normalizeAddress("STARKNET", params.collection), amount.low.toString(), amount.high.toString()]
+      });
+    }
+    calls.push(this._collection(params.collection, account).populate("mint_ticket", [starknet.cairo.uint256(params.collectionId)]));
+    const res = await account.execute(calls);
+    return { txHash: res.transaction_hash };
+  }
+  /** Only the current token owner may redeem. */
+  async redeemTicket(account, params) {
+    const call = this._collection(params.collection, account).populate("redeem_ticket", [starknet.cairo.uint256(params.tokenId)]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+};
 
 // src/client.ts
 var MedialaneClient = class {
@@ -9709,7 +9772,8 @@ var MedialaneClient = class {
       pop: new PopService(this.config),
       drop: new DropService(this.config),
       erc1155Collection: new ERC1155CollectionService(this.config),
-      creatorCoin: new CreatorCoinService(this.config)
+      creatorCoin: new CreatorCoinService(this.config),
+      ticket: new TicketService(this.config)
     };
     if (!this.config.backendUrl) {
       const sentinel = new ApiClient("https://medialane-sdk-no-backend.invalid", this.config.apiKey);
@@ -10322,6 +10386,7 @@ exports.STARKNET_NFTCOMMENTS_CONTRACT = STARKNET_NFTCOMMENTS_CONTRACT;
 exports.STARKNET_POP_COLLECTION_CLASS_HASH = STARKNET_POP_COLLECTION_CLASS_HASH;
 exports.STARKNET_POP_FACTORY_CONTRACT = STARKNET_POP_FACTORY_CONTRACT;
 exports.SUPPORTED_TOKENS = SUPPORTED_TOKENS;
+exports.TicketService = TicketService;
 exports.VALIDATED_EKUBO_PARAMS = VALIDATED_EKUBO_PARAMS;
 exports.adminRequestDigest = adminRequestDigest;
 exports.build1155CancellationTypedData = build1155CancellationTypedData;

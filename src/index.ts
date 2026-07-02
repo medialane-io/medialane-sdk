@@ -80,6 +80,7 @@ export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, D
 // Services
 export { PopService } from "./services/pop.js";
 export { DropService } from "./services/drop.js";
+export { TicketService } from "./services/ticket.js";
 export { ERC1155CollectionService } from "./services/erc1155collection.js";
 export {
   CreatorCoinService,
