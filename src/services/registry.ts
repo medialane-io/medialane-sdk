@@ -135,7 +135,7 @@ const SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     uiVariant: "club",
-    capabilities: ["subscribe", "transfer"],
+    capabilities: ["subscribe"],
     events: [
       { name: "NewClubCreated", emittedBy: "factory" },
     ],
@@ -290,4 +290,14 @@ export function getServicesByCapability(cap: ServiceCapability): ServiceDefiniti
   return Object.values(SERVICES).filter(
     (s) => (s.capabilities as readonly ServiceCapability[]).includes(cap),
   );
+}
+
+/** Whether a service declares a given capability — e.g. whether an asset
+ *  type is transferable. Returns false for an unregistered/missing id rather
+ *  than throwing, since callers use this for UI copy, not authority checks. */
+export function hasCapability(
+  id: string | null | undefined,
+  cap: ServiceCapability,
+): boolean {
+  return getService(id)?.capabilities.includes(cap) ?? false;
 }

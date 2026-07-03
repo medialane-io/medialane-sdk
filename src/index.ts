@@ -123,6 +123,7 @@ export {
   getService,
   listServices,
   getServicesByCapability,
+  hasCapability,
   isServiceId,
 } from "./services/registry.js";
 export type { ServiceId } from "./services/registry.js";
