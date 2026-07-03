@@ -11211,7 +11211,7 @@ var SERVICES = {
     standard: "ERC721",
     provenance: "MEDIALANE",
     uiVariant: "club",
-    capabilities: ["subscribe", "transfer"],
+    capabilities: ["subscribe"],
     events: [
       { name: "NewClubCreated", emittedBy: "factory" }
     ],
@@ -11345,6 +11345,9 @@ function getServicesByCapability(cap) {
     (s) => s.capabilities.includes(cap)
   );
 }
+function hasCapability(id, cap) {
+  return getService(id)?.capabilities.includes(cap) ?? false;
+}
 
 exports.ADMIN_HEADERS = ADMIN_HEADERS;
 exports.ADMIN_SCOPE = ADMIN_SCOPE;
@@ -11446,6 +11449,7 @@ exports.getSiwsStorageKey = getSiwsStorageKey;
 exports.getStoredSiwsToken = getStoredSiwsToken;
 exports.getTokenByAddress = getTokenByAddress;
 exports.getTokenBySymbol = getTokenBySymbol;
+exports.hasCapability = hasCapability;
 exports.isServiceId = isServiceId;
 exports.isSiwsTokenValid = isSiwsTokenValid;
 exports.isTransientRpcError = isTransientRpcError;
