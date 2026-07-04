@@ -15,14 +15,15 @@
 
 /**
  * Ordered public Starknet **mainnet** RPC endpoints (no API key required),
- * used as fallbacks after an app's configured primary (e.g. Alchemy) returns a
- * transient error. lava.build first — RPC spec 0.8.1, permissive CORS — so it
- * is safe for browser `baseFetch` use as well as server-side rotation.
+ * used as fallback after an app's configured primary (e.g. Alchemy) returns a
+ * transient error. lava.build — RPC spec 0.8.1, permissive CORS — so it is
+ * safe for browser `baseFetch` use as well as server-side rotation.
+ *
+ * blastapi.io and free-rpc.nethermind.io were removed (2026-07-04) — long
+ * confirmed dead/unreliable in production; do not re-add them.
  */
 export const PUBLIC_RPC_FALLBACKS: readonly string[] = [
   "https://rpc.starknet.lava.build",
-  "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
-  "https://free-rpc.nethermind.io/mainnet-juno/v0_7",
 ];
 
 /**

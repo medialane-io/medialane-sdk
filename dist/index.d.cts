@@ -9225,9 +9225,12 @@ declare function encodeByteArray(str: string): string[];
  */
 /**
  * Ordered public Starknet **mainnet** RPC endpoints (no API key required),
- * used as fallbacks after an app's configured primary (e.g. Alchemy) returns a
- * transient error. lava.build first — RPC spec 0.8.1, permissive CORS — so it
- * is safe for browser `baseFetch` use as well as server-side rotation.
+ * used as fallback after an app's configured primary (e.g. Alchemy) returns a
+ * transient error. lava.build — RPC spec 0.8.1, permissive CORS — so it is
+ * safe for browser `baseFetch` use as well as server-side rotation.
+ *
+ * blastapi.io and free-rpc.nethermind.io were removed (2026-07-04) — long
+ * confirmed dead/unreliable in production; do not re-add them.
  */
 declare const PUBLIC_RPC_FALLBACKS: readonly string[];
 /**

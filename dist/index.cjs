@@ -8658,9 +8658,7 @@ var MedialaneError = class extends Error {
 
 // src/utils/rpc.ts
 var PUBLIC_RPC_FALLBACKS = [
-  "https://rpc.starknet.lava.build",
-  "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
-  "https://free-rpc.nethermind.io/mainnet-juno/v0_7"
+  "https://rpc.starknet.lava.build"
 ];
 var TRANSIENT_BODY_RE = /"code"\s*:\s*-32001|"code"\s*:\s*-32603|unable to complete|rate.?limit|too many|throttl|exceed.*quota|temporarily unavailable|service unavailable|overload|gateway.*time|upstream.*time|backend.*error/i;
 function isTransientRpcError(input) {
