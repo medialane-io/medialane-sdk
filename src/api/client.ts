@@ -9,6 +9,11 @@ import type {
   ApiToken,
   ApiCollection,
   ApiCoin,
+  ApiUserRewards,
+  ApiRewardsLeaderboardEntry,
+  ApiRewardsConfig,
+  ApiRewardsBatchEntry,
+  ApiPointEvent,
   ApiCoinsQuery,
   ApiCollectionProfile,
   ApiCreatorProfile,
@@ -856,6 +861,41 @@ export class ApiClient {
     const res = await this.get<{ data: DropMintStatus }>(
       `/v1/drop/mint-status/${this.addr(collection)}/${this.addr(wallet)}`
     );
+    return res.data;
+  }
+
+  // ─── Rewards (v0.49.0) ─────────────────────────────────────────────────────
+  // Scores are recomputed on a schedule by the backend (~15 min) — reads only.
+
+  /** Score + level + progress + badges for one address (zeroed for unknown). */
+  async getRewards(address: string): Promise<ApiUserRewards> {
+    const res = await this.get<{ data: ApiUserRewards }>(`/v1/rewards/${this.addr(address)}`);
+    return res.data;
+  }
+
+  /** Paginated XP leaderboard. */
+  getRewardsLeaderboard(page = 1, limit = 50): Promise<ApiResponse<ApiRewardsLeaderboardEntry[]>> {
+    return this.get<ApiResponse<ApiRewardsLeaderboardEntry[]>>(`/v1/rewards?page=${page}&limit=${limit}`);
+  }
+
+  /** Point-event history for an address. */
+  getRewardsEvents(address: string, page = 1, limit = 20): Promise<ApiResponse<ApiPointEvent[]>> {
+    return this.get<ApiResponse<ApiPointEvent[]>>(
+      `/v1/rewards/${this.addr(address)}/events?page=${page}&limit=${limit}`
+    );
+  }
+
+  /** Reward configuration: level ladder, enabled action XP values, badge catalog. */
+  async getRewardsConfig(): Promise<ApiRewardsConfig> {
+    const res = await this.get<{ data: ApiRewardsConfig }>(`/v1/rewards/config`);
+    return res.data;
+  }
+
+  /** Minimal level info for up to 50 addresses — one call per list page. */
+  async getRewardsBatch(addresses: string[]): Promise<ApiRewardsBatchEntry[]> {
+    if (addresses.length === 0) return [];
+    const params = new URLSearchParams({ addresses: addresses.map((a) => this.addr(a)).join(",") });
+    const res = await this.get<{ data: ApiRewardsBatchEntry[] }>(`/v1/rewards/batch?${params}`);
     return res.data;
   }
 }

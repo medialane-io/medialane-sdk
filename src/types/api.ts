@@ -898,3 +898,72 @@ export interface DropMintStatus {
   mintedByWallet: number;
   totalMinted: number;
 }
+
+// ─── Rewards (v0.49.0) ─────────────────────────────────────────────────────────
+
+export interface ApiRewardsBadge {
+  key: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  category: string;
+}
+
+export interface ApiRewardsLevel {
+  level: number;
+  name: string;
+  xpRequired: number;
+  badgeColor: string;
+  description: string | null;
+}
+
+export interface ApiUserRewards {
+  address: string;
+  accountId: string | null;
+  publicId: string | null;
+  totalXp: number;
+  currentLevel: number;
+  currentLevelName: string;
+  badgeColor: string;
+  nextLevel: { level: number; name: string; xpRequired: number } | null;
+  progressPct: number;
+  breakdown: Record<string, number>;
+  badges: ApiRewardsBadge[];
+  computedAt: string | null;
+}
+
+export interface ApiRewardsLeaderboardEntry {
+  rank: number;
+  address: string;
+  accountId: string | null;
+  publicId: string | null;
+  totalXp: number;
+  currentLevel: number;
+  currentLevelName: string;
+  badgeColor: string;
+}
+
+export interface ApiRewardsConfig {
+  levels: ApiRewardsLevel[];
+  actions: { type: string; label: string; xp: number; dailyCap: number | null }[];
+  badges: ApiRewardsBadge[];
+}
+
+export interface ApiRewardsBatchEntry {
+  address: string;
+  totalXp: number;
+  currentLevel: number;
+  currentLevelName: string;
+  badgeColor: string;
+}
+
+export interface ApiPointEvent {
+  id: string;
+  actionType: string;
+  xp: number;
+  multiplier: number;
+  finalXp: number;
+  txHash: string | null;
+  createdAt: string;
+}

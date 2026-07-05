@@ -10132,6 +10132,35 @@ var ApiClient = class {
     );
     return res.data;
   }
+  // ─── Rewards (v0.49.0) ─────────────────────────────────────────────────────
+  // Scores are recomputed on a schedule by the backend (~15 min) — reads only.
+  /** Score + level + progress + badges for one address (zeroed for unknown). */
+  async getRewards(address) {
+    const res = await this.get(`/v1/rewards/${this.addr(address)}`);
+    return res.data;
+  }
+  /** Paginated XP leaderboard. */
+  getRewardsLeaderboard(page = 1, limit = 50) {
+    return this.get(`/v1/rewards?page=${page}&limit=${limit}`);
+  }
+  /** Point-event history for an address. */
+  getRewardsEvents(address, page = 1, limit = 20) {
+    return this.get(
+      `/v1/rewards/${this.addr(address)}/events?page=${page}&limit=${limit}`
+    );
+  }
+  /** Reward configuration: level ladder, enabled action XP values, badge catalog. */
+  async getRewardsConfig() {
+    const res = await this.get(`/v1/rewards/config`);
+    return res.data;
+  }
+  /** Minimal level info for up to 50 addresses — one call per list page. */
+  async getRewardsBatch(addresses) {
+    if (addresses.length === 0) return [];
+    const params = new URLSearchParams({ addresses: addresses.map((a) => this.addr(a)).join(",") });
+    const res = await this.get(`/v1/rewards/batch?${params}`);
+    return res.data;
+  }
 };
 var PopService = class {
   constructor(config) {
