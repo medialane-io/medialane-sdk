@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.50.0] — 2026-07-06
+
+### Added — sortable collection tokens
+
+`getCollectionTokens(contract, page?, limit?, sort?)` gains a 4th optional
+param, `CollectionTokensSort = "recent" | "oldest" | "name"` (default
+`"recent"`). Matches the backend's new `?sort=` param on
+`GET /v1/collections/:contract/tokens`, which now defaults to
+`createdAt desc` (was always `tokenId asc`, which read as alphabetical
+order in the UI). Additive — existing call sites keep working unchanged
+and get the new recent-first default automatically.
+
 ## [0.44.0] — 2026-07-01
 
 ### Added — SIWS client protocol (single source)

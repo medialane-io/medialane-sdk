@@ -54,6 +54,7 @@ import type {
   ConfirmRemixOfferParams,
   ApiResponse,
   CollectionSort,
+  CollectionTokensSort,
   PopClaimStatus,
   PopBatchEligibilityItem,
   DropMintStatus,
@@ -244,10 +245,11 @@ export class ApiClient {
   getCollectionTokens(
     contract: string,
     page = 1,
-    limit = 20
+    limit = 20,
+    sort: CollectionTokensSort = "recent"
   ): Promise<ApiResponse<ApiToken[]>> {
     return this.get<ApiResponse<ApiToken[]>>(
-      `/v1/collections/${this.addr(contract)}/tokens?page=${page}&limit=${limit}`
+      `/v1/collections/${this.addr(contract)}/tokens?page=${page}&limit=${limit}&sort=${sort}`
     );
   }
 
