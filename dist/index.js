@@ -9685,9 +9685,9 @@ var ApiClient = class {
   getCollection(contract) {
     return this.get(`/v1/collections/${this.addr(contract)}`);
   }
-  getCollectionTokens(contract, page = 1, limit = 20) {
+  getCollectionTokens(contract, page = 1, limit = 20, sort = "recent") {
     return this.get(
-      `/v1/collections/${this.addr(contract)}/tokens?page=${page}&limit=${limit}`
+      `/v1/collections/${this.addr(contract)}/tokens?page=${page}&limit=${limit}&sort=${sort}`
     );
   }
   // ─── Activities ────────────────────────────────────────────────────────────
