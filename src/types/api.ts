@@ -14,7 +14,7 @@ export type IPType =
 
 export type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 
-export type CollectionTokensSort = "recent" | "oldest" | "name";
+export type CollectionTokensSort = "recent" | "oldest" | "name" | "price";
 
 /** Bounded capability set (05-service-model §III). Expand the union when a
  *  service needs behavior outside it — never make it free-form. */

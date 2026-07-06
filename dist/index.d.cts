@@ -411,7 +411,7 @@ declare class Medialane1155Module {
 
 type IPType = "Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom";
 type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
-type CollectionTokensSort = "recent" | "oldest" | "name";
+type CollectionTokensSort = "recent" | "oldest" | "name" | "price";
 /** Bounded capability set (05-service-model §III). Expand the union when a
  *  service needs behavior outside it — never make it free-form. */
 type ServiceCapability = "list" | "buy" | "make_offer" | "cancel" | "transfer" | "burn" | "mint" | "claim" | "airdrop" | "remix" | "license" | "subscribe" | "redeem" | "launch" | "swap" | "sponsor";

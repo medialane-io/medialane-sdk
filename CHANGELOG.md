@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.51.0] — 2026-07-06
+
+### Added — price sort for collection tokens
+
+`CollectionTokensSort` gains `"price"` — orders a collection's tokens by
+their cheapest active listing (ascending), tokens with no active listing
+sort last. Backed by a raw-SQL join against `Order` on the backend
+(`MIN(priceRaw::numeric)` over active listing orders per token, `NULLS
+LAST`) — same cross-currency caveat as the existing `/v1/orders`
+`price_asc` sort (raw amounts aren't currency-normalized). Additive.
+
 ## [0.50.0] — 2026-07-06
 
 ### Added — sortable collection tokens
