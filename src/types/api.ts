@@ -143,7 +143,12 @@ export interface ApiResponse<T> {
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
+/** Cross-chain read filter — a concrete chain, or "all" for aggregation
+ *  (platform-federation spec §2.3). Omitted = the backend default (STARKNET). */
+export type ChainFilter = import("../chains.js").Chain | "all";
+
 export interface ApiOrdersQuery {
+  chain?: ChainFilter;
   status?: OrderStatus;
   collection?: string;
   currency?: string;
@@ -373,6 +378,7 @@ export interface ApiCoin {
 }
 
 export interface ApiCoinsQuery {
+  chain?: ChainFilter;
   page?: number;
   limit?: number;
   /** Filter by coin service id ("creator-coin" | "external-erc20"). */
@@ -413,6 +419,7 @@ export interface ApiActivity {
 }
 
 export interface ApiActivitiesQuery {
+  chain?: ChainFilter;
   type?: ActivityType;
   page?: number;
   limit?: number;

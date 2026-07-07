@@ -75,11 +75,11 @@ const client = new MedialaneClient({
 
 ## Marketplace Operations (On-Chain)
 
-All methods require a `starknet.js` `AccountInterface`. Nonce management, SNIP-12 signing, and `waitForTransaction` are handled automatically.
+All methods require a `starknet.js` `AccountInterface`. SNIP-12 signing and `waitForTransaction` are handled automatically. Fulfilment is **unsigned** — the caller is the fulfiller, so there is no `fulfiller`/`offerer` field to pass; cancellation still signs, but without a nonce (a per-offerer `counter` replaces it, see `incrementCounter`).
 
 Two marketplace modules are available:
-- `client.marketplace` — ERC-721 marketplace (`Medialane` contract)
-- `client.marketplace1155` — ERC-1155 marketplace (`Medialane1155V2` contract, deployed 2026-04-28)
+- `client.marketplace` — ERC-721 marketplace (`Medialane721`)
+- `client.marketplace1155` — ERC-1155 marketplace (`Medialane1155`)
 
 ### Create a Listing (ERC-721)
 
@@ -88,10 +88,10 @@ import { Account } from "starknet";
 
 const result = await client.marketplace.createListing(account, {
   nftContract: "0x05e73b7...",
-  tokenId: 42n,
+  tokenId: "42",
   currency: "USDC",
   price: "1000000", // 1 USDC (6 decimals)
-  endTime: Math.floor(Date.now() / 1000) + 86400 * 30, // 30 days
+  durationSeconds: 86400 * 30, // 30 days
 });
 console.log("Listed:", result.txHash);
 ```
@@ -101,19 +101,23 @@ console.log("Listed:", result.txHash);
 ```typescript
 const result = await client.marketplace.makeOffer(account, {
   nftContract: "0x05e73b7...",
-  tokenId: 42n,
+  tokenId: "42",
   currency: "USDC",
   price: "500000", // 0.5 USDC
-  endTime: Math.floor(Date.now() / 1000) + 86400 * 7,
+  durationSeconds: 86400 * 7,
 });
 ```
 
 ### Fulfill an Order
 
 ```typescript
+// Fetch order details first to get paymentToken and totalPrice
+const details = await client.api.getOrder(orderHash);
+
 const result = await client.marketplace.fulfillOrder(account, {
   orderHash: "0x...",
-  fulfiller: account.address,
+  paymentToken: "0x033068...",  // from order details
+  totalPrice: "1000000",        // raw token units
 });
 ```
 
@@ -121,8 +125,8 @@ const result = await client.marketplace.fulfillOrder(account, {
 
 ```typescript
 const result = await client.marketplace.checkoutCart(account, [
-  { orderHash: "0x...", fulfiller: account.address },
-  { orderHash: "0x...", fulfiller: account.address },
+  { orderHash: "0x...", considerationToken: "0x033068...", considerationAmount: "1000000" },
+  { orderHash: "0x...", considerationToken: "0x033068...", considerationAmount: "500000" },
 ]);
 ```
 
@@ -131,8 +135,14 @@ const result = await client.marketplace.checkoutCart(account, [
 ```typescript
 const result = await client.marketplace.cancelOrder(account, {
   orderHash: "0x...",
-  offerer: account.address,
 });
+```
+
+### Bulk-Cancel (Invalidate All Open Orders)
+
+```typescript
+// Bumps the caller's counter — every previously-registered order becomes unfulfillable.
+await client.marketplace.incrementCounter(account);
 ```
 
 ### Mint an IP Asset
@@ -142,6 +152,7 @@ const result = await client.marketplace.mint(account, {
   collectionId: "1",          // collection ID on the registry
   recipient: account.address,
   tokenUri: "ipfs://...",     // IPFS URI of the metadata JSON
+  royaltyBps: 500,            // EIP-2981 secondary-sale royalty, 0-10_000 (required since MIP v0.4.0)
 });
 ```
 
@@ -159,7 +170,7 @@ const result = await client.marketplace.createCollection(account, {
 
 ## ERC-1155 Marketplace (Medialane1155)
 
-For IP assets from ERC-1155 collections (e.g. IP-Programmable-ERC1155-Collections). Contract: `0x02bfa521c25461a09d735889b469418608d7d92f8b26e3d37ef174a4c2e22f99`.
+For IP assets from ERC-1155 collections (e.g. IP-Programmable-ERC1155-Collections). Contract address: see `getCoordinates("STARKNET").marketplace1155` in `src/chains.ts` (the single source — do not hardcode it here, it changes on redeploy).
 
 ### Create an ERC-1155 Listing
 
@@ -201,8 +212,11 @@ const result = await client.marketplace1155.cancelOrder(account, {
 
 ### SNIP-12 Typed Data Builders (ChipiPay / custom flows)
 
+Listing/offer and cancellation are signed; fulfilment is an **unsigned** call (the buyer is
+the fulfiller, since v0.26.0) — there is no fulfillment typed-data builder.
+
 ```typescript
-import { build1155OrderTypedData, build1155FulfillmentTypedData, build1155CancellationTypedData } from "@medialane/sdk";
+import { build1155OrderTypedData, build1155CancellationTypedData } from "@medialane/sdk";
 import { constants } from "starknet";
 
 const typedData = build1155OrderTypedData(orderParams, constants.StarknetChainId.SN_MAIN);

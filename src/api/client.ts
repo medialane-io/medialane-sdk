@@ -1,5 +1,6 @@
 import { normalizeAddress } from "../utils/address.js";
 import type { Chain } from "../chains.js";
+import type { ChainFilter } from "../types/api.js";
 import type { MedialaneErrorCode } from "../types/errors.js";
 import { withRetry, type RetryOptions } from "../utils/retry.js";
 import type {
@@ -174,6 +175,7 @@ export class ApiClient {
     if (query.offerer) params.set("offerer", this.addr(query.offerer));
     if (query.minPrice) params.set("minPrice", query.minPrice);
     if (query.maxPrice) params.set("maxPrice", query.maxPrice);
+    if (query.chain) params.set("chain", query.chain);
     const qs = params.toString();
     return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders${qs ? `?${qs}` : ""}`);
   }
@@ -224,12 +226,14 @@ export class ApiClient {
     limit = 20,
     isKnown?: boolean,
     sort?: CollectionSort,
-    service?: string
+    service?: string,
+    chain?: ChainFilter
   ): Promise<ApiResponse<ApiCollection[]>> {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (isKnown !== undefined) params.set("isKnown", String(isKnown));
     if (sort) params.set("sort", sort);
     if (service) params.set("service", service);
+    if (chain) params.set("chain", chain);
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
   }
 
@@ -260,6 +264,7 @@ export class ApiClient {
     if (query.type) params.set("type", query.type);
     if (query.page !== undefined) params.set("page", String(query.page));
     if (query.limit !== undefined) params.set("limit", String(query.limit));
+    if (query.chain) params.set("chain", query.chain);
     const qs = params.toString();
     return this.get<ApiResponse<ApiActivity[]>>(`/v1/activities${qs ? `?${qs}` : ""}`);
   }
@@ -292,8 +297,9 @@ export class ApiClient {
 
   // ─── Search ────────────────────────────────────────────────────────────────
 
-  search(q: string, limit = 10): Promise<ApiResponse<ApiSearchResult> & { query: string }> {
+  search(q: string, limit = 10, chain?: ChainFilter): Promise<ApiResponse<ApiSearchResult> & { query: string }> {
     const params = new URLSearchParams({ q, limit: String(limit) });
+    if (chain) params.set("chain", chain);
     return this.get<ApiResponse<ApiSearchResult> & { query: string }>(
       `/v1/search?${params.toString()}`
     );
@@ -845,6 +851,7 @@ export class ApiClient {
     if (opts.page) params.set("page", String(opts.page));
     if (opts.limit) params.set("limit", String(opts.limit));
     if (opts.service) params.set("service", opts.service);
+    if (opts.chain) params.set("chain", opts.chain);
     const qs = params.toString();
     return this.get<ApiResponse<ApiCoin[]>>(`/v1/coins${qs ? `?${qs}` : ""}`);
   }
