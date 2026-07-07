@@ -1,4 +1,3 @@
-import { num } from "starknet";
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { base32, base58 } from "@scure/base";
 import type { Chain } from "../chains.js";
@@ -34,8 +33,8 @@ export function normalizeAddress(chain: Chain, address: string): string {
 
 function normalizeStarknet(address: string): string {
   try {
-    const hex = num.toHex(BigInt(address));
-    return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
+    const hex = BigInt(address).toString(16);
+    return "0x" + hex.padStart(64, "0").toLowerCase();
   } catch {
     throw new Error(`Invalid STARKNET address: "${address}"`);
   }
@@ -110,8 +109,8 @@ function crc16xmodem(bytes: Uint8Array): number {
  */
 export function normalizeHash(hash: string): string {
   try {
-    const hex = num.toHex(BigInt(hash));
-    return "0x" + hex.slice(2).padStart(64, "0").toLowerCase();
+    const hex = BigInt(hash).toString(16);
+    return "0x" + hex.padStart(64, "0").toLowerCase();
   } catch {
     throw new Error(`Invalid hash: "${hash}"`);
   }
