@@ -151,3 +151,6 @@ export {
   build1155OrderTypedData,
   build1155CancellationTypedData,
 } from "./marketplace/signing.js";
+
+// Chain-neutral adapter interfaces (platform-federation spec §2.2)
+export * from "./adapters/index.js";
