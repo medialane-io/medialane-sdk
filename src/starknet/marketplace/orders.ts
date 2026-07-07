@@ -6,10 +6,10 @@ import {
   shortString,
   type TypedData,
 } from "starknet";
-import { encodeByteArray } from "../utils/bytearray.js";
+import { encodeByteArray } from "../bytearray.js";
 import { IPMarketplaceABI } from "../abis/index.js";
-import type { ResolvedConfig } from "../config.js";
-import { DEFAULT_CURRENCY } from "../constants.js";
+import type { ResolvedConfig } from "../../config.js";
+import { DEFAULT_CURRENCY } from "../../constants.js";
 import type {
   CreateListingParams,
   MakeOfferParams,
@@ -20,9 +20,9 @@ import type {
   CreateCollectionParams,
   TxResult,
   OrderDetails,
-} from "../types/marketplace.js";
-import { stringifyBigInts } from "../utils/bigint.js";
-import { parseAmount } from "../utils/token.js";
+} from "../../types/marketplace.js";
+import { stringifyBigInts } from "../../utils/bigint.js";
+import { parseAmount } from "../../utils/token.js";
 import {
   buildOrderTypedData,
   buildCancellationTypedData,

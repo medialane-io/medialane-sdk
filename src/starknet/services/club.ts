@@ -1,10 +1,10 @@
 import { CairoOption, CairoOptionVariant, Contract, cairo, type AccountInterface } from "starknet";
-import type { ResolvedConfig } from "../config.js";
-import { normalizeAddress } from "../utils/address.js";
+import type { ResolvedConfig } from "../../config.js";
+import { normalizeAddress } from "../../utils/address.js";
 import { IPClubABI } from "../abis/index.js";
-import { getStarknetCoordinates } from "../chains.js";
-import type { CreateClubParams } from "../types/services.js";
-import type { TxResult } from "../types/marketplace.js";
+import { getStarknetCoordinates } from "../../chains.js";
+import type { CreateClubParams } from "../../types/services.js";
+import type { TxResult } from "../../types/marketplace.js";
 
 export type { CreateClubParams };
 

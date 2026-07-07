@@ -1,4 +1,4 @@
-import type { MedialaneErrorCode } from "../types/errors.js";
+import type { MedialaneErrorCode } from "../../types/errors.js";
 
 export class MedialaneError extends Error {
   constructor(

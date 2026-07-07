@@ -1,9 +1,9 @@
 import { Contract, type AccountInterface } from "starknet";
-import type { ResolvedConfig } from "../config.js";
-import { normalizeAddress } from "../utils/address.js";
+import type { ResolvedConfig } from "../../config.js";
+import { normalizeAddress } from "../../utils/address.js";
 import { IPCollection1155FactoryABI, IPCollection1155ABI } from "../abis/index.js";
-import { getStarknetCoordinates } from "../chains.js";
-import type { TxResult } from "../types/marketplace.js";
+import { getStarknetCoordinates } from "../../chains.js";
+import type { TxResult } from "../../types/marketplace.js";
 
 export interface DeployCollectionParams {
   /** Human-readable collection name (e.g. "My IP Collection") */

@@ -1,7 +1,7 @@
-import { type MedialaneConfig, resolveConfig, type ResolvedConfig } from "./config.js";
+import { type MedialaneConfig, resolveConfig, type ResolvedConfig } from "../config.js";
 import { MarketplaceModule } from "./marketplace/index.js";
 import { Medialane1155Module } from "./marketplace1155/index.js";
-import { ApiClient } from "./api/client.js";
+import { ApiClient } from "../api/client.js";
 import { PopService } from "./services/pop.js";
 import { DropService } from "./services/drop.js";
 import { ERC1155CollectionService } from "./services/erc1155collection.js";

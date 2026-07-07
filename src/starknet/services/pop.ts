@@ -1,10 +1,10 @@
 import { Contract, type AccountInterface } from "starknet";
-import type { ResolvedConfig } from "../config.js";
-import { normalizeAddress } from "../utils/address.js";
+import type { ResolvedConfig } from "../../config.js";
+import { normalizeAddress } from "../../utils/address.js";
 import { POPCollectionABI, POPFactoryABI } from "../abis/index.js";
-import { getStarknetCoordinates } from "../chains.js";
-import type { CreatePopCollectionParams } from "../types/services.js";
-import type { TxResult } from "../types/marketplace.js";
+import { getStarknetCoordinates } from "../../chains.js";
+import type { CreatePopCollectionParams } from "../../types/services.js";
+import type { TxResult } from "../../types/marketplace.js";
 
 export type { CreatePopCollectionParams };
 

@@ -1,10 +1,10 @@
 import { Contract, type AccountInterface } from "starknet";
-import type { ResolvedConfig } from "../config.js";
-import { normalizeAddress } from "../utils/address.js";
+import type { ResolvedConfig } from "../../config.js";
+import { normalizeAddress } from "../../utils/address.js";
 import { DropCollectionABI, DropFactoryABI } from "../abis/index.js";
-import { getStarknetCoordinates } from "../chains.js";
-import type { ClaimConditions, CreateDropParams } from "../types/services.js";
-import type { TxResult } from "../types/marketplace.js";
+import { getStarknetCoordinates } from "../../chains.js";
+import type { ClaimConditions, CreateDropParams } from "../../types/services.js";
+import type { TxResult } from "../../types/marketplace.js";
 import { buildFeeCall } from "../fee/index.js";
 
 export type { ClaimConditions, CreateDropParams };

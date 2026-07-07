@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { buildFeeCall } from "./build-fee-call.js";
-import { resolveFeeConfig } from "./config.js";
+import { resolveFeeConfig } from "../../fee/config.js";
 
 const TOKEN = "0xusdc";
 

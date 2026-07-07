@@ -1,10 +1,10 @@
 import { Contract, RpcProvider, hash, uint256, type AccountInterface, type Call, type ProviderInterface } from "starknet";
-import type { ResolvedConfig } from "../config.js";
+import type { ResolvedConfig } from "../../config.js";
 import { CreatorCoinFactoryABI } from "../abis/index.js";
-import { getStarknetCoordinates } from "../chains.js";
-import { getTokenByAddress } from "../utils/token.js";
-import { normalizeAddress } from "../utils/address.js";
-import type { TxResult } from "../types/marketplace.js";
+import { getStarknetCoordinates } from "../../chains.js";
+import { getTokenByAddress } from "../../utils/token.js";
+import { normalizeAddress } from "../../utils/address.js";
+import type { TxResult } from "../../types/marketplace.js";
 
 export interface CreateCreatorCoinParams {
   /** Owner of the new coin — the only address allowed to launch it. */

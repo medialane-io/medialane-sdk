@@ -1,5 +1,5 @@
 import { cairo, type Call } from "starknet";
-import type { ResolvedFeeConfig } from "./config.js";
+import type { ResolvedFeeConfig } from "../../fee/config.js";
 
 export type FeeSurface = "marketplace" | "launchpad";
 

@@ -1,5 +1,5 @@
 import { type AccountInterface, type TypedData, constants } from "starknet";
-import type { ResolvedConfig } from "../config.js";
+import type { ResolvedConfig } from "../../config.js";
 import type {
   CreateListingParams,
   MakeOfferParams,
@@ -10,7 +10,7 @@ import type {
   CreateCollectionParams,
   TxResult,
   OrderDetails,
-} from "../types/marketplace.js";
+} from "../../types/marketplace.js";
 import {
   buildOrderTypedData,
   buildCancellationTypedData,

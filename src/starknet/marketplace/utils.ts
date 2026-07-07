@@ -1,8 +1,8 @@
 import { RpcProvider, cairo, constants, num } from "starknet";
-import type { ResolvedConfig } from "../config.js";
-import { SUPPORTED_TOKENS } from "../constants.js";
+import type { ResolvedConfig } from "../../config.js";
+import { SUPPORTED_TOKENS } from "../../constants.js";
 import { MedialaneError } from "./errors.js";
-import { createFailoverFetch, PUBLIC_RPC_FALLBACKS } from "../utils/rpc.js";
+import { createFailoverFetch, PUBLIC_RPC_FALLBACKS } from "../../utils/rpc.js";
 
 /** Seconds added to current unix time when setting order start_time.
  *  Provides buffer for Starknet tx inclusion (~6s blocks). */
