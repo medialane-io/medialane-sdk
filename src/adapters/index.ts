@@ -2,9 +2,9 @@ export type {
   AssetRef,
   OrderRef,
   RegisterOrderParams,
-  TxResult,
+  AdapterTxResult,
   VenueAdapter,
-  CreateCollectionParams,
-  MintParams,
+  CreateCollectionInput,
+  MintInput,
   IssuanceAdapter,
 } from "./types.js";

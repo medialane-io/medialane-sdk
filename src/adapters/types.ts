@@ -37,28 +37,28 @@ export interface RegisterOrderParams {
   salt: string;
 }
 
-export interface TxResult {
+export interface AdapterTxResult {
   txHash: string;
 }
 
 export interface VenueAdapter<Signer> {
   readonly chain: Chain;
-  registerOrder(signer: Signer, params: RegisterOrderParams): Promise<TxResult & { orderRef: OrderRef }>;
-  fulfillOrder(signer: Signer, orderRef: OrderRef, opts?: { quantity?: string }): Promise<TxResult>;
-  cancelOrder(signer: Signer, orderRef: OrderRef): Promise<TxResult>;
-  incrementCounter(signer: Signer): Promise<TxResult>;
+  registerOrder(signer: Signer, params: RegisterOrderParams): Promise<AdapterTxResult & { orderRef: OrderRef }>;
+  fulfillOrder(signer: Signer, orderRef: OrderRef, opts?: { quantity?: string }): Promise<AdapterTxResult>;
+  cancelOrder(signer: Signer, orderRef: OrderRef): Promise<AdapterTxResult>;
+  incrementCounter(signer: Signer): Promise<AdapterTxResult>;
   getOrderDetails(orderRef: OrderRef): Promise<unknown>;
   getCounter(address: string): Promise<bigint>;
 }
 
-export interface CreateCollectionParams {
+export interface CreateCollectionInput {
   name: string;
   symbol: string;
   baseUri: string;
   royaltyBps: number;
 }
 
-export interface MintParams {
+export interface MintInput {
   collection: string;
   recipient: string;
   tokenUri: string;
@@ -66,7 +66,7 @@ export interface MintParams {
 
 export interface IssuanceAdapter<Signer> {
   readonly chain: Chain;
-  createCollection(signer: Signer, params: CreateCollectionParams): Promise<TxResult & { collection: string }>;
-  mint(signer: Signer, params: MintParams): Promise<TxResult & { tokenId: string }>;
-  batchMint(signer: Signer, params: { collection: string; recipients: string[]; tokenUris: string[] }): Promise<TxResult>;
+  createCollection(signer: Signer, params: CreateCollectionInput): Promise<AdapterTxResult & { collection: string }>;
+  mint(signer: Signer, params: MintInput): Promise<AdapterTxResult & { tokenId: string }>;
+  batchMint(signer: Signer, params: { collection: string; recipients: string[]; tokenUris: string[] }): Promise<AdapterTxResult>;
 }
