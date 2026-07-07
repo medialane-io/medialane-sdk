@@ -413,8 +413,9 @@ var ApiClient = class {
     );
   }
   // ─── Search ────────────────────────────────────────────────────────────────
-  search(q, limit = 10) {
+  search(q, limit = 10, chain) {
     const params = new URLSearchParams({ q, limit: String(limit) });
+    if (chain) params.set("chain", chain);
     return this.get(
       `/v1/search?${params.toString()}`
     );

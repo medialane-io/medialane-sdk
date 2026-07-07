@@ -16,6 +16,11 @@
       "types": "./dist/starknet/index.d.ts",
       "import": "./dist/starknet/index.js",
       "require": "./dist/starknet/index.cjs"
+    },
+    "./evm": {
+      "types": "./dist/evm/index.d.ts",
+      "import": "./dist/evm/index.js",
+      "require": "./dist/evm/index.cjs"
     }
   },
   "license": "MIT",
@@ -32,12 +37,14 @@
     "test": "bun test"
   },
   "peerDependencies": {
-    "starknet": ">=6.0.0"
+    "starknet": ">=6.0.0",
+    "viem": ">=2.0.0"
   },
   "devDependencies": {
     "starknet": "^6.11.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "viem": "^2.54.6"
   },
   "dependencies": {
     "@noble/hashes": "^2.2.0",
@@ -46,6 +53,9 @@
   },
   "peerDependenciesMeta": {
     "starknet": {
+      "optional": true
+    },
+    "viem": {
       "optional": true
     }
   }
