@@ -1,6 +1,6 @@
 import { num } from "starknet";
 import { keccak_256 } from "@noble/hashes/sha3.js";
-import { base58 } from "@scure/base";
+import { base32, base58 } from "@scure/base";
 import type { Chain } from "../chains.js";
 
 /**
@@ -11,6 +11,8 @@ import type { Chain } from "../chains.js";
  * - STARKNET: 0x-prefixed 64-char lowercase hex (felt, zero-padded).
  * - ETHEREUM / BASE: EIP-55 mixed-case checksum.
  * - SOLANA: base58, validated as a 32-byte public key, returned verbatim.
+ * - STELLAR: strkey (G… account / C… contract), CRC16-XModem-verified,
+ *   canonical uppercase.
  * - BITCOIN: not implemented — a non-foreclosed seam, gated on a future
  *   Bitcoin fork (chain-sovereignty §2); never a built path today.
  */
@@ -23,6 +25,8 @@ export function normalizeAddress(chain: Chain, address: string): string {
       return normalizeEvm(address);
     case "SOLANA":
       return normalizeSolana(address);
+    case "STELLAR":
+      return normalizeStellar(address);
     case "BITCOIN":
       throw new Error("BITCOIN address normalization not implemented");
   }
@@ -60,6 +64,43 @@ function normalizeSolana(address: string): string {
   } catch {
     throw new Error(`Invalid SOLANA address: "${address}"`);
   }
+}
+
+/** Stellar strkey version bytes: 'G' account (6<<3), 'C' contract (2<<3). */
+const STELLAR_VERSION_BYTES = new Set([6 << 3, 2 << 3]);
+
+function normalizeStellar(address: string): string {
+  const upper = address.toUpperCase();
+  if (!/^[GC][A-Z2-7]{55}$/.test(upper)) {
+    throw new Error(`Invalid STELLAR address: "${address}"`);
+  }
+  let decoded: Uint8Array;
+  try {
+    decoded = base32.decode(upper);
+  } catch {
+    throw new Error(`Invalid STELLAR address: "${address}"`);
+  }
+  if (decoded.length !== 35 || !STELLAR_VERSION_BYTES.has(decoded[0]!)) {
+    throw new Error(`Invalid STELLAR address: "${address}"`);
+  }
+  const payload = decoded.subarray(0, 33);
+  const checksum = decoded[33]! | (decoded[34]! << 8);
+  if (crc16xmodem(payload) !== checksum) {
+    throw new Error(`Invalid STELLAR address: "${address}"`);
+  }
+  return upper;
+}
+
+/** CRC16-XModem (poly 0x1021, init 0x0000) — the strkey checksum. */
+function crc16xmodem(bytes: Uint8Array): number {
+  let crc = 0;
+  for (const byte of bytes) {
+    crc ^= byte << 8;
+    for (let i = 0; i < 8; i++) {
+      crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+    }
+  }
+  return crc;
 }
 
 /**

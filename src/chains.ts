@@ -3,7 +3,7 @@
 // mainnet-only, so there is no network axis (refines decisions.md D-9).
 
 /** Mirrors the backend Prisma `Chain` enum. */
-export const CHAINS = ["STARKNET", "ETHEREUM", "SOLANA", "BASE", "BITCOIN"] as const;
+export const CHAINS = ["STARKNET", "ETHEREUM", "SOLANA", "BASE", "STELLAR", "BITCOIN"] as const;
 export type Chain = (typeof CHAINS)[number];
 
 /** Per-chain on-chain coordinates of Medialane services + venues. All fields

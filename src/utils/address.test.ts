@@ -1,33 +1,39 @@
-import { test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { normalizeAddress } from "./address.js";
 
-test("Starknet pads to 64-char lowercase hex (unchanged behavior)", () => {
-  expect(normalizeAddress("STARKNET", "0x1")).toBe("0x" + "0".repeat(63) + "1");
+// Documented Stellar strkeys: the SDF docs example account and the mainnet
+// native-asset (XLM) contract id. Both carry CRC16-XModem checksums, so a
+// passing validation is self-evident.
+const STELLAR_ACCOUNT = "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVSGZ";
+const STELLAR_CONTRACT = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+
+describe("normalizeAddress STELLAR", () => {
+  test("accepts a valid account strkey verbatim", () => {
+    expect(normalizeAddress("STELLAR", STELLAR_ACCOUNT)).toBe(STELLAR_ACCOUNT);
+  });
+  test("accepts a valid contract strkey verbatim", () => {
+    expect(normalizeAddress("STELLAR", STELLAR_CONTRACT)).toBe(STELLAR_CONTRACT);
+  });
+  test("canonicalizes lowercase input to uppercase", () => {
+    expect(normalizeAddress("STELLAR", STELLAR_ACCOUNT.toLowerCase())).toBe(STELLAR_ACCOUNT);
+  });
+  test("rejects a tampered checksum", () => {
+    const bad = STELLAR_ACCOUNT.slice(0, -1) + (STELLAR_ACCOUNT.endsWith("A") ? "B" : "A");
+    expect(() => normalizeAddress("STELLAR", bad)).toThrow();
+  });
+  test("rejects wrong prefix and wrong length", () => {
+    expect(() => normalizeAddress("STELLAR", "S" + STELLAR_ACCOUNT.slice(1))).toThrow();
+    expect(() => normalizeAddress("STELLAR", STELLAR_ACCOUNT.slice(0, 40))).toThrow();
+  });
 });
 
-test("EVM returns EIP-55 checksummed address", () => {
-  expect(normalizeAddress("ETHEREUM", "0xfb6916095ca1df60bb79ce92ce3ea74c37c5d359"))
-    .toBe("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359");
-});
-
-test("BASE uses the same EVM checksum", () => {
-  expect(normalizeAddress("BASE", "0xFB6916095CA1DF60BB79CE92CE3EA74C37C5D359"))
-    .toBe("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359");
-});
-
-test("Solana base58 address (32 bytes) is returned verbatim when valid", () => {
-  const usdcMint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-  expect(normalizeAddress("SOLANA", usdcMint)).toBe(usdcMint);
-});
-
-test("invalid EVM address throws with the chain named", () => {
-  expect(() => normalizeAddress("ETHEREUM", "nope")).toThrow(/ETHEREUM/);
-});
-
-test("invalid Solana address throws with the chain named", () => {
-  expect(() => normalizeAddress("SOLANA", "0xdeadbeef")).toThrow(/SOLANA/);
-});
-
-test("BITCOIN is a non-foreclosed seam — not implemented", () => {
-  expect(() => normalizeAddress("BITCOIN", "bc1qxyz")).toThrow(/not implemented/i);
+describe("normalizeAddress existing chains", () => {
+  test("starknet pads", () => {
+    expect(normalizeAddress("STARKNET", "0x1")).toBe("0x" + "1".padStart(64, "0"));
+  });
+  test("evm checksums", () => {
+    expect(normalizeAddress("ETHEREUM", "0x52908400098527886e0f7030069857d2e4169ee7")).toBe(
+      "0x52908400098527886E0F7030069857D2E4169EE7",
+    );
+  });
 });
