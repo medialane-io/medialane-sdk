@@ -1,10 +1,10 @@
 import type { ServiceDefinition, ServiceCapability } from "../types/api.js";
-import { getCoordinates } from "../chains.js";
+import { getStarknetCoordinates } from "../chains.js";
 
 // The registry re-projects a service's chain coordinates into the generic
 // `onchain` shape (factoryAddress/classHash/startBlock). Single source = the
 // chain registry. Only STARKNET is populated today.
-const SN = getCoordinates("STARKNET");
+const SN = getStarknetCoordinates("STARKNET");
 
 /**
  * The Medialane service registry (05-service-model §II, §VI).
@@ -88,7 +88,7 @@ const SERVICES = {
       },
     },
     uiVariant: "pop",
-    capabilities: ["claim", "transfer"],
+    capabilities: ["claim", "mint"],
     events: [
       { name: "CollectionCreated", emittedBy: "factory" },
       { name: "AllowlistUpdated", emittedBy: "instance", poll: "slow" },

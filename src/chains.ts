@@ -6,9 +6,9 @@
 export const CHAINS = ["STARKNET", "ETHEREUM", "SOLANA", "BASE", "STELLAR", "BITCOIN"] as const;
 export type Chain = (typeof CHAINS)[number];
 
-/** Per-chain on-chain coordinates of Medialane services + venues. All fields
- *  optional because not every service exists on every chain. */
-export interface ChainCoordinates {
+/** Starknet coordinates of Medialane services + venues. All fields optional
+ *  because not every service exists on every chain. */
+export interface StarknetCoordinates {
   rpcUrl: string;
   marketplace721?: `0x${string}`;
   marketplace721ClassHash?: `0x${string}`;
@@ -48,7 +48,53 @@ export interface ChainCoordinates {
 
 /** Coordinates per chain. Only STARKNET is populated today; adding a chain
  *  means adding an entry here (litmus test, spec §7). */
-const COORDINATES: Partial<Record<Chain, ChainCoordinates>> = {
+/** EVM coordinates — one shape for Ethereum and Base (same bytecode, two
+ *  chains). Populated at deploy time (federation Phase 4). */
+export interface EvmCoordinates {
+  rpcUrl: string;
+  marketplace721?: `0x${string}`;
+  marketplace721StartBlock?: number;
+  marketplace1155?: `0x${string}`;
+  marketplace1155StartBlock?: number;
+  mipRegistry?: `0x${string}`;
+  mipRegistryStartBlock?: number;
+  mipEditionsRegistry?: `0x${string}`;
+  mipEditionsRegistryStartBlock?: number;
+}
+
+/** Solana coordinates — base58 program ids. Populated at deploy time. */
+export interface SolanaCoordinates {
+  rpcUrl: string;
+  mipCollectionsProgram?: string;
+  marketplaceProgram?: string;
+  startSlot?: number;
+}
+
+/** Stellar (Soroban) coordinates — strkey contract ids. Populated at deploy
+ *  time; the registry takes the collection WASM hash as a constructor arg. */
+export interface StellarCoordinates {
+  rpcUrl: string;
+  mipRegistry?: string;
+  marketplace?: string;
+  collectionWasmHash?: string;
+  startLedger?: number;
+}
+
+/** Per-chain coordinate shapes. Every chain is an equal entry — no chain is
+ *  privileged in core (chain-sovereignty I2/I4). */
+export interface CoordinatesByChain {
+  STARKNET?: StarknetCoordinates;
+  ETHEREUM?: EvmCoordinates;
+  BASE?: EvmCoordinates;
+  SOLANA?: SolanaCoordinates;
+  STELLAR?: StellarCoordinates;
+  BITCOIN?: never;
+}
+
+/** @deprecated Renamed — use `StarknetCoordinates` (coordinates are per-chain-shaped). */
+export type ChainCoordinates = StarknetCoordinates;
+
+const COORDINATES: CoordinatesByChain = {
   STARKNET: {
     rpcUrl: "https://rpc.starknet.lava.build",
     marketplace721: "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
@@ -91,10 +137,28 @@ const COORDINATES: Partial<Record<Chain, ChainCoordinates>> = {
   },
 };
 
-export function getCoordinates(chain: Chain): ChainCoordinates {
+export function getCoordinates(chain: "STARKNET"): StarknetCoordinates;
+export function getCoordinates(chain: "ETHEREUM" | "BASE"): EvmCoordinates;
+export function getCoordinates(chain: "SOLANA"): SolanaCoordinates;
+export function getCoordinates(chain: "STELLAR"): StellarCoordinates;
+export function getCoordinates(
+  chain: Chain,
+): StarknetCoordinates | EvmCoordinates | SolanaCoordinates | StellarCoordinates;
+export function getCoordinates(
+  chain: Chain,
+): StarknetCoordinates | EvmCoordinates | SolanaCoordinates | StellarCoordinates {
   const c = COORDINATES[chain];
   if (!c) throw new Error(`No coordinates configured for chain "${chain}"`);
   return c;
 }
 
 export const DEFAULT_CHAIN: Chain = "STARKNET";
+
+/** Typed Starknet coordinates for Starknet-only modules; throws when the
+ *  client is scoped to another chain. */
+export function getStarknetCoordinates(chain: Chain): StarknetCoordinates {
+  if (chain !== "STARKNET") {
+    throw new Error(`This module is Starknet-only (client chain: "${chain}")`);
+  }
+  return getCoordinates("STARKNET");
+}

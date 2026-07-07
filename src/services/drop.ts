@@ -2,7 +2,7 @@ import { Contract, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import { normalizeAddress } from "../utils/address.js";
 import { DropCollectionABI, DropFactoryABI } from "../abis/index.js";
-import { getCoordinates } from "../chains.js";
+import { getStarknetCoordinates } from "../chains.js";
 import type { ClaimConditions, CreateDropParams } from "../types/services.js";
 import type { TxResult } from "../types/marketplace.js";
 import { buildFeeCall } from "../fee/index.js";
@@ -24,7 +24,7 @@ export class DropService {
   private readonly config: ResolvedConfig;
 
   constructor(config: ResolvedConfig) {
-    this.factoryAddress = getCoordinates(config.chain).dropFactory!;
+    this.factoryAddress = getStarknetCoordinates(config.chain).dropFactory!;
     this.config = config;
   }
 

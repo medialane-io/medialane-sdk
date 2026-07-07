@@ -2,7 +2,7 @@ import { CairoOption, CairoOptionVariant, Contract, cairo, type AccountInterface
 import type { ResolvedConfig } from "../config.js";
 import { normalizeAddress } from "../utils/address.js";
 import { IPSponsorshipABI, IPGenesisABI } from "../abis/index.js";
-import { getCoordinates } from "../chains.js";
+import { getStarknetCoordinates } from "../chains.js";
 import type { CreateSponsorshipOfferParams } from "../types/services.js";
 import type { TxResult } from "../types/marketplace.js";
 
@@ -13,8 +13,8 @@ export class SponsorshipService {
   private readonly licenseReceiptAddress?: string;
 
   constructor(config: ResolvedConfig) {
-    this.sponsorshipAddress = getCoordinates(config.chain).ipSponsorship;
-    this.licenseReceiptAddress = getCoordinates(config.chain).ipSponsorshipLicense;
+    this.sponsorshipAddress = getStarknetCoordinates(config.chain).ipSponsorship;
+    this.licenseReceiptAddress = getStarknetCoordinates(config.chain).ipSponsorshipLicense;
   }
 
   private _sponsorship(account: AccountInterface, address?: string) {

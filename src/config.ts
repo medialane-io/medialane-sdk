@@ -45,11 +45,15 @@ export interface ResolvedConfig {
 export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
   const parsed = MedialaneConfigSchema.parse(raw);
   const coords = getCoordinates(parsed.chain);
+  // The resolved contract fields are the Starknet module surface; on other
+  // chains they stay unset and the per-chain adapters resolve their own
+  // coordinates.
+  const sn = (parsed.chain === "STARKNET" ? coords : {}) as import("./chains.js").StarknetCoordinates;
 
   const marketplace721Contract =
-    parsed.marketplace721Contract ?? parsed.marketplaceContract ?? coords.marketplace721!;
+    parsed.marketplace721Contract ?? parsed.marketplaceContract ?? sn.marketplace721!;
   const collection721Contract =
-    parsed.collection721Contract ?? parsed.collectionContract ?? coords.collection721!;
+    parsed.collection721Contract ?? parsed.collectionContract ?? sn.collection721!;
 
   return {
     chain: parsed.chain,
@@ -58,10 +62,10 @@ export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
     apiKey: parsed.apiKey,
     marketplace721Contract,
     marketplaceContract: marketplace721Contract,
-    marketplace1155Contract: parsed.marketplace1155Contract ?? coords.marketplace1155!,
+    marketplace1155Contract: parsed.marketplace1155Contract ?? sn.marketplace1155!,
     collection721Contract,
     collectionContract: collection721Contract,
-    collection1155Contract: parsed.collection1155Contract ?? coords.collection1155!,
+    collection1155Contract: parsed.collection1155Contract ?? sn.collection1155!,
     retryOptions: parsed.retryOptions,
     feeConfig: resolveFeeConfig(parsed.feeConfig),
   };

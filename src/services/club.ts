@@ -2,7 +2,7 @@ import { CairoOption, CairoOptionVariant, Contract, cairo, type AccountInterface
 import type { ResolvedConfig } from "../config.js";
 import { normalizeAddress } from "../utils/address.js";
 import { IPClubABI } from "../abis/index.js";
-import { getCoordinates } from "../chains.js";
+import { getStarknetCoordinates } from "../chains.js";
 import type { CreateClubParams } from "../types/services.js";
 import type { TxResult } from "../types/marketplace.js";
 
@@ -12,7 +12,7 @@ export class ClubService {
   private readonly registryAddress?: string;
 
   constructor(config: ResolvedConfig) {
-    this.registryAddress = getCoordinates(config.chain).ipClubRegistry;
+    this.registryAddress = getStarknetCoordinates(config.chain).ipClubRegistry;
   }
 
   private _registry(account: AccountInterface, registryAddress?: string) {

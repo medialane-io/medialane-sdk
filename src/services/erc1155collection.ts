@@ -2,7 +2,7 @@ import { Contract, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../config.js";
 import { normalizeAddress } from "../utils/address.js";
 import { IPCollection1155FactoryABI, IPCollection1155ABI } from "../abis/index.js";
-import { getCoordinates } from "../chains.js";
+import { getStarknetCoordinates } from "../chains.js";
 import type { TxResult } from "../types/marketplace.js";
 
 export interface DeployCollectionParams {
@@ -60,7 +60,7 @@ export class ERC1155CollectionService {
   private readonly factoryAddress: string;
 
   constructor(config: ResolvedConfig) {
-    this.factoryAddress = config.collection1155Contract ?? getCoordinates(config.chain).collection1155!;
+    this.factoryAddress = config.collection1155Contract ?? getStarknetCoordinates(config.chain).collection1155!;
   }
 
   private _factory(account: AccountInterface) {

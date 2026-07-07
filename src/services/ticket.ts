@@ -2,7 +2,7 @@ import { CairoOption, CairoOptionVariant, Contract, cairo, type AccountInterface
 import type { ResolvedConfig } from "../config.js";
 import { normalizeAddress } from "../utils/address.js";
 import { IPTicketCollectionABI, IPTicketCollectionFactoryABI } from "../abis/index.js";
-import { getCoordinates } from "../chains.js";
+import { getStarknetCoordinates } from "../chains.js";
 import type { CreateTicketCollectionParams } from "../types/services.js";
 import type { TxResult } from "../types/marketplace.js";
 
@@ -12,7 +12,7 @@ export class TicketService {
   private readonly factoryAddress?: string;
 
   constructor(config: ResolvedConfig) {
-    this.factoryAddress = getCoordinates(config.chain).ipTicketsFactory;
+    this.factoryAddress = getStarknetCoordinates(config.chain).ipTicketsFactory;
   }
 
   private _collection(address: string, account: AccountInterface) {
