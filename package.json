@@ -21,6 +21,11 @@
       "types": "./dist/evm/index.d.ts",
       "import": "./dist/evm/index.js",
       "require": "./dist/evm/index.cjs"
+    },
+    "./solana": {
+      "types": "./dist/solana/index.d.ts",
+      "import": "./dist/solana/index.js",
+      "require": "./dist/solana/index.cjs"
     }
   },
   "license": "MIT",
@@ -38,9 +43,11 @@
   },
   "peerDependencies": {
     "starknet": ">=6.0.0",
-    "viem": ">=2.0.0"
+    "viem": ">=2.0.0",
+    "@solana/web3.js": ">=1.90.0"
   },
   "devDependencies": {
+    "@solana/web3.js": "^1.98.4",
     "starknet": "^6.11.0",
     "tsup": "^8.0.0",
     "typescript": "^5.6.0",
@@ -56,6 +63,9 @@
       "optional": true
     },
     "viem": {
+      "optional": true
+    },
+    "@solana/web3.js": {
       "optional": true
     }
   }

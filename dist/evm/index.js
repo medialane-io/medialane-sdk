@@ -290,7 +290,7 @@ var EvmIssuance = class {
       address: this.registry,
       abi: EvmMipRegistryABI,
       functionName: "createCollection",
-      args: [params.name, params.symbol, params.baseUri, params.royaltyBps]
+      args: [params.name, params.symbol, params.baseUri, BigInt(params.royaltyBps)]
     });
     const receipt = await this.publicClient.waitForTransactionReceipt({ hash: txHash });
     const [created] = parseEventLogs({
