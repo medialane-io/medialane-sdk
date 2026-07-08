@@ -43,8 +43,8 @@ interface VenueAdapter<Signer> {
     }>;
     fulfillOrder(signer: Signer, orderRef: OrderRef, opts?: {
         quantity?: string;
-    }): Promise<AdapterTxResult>;
-    cancelOrder(signer: Signer, orderRef: OrderRef): Promise<AdapterTxResult>;
+    } & Record<string, string | undefined>): Promise<AdapterTxResult>;
+    cancelOrder(signer: Signer, orderRef: OrderRef, opts?: Record<string, string | undefined>): Promise<AdapterTxResult>;
     incrementCounter(signer: Signer): Promise<AdapterTxResult>;
     getOrderDetails(orderRef: OrderRef): Promise<unknown>;
     getCounter(address: string): Promise<bigint>;
