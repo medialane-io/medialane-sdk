@@ -6,6 +6,12 @@ export { MedialaneClient } from "./client.js";
 export { MarketplaceModule, MedialaneError } from "./marketplace/index.js";
 export { Medialane1155Module } from "./marketplace1155/index.js";
 
+// First-class Starknet venue adapter (implements the chain-neutral VenueAdapter);
+// wraps MarketplaceModule/Medialane1155Module. StarknetIssuance is deferred until
+// the app's mint flow is refactored onto IssuanceAdapter.
+export { StarknetVenue } from "./venue.js";
+export type { StarknetVenueDeps, ResolvedOrder } from "./venue.js";
+
 // Platform-layer fee call builder (creators-fund fee)
 export { buildFeeCall } from "./fee/build-fee-call.js";
 export type { FeeSurface, BuildFeeCallParams } from "./fee/build-fee-call.js";
