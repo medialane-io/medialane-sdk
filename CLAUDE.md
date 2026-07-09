@@ -345,6 +345,26 @@ On-chain Collection Drop interactions. All require a starknet.js `AccountInterfa
 
 `ClaimConditions`: `{ startTime, endTime, price, paymentToken, maxQuantityPerWallet }` — set `price=0` for free mints, `endTime=0` for no expiry.
 
+### client.services.creatorCoin (`CreatorCoinService`)
+
+On-chain Creator Coin launchpad (Ekubo-only faithful fork of unruggable.meme; Factory + EkuboLauncher addresses in `chains.ts`). Liquidity is permanently locked in the EkuboLauncher and the coin's ownership is renounced at launch — post-launch everything is immutable, no admin anywhere.
+
+| Method | Description |
+|---|---|
+| `createCreatorCoin(account, params)` | Deploy a fixed-supply CreatorCoin (full supply held by the Factory until launch). Permissionless. |
+| `launchOnEkubo(account, params)` | Owner-only, once. Multicall: optional quote `transfer` to the Factory + `launch_on_ekubo`. |
+| `isCreatorCoin(address, account)` | View: was this coin deployed by the Factory? |
+| `getPrice(coinAddress)` | Read-only live spot price from the coin's Ekubo pool (`null` if not launched). |
+
+Call builders for app-pipeline flows (ChipiPay chokepoint, paymasters): `buildCreateCreatorCoinCall`, `buildLaunchOnEkuboCalls`, `parseCreatorCoinCreated` (coin address from receipt), `VALIDATED_EKUBO_PARAMS`.
+
+**Integration requirements** (from the 2026-07-09 contract audit, `medialane-contracts` PR #11):
+
+1. **Always launch with `quoteFundAmount`** when initial holders are set — the quote transfer and `launch_on_ekubo` must be **one atomic multicall**. The Factory's buyback sweeps its *entire* balance of the quote token, so quote pre-funded in a separate transaction can be consumed by whoever launches next (their leftover-return receives it). Never transfer quote to the Factory outside `buildLaunchOnEkuboCalls`.
+2. **Team allocation must sum to ≥ 1 coin (1e18 raw); a zero/empty-holders launch always reverts**: the launcher donates exactly 1 coin to the Ekubo token registry out of the team's single-tick position, so `sum(initialHoldersAmounts) < 1e18` fails with an unreadable u256-underflow panic. Validate before submitting. Upper bound: ≤ 10% of supply, ≤ 10 holders (contract-enforced with clear errors).
+3. **Coin-side pool fees are unrecoverable by design** — `withdraw_fees` pays out only the quote side. Don't surface coin-side fee balances as claimable anywhere.
+4. **The anti-snipe cap is per-transaction** (`maxPercentageBuyLaunch`, ≥ 50 bps, applied per Ekubo-core transfer during `transferRestrictionDelay`) — it is friction, not a guarantee. Don't market it as a hard limit.
+
 ---
 
 ## Addresses — `getCoordinates(chain)` (`src/chains.ts`)
