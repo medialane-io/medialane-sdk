@@ -1,4 +1,4 @@
-import type { AccountInterface, ProviderInterface } from "starknet";
+import { hash, num, type AccountInterface, type ProviderInterface } from "starknet";
 import type {
   VenueAdapter,
   RegisterOrderParams,
@@ -6,8 +6,13 @@ import type {
   AdapterTxResult,
 } from "../adapters/types.js";
 import type { ResolvedConfig } from "../config.js";
+import { formatAmount } from "../utils/token.js";
 import { MarketplaceModule } from "./marketplace/index.js";
 import { Medialane1155Module } from "./marketplace1155/index.js";
+import { resolveToken } from "./marketplace/utils.js";
+
+/** Default listing duration when the caller specifies no expiry (endTime 0). */
+const NO_EXPIRY_SECONDS = 100 * 365 * 24 * 3600;
 
 /** What a stored/registered order resolves to for fulfilment/cancellation. */
 export interface ResolvedOrder {
@@ -90,13 +95,84 @@ export class StarknetVenue implements VenueAdapter<AccountInterface> {
     return this.m721.cancelOrder(signer, { orderHash: orderRef });
   }
 
-  // registerOrder needs the contract-emitted order hash (indexer stores
-  // OrderCreated.keys[1]) as its OrderRef return — see receipt-parsing decision
-  // pending before touching the shared orders.ts. Implemented next.
-  registerOrder(
-    _signer: AccountInterface,
-    _params: RegisterOrderParams,
+  async registerOrder(
+    signer: AccountInterface,
+    p: RegisterOrderParams,
   ): Promise<AdapterTxResult & { orderRef: OrderRef }> {
-    throw new Error("StarknetVenue.registerOrder: pending orderRef-from-receipt decision");
+    const standard = await this.deps.resolveStandard(p.asset.contract);
+    // Raw per-unit amount → human price, using the same token resolution the
+    // legacy module uses (accepts symbol OR address) so decimals match exactly.
+    const token = resolveToken(p.paymentToken);
+    const humanPrice = formatAmount(p.amount, token.decimals);
+    const durationSeconds = this.durationSeconds(p.endTime);
+    const royaltyMaxBps = String(p.royaltyMaxBps);
+
+    const quantity = p.quantity ?? "1";
+    let txHash: string;
+    if (standard === "ERC1155") {
+      if (p.side === "listing") {
+        // Listing carries the per-unit price.
+        const res = await this.m1155.createListing(signer, {
+          nftContract: p.asset.contract,
+          tokenId: p.asset.tokenId,
+          amount: quantity,
+          pricePerUnit: humanPrice,
+          currency: p.paymentToken,
+          durationSeconds,
+          royaltyMaxBps,
+        });
+        txHash = res.txHash;
+      } else {
+        // Offer carries the total price (per-unit × quantity).
+        const totalHuman = formatAmount((BigInt(p.amount) * BigInt(quantity)).toString(), token.decimals);
+        const res = await this.m1155.makeOffer(signer, {
+          nftContract: p.asset.contract,
+          tokenId: p.asset.tokenId,
+          amount: quantity,
+          price: totalHuman,
+          currency: p.paymentToken,
+          durationSeconds,
+          royaltyMaxBps,
+        });
+        txHash = res.txHash;
+      }
+    } else {
+      const params = {
+        nftContract: p.asset.contract,
+        tokenId: p.asset.tokenId,
+        price: humanPrice,
+        currency: p.paymentToken,
+        durationSeconds,
+        royaltyMaxBps,
+      };
+      const res =
+        p.side === "listing"
+          ? await this.m721.createListing(signer, params)
+          : await this.m721.makeOffer(signer, params);
+      txHash = res.txHash;
+    }
+
+    const orderRef = await this.orderRefFromReceipt(txHash);
+    return { txHash, orderRef };
+  }
+
+  private durationSeconds(endTime: number): number {
+    if (!endTime) return NO_EXPIRY_SECONDS;
+    return Math.max(1, endTime - Math.floor(Date.now() / 1000));
+  }
+
+  /** The canonical Starknet order id = the contract-emitted `OrderCreated`
+   *  hash (`keys[1]`), which is exactly what the indexer stores. */
+  private async orderRefFromReceipt(txHash: string): Promise<OrderRef> {
+    const receipt = (await this.deps.provider.getTransactionReceipt(txHash)) as {
+      events?: { from_address?: string; keys?: string[] }[];
+    };
+    const selector = hash.getSelectorFromName("OrderCreated");
+    for (const ev of receipt.events ?? []) {
+      if (ev.keys?.[0] && BigInt(ev.keys[0]) === BigInt(selector)) {
+        return num.toHex(ev.keys[1]);
+      }
+    }
+    throw new Error("StarknetVenue.registerOrder: OrderCreated event not found in receipt");
   }
 }

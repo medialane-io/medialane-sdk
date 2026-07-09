@@ -28,8 +28,12 @@ export interface RegisterOrderParams {
   /** Payment token in the chain's canonical address form; adapters define the
    *  native-currency sentinel where the chain has one. */
   paymentToken: string;
-  /** Base-unit amount as a decimal string. */
+  /** Per-unit price in base units, as a decimal string. For single-item (721)
+   *  orders this is the whole price; for multi-unit (1155) orders it is the price
+   *  per unit and the total is `amount × quantity`. */
   amount: string;
+  /** Units offered — 1155 only; defaults to "1" (and is inert for 721). */
+  quantity?: string;
   royaltyMaxBps: number;
   startTime: number;
   /** 0 = no expiry. */
