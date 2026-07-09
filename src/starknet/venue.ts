@@ -18,8 +18,9 @@ const NO_EXPIRY_SECONDS = 100 * 365 * 24 * 3600;
 export interface ResolvedOrder {
   /** ERC-20 consideration token address. */
   paymentToken: string;
-  /** Total price in raw token units, as a decimal string. */
-  totalPrice: string;
+  /** Per-unit price in raw token units, as a decimal string. The total paid is
+   *  `unitPrice × quantity` (quantity is 1 for ERC-721). */
+  unitPrice: string;
   /** Which venue the order lives on. */
   standard: "ERC721" | "ERC1155";
 }
@@ -72,18 +73,21 @@ export class StarknetVenue implements VenueAdapter<AccountInterface> {
     opts?: { quantity?: string } & Record<string, string | undefined>,
   ): Promise<AdapterTxResult> {
     const o = await this.deps.resolveOrder(orderRef);
+    const quantity = opts?.quantity ?? "1";
+    // Total paid = per-unit price × quantity (quantity is 1 for ERC-721).
+    const totalPrice = (BigInt(o.unitPrice) * BigInt(quantity)).toString();
     if (o.standard === "ERC1155") {
       return this.m1155.fulfillOrder(signer, {
         orderHash: orderRef,
         paymentToken: o.paymentToken,
-        totalPrice: o.totalPrice,
-        quantity: opts?.quantity ?? "1",
+        totalPrice,
+        quantity,
       });
     }
     return this.m721.fulfillOrder(signer, {
       orderHash: orderRef,
       paymentToken: o.paymentToken,
-      totalPrice: o.totalPrice,
+      totalPrice,
     });
   }
 

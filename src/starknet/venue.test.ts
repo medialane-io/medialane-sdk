@@ -19,7 +19,7 @@ function makeVenue() {
     provider: {} as any,
     resolveOrder: mock(async () => ({
       paymentToken: "0xusdc",
-      totalPrice: "1000000",
+      unitPrice: "1000000",
       standard: "ERC721" as const,
     })),
     resolveStandard: mock(async () => "ERC721" as const),
@@ -72,14 +72,15 @@ test("fulfillOrder routes to the 1155 module with quantity when the order is ERC
   const deps = {
     config: { marketplaceContract: "0xmkt" } as any,
     provider: {} as any,
-    resolveOrder: mock(async () => ({ paymentToken: "0xusdc", totalPrice: "3000000", standard: "ERC1155" as const })),
+    resolveOrder: mock(async () => ({ paymentToken: "0xusdc", unitPrice: "1000000", standard: "ERC1155" as const })),
     resolveStandard: mock(async () => "ERC1155" as const),
   };
   const venue = new StarknetVenue(deps);
   const spy = mock(async () => ({ txHash: "0xf" }));
   (venue as any).m1155.fulfillOrder = spy;
   await venue.fulfillOrder({} as any, "0xd", { quantity: "3" });
-  expect(spy.mock.calls[0][1]).toMatchObject({ orderHash: "0xd", quantity: "3" });
+  // unitPrice 1_000_000 × quantity 3 = 3_000_000 total approved
+  expect(spy.mock.calls[0][1]).toMatchObject({ orderHash: "0xd", quantity: "3", totalPrice: "3000000" });
 });
 
 test("cancelOrder (721) delegates with the digest", async () => {
@@ -94,7 +95,7 @@ function registerDeps(standard: "ERC721" | "ERC1155", orderHash = "0xabc") {
   return {
     config: { marketplaceContract: "0xmkt" } as any,
     provider: receiptProvider(orderHash),
-    resolveOrder: mock(async () => ({ paymentToken: "0xusdc", totalPrice: "1000000", standard })),
+    resolveOrder: mock(async () => ({ paymentToken: "0xusdc", unitPrice: "1000000", standard })),
     resolveStandard: mock(async () => standard),
   };
 }
