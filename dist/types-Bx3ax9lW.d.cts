@@ -102,9 +102,26 @@ declare function getStarknetCoordinates(chain: Chain): StarknetCoordinates;
  * (`@medialane/sdk/starknet`, `/evm`, `/solana`, `/stellar`) implements, so
  * apps can transact against a chain-tagged asset without knowing the chain
  * (chain-sovereignty I2/I4; platform-federation spec §2.2). `Signer` is the
- * chain's wallet/account handle (starknet.js AccountInterface, a viem wallet
- * client, a Solana signer, a Stellar signer) — adapters fix the type.
+ * chain's `VenueSigner` capability port (see {@link VenueSigner}), not a raw
+ * account — the app implements it over its own wallet layer.
  */
+/**
+ * A chain-neutral capability port the app implements over its own wallet layer.
+ * The adapter orchestrates with only these three capabilities — it never holds a
+ * chain account or an execution provider. Confirmation lives behind `execute`
+ * (the app awaits + revert-detects the receipt before resolving), so there is no
+ * separate receipt method: a resolved `execute` means "on-chain, not reverted".
+ * `TypedData`/`Call` are the chain's native shapes (Starknet: SNIP-12 typed data
+ * and `{ contractAddress, entrypoint, calldata }`); the signature is `string[]`
+ * (Starknet felt array).
+ */
+interface VenueSigner<TypedData = unknown, Call = unknown> {
+    readonly address: string;
+    signTypedData(data: TypedData): Promise<string[]>;
+    execute(calls: Call[]): Promise<{
+        txHash: string;
+    }>;
+}
 /** A chain-tagged asset reference — the working asset identity `(chain, contract, tokenId)`. */
 interface AssetRef {
     chain: Chain;
@@ -176,4 +193,4 @@ interface IssuanceAdapter<Signer> {
     }): Promise<AdapterTxResult>;
 }
 
-export { type AdapterTxResult as A, type Chain as C, DEFAULT_CHAIN as D, type EvmCoordinates as E, type IssuanceAdapter as I, type MintInput as M, type OrderRef as O, type RegisterOrderParams as R, type SolanaCoordinates as S, type VenueAdapter as V, type CreateCollectionInput as a, type AssetRef as b, CHAINS as c, type ChainCoordinates as d, type CoordinatesByChain as e, type StarknetCoordinates as f, type StellarCoordinates as g, getCoordinates as h, getStarknetCoordinates as i };
+export { type AdapterTxResult as A, type Chain as C, DEFAULT_CHAIN as D, type EvmCoordinates as E, type IssuanceAdapter as I, type MintInput as M, type OrderRef as O, type RegisterOrderParams as R, type SolanaCoordinates as S, type VenueAdapter as V, type AssetRef as a, CHAINS as b, type ChainCoordinates as c, type CoordinatesByChain as d, type CreateCollectionInput as e, type StarknetCoordinates as f, type StellarCoordinates as g, type VenueSigner as h, getCoordinates as i, getStarknetCoordinates as j };

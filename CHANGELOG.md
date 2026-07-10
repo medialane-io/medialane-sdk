@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.60.0] — 2026-07-10
+
+Reconcile release: merges the VenueSigner capability port (0.57.0) with the
+IPClubFactory work published concurrently as 0.59.0, so `latest` carries both.
+
+### Added
+- Everything from 0.57.0 (VenueSigner / `StarknetVenueSigner`, pure marketplace
+  call builders, `StarknetVenue` orchestrating over the port, 1155 fee parity).
+- Everything from 0.59.0 (IPClubFactory ABIs, `ClubService.deployClub` /
+  `setOpen` / `mintMembership`, sponsorship-license ABI).
+
 ## [0.57.0] — 2026-07-10
 
 ### Changed — VenueSigner capability port (Starknet venue execution model)

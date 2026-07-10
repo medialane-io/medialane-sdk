@@ -1,5 +1,5 @@
 import { rpc } from '@stellar/stellar-sdk';
-import { V as VenueAdapter, C as Chain, R as RegisterOrderParams, A as AdapterTxResult, O as OrderRef } from '../types-V6imkXvR.js';
+import { V as VenueAdapter, C as Chain, R as RegisterOrderParams, A as AdapterTxResult, O as OrderRef } from '../types-Bx3ax9lW.js';
 
 /** Signer shape: the account's public key + a transaction signer (a wallet
  *  kit or a Keypair-backed callback). */
