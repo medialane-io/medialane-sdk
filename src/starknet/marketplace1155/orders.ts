@@ -1,10 +1,9 @@
 import {
   type AccountInterface,
   type Abi,
-  type TypedData,
+  type Call,
   Contract,
   cairo,
-  shortString,
 } from "starknet";
 import { Medialane1155ABI } from "../abis/index.js";
 import type { ResolvedConfig } from "../../config.js";
@@ -19,15 +18,17 @@ import type {
   TxResult,
   OrderDetails,
 } from "../../types/marketplace.js";
-import { stringifyBigInts } from "../../utils/bigint.js";
 import { parseAmount } from "../../utils/token.js";
 import {
-  build1155OrderTypedData,
-  build1155CancellationTypedData,
-} from "../marketplace/signing.js";
+  buildListing1155Order,
+  buildOffer1155Order,
+  buildRegister1155Calls,
+  buildFulfill1155Calls,
+  buildCancel1155Calls,
+  buildCancel1155TypedData,
+} from "./build.js";
 import {
   toSignatureArray,
-  getChainId,
   getProvider,
   resolveToken,
   generateSalt,
@@ -79,58 +80,30 @@ export async function createListing1155(
   const priceWei = parseAmount(pricePerUnit, token.decimals);
 
   const now = Math.floor(Date.now() / 1000);
+  const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
-  const chainId = getChainId(config);
 
   const counter = (await contract.get_counter(account.address)).toString();
   const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
 
-  const orderParams = {
-    offerer: account.address,
-    marketplace: config.marketplace1155Contract,
-    offer: {
-      item_type: "ERC1155",
-      token: nftContract,
-      identifier_or_criteria: tokenId,
-      amount, // ERC-1155 leg amount = unit quantity
+  const { orderParams, typedData } = buildListing1155Order(
+    {
+      offerer: account.address,
+      nftContract,
+      tokenId,
+      quantity: amount,
+      priceWeiPerUnit: priceWei,
+      paymentTokenAddress: token.address,
+      royaltyMaxBps,
+      startTime,
+      endTime,
+      salt: generateSalt(),
+      counter,
     },
-    consideration: {
-      item_type: "ERC20",
-      token: token.address,
-      identifier_or_criteria: "0",
-      amount: priceWei, // payment leg amount = price PER UNIT
-      recipient: account.address,
-    },
-    royalty_max_bps: royaltyMaxBps,
-    start_time: (now + START_TIME_BUFFER_SECS).toString(),
-    end_time: endTime.toString(),
-    salt: generateSalt(),
-    counter,
-  };
+    config,
+  );
 
-  const typedData = stringifyBigInts(
-    build1155OrderTypedData(orderParams, chainId)
-  ) as TypedData;
-
-  const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray(signature);
-
-  // item_type must be shortString encoded for calldata (felt252), but left as plain
-  // string in orderParams used for SNIP-12 signing (typed data uses shortstring type).
-  const orderPayload = stringifyBigInts({
-    parameters: {
-      ...orderParams,
-      offer: {
-        ...orderParams.offer,
-        item_type: shortString.encodeShortString(orderParams.offer.item_type),
-      },
-      consideration: {
-        ...orderParams.consideration,
-        item_type: shortString.encodeShortString(orderParams.consideration.item_type),
-      },
-    },
-    signature: signatureArray,
-  }) as Record<string, unknown>;
+  const signatureArray = toSignatureArray(await account.signMessage(typedData));
 
   // Check if the marketplace is already approved to transfer the ERC-1155 tokens.
   let isApproved = false;
@@ -146,17 +119,15 @@ export async function createListing1155(
     // Cannot check — include approval call to be safe
   }
 
-  const registerCall = contract.populate("register_order", [orderPayload]);
-  const calls = isApproved
-    ? [registerCall]
-    : [
-        {
-          contractAddress: nftContract,
-          entrypoint: "set_approval_for_all",
-          calldata: [config.marketplace1155Contract, "1"],
-        },
-        registerCall,
-      ];
+  const approve: Call = {
+    contractAddress: nftContract,
+    entrypoint: "set_approval_for_all",
+    calldata: [config.marketplace1155Contract, "1"],
+  };
+  const calls = buildRegister1155Calls(
+    { orderParams, signature: signatureArray, approvalNeeded: !isApproved, approve },
+    config,
+  );
 
   try {
     const tx = await account.execute(calls);
@@ -179,24 +150,13 @@ export async function fulfillOrder1155(
 ): Promise<TxResult> {
   const { orderHash, paymentToken, totalPrice, quantity = "1" } = params;
 
-  const contract = getContract(config);
   const provider = getProvider(config);
 
-  const totalPriceU256 = cairo.uint256(totalPrice);
-  const approveCall = {
-    contractAddress: paymentToken,
-    entrypoint: "approve",
-    calldata: [
-      config.marketplace1155Contract,
-      totalPriceU256.low.toString(),
-      totalPriceU256.high.toString(),
-    ],
-  };
-
-  const fulfillCall = contract.populate("fulfill_order", [orderHash, quantity]);
+  // Composes the platform fee (parity with the 721 venue — see build.ts).
+  const calls = buildFulfill1155Calls({ orderHash, paymentToken, totalPrice, quantity }, config);
 
   try {
-    const tx = await account.execute([approveCall, fulfillCall]);
+    const tx = await account.execute(calls);
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
@@ -215,31 +175,15 @@ export async function cancelOrder1155(
 ): Promise<TxResult> {
   const { orderHash } = params;
 
-  const contract = getContract(config);
   const provider = getProvider(config);
-  const chainId = getChainId(config);
 
-  const cancelParams = {
-    order_hash: orderHash,
-    offerer: account.address,
-  };
+  const typedData = buildCancel1155TypedData(orderHash, account.address, config);
+  const signatureArray = toSignatureArray(await account.signMessage(typedData));
 
-  const typedData = stringifyBigInts(
-    build1155CancellationTypedData(cancelParams, chainId)
-  ) as TypedData;
-
-  const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray(signature);
-
-  const cancelPayload = stringifyBigInts({
-    cancelation: cancelParams,
-    signature: signatureArray,
-  }) as Record<string, unknown>;
-
-  const cancelCall = contract.populate("cancel_order", [cancelPayload]);
+  const calls = buildCancel1155Calls({ orderHash, offerer: account.address, signature: signatureArray }, config);
 
   try {
-    const tx = await account.execute(cancelCall);
+    const tx = await account.execute(calls);
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
@@ -268,66 +212,40 @@ export async function makeOffer1155(
 
   const contract = getContract(config);
   const provider = getProvider(config);
-  const chainId = getChainId(config);
 
   const token = resolveToken(currency);
   const priceWei = parseAmount(price, token.decimals);
 
   const now = Math.floor(Date.now() / 1000);
+  const startTime = now + START_TIME_BUFFER_SECS;
   const endTime = now + durationSeconds;
 
   const counter = (await contract.get_counter(account.address)).toString();
   const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
 
-  const orderParams = {
-    offerer: account.address,
-    marketplace: config.marketplace1155Contract,
-    offer: {
-      item_type: "ERC20",
-      token: token.address,
-      identifier_or_criteria: "0",
-      amount: priceWei, // price PER UNIT
+  const { orderParams, typedData } = buildOffer1155Order(
+    {
+      offerer: account.address,
+      nftContract,
+      tokenId,
+      quantity: amount,
+      priceWeiPerUnit: priceWei,
+      paymentTokenAddress: token.address,
+      royaltyMaxBps,
+      startTime,
+      endTime,
+      salt: generateSalt(),
+      counter,
     },
-    consideration: {
-      item_type: "ERC1155",
-      token: nftContract,
-      identifier_or_criteria: tokenId,
-      amount, // unit quantity
-      recipient: account.address,
-    },
-    royalty_max_bps: royaltyMaxBps,
-    start_time: (now + START_TIME_BUFFER_SECS).toString(),
-    end_time: endTime.toString(),
-    salt: generateSalt(),
-    counter,
-  };
+    config,
+  );
 
-  const typedData = stringifyBigInts(
-    build1155OrderTypedData(orderParams, chainId)
-  ) as TypedData;
-
-  const signature = await account.signMessage(typedData);
-  const signatureArray = toSignatureArray(signature);
-
-  const registerPayload = stringifyBigInts({
-    parameters: {
-      ...orderParams,
-      offer: {
-        ...orderParams.offer,
-        item_type: shortString.encodeShortString(orderParams.offer.item_type),
-      },
-      consideration: {
-        ...orderParams.consideration,
-        item_type: shortString.encodeShortString(orderParams.consideration.item_type),
-      },
-    },
-    signature: signatureArray,
-  }) as Record<string, unknown>;
+  const signatureArray = toSignatureArray(await account.signMessage(typedData));
 
   // Bid pays per-unit price × quantity total — approve the full amount.
   const totalWei = BigInt(priceWei) * BigInt(amount);
   const amountU256 = cairo.uint256(totalWei.toString());
-  const approveCall = {
+  const approveCall: Call = {
     contractAddress: token.address,
     entrypoint: "approve",
     calldata: [
@@ -337,10 +255,13 @@ export async function makeOffer1155(
     ],
   };
 
-  const registerCall = contract.populate("register_order", [registerPayload]);
+  const calls = buildRegister1155Calls(
+    { orderParams, signature: signatureArray, approvalNeeded: true, approve: approveCall },
+    config,
+  );
 
   try {
-    const tx = await account.execute([approveCall, registerCall]);
+    const tx = await account.execute(calls);
     await provider.waitForTransaction(tx.transaction_hash);
     return { txHash: tx.transaction_hash };
   } catch (err) {
