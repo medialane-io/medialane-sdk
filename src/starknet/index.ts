@@ -21,7 +21,7 @@ export * from "./admin-auth/index.js";
 export * from "./siws/index.js";
 
 // Cairo ABIs
-export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, IPClubABI, IPClubNFTABI, IPSponsorshipABI, IPGenesisABI } from "./abis/index.js";
+export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, IPClubABI, IPClubNFTABI, IPClubFactoryABI, IPClubCollectionABI, IPSponsorshipABI, IPSponsorshipLicenseABI, IPGenesisABI } from "./abis/index.js";
 
 // Starknet services
 export { PopService } from "./services/pop.js";

@@ -19,11 +19,13 @@
       },
       "peerDependencies": {
         "@solana/web3.js": ">=1.90.0",
+        "@stellar/stellar-sdk": ">=13.0.0",
         "starknet": ">=6.0.0",
         "viem": ">=2.0.0",
       },
       "optionalPeers": [
         "@solana/web3.js",
+        "@stellar/stellar-sdk",
         "starknet",
         "viem",
       ],
