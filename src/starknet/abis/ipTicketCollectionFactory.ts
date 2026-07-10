@@ -50,7 +50,7 @@ export const IPTicketCollectionFactoryABI = [
       },
       {
         "type": "function",
-        "name": "deploy_ticket_collection",
+        "name": "deploy_collection",
         "inputs": [
           {
             "name": "name",
@@ -71,6 +71,47 @@ export const IPTicketCollectionFactoryABI = [
     ]
   },
   {
+    "type": "impl",
+    "name": "SRC5Impl",
+    "interface_name": "openzeppelin_introspection::interface::ISRC5"
+  },
+  {
+    "type": "enum",
+    "name": "core::bool",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_introspection::interface::ISRC5",
+    "items": [
+      {
+        "type": "function",
+        "name": "supports_interface",
+        "inputs": [
+          {
+            "name": "interface_id",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
     "type": "constructor",
     "name": "constructor",
     "inputs": [
@@ -79,6 +120,12 @@ export const IPTicketCollectionFactoryABI = [
         "type": "core::starknet::class_hash::ClassHash"
       }
     ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_introspection::src5::SRC5Component::Event",
+    "kind": "enum",
+    "variants": []
   },
   {
     "type": "event",
@@ -112,6 +159,11 @@ export const IPTicketCollectionFactoryABI = [
     "name": "ip_ticket::IPTicketCollectionFactory::IPTicketCollectionFactory::Event",
     "kind": "enum",
     "variants": [
+      {
+        "name": "SRC5Event",
+        "type": "openzeppelin_introspection::src5::SRC5Component::Event",
+        "kind": "flat"
+      },
       {
         "name": "CollectionDeployed",
         "type": "ip_ticket::IPTicketCollectionFactory::IPTicketCollectionFactory::CollectionDeployed",

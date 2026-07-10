@@ -1,98 +1,125 @@
-import { CairoOption, CairoOptionVariant, Contract, cairo, type AccountInterface } from "starknet";
+import { CairoOption, CairoOptionVariant, Contract, RpcProvider, cairo, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { normalizeAddress } from "../../utils/address.js";
 import { IPTicketCollectionABI, IPTicketCollectionFactoryABI } from "../abis/index.js";
 import { getStarknetCoordinates } from "../../chains.js";
-import type { CreateTicketCollectionParams } from "../../types/services.js";
+import type { CreateEventParams, MintTicketsParams } from "../../types/services.js";
 import type { TxResult } from "../../types/marketplace.js";
 
-export type { CreateTicketCollectionParams };
+export type { CreateEventParams, MintTicketsParams };
 
 export class TicketService {
   private readonly factoryAddress?: string;
+  private readonly config: ResolvedConfig;
 
   constructor(config: ResolvedConfig) {
+    this.config = config;
     this.factoryAddress = getStarknetCoordinates(config.chain).ipTicketsFactory;
+  }
+
+  private _factory(account: AccountInterface, factoryAddress?: string) {
+    const address = factoryAddress ?? this.factoryAddress;
+    if (!address) throw new Error("IP-Tickets factory address not configured for this chain");
+    return new Contract(IPTicketCollectionFactoryABI as any, normalizeAddress("STARKNET", address), account as any);
   }
 
   private _collection(address: string, account: AccountInterface) {
     return new Contract(IPTicketCollectionABI as any, normalizeAddress("STARKNET", address), account as any);
   }
 
-  /** Deploys a new IPTicketCollection via the factory. Caller becomes its owner. */
-  async deployTicketCollection(
+  private _collectionRead(address: string) {
+    const provider = new RpcProvider({ nodeUrl: this.config.rpcUrl });
+    return new Contract(IPTicketCollectionABI as any, normalizeAddress("STARKNET", address), provider);
+  }
+
+  /** Deploys a new IPTicketCollection via the factory. Caller becomes owner. */
+  async deployCollection(
     account: AccountInterface,
     params: { name: string; symbol: string; factoryAddress?: string }
   ): Promise<TxResult> {
-    const factoryAddress = params.factoryAddress ?? this.factoryAddress;
-    if (!factoryAddress) {
-      throw new Error("IP-Tickets factory address not configured for this chain");
-    }
-    const factory = new Contract(IPTicketCollectionFactoryABI as any, factoryAddress, account as any);
-    const call = factory.populate("deploy_ticket_collection", [params.name, params.symbol]);
+    const call = this._factory(account, params.factoryAddress).populate("deploy_collection", [params.name, params.symbol]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
 
-  /** Owner-only. Creates a new ticket collection (event/tier) inside the caller's deployed IPTicketCollection. */
-  async createTicketCollection(
-    account: AccountInterface,
-    params: CreateTicketCollectionParams
-  ): Promise<TxResult> {
-    const paymentToken = params.paymentToken
-      ? new CairoOption(CairoOptionVariant.Some, params.paymentToken)
+  /** Owner-only. Creates a new event inside the caller's deployed collection. */
+  async createEvent(account: AccountInterface, params: CreateEventParams): Promise<TxResult> {
+    const startTime = params.startTime != null
+      ? new CairoOption(CairoOptionVariant.Some, params.startTime)
       : new CairoOption(CairoOptionVariant.None);
-    const call = this._collection(params.collection, account).populate("create_ticket_collection", [
-      cairo.uint256(params.price),
+    const endTime = params.endTime != null
+      ? new CairoOption(CairoOptionVariant.Some, params.endTime)
+      : new CairoOption(CairoOptionVariant.None);
+    const call = this._collection(params.collection, account).populate("create_event", [
       cairo.uint256(params.maxSupply),
-      params.expiration,
+      startTime,
+      endTime,
       params.royaltyBps,
-      paymentToken,
       params.metadataUri,
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
 
-  /** Owner-only. Gates minting only — existing tickets keep access/transfer/redeem. */
-  async setCollectionActive(
+  /** Owner-only. Mints `amount` of `tokenId` to `to`. */
+  async mint(account: AccountInterface, params: MintTicketsParams): Promise<TxResult> {
+    const call = this._collection(params.collection, account).populate("mint", [
+      params.to,
+      cairo.uint256(params.tokenId),
+      cairo.uint256(params.amount),
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+
+  /** Owner-only. Pauses or resumes minting for one event. */
+  async pauseEvent(
     account: AccountInterface,
-    params: { collection: string; collectionId: bigint | string; active: boolean }
+    params: { collection: string; tokenId: bigint | string; active: boolean }
   ): Promise<TxResult> {
-    const call = this._collection(params.collection, account).populate("set_collection_active", [
-      cairo.uint256(params.collectionId),
+    const call = this._collection(params.collection, account).populate("pause_event", [
+      cairo.uint256(params.tokenId),
       params.active,
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
 
-  /** Mints a ticket. Prepends an ERC-20 approve when the collection is paid. */
-  async mintTicket(
-    account: AccountInterface,
-    params: { collection: string; collectionId: bigint | string; paymentToken?: string; price?: bigint | string }
-  ): Promise<TxResult> {
-    const calls = [];
-    if (params.paymentToken && params.price && BigInt(params.price) > 0n) {
-      const amount = cairo.uint256(params.price);
-      calls.push({
-        contractAddress: params.paymentToken,
-        entrypoint: "approve",
-        calldata: [normalizeAddress("STARKNET", params.collection), amount.low.toString(), amount.high.toString()],
-      });
-    }
-    calls.push(this._collection(params.collection, account).populate("mint_ticket", [cairo.uint256(params.collectionId)]));
-    const res = await account.execute(calls);
-    return { txHash: res.transaction_hash };
+  /** Read — true if holder has balance > 0 and current time is within the event window. */
+  async isValid(params: { collection: string; tokenId: bigint | string; holder: string }): Promise<boolean> {
+    const result = await this._collectionRead(params.collection).call("is_valid", [
+      cairo.uint256(params.tokenId),
+      params.holder,
+    ]);
+    return Boolean(result);
   }
 
-  /** Only the current token owner may redeem. */
-  async redeemTicket(
-    account: AccountInterface,
-    params: { collection: string; tokenId: bigint | string }
-  ): Promise<TxResult> {
-    const call = this._collection(params.collection, account).populate("redeem_ticket", [cairo.uint256(params.tokenId)]);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
+  /** Read — returns the EventRecord for a token ID. */
+  async getEvent(params: {
+    collection: string;
+    tokenId: bigint | string;
+  }): Promise<{
+    creator: string;
+    maxSupply: bigint;
+    minted: bigint;
+    startTime: number | null;
+    endTime: number | null;
+    royaltyBps: number;
+    metadataUri: string;
+    active: boolean;
+  }> {
+    const ev = await this._collectionRead(params.collection).call("get_event", [
+      cairo.uint256(params.tokenId),
+    ]) as any;
+    return {
+      creator: ev.creator as string,
+      maxSupply: BigInt(ev.max_supply),
+      minted: BigInt(ev.minted),
+      startTime: ev.start_time?.variant === "Some" ? Number(ev.start_time.values[0] ?? ev.start_time.value) : null,
+      endTime: ev.end_time?.variant === "Some" ? Number(ev.end_time.values[0] ?? ev.end_time.value) : null,
+      royaltyBps: Number(ev.royalty_bps),
+      metadataUri: ev.metadata_uri as string,
+      active: Boolean(ev.active),
+    };
   }
 }

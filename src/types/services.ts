@@ -35,19 +35,25 @@ export interface CreateDropParams {
 
 // ─── IP Tickets ────────────────────────────────────────────────────────────────
 
-export interface CreateTicketCollectionParams {
+export interface CreateEventParams {
+  /** Address of the deployed IPTicketCollection contract. */
   collection: string;
-  /** 0 = free ticket; must be non-zero with paymentToken set otherwise. */
-  price: bigint | string;
   maxSupply: bigint | string;
-  /** Unix timestamp; must be in the future. */
-  expiration: number;
-  /** Basis points, 0-10000. */
+  /** Unix timestamp (seconds). Omit for "open immediately". */
+  startTime?: number;
+  /** Unix timestamp (seconds). Omit for "never expires". */
+  endTime?: number;
+  /** Basis points, 0–10000. */
   royaltyBps: number;
-  /** Required (non-zero) when price > 0; omit for free tickets. */
-  paymentToken?: string;
-  /** ipfs:// or ar:// only — enforced on-chain. */
+  /** ipfs:// or ar:// — enforced on-chain. */
   metadataUri: string;
+}
+
+export interface MintTicketsParams {
+  collection: string;
+  tokenId: bigint | string;
+  to: string;
+  amount: bigint | string;
 }
 
 // ─── IP Club ───────────────────────────────────────────────────────────────────
