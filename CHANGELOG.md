@@ -2,6 +2,37 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.57.0] — 2026-07-10
+
+### Changed — VenueSigner capability port (Starknet venue execution model)
+
+`VenueAdapter`'s `Signer` is now a three-method **capability port**,
+`VenueSigner { address, signTypedData(data), execute(calls) }`, that the
+app implements over its own wallet layer — not a raw chain account.
+`StarknetVenue` no longer wraps `MarketplaceModule`/`Medialane1155Module`
+and no longer self-executes: it *builds* typed data + calldata via new pure
+builders, *reads* chain state (counter/approvals/receipt) on its
+`deps.provider`, and delegates sign + submit + confirm to the injected
+signer. This lets a single adapter drive every wallet (injected / Cartridge
+/ Privy) and the AVNU paymaster.
+
+**Breaking (Starknet adapter only):** `StarknetVenue`'s signer type is now
+`StarknetVenueSigner` (exported from `@medialane/sdk/starknet`), not
+starknet.js `AccountInterface`. No other adapter or `MedialaneClient`
+surface changes.
+
+### Added
+
+- `VenueSigner` (root + `/starknet`) and `StarknetVenueSigner` (`/starknet`).
+- Pure calldata builders exposed for both venues: `buildListingOrder` /
+  `buildOfferOrder` / `buildRegisterCalls` / `buildFulfillCalls` /
+  `buildCancelCalls` (+ `buildCancelTypedData`) and their `*1155*` mirrors.
+
+### Fixed
+
+- ERC-1155 fulfilment now composes the platform (creators-fund) fee, matching
+  the 721 venue — closes a latent 1155 fee-parity gap.
+
 ## [0.51.0] — 2026-07-06
 
 ### Added — price sort for collection tokens
