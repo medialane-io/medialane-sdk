@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { C as Chain, V as VenueAdapter, O as OrderRef, A as AdapterTxResult, R as RegisterOrderParams, h as VenueSigner } from './types-Bx3ax9lW.cjs';
+import { C as Chain, V as VenueAdapter, O as OrderRef, A as AdapterTxResult, R as RegisterOrderParams, h as VenueSigner } from './types-Bx3ax9lW.js';
 import { AccountInterface, constants, TypedData, Call, ProviderInterface } from 'starknet';
 
 interface RetryOptions {
@@ -1388,19 +1388,24 @@ interface CreateDropParams {
     maxSupply: bigint | string;
     initialConditions: ClaimConditions;
 }
-interface CreateTicketCollectionParams {
+interface CreateEventParams {
+    /** Address of the deployed IPTicketCollection contract. */
     collection: string;
-    /** 0 = free ticket; must be non-zero with paymentToken set otherwise. */
-    price: bigint | string;
     maxSupply: bigint | string;
-    /** Unix timestamp; must be in the future. */
-    expiration: number;
-    /** Basis points, 0-10000. */
+    /** Unix timestamp (seconds). Omit for "open immediately". */
+    startTime?: number;
+    /** Unix timestamp (seconds). Omit for "never expires". */
+    endTime?: number;
+    /** Basis points, 0–10000. */
     royaltyBps: number;
-    /** Required (non-zero) when price > 0; omit for free tickets. */
-    paymentToken?: string;
-    /** ipfs:// or ar:// only — enforced on-chain. */
+    /** ipfs:// or ar:// — enforced on-chain. */
     metadataUri: string;
+}
+interface MintTicketsParams {
+    collection: string;
+    tokenId: bigint | string;
+    to: string;
+    amount: bigint | string;
 }
 interface CreateClubParams {
     name: string;
@@ -1798,34 +1803,47 @@ declare class CreatorCoinService {
 
 declare class TicketService {
     private readonly factoryAddress?;
+    private readonly config;
     constructor(config: ResolvedConfig);
+    private _factory;
     private _collection;
-    /** Deploys a new IPTicketCollection via the factory. Caller becomes its owner. */
-    deployTicketCollection(account: AccountInterface, params: {
+    private _collectionRead;
+    /** Deploys a new IPTicketCollection via the factory. Caller becomes owner. */
+    deployCollection(account: AccountInterface, params: {
         name: string;
         symbol: string;
         factoryAddress?: string;
     }): Promise<TxResult>;
-    /** Owner-only. Creates a new ticket collection (event/tier) inside the caller's deployed IPTicketCollection. */
-    createTicketCollection(account: AccountInterface, params: CreateTicketCollectionParams): Promise<TxResult>;
-    /** Owner-only. Gates minting only — existing tickets keep access/transfer/redeem. */
-    setCollectionActive(account: AccountInterface, params: {
-        collection: string;
-        collectionId: bigint | string;
-        active: boolean;
-    }): Promise<TxResult>;
-    /** Mints a ticket. Prepends an ERC-20 approve when the collection is paid. */
-    mintTicket(account: AccountInterface, params: {
-        collection: string;
-        collectionId: bigint | string;
-        paymentToken?: string;
-        price?: bigint | string;
-    }): Promise<TxResult>;
-    /** Only the current token owner may redeem. */
-    redeemTicket(account: AccountInterface, params: {
+    /** Owner-only. Creates a new event inside the caller's deployed collection. */
+    createEvent(account: AccountInterface, params: CreateEventParams): Promise<TxResult>;
+    /** Owner-only. Mints `amount` of `tokenId` to `to`. */
+    mint(account: AccountInterface, params: MintTicketsParams): Promise<TxResult>;
+    /** Owner-only. Pauses or resumes minting for one event. */
+    pauseEvent(account: AccountInterface, params: {
         collection: string;
         tokenId: bigint | string;
+        active: boolean;
     }): Promise<TxResult>;
+    /** Read — true if holder has balance > 0 and current time is within the event window. */
+    isValid(params: {
+        collection: string;
+        tokenId: bigint | string;
+        holder: string;
+    }): Promise<boolean>;
+    /** Read — returns the EventRecord for a token ID. */
+    getEvent(params: {
+        collection: string;
+        tokenId: bigint | string;
+    }): Promise<{
+        creator: string;
+        maxSupply: bigint;
+        minted: bigint;
+        startTime: number | null;
+        endTime: number | null;
+        royaltyBps: number;
+        metadataUri: string;
+        active: boolean;
+    }>;
 }
 
 declare class ClubService {
@@ -6039,8 +6057,18 @@ declare const CreatorCoinFactoryABI: readonly [{
 
 declare const IPTicketCollectionABI: readonly [{
     readonly type: "impl";
-    readonly name: "ERC721MetadataImpl";
-    readonly interface_name: "openzeppelin_token::erc721::interface::IERC721Metadata";
+    readonly name: "ERC1155MetadataURIImpl";
+    readonly interface_name: "openzeppelin_token::erc1155::interface::IERC1155MetadataURI";
+}, {
+    readonly type: "struct";
+    readonly name: "core::integer::u256";
+    readonly members: readonly [{
+        readonly name: "low";
+        readonly type: "core::integer::u128";
+    }, {
+        readonly name: "high";
+        readonly type: "core::integer::u128";
+    }];
 }, {
     readonly type: "struct";
     readonly name: "core::byte_array::ByteArray";
@@ -6055,37 +6083,11 @@ declare const IPTicketCollectionABI: readonly [{
         readonly type: "core::internal::bounded_int::BoundedInt::<0, 30>";
     }];
 }, {
-    readonly type: "struct";
-    readonly name: "core::integer::u256";
-    readonly members: readonly [{
-        readonly name: "low";
-        readonly type: "core::integer::u128";
-    }, {
-        readonly name: "high";
-        readonly type: "core::integer::u128";
-    }];
-}, {
     readonly type: "interface";
-    readonly name: "openzeppelin_token::erc721::interface::IERC721Metadata";
+    readonly name: "openzeppelin_token::erc1155::interface::IERC1155MetadataURI";
     readonly items: readonly [{
         readonly type: "function";
-        readonly name: "name";
-        readonly inputs: readonly [];
-        readonly outputs: readonly [{
-            readonly type: "core::byte_array::ByteArray";
-        }];
-        readonly state_mutability: "view";
-    }, {
-        readonly type: "function";
-        readonly name: "symbol";
-        readonly inputs: readonly [];
-        readonly outputs: readonly [{
-            readonly type: "core::byte_array::ByteArray";
-        }];
-        readonly state_mutability: "view";
-    }, {
-        readonly type: "function";
-        readonly name: "token_uri";
+        readonly name: "uri";
         readonly inputs: readonly [{
             readonly name: "token_id";
             readonly type: "core::integer::u256";
@@ -6097,33 +6099,14 @@ declare const IPTicketCollectionABI: readonly [{
     }];
 }, {
     readonly type: "impl";
-    readonly name: "ERC721MetadataCamelOnlyImpl";
-    readonly interface_name: "openzeppelin_token::erc721::interface::IERC721MetadataCamelOnly";
-}, {
-    readonly type: "interface";
-    readonly name: "openzeppelin_token::erc721::interface::IERC721MetadataCamelOnly";
-    readonly items: readonly [{
-        readonly type: "function";
-        readonly name: "tokenURI";
-        readonly inputs: readonly [{
-            readonly name: "tokenId";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [{
-            readonly type: "core::byte_array::ByteArray";
-        }];
-        readonly state_mutability: "view";
-    }];
-}, {
-    readonly type: "impl";
-    readonly name: "IPTicketImpl";
+    readonly name: "IPTicketCollectionImpl";
     readonly interface_name: "ip_ticket::interface::IIPTicketCollection";
 }, {
     readonly type: "enum";
-    readonly name: "core::option::Option::<core::starknet::contract_address::ContractAddress>";
+    readonly name: "core::option::Option::<core::integer::u64>";
     readonly variants: readonly [{
         readonly name: "Some";
-        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly type: "core::integer::u64";
     }, {
         readonly name: "None";
         readonly type: "()";
@@ -6140,13 +6123,10 @@ declare const IPTicketCollectionABI: readonly [{
     }];
 }, {
     readonly type: "struct";
-    readonly name: "ip_ticket::types::TicketCollection";
+    readonly name: "ip_ticket::types::EventRecord";
     readonly members: readonly [{
         readonly name: "creator";
         readonly type: "core::starknet::contract_address::ContractAddress";
-    }, {
-        readonly name: "price";
-        readonly type: "core::integer::u256";
     }, {
         readonly name: "max_supply";
         readonly type: "core::integer::u256";
@@ -6154,14 +6134,14 @@ declare const IPTicketCollectionABI: readonly [{
         readonly name: "minted";
         readonly type: "core::integer::u256";
     }, {
-        readonly name: "expiration";
-        readonly type: "core::integer::u64";
+        readonly name: "start_time";
+        readonly type: "core::option::Option::<core::integer::u64>";
+    }, {
+        readonly name: "end_time";
+        readonly type: "core::option::Option::<core::integer::u64>";
     }, {
         readonly name: "royalty_bps";
-        readonly type: "core::integer::u256";
-    }, {
-        readonly name: "payment_token";
-        readonly type: "core::option::Option::<core::starknet::contract_address::ContractAddress>";
+        readonly type: "core::integer::u16";
     }, {
         readonly name: "metadata_uri";
         readonly type: "core::byte_array::ByteArray";
@@ -6170,54 +6150,23 @@ declare const IPTicketCollectionABI: readonly [{
         readonly type: "core::bool";
     }];
 }, {
-    readonly type: "struct";
-    readonly name: "ip_ticket::types::TicketData";
-    readonly members: readonly [{
-        readonly name: "token_id";
-        readonly type: "core::integer::u256";
-    }, {
-        readonly name: "owner";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-    }, {
-        readonly name: "collection_id";
-        readonly type: "core::integer::u256";
-    }, {
-        readonly name: "creator";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-    }, {
-        readonly name: "metadata_uri";
-        readonly type: "core::byte_array::ByteArray";
-    }, {
-        readonly name: "expiration";
-        readonly type: "core::integer::u64";
-    }, {
-        readonly name: "redeemed";
-        readonly type: "core::bool";
-    }, {
-        readonly name: "valid";
-        readonly type: "core::bool";
-    }];
-}, {
     readonly type: "interface";
     readonly name: "ip_ticket::interface::IIPTicketCollection";
     readonly items: readonly [{
         readonly type: "function";
-        readonly name: "create_ticket_collection";
+        readonly name: "create_event";
         readonly inputs: readonly [{
-            readonly name: "price";
-            readonly type: "core::integer::u256";
-        }, {
             readonly name: "max_supply";
             readonly type: "core::integer::u256";
         }, {
-            readonly name: "expiration";
-            readonly type: "core::integer::u64";
+            readonly name: "start_time";
+            readonly type: "core::option::Option::<core::integer::u64>";
+        }, {
+            readonly name: "end_time";
+            readonly type: "core::option::Option::<core::integer::u64>";
         }, {
             readonly name: "royalty_bps";
-            readonly type: "core::integer::u256";
-        }, {
-            readonly name: "payment_token";
-            readonly type: "core::option::Option::<core::starknet::contract_address::ContractAddress>";
+            readonly type: "core::integer::u16";
         }, {
             readonly name: "metadata_uri";
             readonly type: "core::byte_array::ByteArray";
@@ -6228,9 +6177,24 @@ declare const IPTicketCollectionABI: readonly [{
         readonly state_mutability: "external";
     }, {
         readonly type: "function";
-        readonly name: "set_collection_active";
+        readonly name: "mint";
         readonly inputs: readonly [{
-            readonly name: "collection_id";
+            readonly name: "to";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }, {
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
+        }, {
+            readonly name: "amount";
+            readonly type: "core::integer::u256";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
+    }, {
+        readonly type: "function";
+        readonly name: "pause_event";
+        readonly inputs: readonly [{
+            readonly name: "token_id";
             readonly type: "core::integer::u256";
         }, {
             readonly name: "active";
@@ -6240,33 +6204,13 @@ declare const IPTicketCollectionABI: readonly [{
         readonly state_mutability: "external";
     }, {
         readonly type: "function";
-        readonly name: "mint_ticket";
-        readonly inputs: readonly [{
-            readonly name: "collection_id";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [{
-            readonly type: "core::integer::u256";
-        }];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "redeem_ticket";
+        readonly name: "is_valid";
         readonly inputs: readonly [{
             readonly name: "token_id";
             readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "has_valid_ticket";
-        readonly inputs: readonly [{
-            readonly name: "user";
-            readonly type: "core::starknet::contract_address::ContractAddress";
         }, {
-            readonly name: "collection_id";
-            readonly type: "core::integer::u256";
+            readonly name: "holder";
+            readonly type: "core::starknet::contract_address::ContractAddress";
         }];
         readonly outputs: readonly [{
             readonly type: "core::bool";
@@ -6274,65 +6218,13 @@ declare const IPTicketCollectionABI: readonly [{
         readonly state_mutability: "view";
     }, {
         readonly type: "function";
-        readonly name: "get_ticket_collection";
-        readonly inputs: readonly [{
-            readonly name: "collection_id";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [{
-            readonly type: "ip_ticket::types::TicketCollection";
-        }];
-        readonly state_mutability: "view";
-    }, {
-        readonly type: "function";
-        readonly name: "get_ticket_data";
+        readonly name: "get_event";
         readonly inputs: readonly [{
             readonly name: "token_id";
             readonly type: "core::integer::u256";
         }];
         readonly outputs: readonly [{
-            readonly type: "ip_ticket::types::TicketData";
-        }];
-        readonly state_mutability: "view";
-    }, {
-        readonly type: "function";
-        readonly name: "get_ticket_collection_id";
-        readonly inputs: readonly [{
-            readonly name: "token_id";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [{
-            readonly type: "core::integer::u256";
-        }];
-        readonly state_mutability: "view";
-    }, {
-        readonly type: "function";
-        readonly name: "get_active_ticket_balance";
-        readonly inputs: readonly [{
-            readonly name: "user";
-            readonly type: "core::starknet::contract_address::ContractAddress";
-        }, {
-            readonly name: "collection_id";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [{
-            readonly type: "core::integer::u256";
-        }];
-        readonly state_mutability: "view";
-    }, {
-        readonly type: "function";
-        readonly name: "get_last_collection_id";
-        readonly inputs: readonly [];
-        readonly outputs: readonly [{
-            readonly type: "core::integer::u256";
-        }];
-        readonly state_mutability: "view";
-    }, {
-        readonly type: "function";
-        readonly name: "total_supply";
-        readonly inputs: readonly [];
-        readonly outputs: readonly [{
-            readonly type: "core::integer::u256";
+            readonly type: "ip_ticket::types::EventRecord";
         }];
         readonly state_mutability: "view";
     }, {
@@ -6363,11 +6255,33 @@ declare const IPTicketCollectionABI: readonly [{
             readonly type: "(core::starknet::contract_address::ContractAddress, core::integer::u256)";
         }];
         readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "version";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly type: "core::byte_array::ByteArray";
+        }];
+        readonly state_mutability: "view";
     }];
 }, {
     readonly type: "impl";
-    readonly name: "ERC721Impl";
-    readonly interface_name: "openzeppelin_token::erc721::interface::IERC721";
+    readonly name: "ERC1155Impl";
+    readonly interface_name: "openzeppelin_token::erc1155::interface::IERC1155";
+}, {
+    readonly type: "struct";
+    readonly name: "core::array::Span::<core::starknet::contract_address::ContractAddress>";
+    readonly members: readonly [{
+        readonly name: "snapshot";
+        readonly type: "@core::array::Array::<core::starknet::contract_address::ContractAddress>";
+    }];
+}, {
+    readonly type: "struct";
+    readonly name: "core::array::Span::<core::integer::u256>";
+    readonly members: readonly [{
+        readonly name: "snapshot";
+        readonly type: "@core::array::Array::<core::integer::u256>";
+    }];
 }, {
     readonly type: "struct";
     readonly name: "core::array::Span::<core::felt252>";
@@ -6377,13 +6291,16 @@ declare const IPTicketCollectionABI: readonly [{
     }];
 }, {
     readonly type: "interface";
-    readonly name: "openzeppelin_token::erc721::interface::IERC721";
+    readonly name: "openzeppelin_token::erc1155::interface::IERC1155";
     readonly items: readonly [{
         readonly type: "function";
         readonly name: "balance_of";
         readonly inputs: readonly [{
             readonly name: "account";
             readonly type: "core::starknet::contract_address::ContractAddress";
+        }, {
+            readonly name: "token_id";
+            readonly type: "core::integer::u256";
         }];
         readonly outputs: readonly [{
             readonly type: "core::integer::u256";
@@ -6391,13 +6308,16 @@ declare const IPTicketCollectionABI: readonly [{
         readonly state_mutability: "view";
     }, {
         readonly type: "function";
-        readonly name: "owner_of";
+        readonly name: "balance_of_batch";
         readonly inputs: readonly [{
-            readonly name: "token_id";
-            readonly type: "core::integer::u256";
+            readonly name: "accounts";
+            readonly type: "core::array::Span::<core::starknet::contract_address::ContractAddress>";
+        }, {
+            readonly name: "token_ids";
+            readonly type: "core::array::Span::<core::integer::u256>";
         }];
         readonly outputs: readonly [{
-            readonly type: "core::starknet::contract_address::ContractAddress";
+            readonly type: "core::array::Span::<core::integer::u256>";
         }];
         readonly state_mutability: "view";
     }, {
@@ -6413,6 +6333,9 @@ declare const IPTicketCollectionABI: readonly [{
             readonly name: "token_id";
             readonly type: "core::integer::u256";
         }, {
+            readonly name: "value";
+            readonly type: "core::integer::u256";
+        }, {
             readonly name: "data";
             readonly type: "core::array::Span::<core::felt252>";
         }];
@@ -6420,7 +6343,7 @@ declare const IPTicketCollectionABI: readonly [{
         readonly state_mutability: "external";
     }, {
         readonly type: "function";
-        readonly name: "transfer_from";
+        readonly name: "safe_batch_transfer_from";
         readonly inputs: readonly [{
             readonly name: "from";
             readonly type: "core::starknet::contract_address::ContractAddress";
@@ -6428,46 +6351,17 @@ declare const IPTicketCollectionABI: readonly [{
             readonly name: "to";
             readonly type: "core::starknet::contract_address::ContractAddress";
         }, {
-            readonly name: "token_id";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "approve";
-        readonly inputs: readonly [{
-            readonly name: "to";
-            readonly type: "core::starknet::contract_address::ContractAddress";
+            readonly name: "token_ids";
+            readonly type: "core::array::Span::<core::integer::u256>";
         }, {
-            readonly name: "token_id";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "set_approval_for_all";
-        readonly inputs: readonly [{
-            readonly name: "operator";
-            readonly type: "core::starknet::contract_address::ContractAddress";
+            readonly name: "values";
+            readonly type: "core::array::Span::<core::integer::u256>";
         }, {
-            readonly name: "approved";
-            readonly type: "core::bool";
+            readonly name: "data";
+            readonly type: "core::array::Span::<core::felt252>";
         }];
         readonly outputs: readonly [];
         readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "get_approved";
-        readonly inputs: readonly [{
-            readonly name: "token_id";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [{
-            readonly type: "core::starknet::contract_address::ContractAddress";
-        }];
-        readonly state_mutability: "view";
     }, {
         readonly type: "function";
         readonly name: "is_approved_for_all";
@@ -6482,20 +6376,35 @@ declare const IPTicketCollectionABI: readonly [{
             readonly type: "core::bool";
         }];
         readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "set_approval_for_all";
+        readonly inputs: readonly [{
+            readonly name: "operator";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }, {
+            readonly name: "approved";
+            readonly type: "core::bool";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
     }];
 }, {
     readonly type: "impl";
-    readonly name: "ERC721CamelOnly";
-    readonly interface_name: "openzeppelin_token::erc721::interface::IERC721CamelOnly";
+    readonly name: "ERC1155CamelImpl";
+    readonly interface_name: "openzeppelin_token::erc1155::interface::IERC1155Camel";
 }, {
     readonly type: "interface";
-    readonly name: "openzeppelin_token::erc721::interface::IERC721CamelOnly";
+    readonly name: "openzeppelin_token::erc1155::interface::IERC1155Camel";
     readonly items: readonly [{
         readonly type: "function";
         readonly name: "balanceOf";
         readonly inputs: readonly [{
             readonly name: "account";
             readonly type: "core::starknet::contract_address::ContractAddress";
+        }, {
+            readonly name: "tokenId";
+            readonly type: "core::integer::u256";
         }];
         readonly outputs: readonly [{
             readonly type: "core::integer::u256";
@@ -6503,13 +6412,16 @@ declare const IPTicketCollectionABI: readonly [{
         readonly state_mutability: "view";
     }, {
         readonly type: "function";
-        readonly name: "ownerOf";
+        readonly name: "balanceOfBatch";
         readonly inputs: readonly [{
-            readonly name: "tokenId";
-            readonly type: "core::integer::u256";
+            readonly name: "accounts";
+            readonly type: "core::array::Span::<core::starknet::contract_address::ContractAddress>";
+        }, {
+            readonly name: "tokenIds";
+            readonly type: "core::array::Span::<core::integer::u256>";
         }];
         readonly outputs: readonly [{
-            readonly type: "core::starknet::contract_address::ContractAddress";
+            readonly type: "core::array::Span::<core::integer::u256>";
         }];
         readonly state_mutability: "view";
     }, {
@@ -6525,6 +6437,9 @@ declare const IPTicketCollectionABI: readonly [{
             readonly name: "tokenId";
             readonly type: "core::integer::u256";
         }, {
+            readonly name: "value";
+            readonly type: "core::integer::u256";
+        }, {
             readonly name: "data";
             readonly type: "core::array::Span::<core::felt252>";
         }];
@@ -6532,7 +6447,7 @@ declare const IPTicketCollectionABI: readonly [{
         readonly state_mutability: "external";
     }, {
         readonly type: "function";
-        readonly name: "transferFrom";
+        readonly name: "safeBatchTransferFrom";
         readonly inputs: readonly [{
             readonly name: "from";
             readonly type: "core::starknet::contract_address::ContractAddress";
@@ -6540,34 +6455,17 @@ declare const IPTicketCollectionABI: readonly [{
             readonly name: "to";
             readonly type: "core::starknet::contract_address::ContractAddress";
         }, {
-            readonly name: "tokenId";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [];
-        readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "setApprovalForAll";
-        readonly inputs: readonly [{
-            readonly name: "operator";
-            readonly type: "core::starknet::contract_address::ContractAddress";
+            readonly name: "tokenIds";
+            readonly type: "core::array::Span::<core::integer::u256>";
         }, {
-            readonly name: "approved";
-            readonly type: "core::bool";
+            readonly name: "values";
+            readonly type: "core::array::Span::<core::integer::u256>";
+        }, {
+            readonly name: "data";
+            readonly type: "core::array::Span::<core::felt252>";
         }];
         readonly outputs: readonly [];
         readonly state_mutability: "external";
-    }, {
-        readonly type: "function";
-        readonly name: "getApproved";
-        readonly inputs: readonly [{
-            readonly name: "tokenId";
-            readonly type: "core::integer::u256";
-        }];
-        readonly outputs: readonly [{
-            readonly type: "core::starknet::contract_address::ContractAddress";
-        }];
-        readonly state_mutability: "view";
     }, {
         readonly type: "function";
         readonly name: "isApprovedForAll";
@@ -6582,6 +6480,18 @@ declare const IPTicketCollectionABI: readonly [{
             readonly type: "core::bool";
         }];
         readonly state_mutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "setApprovalForAll";
+        readonly inputs: readonly [{
+            readonly name: "operator";
+            readonly type: "core::starknet::contract_address::ContractAddress";
+        }, {
+            readonly name: "approved";
+            readonly type: "core::bool";
+        }];
+        readonly outputs: readonly [];
+        readonly state_mutability: "external";
     }];
 }, {
     readonly type: "impl";
@@ -6663,9 +6573,13 @@ declare const IPTicketCollectionABI: readonly [{
     }];
 }, {
     readonly type: "event";
-    readonly name: "openzeppelin_token::erc721::erc721::ERC721Component::Transfer";
+    readonly name: "openzeppelin_token::erc1155::erc1155::ERC1155Component::TransferSingle";
     readonly kind: "struct";
     readonly members: readonly [{
+        readonly name: "operator";
+        readonly type: "core::starknet::contract_address::ContractAddress";
+        readonly kind: "key";
+    }, {
         readonly name: "from";
         readonly type: "core::starknet::contract_address::ContractAddress";
         readonly kind: "key";
@@ -6674,30 +6588,42 @@ declare const IPTicketCollectionABI: readonly [{
         readonly type: "core::starknet::contract_address::ContractAddress";
         readonly kind: "key";
     }, {
-        readonly name: "token_id";
+        readonly name: "id";
         readonly type: "core::integer::u256";
-        readonly kind: "key";
+        readonly kind: "data";
+    }, {
+        readonly name: "value";
+        readonly type: "core::integer::u256";
+        readonly kind: "data";
     }];
 }, {
     readonly type: "event";
-    readonly name: "openzeppelin_token::erc721::erc721::ERC721Component::Approval";
+    readonly name: "openzeppelin_token::erc1155::erc1155::ERC1155Component::TransferBatch";
     readonly kind: "struct";
     readonly members: readonly [{
-        readonly name: "owner";
+        readonly name: "operator";
         readonly type: "core::starknet::contract_address::ContractAddress";
         readonly kind: "key";
     }, {
-        readonly name: "approved";
+        readonly name: "from";
         readonly type: "core::starknet::contract_address::ContractAddress";
         readonly kind: "key";
     }, {
-        readonly name: "token_id";
-        readonly type: "core::integer::u256";
+        readonly name: "to";
+        readonly type: "core::starknet::contract_address::ContractAddress";
         readonly kind: "key";
+    }, {
+        readonly name: "ids";
+        readonly type: "core::array::Span::<core::integer::u256>";
+        readonly kind: "data";
+    }, {
+        readonly name: "values";
+        readonly type: "core::array::Span::<core::integer::u256>";
+        readonly kind: "data";
     }];
 }, {
     readonly type: "event";
-    readonly name: "openzeppelin_token::erc721::erc721::ERC721Component::ApprovalForAll";
+    readonly name: "openzeppelin_token::erc1155::erc1155::ERC1155Component::ApprovalForAll";
     readonly kind: "struct";
     readonly members: readonly [{
         readonly name: "owner";
@@ -6714,19 +6640,36 @@ declare const IPTicketCollectionABI: readonly [{
     }];
 }, {
     readonly type: "event";
-    readonly name: "openzeppelin_token::erc721::erc721::ERC721Component::Event";
+    readonly name: "openzeppelin_token::erc1155::erc1155::ERC1155Component::URI";
+    readonly kind: "struct";
+    readonly members: readonly [{
+        readonly name: "value";
+        readonly type: "core::byte_array::ByteArray";
+        readonly kind: "data";
+    }, {
+        readonly name: "id";
+        readonly type: "core::integer::u256";
+        readonly kind: "key";
+    }];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_token::erc1155::erc1155::ERC1155Component::Event";
     readonly kind: "enum";
     readonly variants: readonly [{
-        readonly name: "Transfer";
-        readonly type: "openzeppelin_token::erc721::erc721::ERC721Component::Transfer";
+        readonly name: "TransferSingle";
+        readonly type: "openzeppelin_token::erc1155::erc1155::ERC1155Component::TransferSingle";
         readonly kind: "nested";
     }, {
-        readonly name: "Approval";
-        readonly type: "openzeppelin_token::erc721::erc721::ERC721Component::Approval";
+        readonly name: "TransferBatch";
+        readonly type: "openzeppelin_token::erc1155::erc1155::ERC1155Component::TransferBatch";
         readonly kind: "nested";
     }, {
         readonly name: "ApprovalForAll";
-        readonly type: "openzeppelin_token::erc721::erc721::ERC721Component::ApprovalForAll";
+        readonly type: "openzeppelin_token::erc1155::erc1155::ERC1155Component::ApprovalForAll";
+        readonly kind: "nested";
+    }, {
+        readonly name: "URI";
+        readonly type: "openzeppelin_token::erc1155::erc1155::ERC1155Component::URI";
         readonly kind: "nested";
     }];
 }, {
@@ -6775,35 +6718,23 @@ declare const IPTicketCollectionABI: readonly [{
     }];
 }, {
     readonly type: "event";
-    readonly name: "ip_ticket::IPTicketCollection::IPTicketCollection::TicketCollectionCreated";
+    readonly name: "ip_ticket::IPTicketCollection::IPTicketCollection::EventCreated";
     readonly kind: "struct";
     readonly members: readonly [{
-        readonly name: "collection_id";
+        readonly name: "token_id";
         readonly type: "core::integer::u256";
         readonly kind: "key";
-    }, {
-        readonly name: "creator";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-        readonly kind: "key";
-    }, {
-        readonly name: "price";
-        readonly type: "core::integer::u256";
-        readonly kind: "data";
     }, {
         readonly name: "max_supply";
         readonly type: "core::integer::u256";
         readonly kind: "data";
     }, {
-        readonly name: "expiration";
-        readonly type: "core::integer::u64";
+        readonly name: "start_time";
+        readonly type: "core::option::Option::<core::integer::u64>";
         readonly kind: "data";
     }, {
-        readonly name: "royalty_bps";
-        readonly type: "core::integer::u256";
-        readonly kind: "data";
-    }, {
-        readonly name: "payment_token";
-        readonly type: "core::option::Option::<core::starknet::contract_address::ContractAddress>";
+        readonly name: "end_time";
+        readonly type: "core::option::Option::<core::integer::u64>";
         readonly kind: "data";
     }, {
         readonly name: "metadata_uri";
@@ -6816,61 +6747,15 @@ declare const IPTicketCollectionABI: readonly [{
     }];
 }, {
     readonly type: "event";
-    readonly name: "ip_ticket::IPTicketCollection::IPTicketCollection::CollectionStatusUpdated";
+    readonly name: "ip_ticket::IPTicketCollection::IPTicketCollection::EventPaused";
     readonly kind: "struct";
     readonly members: readonly [{
-        readonly name: "collection_id";
+        readonly name: "token_id";
         readonly type: "core::integer::u256";
         readonly kind: "key";
     }, {
         readonly name: "active";
         readonly type: "core::bool";
-        readonly kind: "data";
-    }, {
-        readonly name: "updated_at";
-        readonly type: "core::integer::u64";
-        readonly kind: "data";
-    }];
-}, {
-    readonly type: "event";
-    readonly name: "ip_ticket::IPTicketCollection::IPTicketCollection::TicketMinted";
-    readonly kind: "struct";
-    readonly members: readonly [{
-        readonly name: "token_id";
-        readonly type: "core::integer::u256";
-        readonly kind: "key";
-    }, {
-        readonly name: "collection_id";
-        readonly type: "core::integer::u256";
-        readonly kind: "key";
-    }, {
-        readonly name: "owner";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-        readonly kind: "key";
-    }, {
-        readonly name: "minted_at";
-        readonly type: "core::integer::u64";
-        readonly kind: "data";
-    }];
-}, {
-    readonly type: "event";
-    readonly name: "ip_ticket::IPTicketCollection::IPTicketCollection::TicketRedeemed";
-    readonly kind: "struct";
-    readonly members: readonly [{
-        readonly name: "token_id";
-        readonly type: "core::integer::u256";
-        readonly kind: "key";
-    }, {
-        readonly name: "collection_id";
-        readonly type: "core::integer::u256";
-        readonly kind: "key";
-    }, {
-        readonly name: "owner";
-        readonly type: "core::starknet::contract_address::ContractAddress";
-        readonly kind: "key";
-    }, {
-        readonly name: "redeemed_at";
-        readonly type: "core::integer::u64";
         readonly kind: "data";
     }];
 }, {
@@ -6878,8 +6763,8 @@ declare const IPTicketCollectionABI: readonly [{
     readonly name: "ip_ticket::IPTicketCollection::IPTicketCollection::Event";
     readonly kind: "enum";
     readonly variants: readonly [{
-        readonly name: "ERC721Event";
-        readonly type: "openzeppelin_token::erc721::erc721::ERC721Component::Event";
+        readonly name: "ERC1155Event";
+        readonly type: "openzeppelin_token::erc1155::erc1155::ERC1155Component::Event";
         readonly kind: "flat";
     }, {
         readonly name: "SRC5Event";
@@ -6890,20 +6775,12 @@ declare const IPTicketCollectionABI: readonly [{
         readonly type: "openzeppelin_access::ownable::ownable::OwnableComponent::Event";
         readonly kind: "flat";
     }, {
-        readonly name: "TicketCollectionCreated";
-        readonly type: "ip_ticket::IPTicketCollection::IPTicketCollection::TicketCollectionCreated";
+        readonly name: "EventCreated";
+        readonly type: "ip_ticket::IPTicketCollection::IPTicketCollection::EventCreated";
         readonly kind: "nested";
     }, {
-        readonly name: "CollectionStatusUpdated";
-        readonly type: "ip_ticket::IPTicketCollection::IPTicketCollection::CollectionStatusUpdated";
-        readonly kind: "nested";
-    }, {
-        readonly name: "TicketMinted";
-        readonly type: "ip_ticket::IPTicketCollection::IPTicketCollection::TicketMinted";
-        readonly kind: "nested";
-    }, {
-        readonly name: "TicketRedeemed";
-        readonly type: "ip_ticket::IPTicketCollection::IPTicketCollection::TicketRedeemed";
+        readonly name: "EventPaused";
+        readonly type: "ip_ticket::IPTicketCollection::IPTicketCollection::EventPaused";
         readonly kind: "nested";
     }];
 }];
@@ -6946,7 +6823,7 @@ declare const IPTicketCollectionFactoryABI: readonly [{
         readonly state_mutability: "view";
     }, {
         readonly type: "function";
-        readonly name: "deploy_ticket_collection";
+        readonly name: "deploy_collection";
         readonly inputs: readonly [{
             readonly name: "name";
             readonly type: "core::byte_array::ByteArray";
@@ -6960,12 +6837,46 @@ declare const IPTicketCollectionFactoryABI: readonly [{
         readonly state_mutability: "external";
     }];
 }, {
+    readonly type: "impl";
+    readonly name: "SRC5Impl";
+    readonly interface_name: "openzeppelin_introspection::interface::ISRC5";
+}, {
+    readonly type: "enum";
+    readonly name: "core::bool";
+    readonly variants: readonly [{
+        readonly name: "False";
+        readonly type: "()";
+    }, {
+        readonly name: "True";
+        readonly type: "()";
+    }];
+}, {
+    readonly type: "interface";
+    readonly name: "openzeppelin_introspection::interface::ISRC5";
+    readonly items: readonly [{
+        readonly type: "function";
+        readonly name: "supports_interface";
+        readonly inputs: readonly [{
+            readonly name: "interface_id";
+            readonly type: "core::felt252";
+        }];
+        readonly outputs: readonly [{
+            readonly type: "core::bool";
+        }];
+        readonly state_mutability: "view";
+    }];
+}, {
     readonly type: "constructor";
     readonly name: "constructor";
     readonly inputs: readonly [{
         readonly name: "collection_class_hash";
         readonly type: "core::starknet::class_hash::ClassHash";
     }];
+}, {
+    readonly type: "event";
+    readonly name: "openzeppelin_introspection::src5::SRC5Component::Event";
+    readonly kind: "enum";
+    readonly variants: readonly [];
 }, {
     readonly type: "event";
     readonly name: "ip_ticket::IPTicketCollectionFactory::IPTicketCollectionFactory::CollectionDeployed";
@@ -6992,6 +6903,10 @@ declare const IPTicketCollectionFactoryABI: readonly [{
     readonly name: "ip_ticket::IPTicketCollectionFactory::IPTicketCollectionFactory::Event";
     readonly kind: "enum";
     readonly variants: readonly [{
+        readonly name: "SRC5Event";
+        readonly type: "openzeppelin_introspection::src5::SRC5Component::Event";
+        readonly kind: "flat";
+    }, {
         readonly name: "CollectionDeployed";
         readonly type: "ip_ticket::IPTicketCollectionFactory::IPTicketCollectionFactory::CollectionDeployed";
         readonly kind: "nested";
@@ -10384,4 +10299,4 @@ declare function build1155CancellationTypedData(message: Record<string, unknown>
 
 type StarknetVenueSigner = VenueSigner<TypedData, Call>;
 
-export { type ApiRewardsConfig as $, ADMIN_HEADERS as A, type ApiCreatorProfile as B, type ApiIntent as C, type ApiIntentCreated as D, type ApiKeyStatus as E, type ApiMeta as F, type ApiMetadataSignedUrl as G, type ApiMetadataUpload as H, type ApiOrder as I, type ApiOrderConsideration as J, type ApiOrderOffer as K, type ApiOrderPrice as L, type ApiOrderTokenMeta as M, type ApiOrderTxHash as N, type ApiOrdersQuery as O, type ApiPointEvent as P, type ApiPortalKey as Q, type ApiPortalKeyCreated as R, type ServiceDefinition as S, type ApiPortalMe as T, type ApiPublicRemix as U, type ApiRemixOffer as V, type ApiRemixOfferPrice as W, type ApiRemixOffersQuery as X, type ApiResponse as Y, type ApiRewardsBadge as Z, type ApiRewardsBatchEntry as _, type ServiceCapability as a, FeeConfigSchema as a$, type ApiRewardsLeaderboardEntry as a0, type ApiRewardsLevel as a1, type ApiSearchCollectionResult as a2, type ApiSearchCreatorResult as a3, type ApiSearchResult as a4, type ApiSearchTokenResult as a5, type ApiToken as a6, type ApiTokenBalance as a7, type ApiTokenMetadata as a8, type ApiUsageDay as a9, type CreateCreatorCoinParams as aA, type CreateDropParams as aB, type CreateGrantOpts as aC, type CreateListing1155Params as aD, type CreateListingIntentParams as aE, type CreateListingParams as aF, type CreateMintIntentParams as aG, type CreatePopCollectionParams as aH, type CreateRemixOfferParams as aI, type CreateSponsorshipOfferParams as aJ, type CreateTicketCollectionParams as aK, type CreateWebhookParams as aL, CreatorCoinFactoryABI as aM, type CreatorCoinPrice as aN, type CreatorCoinReceiptLike as aO, CreatorCoinService as aP, type DeployClubParams as aQ, type DeployCollectionParams as aR, DropCollectionABI as aS, DropFactoryABI as aT, type DropMintStatus as aU, DropService as aV, ERC1155CollectionService as aW, type EkuboLaunchParams as aX, type EkuboPoolParams as aY, type EnforcementDeclaration as aZ, type FeeConfig as a_, type ApiUserRewards as aa, type ApiUserWallet as ab, type ApiWebhookCreated as ac, type ApiWebhookEndpoint as ad, type AutoRemixOfferParams as ae, type BatchMintEditionParams as af, type BuildFeeCallParams as ag, MAX_SUPPLY as ah, MIN_SUPPLY as ai, type CancelOrder1155Params as aj, type CancelOrderIntentParams as ak, type CancelOrderParams as al, type Cancelation as am, type CartItem as an, type ChainFilter as ao, type ClaimConditions as ap, ClubService as aq, type CollectionSort as ar, type CollectionTokensSort as as, type ConfirmRemixOfferParams as at, type ConfirmSelfRemixParams as au, type ConsiderationItem as av, type CreateClubParams as aw, type CreateCollectionIntentParams as ax, type CreateCollectionParams as ay, type CreateCounterOfferIntentParams as az, ADMIN_SCOPE as b, type StarknetVenueDeps as b$, type FeeSurface as b0, type FulfillOrder1155Params as b1, type FulfillOrderIntentParams as b2, type FulfillOrderParams as b3, IPClubABI as b4, IPClubCollectionABI as b5, IPClubFactoryABI as b6, IPClubNFTABI as b7, IPCollection1155ABI as b8, IPCollection1155FactoryABI as b9, type MintEditionParams as bA, type MintParams as bB, OPEN_LICENSES as bC, type OfferItem as bD, type OpenLicense as bE, type Order as bF, type OrderDetails as bG, type OrderParameters as bH, type OrderStatus as bI, POPCollectionABI as bJ, POPFactoryABI as bK, type ParsedAdminHeaders as bL, type PopBatchEligibilityItem as bM, type PopClaimStatus as bN, type PopEventType as bO, PopService as bP, type RemixOfferStatus as bQ, type RequestSiwsTokenArgs as bR, type ResolvedConfig as bS, type ResolvedFeeConfig as bT, type ResolvedOrder as bU, type RetryOptions as bV, type ServiceEventDeclaration as bW, type SiwsSigner as bX, type SortOrder as bY, SponsorshipService as bZ, StarknetVenue as b_, IPCollectionABI as ba, IPGenesisABI as bb, IPMarketplaceABI as bc, IPNftABI as bd, IPSponsorshipABI as be, IPSponsorshipLicenseABI as bf, IPTicketCollectionABI as bg, IPTicketCollectionFactoryABI as bh, type IPType as bi, type IntentCall as bj, type IntentStatus as bk, type IntentType as bl, type IpAttribute as bm, type IpNftMetadata as bn, LAUNCH_PRICE_QUOTE_PER_COIN as bo, type MakeOffer1155Params as bp, type MakeOfferIntentParams as bq, type MakeOfferParams as br, MarketplaceModule as bs, Medialane1155ABI as bt, Medialane1155Module as bu, MedialaneApiError as bv, MedialaneClient as bw, type MedialaneConfig as bx, MedialaneError as by, type MedialaneErrorCode as bz, type ActivityType as c, type StarknetVenueSigner as c0, type TenantPlan as c1, TicketService as c2, type TxResult as c3, VALIDATED_EKUBO_PARAMS as c4, type WebhookEventType as c5, type WebhookStatus as c6, adminRequestDigest as c7, build1155CancellationTypedData as c8, build1155OrderTypedData as c9, teamCoinsRaw as cA, validateName as cB, validateSupply as cC, validateSymbol as cD, verifyAdminRequestSig as cE, buildAdminSessionTypedData as ca, buildCancellationTypedData as cb, buildCreateCreatorCoinCall as cc, buildFeeCall as cd, buildLaunchOnEkuboCalls as ce, buildOrderTypedData as cf, buybackQuoteRaw as cg, toRaw as ch, createAdminSessionGrant as ci, encodeAdminHeaders as cj, encodeByteArray as ck, fdvHuman as cl, getCreatorCoinPrice as cm, getSiwsStorageKey as cn, getStoredSiwsToken as co, isSiwsTokenValid as cp, normalizeSiwsSignature as cq, parseAdminHeaders as cr, parseCreatorCoinCreated as cs, randomNonce as ct, requestSiwsToken as cu, resolveConfig as cv, resolveFeeConfig as cw, sessionKeyHashOf as cx, signAdminRequest as cy, storeSiwsToken as cz, type AddSupplyParams as d, type AdminGrant as e, type AdminRequest as f, type AdminRequestSig as g, type AdminSession as h, type AdminSessionTypedDataInput as i, type ApiActivitiesQuery as j, type ApiActivity as k, type ApiActivityPrice as l, type ApiAdminCollectionClaim as m, type ApiAppSource as n, type ApiChain as o, ApiClient as p, type ApiCoin as q, type ApiCoinsQuery as r, type ApiCollection as s, type ApiCollectionClaim as t, type ApiCollectionProfile as u, type ApiCollectionSlugClaim as v, type ApiCollectionsQuery as w, type ApiComment as x, type ApiCounterOffersQuery as y, type ApiCreatorListResult as z };
+export { type ApiRewardsConfig as $, ADMIN_HEADERS as A, type ApiCreatorProfile as B, type ApiIntent as C, type ApiIntentCreated as D, type ApiKeyStatus as E, type ApiMeta as F, type ApiMetadataSignedUrl as G, type ApiMetadataUpload as H, type ApiOrder as I, type ApiOrderConsideration as J, type ApiOrderOffer as K, type ApiOrderPrice as L, type ApiOrderTokenMeta as M, type ApiOrderTxHash as N, type ApiOrdersQuery as O, type ApiPointEvent as P, type ApiPortalKey as Q, type ApiPortalKeyCreated as R, type ServiceDefinition as S, type ApiPortalMe as T, type ApiPublicRemix as U, type ApiRemixOffer as V, type ApiRemixOfferPrice as W, type ApiRemixOffersQuery as X, type ApiResponse as Y, type ApiRewardsBadge as Z, type ApiRewardsBatchEntry as _, type ServiceCapability as a, FeeConfigSchema as a$, type ApiRewardsLeaderboardEntry as a0, type ApiRewardsLevel as a1, type ApiSearchCollectionResult as a2, type ApiSearchCreatorResult as a3, type ApiSearchResult as a4, type ApiSearchTokenResult as a5, type ApiToken as a6, type ApiTokenBalance as a7, type ApiTokenMetadata as a8, type ApiUsageDay as a9, type CreateCreatorCoinParams as aA, type CreateDropParams as aB, type CreateEventParams as aC, type CreateGrantOpts as aD, type CreateListing1155Params as aE, type CreateListingIntentParams as aF, type CreateListingParams as aG, type CreateMintIntentParams as aH, type CreatePopCollectionParams as aI, type CreateRemixOfferParams as aJ, type CreateSponsorshipOfferParams as aK, type CreateWebhookParams as aL, CreatorCoinFactoryABI as aM, type CreatorCoinPrice as aN, type CreatorCoinReceiptLike as aO, CreatorCoinService as aP, type DeployClubParams as aQ, type DeployCollectionParams as aR, DropCollectionABI as aS, DropFactoryABI as aT, type DropMintStatus as aU, DropService as aV, ERC1155CollectionService as aW, type EkuboLaunchParams as aX, type EkuboPoolParams as aY, type EnforcementDeclaration as aZ, type FeeConfig as a_, type ApiUserRewards as aa, type ApiUserWallet as ab, type ApiWebhookCreated as ac, type ApiWebhookEndpoint as ad, type AutoRemixOfferParams as ae, type BatchMintEditionParams as af, type BuildFeeCallParams as ag, MAX_SUPPLY as ah, MIN_SUPPLY as ai, type CancelOrder1155Params as aj, type CancelOrderIntentParams as ak, type CancelOrderParams as al, type Cancelation as am, type CartItem as an, type ChainFilter as ao, type ClaimConditions as ap, ClubService as aq, type CollectionSort as ar, type CollectionTokensSort as as, type ConfirmRemixOfferParams as at, type ConfirmSelfRemixParams as au, type ConsiderationItem as av, type CreateClubParams as aw, type CreateCollectionIntentParams as ax, type CreateCollectionParams as ay, type CreateCounterOfferIntentParams as az, ADMIN_SCOPE as b, StarknetVenue as b$, type FeeSurface as b0, type FulfillOrder1155Params as b1, type FulfillOrderIntentParams as b2, type FulfillOrderParams as b3, IPClubABI as b4, IPClubCollectionABI as b5, IPClubFactoryABI as b6, IPClubNFTABI as b7, IPCollection1155ABI as b8, IPCollection1155FactoryABI as b9, type MintEditionParams as bA, type MintParams as bB, type MintTicketsParams as bC, OPEN_LICENSES as bD, type OfferItem as bE, type OpenLicense as bF, type Order as bG, type OrderDetails as bH, type OrderParameters as bI, type OrderStatus as bJ, POPCollectionABI as bK, POPFactoryABI as bL, type ParsedAdminHeaders as bM, type PopBatchEligibilityItem as bN, type PopClaimStatus as bO, type PopEventType as bP, PopService as bQ, type RemixOfferStatus as bR, type RequestSiwsTokenArgs as bS, type ResolvedConfig as bT, type ResolvedFeeConfig as bU, type ResolvedOrder as bV, type RetryOptions as bW, type ServiceEventDeclaration as bX, type SiwsSigner as bY, type SortOrder as bZ, SponsorshipService as b_, IPCollectionABI as ba, IPGenesisABI as bb, IPMarketplaceABI as bc, IPNftABI as bd, IPSponsorshipABI as be, IPSponsorshipLicenseABI as bf, IPTicketCollectionABI as bg, IPTicketCollectionFactoryABI as bh, type IPType as bi, type IntentCall as bj, type IntentStatus as bk, type IntentType as bl, type IpAttribute as bm, type IpNftMetadata as bn, LAUNCH_PRICE_QUOTE_PER_COIN as bo, type MakeOffer1155Params as bp, type MakeOfferIntentParams as bq, type MakeOfferParams as br, MarketplaceModule as bs, Medialane1155ABI as bt, Medialane1155Module as bu, MedialaneApiError as bv, MedialaneClient as bw, type MedialaneConfig as bx, MedialaneError as by, type MedialaneErrorCode as bz, type ActivityType as c, type StarknetVenueDeps as c0, type StarknetVenueSigner as c1, type TenantPlan as c2, TicketService as c3, type TxResult as c4, VALIDATED_EKUBO_PARAMS as c5, type WebhookEventType as c6, type WebhookStatus as c7, adminRequestDigest as c8, build1155CancellationTypedData as c9, storeSiwsToken as cA, teamCoinsRaw as cB, validateName as cC, validateSupply as cD, validateSymbol as cE, verifyAdminRequestSig as cF, build1155OrderTypedData as ca, buildAdminSessionTypedData as cb, buildCancellationTypedData as cc, buildCreateCreatorCoinCall as cd, buildFeeCall as ce, buildLaunchOnEkuboCalls as cf, buildOrderTypedData as cg, buybackQuoteRaw as ch, toRaw as ci, createAdminSessionGrant as cj, encodeAdminHeaders as ck, encodeByteArray as cl, fdvHuman as cm, getCreatorCoinPrice as cn, getSiwsStorageKey as co, getStoredSiwsToken as cp, isSiwsTokenValid as cq, normalizeSiwsSignature as cr, parseAdminHeaders as cs, parseCreatorCoinCreated as ct, randomNonce as cu, requestSiwsToken as cv, resolveConfig as cw, resolveFeeConfig as cx, sessionKeyHashOf as cy, signAdminRequest as cz, type AddSupplyParams as d, type AdminGrant as e, type AdminRequest as f, type AdminRequestSig as g, type AdminSession as h, type AdminSessionTypedDataInput as i, type ApiActivitiesQuery as j, type ApiActivity as k, type ApiActivityPrice as l, type ApiAdminCollectionClaim as m, type ApiAppSource as n, type ApiChain as o, ApiClient as p, type ApiCoin as q, type ApiCoinsQuery as r, type ApiCollection as s, type ApiCollectionClaim as t, type ApiCollectionProfile as u, type ApiCollectionSlugClaim as v, type ApiCollectionsQuery as w, type ApiComment as x, type ApiCounterOffersQuery as y, type ApiCreatorListResult as z };

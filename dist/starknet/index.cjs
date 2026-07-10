@@ -4651,8 +4651,22 @@ var CreatorCoinFactoryABI = [{ "type": "impl", "name": "FactoryImpl", "interface
 var IPTicketCollectionABI = [
   {
     "type": "impl",
-    "name": "ERC721MetadataImpl",
-    "interface_name": "openzeppelin_token::erc721::interface::IERC721Metadata"
+    "name": "ERC1155MetadataURIImpl",
+    "interface_name": "openzeppelin_token::erc1155::interface::IERC1155MetadataURI"
+  },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
   },
   {
     "type": "struct",
@@ -4673,48 +4687,12 @@ var IPTicketCollectionABI = [
     ]
   },
   {
-    "type": "struct",
-    "name": "core::integer::u256",
-    "members": [
-      {
-        "name": "low",
-        "type": "core::integer::u128"
-      },
-      {
-        "name": "high",
-        "type": "core::integer::u128"
-      }
-    ]
-  },
-  {
     "type": "interface",
-    "name": "openzeppelin_token::erc721::interface::IERC721Metadata",
+    "name": "openzeppelin_token::erc1155::interface::IERC1155MetadataURI",
     "items": [
       {
         "type": "function",
-        "name": "name",
-        "inputs": [],
-        "outputs": [
-          {
-            "type": "core::byte_array::ByteArray"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "symbol",
-        "inputs": [],
-        "outputs": [
-          {
-            "type": "core::byte_array::ByteArray"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "token_uri",
+        "name": "uri",
         "inputs": [
           {
             "name": "token_id",
@@ -4732,43 +4710,16 @@ var IPTicketCollectionABI = [
   },
   {
     "type": "impl",
-    "name": "ERC721MetadataCamelOnlyImpl",
-    "interface_name": "openzeppelin_token::erc721::interface::IERC721MetadataCamelOnly"
-  },
-  {
-    "type": "interface",
-    "name": "openzeppelin_token::erc721::interface::IERC721MetadataCamelOnly",
-    "items": [
-      {
-        "type": "function",
-        "name": "tokenURI",
-        "inputs": [
-          {
-            "name": "tokenId",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::byte_array::ByteArray"
-          }
-        ],
-        "state_mutability": "view"
-      }
-    ]
-  },
-  {
-    "type": "impl",
-    "name": "IPTicketImpl",
+    "name": "IPTicketCollectionImpl",
     "interface_name": "ip_ticket::interface::IIPTicketCollection"
   },
   {
     "type": "enum",
-    "name": "core::option::Option::<core::starknet::contract_address::ContractAddress>",
+    "name": "core::option::Option::<core::integer::u64>",
     "variants": [
       {
         "name": "Some",
-        "type": "core::starknet::contract_address::ContractAddress"
+        "type": "core::integer::u64"
       },
       {
         "name": "None",
@@ -4792,15 +4743,11 @@ var IPTicketCollectionABI = [
   },
   {
     "type": "struct",
-    "name": "ip_ticket::types::TicketCollection",
+    "name": "ip_ticket::types::EventRecord",
     "members": [
       {
         "name": "creator",
         "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
-        "name": "price",
-        "type": "core::integer::u256"
       },
       {
         "name": "max_supply",
@@ -4811,16 +4758,16 @@ var IPTicketCollectionABI = [
         "type": "core::integer::u256"
       },
       {
-        "name": "expiration",
-        "type": "core::integer::u64"
+        "name": "start_time",
+        "type": "core::option::Option::<core::integer::u64>"
+      },
+      {
+        "name": "end_time",
+        "type": "core::option::Option::<core::integer::u64>"
       },
       {
         "name": "royalty_bps",
-        "type": "core::integer::u256"
-      },
-      {
-        "name": "payment_token",
-        "type": "core::option::Option::<core::starknet::contract_address::ContractAddress>"
+        "type": "core::integer::u16"
       },
       {
         "name": "metadata_uri",
@@ -4833,70 +4780,28 @@ var IPTicketCollectionABI = [
     ]
   },
   {
-    "type": "struct",
-    "name": "ip_ticket::types::TicketData",
-    "members": [
-      {
-        "name": "token_id",
-        "type": "core::integer::u256"
-      },
-      {
-        "name": "owner",
-        "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
-        "name": "collection_id",
-        "type": "core::integer::u256"
-      },
-      {
-        "name": "creator",
-        "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
-        "name": "metadata_uri",
-        "type": "core::byte_array::ByteArray"
-      },
-      {
-        "name": "expiration",
-        "type": "core::integer::u64"
-      },
-      {
-        "name": "redeemed",
-        "type": "core::bool"
-      },
-      {
-        "name": "valid",
-        "type": "core::bool"
-      }
-    ]
-  },
-  {
     "type": "interface",
     "name": "ip_ticket::interface::IIPTicketCollection",
     "items": [
       {
         "type": "function",
-        "name": "create_ticket_collection",
+        "name": "create_event",
         "inputs": [
-          {
-            "name": "price",
-            "type": "core::integer::u256"
-          },
           {
             "name": "max_supply",
             "type": "core::integer::u256"
           },
           {
-            "name": "expiration",
-            "type": "core::integer::u64"
+            "name": "start_time",
+            "type": "core::option::Option::<core::integer::u64>"
+          },
+          {
+            "name": "end_time",
+            "type": "core::option::Option::<core::integer::u64>"
           },
           {
             "name": "royalty_bps",
-            "type": "core::integer::u256"
-          },
-          {
-            "name": "payment_token",
-            "type": "core::option::Option::<core::starknet::contract_address::ContractAddress>"
+            "type": "core::integer::u16"
           },
           {
             "name": "metadata_uri",
@@ -4912,10 +4817,30 @@ var IPTicketCollectionABI = [
       },
       {
         "type": "function",
-        "name": "set_collection_active",
+        "name": "mint",
         "inputs": [
           {
-            "name": "collection_id",
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "pause_event",
+        "inputs": [
+          {
+            "name": "token_id",
             "type": "core::integer::u256"
           },
           {
@@ -4928,43 +4853,15 @@ var IPTicketCollectionABI = [
       },
       {
         "type": "function",
-        "name": "mint_ticket",
-        "inputs": [
-          {
-            "name": "collection_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::integer::u256"
-          }
-        ],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "redeem_ticket",
+        "name": "is_valid",
         "inputs": [
           {
             "name": "token_id",
             "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "has_valid_ticket",
-        "inputs": [
-          {
-            "name": "user",
-            "type": "core::starknet::contract_address::ContractAddress"
           },
           {
-            "name": "collection_id",
-            "type": "core::integer::u256"
+            "name": "holder",
+            "type": "core::starknet::contract_address::ContractAddress"
           }
         ],
         "outputs": [
@@ -4976,23 +4873,7 @@ var IPTicketCollectionABI = [
       },
       {
         "type": "function",
-        "name": "get_ticket_collection",
-        "inputs": [
-          {
-            "name": "collection_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "ip_ticket::types::TicketCollection"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "get_ticket_data",
+        "name": "get_event",
         "inputs": [
           {
             "name": "token_id",
@@ -5001,65 +4882,7 @@ var IPTicketCollectionABI = [
         ],
         "outputs": [
           {
-            "type": "ip_ticket::types::TicketData"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "get_ticket_collection_id",
-        "inputs": [
-          {
-            "name": "token_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::integer::u256"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "get_active_ticket_balance",
-        "inputs": [
-          {
-            "name": "user",
-            "type": "core::starknet::contract_address::ContractAddress"
-          },
-          {
-            "name": "collection_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::integer::u256"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "get_last_collection_id",
-        "inputs": [],
-        "outputs": [
-          {
-            "type": "core::integer::u256"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "total_supply",
-        "inputs": [],
-        "outputs": [
-          {
-            "type": "core::integer::u256"
+            "type": "ip_ticket::types::EventRecord"
           }
         ],
         "state_mutability": "view"
@@ -5103,13 +4926,44 @@ var IPTicketCollectionABI = [
           }
         ],
         "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "version",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
       }
     ]
   },
   {
     "type": "impl",
-    "name": "ERC721Impl",
-    "interface_name": "openzeppelin_token::erc721::interface::IERC721"
+    "name": "ERC1155Impl",
+    "interface_name": "openzeppelin_token::erc1155::interface::IERC1155"
+  },
+  {
+    "type": "struct",
+    "name": "core::array::Span::<core::starknet::contract_address::ContractAddress>",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<core::starknet::contract_address::ContractAddress>"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "core::array::Span::<core::integer::u256>",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<core::integer::u256>"
+      }
+    ]
   },
   {
     "type": "struct",
@@ -5123,7 +4977,7 @@ var IPTicketCollectionABI = [
   },
   {
     "type": "interface",
-    "name": "openzeppelin_token::erc721::interface::IERC721",
+    "name": "openzeppelin_token::erc1155::interface::IERC1155",
     "items": [
       {
         "type": "function",
@@ -5132,6 +4986,10 @@ var IPTicketCollectionABI = [
           {
             "name": "account",
             "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [
@@ -5143,16 +5001,20 @@ var IPTicketCollectionABI = [
       },
       {
         "type": "function",
-        "name": "owner_of",
+        "name": "balance_of_batch",
         "inputs": [
           {
-            "name": "token_id",
-            "type": "core::integer::u256"
+            "name": "accounts",
+            "type": "core::array::Span::<core::starknet::contract_address::ContractAddress>"
+          },
+          {
+            "name": "token_ids",
+            "type": "core::array::Span::<core::integer::u256>"
           }
         ],
         "outputs": [
           {
-            "type": "core::starknet::contract_address::ContractAddress"
+            "type": "core::array::Span::<core::integer::u256>"
           }
         ],
         "state_mutability": "view"
@@ -5174,6 +5036,10 @@ var IPTicketCollectionABI = [
             "type": "core::integer::u256"
           },
           {
+            "name": "value",
+            "type": "core::integer::u256"
+          },
+          {
             "name": "data",
             "type": "core::array::Span::<core::felt252>"
           }
@@ -5183,7 +5049,7 @@ var IPTicketCollectionABI = [
       },
       {
         "type": "function",
-        "name": "transfer_from",
+        "name": "safe_batch_transfer_from",
         "inputs": [
           {
             "name": "from",
@@ -5194,60 +5060,20 @@ var IPTicketCollectionABI = [
             "type": "core::starknet::contract_address::ContractAddress"
           },
           {
-            "name": "token_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "approve",
-        "inputs": [
-          {
-            "name": "to",
-            "type": "core::starknet::contract_address::ContractAddress"
+            "name": "token_ids",
+            "type": "core::array::Span::<core::integer::u256>"
           },
           {
-            "name": "token_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "set_approval_for_all",
-        "inputs": [
-          {
-            "name": "operator",
-            "type": "core::starknet::contract_address::ContractAddress"
+            "name": "values",
+            "type": "core::array::Span::<core::integer::u256>"
           },
           {
-            "name": "approved",
-            "type": "core::bool"
+            "name": "data",
+            "type": "core::array::Span::<core::felt252>"
           }
         ],
         "outputs": [],
         "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "get_approved",
-        "inputs": [
-          {
-            "name": "token_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "state_mutability": "view"
       },
       {
         "type": "function",
@@ -5268,17 +5094,33 @@ var IPTicketCollectionABI = [
           }
         ],
         "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "set_approval_for_all",
+        "inputs": [
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "approved",
+            "type": "core::bool"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
       }
     ]
   },
   {
     "type": "impl",
-    "name": "ERC721CamelOnly",
-    "interface_name": "openzeppelin_token::erc721::interface::IERC721CamelOnly"
+    "name": "ERC1155CamelImpl",
+    "interface_name": "openzeppelin_token::erc1155::interface::IERC1155Camel"
   },
   {
     "type": "interface",
-    "name": "openzeppelin_token::erc721::interface::IERC721CamelOnly",
+    "name": "openzeppelin_token::erc1155::interface::IERC1155Camel",
     "items": [
       {
         "type": "function",
@@ -5287,6 +5129,10 @@ var IPTicketCollectionABI = [
           {
             "name": "account",
             "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
           }
         ],
         "outputs": [
@@ -5298,16 +5144,20 @@ var IPTicketCollectionABI = [
       },
       {
         "type": "function",
-        "name": "ownerOf",
+        "name": "balanceOfBatch",
         "inputs": [
           {
-            "name": "tokenId",
-            "type": "core::integer::u256"
+            "name": "accounts",
+            "type": "core::array::Span::<core::starknet::contract_address::ContractAddress>"
+          },
+          {
+            "name": "tokenIds",
+            "type": "core::array::Span::<core::integer::u256>"
           }
         ],
         "outputs": [
           {
-            "type": "core::starknet::contract_address::ContractAddress"
+            "type": "core::array::Span::<core::integer::u256>"
           }
         ],
         "state_mutability": "view"
@@ -5329,6 +5179,10 @@ var IPTicketCollectionABI = [
             "type": "core::integer::u256"
           },
           {
+            "name": "value",
+            "type": "core::integer::u256"
+          },
+          {
             "name": "data",
             "type": "core::array::Span::<core::felt252>"
           }
@@ -5338,7 +5192,7 @@ var IPTicketCollectionABI = [
       },
       {
         "type": "function",
-        "name": "transferFrom",
+        "name": "safeBatchTransferFrom",
         "inputs": [
           {
             "name": "from",
@@ -5349,44 +5203,20 @@ var IPTicketCollectionABI = [
             "type": "core::starknet::contract_address::ContractAddress"
           },
           {
-            "name": "tokenId",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "setApprovalForAll",
-        "inputs": [
-          {
-            "name": "operator",
-            "type": "core::starknet::contract_address::ContractAddress"
+            "name": "tokenIds",
+            "type": "core::array::Span::<core::integer::u256>"
           },
           {
-            "name": "approved",
-            "type": "core::bool"
+            "name": "values",
+            "type": "core::array::Span::<core::integer::u256>"
+          },
+          {
+            "name": "data",
+            "type": "core::array::Span::<core::felt252>"
           }
         ],
         "outputs": [],
         "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "getApproved",
-        "inputs": [
-          {
-            "name": "tokenId",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "state_mutability": "view"
       },
       {
         "type": "function",
@@ -5407,6 +5237,22 @@ var IPTicketCollectionABI = [
           }
         ],
         "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "setApprovalForAll",
+        "inputs": [
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "approved",
+            "type": "core::bool"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
       }
     ]
   },
@@ -5517,9 +5363,14 @@ var IPTicketCollectionABI = [
   },
   {
     "type": "event",
-    "name": "openzeppelin_token::erc721::erc721::ERC721Component::Transfer",
+    "name": "openzeppelin_token::erc1155::erc1155::ERC1155Component::TransferSingle",
     "kind": "struct",
     "members": [
+      {
+        "name": "operator",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
       {
         "name": "from",
         "type": "core::starknet::contract_address::ContractAddress",
@@ -5531,37 +5382,52 @@ var IPTicketCollectionABI = [
         "kind": "key"
       },
       {
-        "name": "token_id",
+        "name": "id",
         "type": "core::integer::u256",
-        "kind": "key"
+        "kind": "data"
+      },
+      {
+        "name": "value",
+        "type": "core::integer::u256",
+        "kind": "data"
       }
     ]
   },
   {
     "type": "event",
-    "name": "openzeppelin_token::erc721::erc721::ERC721Component::Approval",
+    "name": "openzeppelin_token::erc1155::erc1155::ERC1155Component::TransferBatch",
     "kind": "struct",
     "members": [
       {
-        "name": "owner",
+        "name": "operator",
         "type": "core::starknet::contract_address::ContractAddress",
         "kind": "key"
       },
       {
-        "name": "approved",
+        "name": "from",
         "type": "core::starknet::contract_address::ContractAddress",
         "kind": "key"
       },
       {
-        "name": "token_id",
-        "type": "core::integer::u256",
+        "name": "to",
+        "type": "core::starknet::contract_address::ContractAddress",
         "kind": "key"
+      },
+      {
+        "name": "ids",
+        "type": "core::array::Span::<core::integer::u256>",
+        "kind": "data"
+      },
+      {
+        "name": "values",
+        "type": "core::array::Span::<core::integer::u256>",
+        "kind": "data"
       }
     ]
   },
   {
     "type": "event",
-    "name": "openzeppelin_token::erc721::erc721::ERC721Component::ApprovalForAll",
+    "name": "openzeppelin_token::erc1155::erc1155::ERC1155Component::ApprovalForAll",
     "kind": "struct",
     "members": [
       {
@@ -5583,22 +5449,44 @@ var IPTicketCollectionABI = [
   },
   {
     "type": "event",
-    "name": "openzeppelin_token::erc721::erc721::ERC721Component::Event",
+    "name": "openzeppelin_token::erc1155::erc1155::ERC1155Component::URI",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "value",
+        "type": "core::byte_array::ByteArray",
+        "kind": "data"
+      },
+      {
+        "name": "id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_token::erc1155::erc1155::ERC1155Component::Event",
     "kind": "enum",
     "variants": [
       {
-        "name": "Transfer",
-        "type": "openzeppelin_token::erc721::erc721::ERC721Component::Transfer",
+        "name": "TransferSingle",
+        "type": "openzeppelin_token::erc1155::erc1155::ERC1155Component::TransferSingle",
         "kind": "nested"
       },
       {
-        "name": "Approval",
-        "type": "openzeppelin_token::erc721::erc721::ERC721Component::Approval",
+        "name": "TransferBatch",
+        "type": "openzeppelin_token::erc1155::erc1155::ERC1155Component::TransferBatch",
         "kind": "nested"
       },
       {
         "name": "ApprovalForAll",
-        "type": "openzeppelin_token::erc721::erc721::ERC721Component::ApprovalForAll",
+        "type": "openzeppelin_token::erc1155::erc1155::ERC1155Component::ApprovalForAll",
+        "kind": "nested"
+      },
+      {
+        "name": "URI",
+        "type": "openzeppelin_token::erc1155::erc1155::ERC1155Component::URI",
         "kind": "nested"
       }
     ]
@@ -5662,23 +5550,13 @@ var IPTicketCollectionABI = [
   },
   {
     "type": "event",
-    "name": "ip_ticket::IPTicketCollection::IPTicketCollection::TicketCollectionCreated",
+    "name": "ip_ticket::IPTicketCollection::IPTicketCollection::EventCreated",
     "kind": "struct",
     "members": [
       {
-        "name": "collection_id",
+        "name": "token_id",
         "type": "core::integer::u256",
         "kind": "key"
-      },
-      {
-        "name": "creator",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      },
-      {
-        "name": "price",
-        "type": "core::integer::u256",
-        "kind": "data"
       },
       {
         "name": "max_supply",
@@ -5686,18 +5564,13 @@ var IPTicketCollectionABI = [
         "kind": "data"
       },
       {
-        "name": "expiration",
-        "type": "core::integer::u64",
+        "name": "start_time",
+        "type": "core::option::Option::<core::integer::u64>",
         "kind": "data"
       },
       {
-        "name": "royalty_bps",
-        "type": "core::integer::u256",
-        "kind": "data"
-      },
-      {
-        "name": "payment_token",
-        "type": "core::option::Option::<core::starknet::contract_address::ContractAddress>",
+        "name": "end_time",
+        "type": "core::option::Option::<core::integer::u64>",
         "kind": "data"
       },
       {
@@ -5714,76 +5587,17 @@ var IPTicketCollectionABI = [
   },
   {
     "type": "event",
-    "name": "ip_ticket::IPTicketCollection::IPTicketCollection::CollectionStatusUpdated",
+    "name": "ip_ticket::IPTicketCollection::IPTicketCollection::EventPaused",
     "kind": "struct",
     "members": [
       {
-        "name": "collection_id",
+        "name": "token_id",
         "type": "core::integer::u256",
         "kind": "key"
       },
       {
         "name": "active",
         "type": "core::bool",
-        "kind": "data"
-      },
-      {
-        "name": "updated_at",
-        "type": "core::integer::u64",
-        "kind": "data"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "ip_ticket::IPTicketCollection::IPTicketCollection::TicketMinted",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "token_id",
-        "type": "core::integer::u256",
-        "kind": "key"
-      },
-      {
-        "name": "collection_id",
-        "type": "core::integer::u256",
-        "kind": "key"
-      },
-      {
-        "name": "owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      },
-      {
-        "name": "minted_at",
-        "type": "core::integer::u64",
-        "kind": "data"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "ip_ticket::IPTicketCollection::IPTicketCollection::TicketRedeemed",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "token_id",
-        "type": "core::integer::u256",
-        "kind": "key"
-      },
-      {
-        "name": "collection_id",
-        "type": "core::integer::u256",
-        "kind": "key"
-      },
-      {
-        "name": "owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      },
-      {
-        "name": "redeemed_at",
-        "type": "core::integer::u64",
         "kind": "data"
       }
     ]
@@ -5794,8 +5608,8 @@ var IPTicketCollectionABI = [
     "kind": "enum",
     "variants": [
       {
-        "name": "ERC721Event",
-        "type": "openzeppelin_token::erc721::erc721::ERC721Component::Event",
+        "name": "ERC1155Event",
+        "type": "openzeppelin_token::erc1155::erc1155::ERC1155Component::Event",
         "kind": "flat"
       },
       {
@@ -5809,23 +5623,13 @@ var IPTicketCollectionABI = [
         "kind": "flat"
       },
       {
-        "name": "TicketCollectionCreated",
-        "type": "ip_ticket::IPTicketCollection::IPTicketCollection::TicketCollectionCreated",
+        "name": "EventCreated",
+        "type": "ip_ticket::IPTicketCollection::IPTicketCollection::EventCreated",
         "kind": "nested"
       },
       {
-        "name": "CollectionStatusUpdated",
-        "type": "ip_ticket::IPTicketCollection::IPTicketCollection::CollectionStatusUpdated",
-        "kind": "nested"
-      },
-      {
-        "name": "TicketMinted",
-        "type": "ip_ticket::IPTicketCollection::IPTicketCollection::TicketMinted",
-        "kind": "nested"
-      },
-      {
-        "name": "TicketRedeemed",
-        "type": "ip_ticket::IPTicketCollection::IPTicketCollection::TicketRedeemed",
+        "name": "EventPaused",
+        "type": "ip_ticket::IPTicketCollection::IPTicketCollection::EventPaused",
         "kind": "nested"
       }
     ]
@@ -5885,7 +5689,7 @@ var IPTicketCollectionFactoryABI = [
       },
       {
         "type": "function",
-        "name": "deploy_ticket_collection",
+        "name": "deploy_collection",
         "inputs": [
           {
             "name": "name",
@@ -5906,6 +5710,47 @@ var IPTicketCollectionFactoryABI = [
     ]
   },
   {
+    "type": "impl",
+    "name": "SRC5Impl",
+    "interface_name": "openzeppelin_introspection::interface::ISRC5"
+  },
+  {
+    "type": "enum",
+    "name": "core::bool",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_introspection::interface::ISRC5",
+    "items": [
+      {
+        "type": "function",
+        "name": "supports_interface",
+        "inputs": [
+          {
+            "name": "interface_id",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
     "type": "constructor",
     "name": "constructor",
     "inputs": [
@@ -5914,6 +5759,12 @@ var IPTicketCollectionFactoryABI = [
         "type": "core::starknet::class_hash::ClassHash"
       }
     ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_introspection::src5::SRC5Component::Event",
+    "kind": "enum",
+    "variants": []
   },
   {
     "type": "event",
@@ -5947,6 +5798,11 @@ var IPTicketCollectionFactoryABI = [
     "name": "ip_ticket::IPTicketCollectionFactory::IPTicketCollectionFactory::Event",
     "kind": "enum",
     "variants": [
+      {
+        "name": "SRC5Event",
+        "type": "openzeppelin_introspection::src5::SRC5Component::Event",
+        "kind": "flat"
+      },
       {
         "name": "CollectionDeployed",
         "type": "ip_ticket::IPTicketCollectionFactory::IPTicketCollectionFactory::CollectionDeployed",
@@ -12526,65 +12382,83 @@ var CreatorCoinService = class {
 };
 var TicketService = class {
   constructor(config) {
+    this.config = config;
     this.factoryAddress = getStarknetCoordinates(config.chain).ipTicketsFactory;
+  }
+  _factory(account, factoryAddress) {
+    const address = factoryAddress ?? this.factoryAddress;
+    if (!address) throw new Error("IP-Tickets factory address not configured for this chain");
+    return new starknet.Contract(IPTicketCollectionFactoryABI, normalizeAddress("STARKNET", address), account);
   }
   _collection(address, account) {
     return new starknet.Contract(IPTicketCollectionABI, normalizeAddress("STARKNET", address), account);
   }
-  /** Deploys a new IPTicketCollection via the factory. Caller becomes its owner. */
-  async deployTicketCollection(account, params) {
-    const factoryAddress = params.factoryAddress ?? this.factoryAddress;
-    if (!factoryAddress) {
-      throw new Error("IP-Tickets factory address not configured for this chain");
-    }
-    const factory = new starknet.Contract(IPTicketCollectionFactoryABI, factoryAddress, account);
-    const call = factory.populate("deploy_ticket_collection", [params.name, params.symbol]);
+  _collectionRead(address) {
+    const provider = new starknet.RpcProvider({ nodeUrl: this.config.rpcUrl });
+    return new starknet.Contract(IPTicketCollectionABI, normalizeAddress("STARKNET", address), provider);
+  }
+  /** Deploys a new IPTicketCollection via the factory. Caller becomes owner. */
+  async deployCollection(account, params) {
+    const call = this._factory(account, params.factoryAddress).populate("deploy_collection", [params.name, params.symbol]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
-  /** Owner-only. Creates a new ticket collection (event/tier) inside the caller's deployed IPTicketCollection. */
-  async createTicketCollection(account, params) {
-    const paymentToken = params.paymentToken ? new starknet.CairoOption(starknet.CairoOptionVariant.Some, params.paymentToken) : new starknet.CairoOption(starknet.CairoOptionVariant.None);
-    const call = this._collection(params.collection, account).populate("create_ticket_collection", [
-      starknet.cairo.uint256(params.price),
+  /** Owner-only. Creates a new event inside the caller's deployed collection. */
+  async createEvent(account, params) {
+    const startTime = params.startTime != null ? new starknet.CairoOption(starknet.CairoOptionVariant.Some, params.startTime) : new starknet.CairoOption(starknet.CairoOptionVariant.None);
+    const endTime = params.endTime != null ? new starknet.CairoOption(starknet.CairoOptionVariant.Some, params.endTime) : new starknet.CairoOption(starknet.CairoOptionVariant.None);
+    const call = this._collection(params.collection, account).populate("create_event", [
       starknet.cairo.uint256(params.maxSupply),
-      params.expiration,
+      startTime,
+      endTime,
       params.royaltyBps,
-      paymentToken,
       params.metadataUri
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
-  /** Owner-only. Gates minting only — existing tickets keep access/transfer/redeem. */
-  async setCollectionActive(account, params) {
-    const call = this._collection(params.collection, account).populate("set_collection_active", [
-      starknet.cairo.uint256(params.collectionId),
+  /** Owner-only. Mints `amount` of `tokenId` to `to`. */
+  async mint(account, params) {
+    const call = this._collection(params.collection, account).populate("mint", [
+      params.to,
+      starknet.cairo.uint256(params.tokenId),
+      starknet.cairo.uint256(params.amount)
+    ]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
+  /** Owner-only. Pauses or resumes minting for one event. */
+  async pauseEvent(account, params) {
+    const call = this._collection(params.collection, account).populate("pause_event", [
+      starknet.cairo.uint256(params.tokenId),
       params.active
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
-  /** Mints a ticket. Prepends an ERC-20 approve when the collection is paid. */
-  async mintTicket(account, params) {
-    const calls = [];
-    if (params.paymentToken && params.price && BigInt(params.price) > 0n) {
-      const amount = starknet.cairo.uint256(params.price);
-      calls.push({
-        contractAddress: params.paymentToken,
-        entrypoint: "approve",
-        calldata: [normalizeAddress("STARKNET", params.collection), amount.low.toString(), amount.high.toString()]
-      });
-    }
-    calls.push(this._collection(params.collection, account).populate("mint_ticket", [starknet.cairo.uint256(params.collectionId)]));
-    const res = await account.execute(calls);
-    return { txHash: res.transaction_hash };
+  /** Read — true if holder has balance > 0 and current time is within the event window. */
+  async isValid(params) {
+    const result = await this._collectionRead(params.collection).call("is_valid", [
+      starknet.cairo.uint256(params.tokenId),
+      params.holder
+    ]);
+    return Boolean(result);
   }
-  /** Only the current token owner may redeem. */
-  async redeemTicket(account, params) {
-    const call = this._collection(params.collection, account).populate("redeem_ticket", [starknet.cairo.uint256(params.tokenId)]);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
+  /** Read — returns the EventRecord for a token ID. */
+  async getEvent(params) {
+    const ev = await this._collectionRead(params.collection).call("get_event", [
+      starknet.cairo.uint256(params.tokenId)
+    ]);
+    return {
+      creator: ev.creator,
+      maxSupply: BigInt(ev.max_supply),
+      minted: BigInt(ev.minted),
+      startTime: ev.start_time?.variant === "Some" ? Number(ev.start_time.values[0] ?? ev.start_time.value) : null,
+      endTime: ev.end_time?.variant === "Some" ? Number(ev.end_time.values[0] ?? ev.end_time.value) : null,
+      royaltyBps: Number(ev.royalty_bps),
+      metadataUri: ev.metadata_uri,
+      active: Boolean(ev.active)
+    };
   }
 };
 var ClubService = class {
