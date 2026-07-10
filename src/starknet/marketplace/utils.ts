@@ -1,4 +1,4 @@
-import { RpcProvider, cairo, constants, num } from "starknet";
+import { Contract, RpcProvider, cairo, constants, num, type Abi } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { SUPPORTED_TOKENS } from "../../constants.js";
 import { MedialaneError } from "./errors.js";
@@ -46,6 +46,26 @@ export function toSignatureArray(sig: unknown): string[] {
   if (Array.isArray(sig)) return sig as string[];
   const s = sig as { r: bigint | string; s: bigint | string };
   return [s.r.toString(), s.s.toString()];
+}
+
+/**
+ * Construct a `Contract` across starknet major versions. starknet v8 changed the
+ * constructor to a single options object (`{ abi, address, providerOrAccount }`)
+ * and REMOVED the v6/v7 positional form — passing `(abi, address, provider)` to
+ * v8 lands the ABI in the options slot, so the parser reads `options.abi`
+ * (undefined) and throws `abi.find is not a function`. The dapp runs starknet v8
+ * while this SDK builds against v6, so every `new Contract(...)` must route
+ * through here. Detected by constructor arity (v8 = 1, v6/v7 = 2+).
+ */
+export function newContract(abi: Abi, address: string, providerOrAccount?: unknown): Contract {
+  const C = Contract as unknown as { length: number };
+  return C.length === 1
+    ? new (Contract as unknown as new (opts: unknown) => Contract)({ abi, address, providerOrAccount })
+    : new (Contract as unknown as new (a: Abi, addr: string, p?: unknown) => Contract)(
+        abi,
+        address,
+        providerOrAccount,
+      );
 }
 
 export function getChainId(config: ResolvedConfig): constants.StarknetChainId {

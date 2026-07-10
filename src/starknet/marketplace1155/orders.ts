@@ -30,6 +30,7 @@ import {
 import {
   toSignatureArray,
   getProvider,
+  newContract,
   resolveToken,
   generateSalt,
   resolveRoyaltyMaxBps,
@@ -42,11 +43,7 @@ function getContract(config: ResolvedConfig): Contract {
   let c = _contractCache.get(config);
   if (!c) {
     const provider = getProvider(config);
-    c = new Contract(
-      Medialane1155ABI as unknown as Abi,
-      config.marketplace1155Contract,
-      provider
-    );
+    c = newContract(Medialane1155ABI as unknown as Abi, config.marketplace1155Contract, provider);
     _contractCache.set(config, c);
   }
   return c;

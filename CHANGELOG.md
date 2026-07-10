@@ -2,6 +2,21 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.61.0] — 2026-07-10
+
+### Fixed — starknet v8 `Contract` constructor incompatibility (marketplace)
+
+The marketplace builders/modules constructed `new Contract(abi, address, provider)`
+(positional, starknet v6/v7). starknet **v8 removed the positional form** — it
+takes a single options object `{ abi, address, providerOrAccount }` — so under a
+v8 host (the dapp) the ABI landed in the options slot and the parser threw
+`abi.find is not a function`, breaking `registerOrder`/`cancelOrder` (list, offer,
+cancel) at build time. Added a version-agnostic `newContract()` helper (detects
+constructor arity) and routed all marketplace `new Contract` sites through it.
+`buildFulfillCalls` (buy) was unaffected because the dapp composes those calls
+itself. Note: the `services/*` modules still use the positional form and need the
+same treatment before they run on a v8 host.
+
 ## [0.60.0] — 2026-07-10
 
 Reconcile release: merges the VenueSigner capability port (0.57.0) with the

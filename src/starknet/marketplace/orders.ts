@@ -34,6 +34,7 @@ import {
 import {
   toSignatureArray,
   getProvider,
+  newContract,
   resolveToken,
   generateSalt,
   resolveRoyaltyMaxBps,
@@ -47,11 +48,7 @@ function makeContract(config: ResolvedConfig): { contract: Contract; provider: R
   const provider = getProvider(config);
   if (cached) return { ...cached, provider };
 
-  const contract = new Contract(
-    IPMarketplaceABI as unknown as Abi,
-    config.marketplaceContract,
-    provider
-  );
+  const contract = newContract(IPMarketplaceABI as unknown as Abi, config.marketplaceContract, provider);
   _contractCache.set(config, { contract });
   return { contract, provider };
 }

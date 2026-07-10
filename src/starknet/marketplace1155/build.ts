@@ -4,7 +4,7 @@ import type { ResolvedConfig } from "../../config.js";
 import { stringifyBigInts } from "../../utils/bigint.js";
 import { build1155OrderTypedData, build1155CancellationTypedData } from "../marketplace/signing.js";
 import { buildFeeCall } from "../fee/index.js";
-import { getChainId, getProvider } from "../marketplace/utils.js";
+import { getChainId, getProvider, newContract } from "../marketplace/utils.js";
 import type { OrderParams } from "../marketplace/build.js";
 
 /**
@@ -36,7 +36,7 @@ export interface Build1155ListingInput {
 export type Build1155OfferInput = Build1155ListingInput;
 
 function contractFor(cfg: ResolvedConfig): Contract {
-  return new Contract(Medialane1155ABI as unknown as Abi, cfg.marketplace1155Contract, getProvider(cfg));
+  return newContract(Medialane1155ABI as unknown as Abi, cfg.marketplace1155Contract, getProvider(cfg));
 }
 
 export function buildListing1155Order(

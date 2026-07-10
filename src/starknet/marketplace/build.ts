@@ -4,7 +4,7 @@ import type { ResolvedConfig } from "../../config.js";
 import { stringifyBigInts } from "../../utils/bigint.js";
 import { buildOrderTypedData, buildCancellationTypedData } from "./signing.js";
 import { buildFeeCall } from "../fee/index.js";
-import { getChainId, getProvider } from "./utils.js";
+import { getChainId, getProvider, newContract } from "./utils.js";
 
 /**
  * Pure calldata builders for the 721 marketplace — no signing, no execution, no
@@ -51,7 +51,7 @@ export interface BuildListingInput {
 export type BuildOfferInput = BuildListingInput;
 
 function contractFor(cfg: ResolvedConfig): Contract {
-  return new Contract(IPMarketplaceABI as unknown as Abi, cfg.marketplaceContract, getProvider(cfg));
+  return newContract(IPMarketplaceABI as unknown as Abi, cfg.marketplaceContract, getProvider(cfg));
 }
 
 export function buildListingOrder(

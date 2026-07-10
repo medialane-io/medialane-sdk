@@ -10621,6 +10621,14 @@ function toSignatureArray(sig) {
   const s = sig;
   return [s.r.toString(), s.s.toString()];
 }
+function newContract(abi, address, providerOrAccount) {
+  const C = starknet.Contract;
+  return C.length === 1 ? new starknet.Contract({ abi, address, providerOrAccount }) : new starknet.Contract(
+    abi,
+    address,
+    providerOrAccount
+  );
+}
 function getChainId(config) {
   if (config.chain !== "STARKNET") {
     throw new Error(`SNIP-12 signing is Starknet-only; got chain "${config.chain}"`);
@@ -10647,7 +10655,7 @@ function getProvider(config) {
 
 // src/starknet/marketplace/build.ts
 function contractFor(cfg) {
-  return new starknet.Contract(IPMarketplaceABI, cfg.marketplaceContract, getProvider(cfg));
+  return newContract(IPMarketplaceABI, cfg.marketplaceContract, getProvider(cfg));
 }
 function buildListingOrder(i, cfg) {
   const orderParams = {
@@ -10739,11 +10747,7 @@ function makeContract(config) {
   const cached = _contractCache.get(config);
   const provider = getProvider(config);
   if (cached) return { ...cached, provider };
-  const contract = new starknet.Contract(
-    IPMarketplaceABI,
-    config.marketplaceContract,
-    provider
-  );
+  const contract = newContract(IPMarketplaceABI, config.marketplaceContract, provider);
   _contractCache.set(config, { contract });
   return { contract, provider };
 }
@@ -11020,7 +11024,7 @@ var MarketplaceModule = class {
   }
 };
 function contractFor2(cfg) {
-  return new starknet.Contract(Medialane1155ABI, cfg.marketplace1155Contract, getProvider(cfg));
+  return newContract(Medialane1155ABI, cfg.marketplace1155Contract, getProvider(cfg));
 }
 function buildListing1155Order(i, cfg) {
   const orderParams = {
@@ -11118,11 +11122,7 @@ function getContract(config) {
   let c = _contractCache2.get(config);
   if (!c) {
     const provider = getProvider(config);
-    c = new starknet.Contract(
-      Medialane1155ABI,
-      config.marketplace1155Contract,
-      provider
-    );
+    c = newContract(Medialane1155ABI, config.marketplace1155Contract, provider);
     _contractCache2.set(config, c);
   }
   return c;
