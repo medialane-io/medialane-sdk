@@ -63,6 +63,24 @@ export interface CreateClubParams {
   paymentToken?: string;
 }
 
+/** Factory-pattern deploy — one ERC-721 collection per creator. */
+export interface DeployClubParams {
+  name: string;
+  symbol: string;
+  /** ipfs:// base URI for the collection. */
+  baseUri: string;
+  /** Max token supply; defaults to u128 max (effectively unlimited). */
+  maxSupply?: bigint | string;
+  /** Entry fee in payment token units; 0 = free. */
+  entryFee?: bigint | string;
+  /** Required when entryFee > 0. */
+  paymentToken?: string;
+  /** Royalty in basis points (0–10 000). */
+  royaltyBps?: bigint | string;
+  /** Override factory address. */
+  factoryAddress?: string;
+}
+
 // ─── IP Sponsorship ────────────────────────────────────────────────────────────
 
 export interface CreateSponsorshipOfferParams {

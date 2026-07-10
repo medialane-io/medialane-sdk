@@ -15,5 +15,8 @@ export { IPTicketCollectionABI } from "./ipTicketCollection.js";
 export { IPTicketCollectionFactoryABI } from "./ipTicketCollectionFactory.js";
 export { IPClubABI } from "./ipClub.js";
 export { IPClubNFTABI } from "./ipClubNft.js";
+export { IPClubFactoryABI } from "./ipClubFactory.js";
+export { IPClubCollectionABI } from "./ipClubCollection.js";
 export { IPSponsorshipABI } from "./ipSponsorship.js";
+export { IPSponsorshipLicenseABI } from "./ipSponsorshipLicense.js";
 export { IPGenesisABI } from "./ipGenesis.js";
