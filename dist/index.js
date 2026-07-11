@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { keccak_256 } from '@noble/hashes/sha3.js';
 import { base58, base32 } from '@scure/base';
-import { hash, num, cairo, Contract, uint256, RpcProvider, CairoOption, CairoOptionVariant, ec, encode, TypedDataRevision, constants, shortString } from 'starknet';
+import { hash, Contract, cairo, uint256, RpcProvider, CairoOption, CairoOptionVariant, num, ec, encode, TypedDataRevision, constants, shortString } from 'starknet';
 
 // src/config.ts
 
@@ -1293,124 +1293,6 @@ function createFailoverFetch(urls, options = {}) {
     throw lastError ?? new Error("createFailoverFetch: all endpoints failed");
   };
   return failover;
-}
-var STARKNET_DOMAIN = [
-  { name: "name", type: "shortstring" },
-  { name: "version", type: "shortstring" },
-  { name: "chainId", type: "shortstring" },
-  { name: "revision", type: "shortstring" }
-];
-var OFFER_ITEM = [
-  { name: "item_type", type: "shortstring" },
-  { name: "token", type: "ContractAddress" },
-  { name: "identifier_or_criteria", type: "felt" },
-  { name: "amount", type: "felt" }
-];
-var CONSIDERATION_ITEM = [
-  { name: "item_type", type: "shortstring" },
-  { name: "token", type: "ContractAddress" },
-  { name: "identifier_or_criteria", type: "felt" },
-  { name: "amount", type: "felt" },
-  { name: "recipient", type: "ContractAddress" }
-];
-var ORDER_PARAMETERS = [
-  { name: "offerer", type: "ContractAddress" },
-  { name: "marketplace", type: "ContractAddress" },
-  { name: "offer", type: "OfferItem" },
-  { name: "consideration", type: "ConsiderationItem" },
-  { name: "royalty_max_bps", type: "felt" },
-  { name: "start_time", type: "felt" },
-  { name: "end_time", type: "felt" },
-  { name: "salt", type: "felt" },
-  { name: "counter", type: "felt" }
-];
-var ORDER_CANCELLATION = [
-  { name: "order_hash", type: "felt" },
-  { name: "offerer", type: "ContractAddress" }
-];
-var DOMAIN_VERSION = {
-  erc721: "5",
-  erc1155: "4"
-};
-function buildDomain(standard, chainId) {
-  return {
-    name: "Medialane",
-    version: DOMAIN_VERSION[standard],
-    chainId,
-    revision: TypedDataRevision.ACTIVE
-  };
-}
-function buildOrderTypedData(message, chainId) {
-  return {
-    domain: buildDomain("erc721", chainId),
-    primaryType: "OrderParameters",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderParameters: ORDER_PARAMETERS,
-      OfferItem: OFFER_ITEM,
-      ConsiderationItem: CONSIDERATION_ITEM
-    },
-    message
-  };
-}
-function build1155OrderTypedData(message, chainId) {
-  return {
-    domain: buildDomain("erc1155", chainId),
-    primaryType: "OrderParameters",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderParameters: ORDER_PARAMETERS,
-      OfferItem: OFFER_ITEM,
-      ConsiderationItem: CONSIDERATION_ITEM
-    },
-    message
-  };
-}
-function buildCancellationTypedData(message, chainId) {
-  return {
-    domain: buildDomain("erc721", chainId),
-    primaryType: "OrderCancellation",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderCancellation: ORDER_CANCELLATION
-    },
-    message
-  };
-}
-function build1155CancellationTypedData(message, chainId) {
-  return {
-    domain: buildDomain("erc1155", chainId),
-    primaryType: "OrderCancellation",
-    types: {
-      StarknetDomain: STARKNET_DOMAIN,
-      OrderCancellation: ORDER_CANCELLATION
-    },
-    message
-  };
-}
-function encodeByteArray(str) {
-  const bytes = new TextEncoder().encode(str);
-  const fullChunks = [];
-  let i = 0;
-  while (i + 31 <= bytes.length) {
-    let val = 0n;
-    for (const b of bytes.slice(i, i + 31)) {
-      val = val << 8n | BigInt(b);
-    }
-    fullChunks.push(num.toHex(val));
-    i += 31;
-  }
-  const remaining = bytes.slice(i);
-  let pendingVal = 0n;
-  for (const b of remaining) {
-    pendingVal = pendingVal << 8n | BigInt(b);
-  }
-  return [
-    fullChunks.length.toString(),
-    ...fullChunks,
-    num.toHex(pendingVal),
-    remaining.length.toString()
-  ];
 }
 
 // src/starknet/abis/ipMarketplace.ts
@@ -11442,818 +11324,7 @@ var IPGenesisABI = [
   }
 ];
 
-// src/starknet/marketplace/errors.ts
-var MedialaneError = class extends Error {
-  constructor(message, code = "UNKNOWN", cause) {
-    super(message);
-    this.code = code;
-    this.cause = cause;
-    this.name = "MedialaneError";
-  }
-};
-function buildFeeCall(p, cfg) {
-  if (!cfg.enabled || !cfg.fundAddress) return null;
-  const bps = p.surface === "marketplace" ? cfg.marketplaceBps : cfg.launchpadBps;
-  if (bps <= 0) return null;
-  const fee = p.grossAmount * BigInt(bps) / 10000n;
-  if (fee <= 0n) return null;
-  const u = cairo.uint256(fee.toString());
-  return {
-    contractAddress: p.token,
-    entrypoint: "transfer",
-    calldata: [cfg.fundAddress, u.low.toString(), u.high.toString()]
-  };
-}
-var START_TIME_BUFFER_SECS = 30;
-function generateSalt() {
-  const bytes = new Uint8Array(31);
-  crypto.getRandomValues(bytes);
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-  return num.toHex(BigInt("0x" + hex));
-}
-async function resolveRoyaltyMaxBps(provider, nft, tokenId, override) {
-  if (override !== void 0) return override;
-  try {
-    const id = cairo.uint256(tokenId);
-    const res = await provider.callContract({
-      contractAddress: nft,
-      entrypoint: "royalty_info",
-      calldata: [id.low.toString(), id.high.toString(), "10000", "0"]
-    });
-    return BigInt(res[1] ?? "0").toString();
-  } catch {
-    return "0";
-  }
-}
-function toSignatureArray(sig) {
-  if (Array.isArray(sig)) return sig;
-  const s = sig;
-  return [s.r.toString(), s.s.toString()];
-}
-function newContract(abi, address, providerOrAccount) {
-  const C = Contract;
-  return C.length === 1 ? new Contract({ abi, address, providerOrAccount }) : new Contract(
-    abi,
-    address,
-    providerOrAccount
-  );
-}
-function getChainId(config) {
-  if (config.chain !== "STARKNET") {
-    throw new Error(`SNIP-12 signing is Starknet-only; got chain "${config.chain}"`);
-  }
-  return constants.StarknetChainId.SN_MAIN;
-}
-function resolveToken(currency) {
-  const token = SUPPORTED_TOKENS.find(
-    (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
-  );
-  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
-  return token;
-}
-var _providerCache = /* @__PURE__ */ new WeakMap();
-function getProvider(config) {
-  let p = _providerCache.get(config);
-  if (!p) {
-    const urls = Array.from(/* @__PURE__ */ new Set([config.rpcUrl, ...PUBLIC_RPC_FALLBACKS]));
-    p = new RpcProvider({ nodeUrl: urls[0], baseFetch: createFailoverFetch(urls) });
-    _providerCache.set(config, p);
-  }
-  return p;
-}
-
-// src/starknet/marketplace/build.ts
-function contractFor(cfg) {
-  return newContract(IPMarketplaceABI, cfg.marketplaceContract, getProvider(cfg));
-}
-function buildListingOrder(i, cfg) {
-  const orderParams = {
-    offerer: i.offerer,
-    marketplace: cfg.marketplaceContract,
-    offer: { item_type: "ERC721", token: i.nftContract, identifier_or_criteria: i.tokenId, amount: "1" },
-    consideration: {
-      item_type: "ERC20",
-      token: i.paymentTokenAddress,
-      identifier_or_criteria: "0",
-      amount: i.priceWei,
-      recipient: i.offerer
-    },
-    royalty_max_bps: i.royaltyMaxBps,
-    start_time: String(i.startTime),
-    end_time: String(i.endTime),
-    salt: i.salt,
-    counter: i.counter
-  };
-  const typedData = stringifyBigInts(buildOrderTypedData(orderParams, getChainId(cfg)));
-  return { orderParams, typedData };
-}
-function buildOfferOrder(i, cfg) {
-  const orderParams = {
-    offerer: i.offerer,
-    marketplace: cfg.marketplaceContract,
-    offer: { item_type: "ERC20", token: i.paymentTokenAddress, identifier_or_criteria: "0", amount: i.priceWei },
-    consideration: {
-      item_type: "ERC721",
-      token: i.nftContract,
-      identifier_or_criteria: i.tokenId,
-      amount: "1",
-      recipient: i.offerer
-    },
-    royalty_max_bps: i.royaltyMaxBps,
-    start_time: String(i.startTime),
-    end_time: String(i.endTime),
-    salt: i.salt,
-    counter: i.counter
-  };
-  const typedData = stringifyBigInts(buildOrderTypedData(orderParams, getChainId(cfg)));
-  return { orderParams, typedData };
-}
-function registerPayload(orderParams, signature) {
-  return stringifyBigInts({
-    parameters: {
-      ...orderParams,
-      offer: { ...orderParams.offer, item_type: shortString.encodeShortString(orderParams.offer.item_type) },
-      consideration: {
-        ...orderParams.consideration,
-        item_type: shortString.encodeShortString(orderParams.consideration.item_type)
-      }
-    },
-    signature
-  });
-}
-function buildRegisterCalls(a, cfg) {
-  const registerCall = contractFor(cfg).populate("register_order", [registerPayload(a.orderParams, a.signature)]);
-  return a.approvalNeeded ? [a.approve, registerCall] : [registerCall];
-}
-function buildFulfillCalls(a, cfg) {
-  const u = cairo.uint256(a.totalPrice);
-  const approve = {
-    contractAddress: a.paymentToken,
-    entrypoint: "approve",
-    calldata: [cfg.marketplaceContract, u.low.toString(), u.high.toString()]
-  };
-  const fulfill = contractFor(cfg).populate("fulfill_order", [a.orderHash]);
-  const fee = buildFeeCall(
-    { surface: "marketplace", token: a.paymentToken, grossAmount: BigInt(a.totalPrice) },
-    cfg.feeConfig
-  );
-  return fee ? [approve, fulfill, fee] : [approve, fulfill];
-}
-function buildCancelCalls(a, cfg) {
-  const cancelRequest = stringifyBigInts({
-    cancelation: { order_hash: a.orderHash, offerer: a.offerer },
-    signature: a.signature
-  });
-  return [contractFor(cfg).populate("cancel_order", [cancelRequest])];
-}
-function buildCancelTypedData(orderHash, offerer, cfg) {
-  return stringifyBigInts(buildCancellationTypedData({ order_hash: orderHash, offerer }, getChainId(cfg)));
-}
-
-// src/starknet/marketplace/orders.ts
-var _contractCache = /* @__PURE__ */ new WeakMap();
-function makeContract(config) {
-  const cached = _contractCache.get(config);
-  const provider = getProvider(config);
-  if (cached) return { ...cached, provider };
-  const contract = newContract(IPMarketplaceABI, config.marketplaceContract, provider);
-  _contractCache.set(config, { contract });
-  return { contract, provider };
-}
-async function createListing(account, params, config) {
-  const { nftContract, tokenId, price, currency = DEFAULT_CURRENCY, durationSeconds } = params;
-  const { contract, provider } = makeContract(config);
-  const token = resolveToken(currency);
-  const priceWei = parseAmount(price, token.decimals);
-  const now = Math.floor(Date.now() / 1e3);
-  const startTime = now + START_TIME_BUFFER_SECS;
-  const endTime = now + durationSeconds;
-  const counter = (await contract.get_counter(account.address)).toString();
-  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
-  const { orderParams, typedData } = buildListingOrder(
-    {
-      offerer: account.address,
-      nftContract,
-      tokenId,
-      priceWei,
-      paymentTokenAddress: token.address,
-      royaltyMaxBps,
-      startTime,
-      endTime,
-      salt: generateSalt(),
-      counter
-    },
-    config
-  );
-  const signatureArray = toSignatureArray(await account.signMessage(typedData));
-  const tokenIdUint256 = cairo.uint256(tokenId);
-  let isAlreadyApproved = false;
-  try {
-    const result = await provider.callContract({
-      contractAddress: nftContract,
-      entrypoint: "get_approved",
-      calldata: [tokenIdUint256.low.toString(), tokenIdUint256.high.toString()]
-    });
-    isAlreadyApproved = BigInt(result[0]).toString() === BigInt(config.marketplaceContract).toString();
-  } catch {
-  }
-  const approve = {
-    contractAddress: nftContract,
-    entrypoint: "approve",
-    calldata: [
-      config.marketplaceContract,
-      tokenIdUint256.low.toString(),
-      tokenIdUint256.high.toString()
-    ]
-  };
-  const calls = buildRegisterCalls(
-    { orderParams, signature: signatureArray, approvalNeeded: !isAlreadyApproved, approve },
-    config
-  );
-  try {
-    const tx = await account.execute(calls);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to create listing", "TRANSACTION_FAILED", err);
-  }
-}
-async function makeOffer(account, params, config) {
-  const { nftContract, tokenId, price, currency = DEFAULT_CURRENCY, durationSeconds } = params;
-  const { contract, provider } = makeContract(config);
-  const token = resolveToken(currency);
-  const priceWei = parseAmount(price, token.decimals);
-  const now = Math.floor(Date.now() / 1e3);
-  const startTime = now + START_TIME_BUFFER_SECS;
-  const endTime = now + durationSeconds;
-  const counter = (await contract.get_counter(account.address)).toString();
-  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
-  const { orderParams, typedData } = buildOfferOrder(
-    {
-      offerer: account.address,
-      nftContract,
-      tokenId,
-      priceWei,
-      paymentTokenAddress: token.address,
-      royaltyMaxBps,
-      startTime,
-      endTime,
-      salt: generateSalt(),
-      counter
-    },
-    config
-  );
-  const signatureArray = toSignatureArray(await account.signMessage(typedData));
-  const amountUint256 = cairo.uint256(priceWei);
-  const approveCall = {
-    contractAddress: token.address,
-    entrypoint: "approve",
-    calldata: [
-      config.marketplaceContract,
-      amountUint256.low.toString(),
-      amountUint256.high.toString()
-    ]
-  };
-  const calls = buildRegisterCalls(
-    { orderParams, signature: signatureArray, approvalNeeded: true, approve: approveCall },
-    config
-  );
-  try {
-    const tx = await account.execute(calls);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to make offer", "TRANSACTION_FAILED", err);
-  }
-}
-async function fulfillOrder(account, params, config) {
-  const { orderHash, paymentToken, totalPrice } = params;
-  const { provider } = makeContract(config);
-  const calls = buildFulfillCalls({ orderHash, paymentToken, totalPrice }, config);
-  try {
-    const tx = await account.execute(calls);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to fulfill order", "TRANSACTION_FAILED", err);
-  }
-}
-async function cancelOrder(account, params, config) {
-  const { orderHash } = params;
-  const { provider } = makeContract(config);
-  const typedData = buildCancelTypedData(orderHash, account.address, config);
-  const signatureArray = toSignatureArray(await account.signMessage(typedData));
-  const calls = buildCancelCalls({ orderHash, offerer: account.address, signature: signatureArray }, config);
-  try {
-    const tx = await account.execute(calls);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to cancel order", "TRANSACTION_FAILED", err);
-  }
-}
-async function mint(account, params, config) {
-  const { collectionId, recipient, tokenUri, royaltyBps, collectionContract } = params;
-  const provider = getProvider(config);
-  const contractAddress = collectionContract ?? config.collectionContract;
-  const id = cairo.uint256(collectionId);
-  const calldata = [
-    id.low.toString(),
-    id.high.toString(),
-    recipient,
-    ...encodeByteArray(tokenUri),
-    royaltyBps.toString()
-  ];
-  try {
-    const tx = await account.execute([{ contractAddress, entrypoint: "mint", calldata }]);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to mint NFT", "TRANSACTION_FAILED", err);
-  }
-}
-async function createCollection(account, params, config) {
-  const { name, symbol, baseUri, collectionContract } = params;
-  const provider = getProvider(config);
-  const contractAddress = collectionContract ?? config.collectionContract;
-  const calldata = [
-    ...encodeByteArray(name),
-    ...encodeByteArray(symbol),
-    ...encodeByteArray(baseUri)
-  ];
-  try {
-    const tx = await account.execute([{ contractAddress, entrypoint: "create_collection", calldata }]);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to create collection", "TRANSACTION_FAILED", err);
-  }
-}
-async function checkoutCart(account, items, config) {
-  if (items.length === 0) throw new MedialaneError("Cart is empty", "INVALID_PARAMS");
-  const { contract, provider } = makeContract(config);
-  const tokenTotals = /* @__PURE__ */ new Map();
-  for (const item of items) {
-    const prev = tokenTotals.get(item.considerationToken) ?? 0n;
-    tokenTotals.set(item.considerationToken, prev + BigInt(item.considerationAmount));
-  }
-  const approveCalls = Array.from(tokenTotals.entries()).map(([tokenAddr, totalWei]) => {
-    const amount = cairo.uint256(totalWei.toString());
-    return {
-      contractAddress: tokenAddr,
-      entrypoint: "approve",
-      calldata: [
-        config.marketplaceContract,
-        amount.low.toString(),
-        amount.high.toString()
-      ]
-    };
-  });
-  const fulfillCalls = items.map(
-    (item) => contract.populate("fulfill_order", [item.orderHash])
-  );
-  const feeCalls = Array.from(tokenTotals.entries()).map(
-    ([tokenAddr, totalWei]) => buildFeeCall(
-      { surface: "marketplace", token: tokenAddr, grossAmount: totalWei },
-      config.feeConfig
-    )
-  ).filter((c) => c !== null);
-  try {
-    const tx = await account.execute([...approveCalls, ...fulfillCalls, ...feeCalls]);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Cart checkout failed", "TRANSACTION_FAILED", err);
-  }
-}
-async function getOrderDetails(orderHash, config) {
-  const { contract } = makeContract(config);
-  return contract.get_order_details(orderHash);
-}
-async function getCounter(address, config) {
-  const { contract } = makeContract(config);
-  return BigInt((await contract.get_counter(address)).toString());
-}
-async function incrementCounter(account, config) {
-  const { contract, provider } = makeContract(config);
-  const call = contract.populate("increment_counter", []);
-  try {
-    const tx = await account.execute(call);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to increment counter", "TRANSACTION_FAILED", err);
-  }
-}
-
-// src/starknet/marketplace/index.ts
-var MarketplaceModule = class {
-  constructor(config) {
-    this.config = config;
-  }
-  // ─── Writes ───────────────────────────────────────────────────────────────
-  createListing(account, params) {
-    return createListing(account, params, this.config);
-  }
-  makeOffer(account, params) {
-    return makeOffer(account, params, this.config);
-  }
-  fulfillOrder(account, params) {
-    return fulfillOrder(account, params, this.config);
-  }
-  cancelOrder(account, params) {
-    return cancelOrder(account, params, this.config);
-  }
-  checkoutCart(account, items) {
-    return checkoutCart(account, items, this.config);
-  }
-  mint(account, params) {
-    return mint(account, params, this.config);
-  }
-  createCollection(account, params) {
-    return createCollection(account, params, this.config);
-  }
-  /** Bulk-cancel: bump the caller's counter, invalidating all their open orders. */
-  incrementCounter(account) {
-    return incrementCounter(account, this.config);
-  }
-  // ─── View calls ───────────────────────────────────────────────────────────
-  getOrderDetails(orderHash) {
-    return getOrderDetails(orderHash, this.config);
-  }
-  getCounter(address) {
-    return getCounter(address, this.config);
-  }
-  // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
-  buildListingTypedData(params, chainId) {
-    return buildOrderTypedData(params, chainId);
-  }
-  buildCancellationTypedData(params, chainId) {
-    return buildCancellationTypedData(params, chainId);
-  }
-};
-function contractFor2(cfg) {
-  return newContract(Medialane1155ABI, cfg.marketplace1155Contract, getProvider(cfg));
-}
-function buildListing1155Order(i, cfg) {
-  const orderParams = {
-    offerer: i.offerer,
-    marketplace: cfg.marketplace1155Contract,
-    offer: { item_type: "ERC1155", token: i.nftContract, identifier_or_criteria: i.tokenId, amount: i.quantity },
-    consideration: {
-      item_type: "ERC20",
-      token: i.paymentTokenAddress,
-      identifier_or_criteria: "0",
-      amount: i.priceWeiPerUnit,
-      recipient: i.offerer
-    },
-    royalty_max_bps: i.royaltyMaxBps,
-    start_time: String(i.startTime),
-    end_time: String(i.endTime),
-    salt: i.salt,
-    counter: i.counter
-  };
-  const typedData = stringifyBigInts(
-    build1155OrderTypedData(orderParams, getChainId(cfg))
-  );
-  return { orderParams, typedData };
-}
-function buildOffer1155Order(i, cfg) {
-  const orderParams = {
-    offerer: i.offerer,
-    marketplace: cfg.marketplace1155Contract,
-    offer: { item_type: "ERC20", token: i.paymentTokenAddress, identifier_or_criteria: "0", amount: i.priceWeiPerUnit },
-    consideration: {
-      item_type: "ERC1155",
-      token: i.nftContract,
-      identifier_or_criteria: i.tokenId,
-      amount: i.quantity,
-      recipient: i.offerer
-    },
-    royalty_max_bps: i.royaltyMaxBps,
-    start_time: String(i.startTime),
-    end_time: String(i.endTime),
-    salt: i.salt,
-    counter: i.counter
-  };
-  const typedData = stringifyBigInts(
-    build1155OrderTypedData(orderParams, getChainId(cfg))
-  );
-  return { orderParams, typedData };
-}
-function registerPayload2(orderParams, signature) {
-  return stringifyBigInts({
-    parameters: {
-      ...orderParams,
-      offer: { ...orderParams.offer, item_type: shortString.encodeShortString(orderParams.offer.item_type) },
-      consideration: {
-        ...orderParams.consideration,
-        item_type: shortString.encodeShortString(orderParams.consideration.item_type)
-      }
-    },
-    signature
-  });
-}
-function buildRegister1155Calls(a, cfg) {
-  const registerCall = contractFor2(cfg).populate("register_order", [registerPayload2(a.orderParams, a.signature)]);
-  return a.approvalNeeded ? [a.approve, registerCall] : [registerCall];
-}
-function buildFulfill1155Calls(a, cfg) {
-  const u = cairo.uint256(a.totalPrice);
-  const approve = {
-    contractAddress: a.paymentToken,
-    entrypoint: "approve",
-    calldata: [cfg.marketplace1155Contract, u.low.toString(), u.high.toString()]
-  };
-  const fulfill = contractFor2(cfg).populate("fulfill_order", [a.orderHash, a.quantity]);
-  const fee = buildFeeCall(
-    { surface: "marketplace", token: a.paymentToken, grossAmount: BigInt(a.totalPrice) },
-    cfg.feeConfig
-  );
-  return fee ? [approve, fulfill, fee] : [approve, fulfill];
-}
-function buildCancel1155Calls(a, cfg) {
-  const cancelPayload = stringifyBigInts({
-    cancelation: { order_hash: a.orderHash, offerer: a.offerer },
-    signature: a.signature
-  });
-  return [contractFor2(cfg).populate("cancel_order", [cancelPayload])];
-}
-function buildCancel1155TypedData(orderHash, offerer, cfg) {
-  return stringifyBigInts(
-    build1155CancellationTypedData({ order_hash: orderHash, offerer }, getChainId(cfg))
-  );
-}
-
-// src/starknet/marketplace1155/orders.ts
-var _contractCache2 = /* @__PURE__ */ new WeakMap();
-function getContract(config) {
-  let c = _contractCache2.get(config);
-  if (!c) {
-    const provider = getProvider(config);
-    c = newContract(Medialane1155ABI, config.marketplace1155Contract, provider);
-    _contractCache2.set(config, c);
-  }
-  return c;
-}
-async function createListing1155(account, params, config) {
-  const {
-    nftContract,
-    tokenId,
-    amount,
-    pricePerUnit,
-    currency = DEFAULT_CURRENCY,
-    durationSeconds
-  } = params;
-  const contract = getContract(config);
-  const provider = getProvider(config);
-  const token = resolveToken(currency);
-  const priceWei = parseAmount(pricePerUnit, token.decimals);
-  const now = Math.floor(Date.now() / 1e3);
-  const startTime = now + START_TIME_BUFFER_SECS;
-  const endTime = now + durationSeconds;
-  const counter = (await contract.get_counter(account.address)).toString();
-  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
-  const { orderParams, typedData } = buildListing1155Order(
-    {
-      offerer: account.address,
-      nftContract,
-      tokenId,
-      quantity: amount,
-      priceWeiPerUnit: priceWei,
-      paymentTokenAddress: token.address,
-      royaltyMaxBps,
-      startTime,
-      endTime,
-      salt: generateSalt(),
-      counter
-    },
-    config
-  );
-  const signatureArray = toSignatureArray(await account.signMessage(typedData));
-  let isApproved = false;
-  try {
-    const result = await provider.callContract({
-      contractAddress: nftContract,
-      entrypoint: "is_approved_for_all",
-      calldata: [account.address, config.marketplace1155Contract]
-    });
-    isApproved = BigInt(result[0]) === 1n;
-  } catch {
-  }
-  const approve = {
-    contractAddress: nftContract,
-    entrypoint: "set_approval_for_all",
-    calldata: [config.marketplace1155Contract, "1"]
-  };
-  const calls = buildRegister1155Calls(
-    { orderParams, signature: signatureArray, approvalNeeded: !isApproved, approve },
-    config
-  );
-  try {
-    const tx = await account.execute(calls);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to create ERC-1155 listing", "TRANSACTION_FAILED", err);
-  }
-}
-async function fulfillOrder1155(account, params, config) {
-  const { orderHash, paymentToken, totalPrice, quantity = "1" } = params;
-  const provider = getProvider(config);
-  const calls = buildFulfill1155Calls({ orderHash, paymentToken, totalPrice, quantity }, config);
-  try {
-    const tx = await account.execute(calls);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to fulfill ERC-1155 order", "TRANSACTION_FAILED", err);
-  }
-}
-async function cancelOrder1155(account, params, config) {
-  const { orderHash } = params;
-  const provider = getProvider(config);
-  const typedData = buildCancel1155TypedData(orderHash, account.address, config);
-  const signatureArray = toSignatureArray(await account.signMessage(typedData));
-  const calls = buildCancel1155Calls({ orderHash, offerer: account.address, signature: signatureArray }, config);
-  try {
-    const tx = await account.execute(calls);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to cancel ERC-1155 order", "TRANSACTION_FAILED", err);
-  }
-}
-async function makeOffer1155(account, params, config) {
-  const {
-    nftContract,
-    tokenId,
-    amount,
-    price,
-    currency = DEFAULT_CURRENCY,
-    durationSeconds
-  } = params;
-  const contract = getContract(config);
-  const provider = getProvider(config);
-  const token = resolveToken(currency);
-  const priceWei = parseAmount(price, token.decimals);
-  const now = Math.floor(Date.now() / 1e3);
-  const startTime = now + START_TIME_BUFFER_SECS;
-  const endTime = now + durationSeconds;
-  const counter = (await contract.get_counter(account.address)).toString();
-  const royaltyMaxBps = await resolveRoyaltyMaxBps(provider, nftContract, tokenId, params.royaltyMaxBps);
-  const { orderParams, typedData } = buildOffer1155Order(
-    {
-      offerer: account.address,
-      nftContract,
-      tokenId,
-      quantity: amount,
-      priceWeiPerUnit: priceWei,
-      paymentTokenAddress: token.address,
-      royaltyMaxBps,
-      startTime,
-      endTime,
-      salt: generateSalt(),
-      counter
-    },
-    config
-  );
-  const signatureArray = toSignatureArray(await account.signMessage(typedData));
-  const totalWei = BigInt(priceWei) * BigInt(amount);
-  const amountU256 = cairo.uint256(totalWei.toString());
-  const approveCall = {
-    contractAddress: token.address,
-    entrypoint: "approve",
-    calldata: [
-      config.marketplace1155Contract,
-      amountU256.low.toString(),
-      amountU256.high.toString()
-    ]
-  };
-  const calls = buildRegister1155Calls(
-    { orderParams, signature: signatureArray, approvalNeeded: true, approve: approveCall },
-    config
-  );
-  try {
-    const tx = await account.execute(calls);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to make ERC-1155 offer", "TRANSACTION_FAILED", err);
-  }
-}
-async function checkoutCart1155(account, items, config) {
-  if (items.length === 0) throw new MedialaneError("Cart is empty", "INVALID_PARAMS");
-  const contract = getContract(config);
-  const provider = getProvider(config);
-  const tokenTotals = /* @__PURE__ */ new Map();
-  for (const item of items) {
-    const prev = tokenTotals.get(item.considerationToken) ?? 0n;
-    tokenTotals.set(item.considerationToken, prev + BigInt(item.considerationAmount));
-  }
-  const approveCalls = Array.from(tokenTotals.entries()).map(([tokenAddr, totalWei]) => {
-    const amount = cairo.uint256(totalWei.toString());
-    return {
-      contractAddress: tokenAddr,
-      entrypoint: "approve",
-      calldata: [
-        config.marketplace1155Contract,
-        amount.low.toString(),
-        amount.high.toString()
-      ]
-    };
-  });
-  const fulfillCalls = items.map(
-    (item) => contract.populate("fulfill_order", [item.orderHash, item.quantity ?? "1"])
-  );
-  try {
-    const tx = await account.execute([...approveCalls, ...fulfillCalls]);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("ERC-1155 cart checkout failed", "TRANSACTION_FAILED", err);
-  }
-}
-async function getOrderDetails1155(orderHash, config) {
-  const contract = getContract(config);
-  return contract.get_order_details(orderHash);
-}
-async function getCounter1155(address, config) {
-  const contract = getContract(config);
-  return BigInt((await contract.get_counter(address)).toString());
-}
-async function incrementCounter1155(account, config) {
-  const contract = getContract(config);
-  const provider = getProvider(config);
-  const call = contract.populate("increment_counter", []);
-  try {
-    const tx = await account.execute(call);
-    await provider.waitForTransaction(tx.transaction_hash);
-    return { txHash: tx.transaction_hash };
-  } catch (err) {
-    throw new MedialaneError("Failed to increment counter (1155)", "TRANSACTION_FAILED", err);
-  }
-}
-
-// src/starknet/marketplace1155/index.ts
-var Medialane1155Module = class {
-  constructor(config) {
-    this.config = config;
-  }
-  // ─── Writes ───────────────────────────────────────────────────────────────
-  /**
-   * Create an ERC-1155 sell listing.
-   * Optionally grants `set_approval_for_all` if not already approved.
-   */
-  createListing(account, params) {
-    return createListing1155(account, params, this.config);
-  }
-  /**
-   * Make an offer (bid) on an ERC-1155 token.
-   * Approves the ERC-20 spend then calls `register_order` atomically.
-   */
-  makeOffer(account, params) {
-    return makeOffer1155(account, params, this.config);
-  }
-  /**
-   * Fulfill (buy) an ERC-1155 listing.
-   * Approves the payment token then calls `fulfill_order` atomically.
-   */
-  fulfillOrder(account, params) {
-    return fulfillOrder1155(account, params, this.config);
-  }
-  /**
-   * Cancel an ERC-1155 listing (offerer only).
-   */
-  cancelOrder(account, params) {
-    return cancelOrder1155(account, params, this.config);
-  }
-  /**
-   * Checkout a cart of ERC-1155 orders atomically.
-   * Signs one fulfillment per item (with quantity), sums ERC-20 approvals by token.
-   */
-  checkoutCart(account, items) {
-    return checkoutCart1155(account, items, this.config);
-  }
-  /** Bulk-cancel on the 1155 venue: bump the caller's counter. */
-  incrementCounter(account) {
-    return incrementCounter1155(account, this.config);
-  }
-  // ─── View calls ───────────────────────────────────────────────────────────
-  getOrderDetails(orderHash) {
-    return getOrderDetails1155(orderHash, this.config);
-  }
-  getCounter(address) {
-    return getCounter1155(address, this.config);
-  }
-  // ─── Typed data builders (for ChipiPay / custom signing flows) ───────────
-  buildListingTypedData(params, chainId) {
-    return build1155OrderTypedData(params, chainId);
-  }
-  buildCancellationTypedData(params, chainId) {
-    return build1155CancellationTypedData(params, chainId);
-  }
-};
+// src/starknet/services/pop.ts
 var PopService = class {
   constructor(config) {
     this.factoryAddress = getStarknetCoordinates(config.chain).popFactory;
@@ -12320,6 +11391,21 @@ var PopService = class {
     return { txHash: res.transaction_hash };
   }
 };
+function buildFeeCall(p, cfg) {
+  if (!cfg.enabled || !cfg.fundAddress) return null;
+  const bps = p.surface === "marketplace" ? cfg.marketplaceBps : cfg.launchpadBps;
+  if (bps <= 0) return null;
+  const fee = p.grossAmount * BigInt(bps) / 10000n;
+  if (fee <= 0n) return null;
+  const u = cairo.uint256(fee.toString());
+  return {
+    contractAddress: p.token,
+    entrypoint: "transfer",
+    calldata: [cfg.fundAddress, u.low.toString(), u.high.toString()]
+  };
+}
+
+// src/starknet/services/drop.ts
 function toContractConditions(c) {
   return {
     start_time: c.startTime,
@@ -12976,8 +12062,6 @@ var SponsorshipService = class {
 var MedialaneClient = class {
   constructor(rawConfig = {}) {
     this.config = resolveConfig(rawConfig);
-    this.marketplace = new MarketplaceModule(this.config);
-    this.marketplace1155 = new Medialane1155Module(this.config);
     this.services = {
       pop: new PopService(this.config),
       drop: new DropService(this.config),
@@ -13020,6 +12104,366 @@ var MedialaneClient = class {
     return this.config.marketplaceContract;
   }
 };
+
+// src/starknet/marketplace/errors.ts
+var MedialaneError = class extends Error {
+  constructor(message, code = "UNKNOWN", cause) {
+    super(message);
+    this.code = code;
+    this.cause = cause;
+    this.name = "MedialaneError";
+  }
+};
+var START_TIME_BUFFER_SECS = 30;
+function newContract(abi, address, providerOrAccount) {
+  const C = Contract;
+  return C.length === 1 ? new Contract({ abi, address, providerOrAccount }) : new Contract(
+    abi,
+    address,
+    providerOrAccount
+  );
+}
+function getChainId(config) {
+  if (config.chain !== "STARKNET") {
+    throw new Error(`SNIP-12 signing is Starknet-only; got chain "${config.chain}"`);
+  }
+  return constants.StarknetChainId.SN_MAIN;
+}
+function resolveToken(currency) {
+  const token = SUPPORTED_TOKENS.find(
+    (t) => t.symbol === currency.toUpperCase() || t.address.toLowerCase() === currency.toLowerCase()
+  );
+  if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
+  return token;
+}
+var _providerCache = /* @__PURE__ */ new WeakMap();
+function getProvider(config) {
+  let p = _providerCache.get(config);
+  if (!p) {
+    const urls = Array.from(/* @__PURE__ */ new Set([config.rpcUrl, ...PUBLIC_RPC_FALLBACKS]));
+    p = new RpcProvider({ nodeUrl: urls[0], baseFetch: createFailoverFetch(urls) });
+    _providerCache.set(config, p);
+  }
+  return p;
+}
+
+// src/starknet/marketplace/orders.ts
+var _contractCache = /* @__PURE__ */ new WeakMap();
+function makeContract(config) {
+  const cached = _contractCache.get(config);
+  if (cached) return cached;
+  const contract = newContract(
+    IPMarketplaceABI,
+    config.marketplaceContract,
+    getProvider(config)
+  );
+  const entry = { contract };
+  _contractCache.set(config, entry);
+  return entry;
+}
+async function getOrderDetails(orderHash, config) {
+  const { contract } = makeContract(config);
+  return contract.get_order_details(orderHash);
+}
+async function getCounter(address, config) {
+  const { contract } = makeContract(config);
+  return BigInt((await contract.get_counter(address)).toString());
+}
+
+// src/starknet/marketplace1155/orders.ts
+var _contractCache2 = /* @__PURE__ */ new WeakMap();
+function getContract(config) {
+  let c = _contractCache2.get(config);
+  if (!c) {
+    c = newContract(Medialane1155ABI, config.marketplace1155Contract, getProvider(config));
+    _contractCache2.set(config, c);
+  }
+  return c;
+}
+async function getOrderDetails1155(orderHash, config) {
+  const contract = getContract(config);
+  return contract.get_order_details(orderHash);
+}
+async function getCounter1155(address, config) {
+  const contract = getContract(config);
+  return BigInt((await contract.get_counter(address)).toString());
+}
+var STARKNET_DOMAIN = [
+  { name: "name", type: "shortstring" },
+  { name: "version", type: "shortstring" },
+  { name: "chainId", type: "shortstring" },
+  { name: "revision", type: "shortstring" }
+];
+var OFFER_ITEM = [
+  { name: "item_type", type: "shortstring" },
+  { name: "token", type: "ContractAddress" },
+  { name: "identifier_or_criteria", type: "felt" },
+  { name: "amount", type: "felt" }
+];
+var CONSIDERATION_ITEM = [
+  { name: "item_type", type: "shortstring" },
+  { name: "token", type: "ContractAddress" },
+  { name: "identifier_or_criteria", type: "felt" },
+  { name: "amount", type: "felt" },
+  { name: "recipient", type: "ContractAddress" }
+];
+var ORDER_PARAMETERS = [
+  { name: "offerer", type: "ContractAddress" },
+  { name: "marketplace", type: "ContractAddress" },
+  { name: "offer", type: "OfferItem" },
+  { name: "consideration", type: "ConsiderationItem" },
+  { name: "royalty_max_bps", type: "felt" },
+  { name: "start_time", type: "felt" },
+  { name: "end_time", type: "felt" },
+  { name: "salt", type: "felt" },
+  { name: "counter", type: "felt" }
+];
+var ORDER_CANCELLATION = [
+  { name: "order_hash", type: "felt" },
+  { name: "offerer", type: "ContractAddress" }
+];
+var DOMAIN_VERSION = {
+  erc721: "5",
+  erc1155: "4"
+};
+function buildDomain(standard, chainId) {
+  return {
+    name: "Medialane",
+    version: DOMAIN_VERSION[standard],
+    chainId,
+    revision: TypedDataRevision.ACTIVE
+  };
+}
+function buildOrderTypedData(message, chainId) {
+  return {
+    domain: buildDomain("erc721", chainId),
+    primaryType: "OrderParameters",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderParameters: ORDER_PARAMETERS,
+      OfferItem: OFFER_ITEM,
+      ConsiderationItem: CONSIDERATION_ITEM
+    },
+    message
+  };
+}
+function build1155OrderTypedData(message, chainId) {
+  return {
+    domain: buildDomain("erc1155", chainId),
+    primaryType: "OrderParameters",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderParameters: ORDER_PARAMETERS,
+      OfferItem: OFFER_ITEM,
+      ConsiderationItem: CONSIDERATION_ITEM
+    },
+    message
+  };
+}
+function buildCancellationTypedData(message, chainId) {
+  return {
+    domain: buildDomain("erc721", chainId),
+    primaryType: "OrderCancellation",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderCancellation: ORDER_CANCELLATION
+    },
+    message
+  };
+}
+function build1155CancellationTypedData(message, chainId) {
+  return {
+    domain: buildDomain("erc1155", chainId),
+    primaryType: "OrderCancellation",
+    types: {
+      StarknetDomain: STARKNET_DOMAIN,
+      OrderCancellation: ORDER_CANCELLATION
+    },
+    message
+  };
+}
+
+// src/starknet/marketplace/build.ts
+function contractFor(cfg) {
+  return newContract(IPMarketplaceABI, cfg.marketplaceContract, getProvider(cfg));
+}
+function buildListingOrder(i, cfg) {
+  const orderParams = {
+    offerer: i.offerer,
+    marketplace: cfg.marketplaceContract,
+    offer: { item_type: "ERC721", token: i.nftContract, identifier_or_criteria: i.tokenId, amount: "1" },
+    consideration: {
+      item_type: "ERC20",
+      token: i.paymentTokenAddress,
+      identifier_or_criteria: "0",
+      amount: i.priceWei,
+      recipient: i.offerer
+    },
+    royalty_max_bps: i.royaltyMaxBps,
+    start_time: String(i.startTime),
+    end_time: String(i.endTime),
+    salt: i.salt,
+    counter: i.counter
+  };
+  const typedData = stringifyBigInts(buildOrderTypedData(orderParams, getChainId(cfg)));
+  return { orderParams, typedData };
+}
+function buildOfferOrder(i, cfg) {
+  const orderParams = {
+    offerer: i.offerer,
+    marketplace: cfg.marketplaceContract,
+    offer: { item_type: "ERC20", token: i.paymentTokenAddress, identifier_or_criteria: "0", amount: i.priceWei },
+    consideration: {
+      item_type: "ERC721",
+      token: i.nftContract,
+      identifier_or_criteria: i.tokenId,
+      amount: "1",
+      recipient: i.offerer
+    },
+    royalty_max_bps: i.royaltyMaxBps,
+    start_time: String(i.startTime),
+    end_time: String(i.endTime),
+    salt: i.salt,
+    counter: i.counter
+  };
+  const typedData = stringifyBigInts(buildOrderTypedData(orderParams, getChainId(cfg)));
+  return { orderParams, typedData };
+}
+function registerPayload(orderParams, signature) {
+  return stringifyBigInts({
+    parameters: {
+      ...orderParams,
+      offer: { ...orderParams.offer, item_type: shortString.encodeShortString(orderParams.offer.item_type) },
+      consideration: {
+        ...orderParams.consideration,
+        item_type: shortString.encodeShortString(orderParams.consideration.item_type)
+      }
+    },
+    signature
+  });
+}
+function buildRegisterCalls(a, cfg) {
+  const registerCall = contractFor(cfg).populate("register_order", [registerPayload(a.orderParams, a.signature)]);
+  return a.approvalNeeded ? [a.approve, registerCall] : [registerCall];
+}
+function buildFulfillCalls(a, cfg) {
+  const u = cairo.uint256(a.totalPrice);
+  const approve = {
+    contractAddress: a.paymentToken,
+    entrypoint: "approve",
+    calldata: [cfg.marketplaceContract, u.low.toString(), u.high.toString()]
+  };
+  const fulfill = contractFor(cfg).populate("fulfill_order", [a.orderHash]);
+  const fee = buildFeeCall(
+    { surface: "marketplace", token: a.paymentToken, grossAmount: BigInt(a.totalPrice) },
+    cfg.feeConfig
+  );
+  return fee ? [approve, fulfill, fee] : [approve, fulfill];
+}
+function buildCancelCalls(a, cfg) {
+  const cancelRequest = stringifyBigInts({
+    cancelation: { order_hash: a.orderHash, offerer: a.offerer },
+    signature: a.signature
+  });
+  return [contractFor(cfg).populate("cancel_order", [cancelRequest])];
+}
+function buildCancelTypedData(orderHash, offerer, cfg) {
+  return stringifyBigInts(buildCancellationTypedData({ order_hash: orderHash, offerer }, getChainId(cfg)));
+}
+function contractFor2(cfg) {
+  return newContract(Medialane1155ABI, cfg.marketplace1155Contract, getProvider(cfg));
+}
+function buildListing1155Order(i, cfg) {
+  const orderParams = {
+    offerer: i.offerer,
+    marketplace: cfg.marketplace1155Contract,
+    offer: { item_type: "ERC1155", token: i.nftContract, identifier_or_criteria: i.tokenId, amount: i.quantity },
+    consideration: {
+      item_type: "ERC20",
+      token: i.paymentTokenAddress,
+      identifier_or_criteria: "0",
+      amount: i.priceWeiPerUnit,
+      recipient: i.offerer
+    },
+    royalty_max_bps: i.royaltyMaxBps,
+    start_time: String(i.startTime),
+    end_time: String(i.endTime),
+    salt: i.salt,
+    counter: i.counter
+  };
+  const typedData = stringifyBigInts(
+    build1155OrderTypedData(orderParams, getChainId(cfg))
+  );
+  return { orderParams, typedData };
+}
+function buildOffer1155Order(i, cfg) {
+  const orderParams = {
+    offerer: i.offerer,
+    marketplace: cfg.marketplace1155Contract,
+    offer: { item_type: "ERC20", token: i.paymentTokenAddress, identifier_or_criteria: "0", amount: i.priceWeiPerUnit },
+    consideration: {
+      item_type: "ERC1155",
+      token: i.nftContract,
+      identifier_or_criteria: i.tokenId,
+      amount: i.quantity,
+      recipient: i.offerer
+    },
+    royalty_max_bps: i.royaltyMaxBps,
+    start_time: String(i.startTime),
+    end_time: String(i.endTime),
+    salt: i.salt,
+    counter: i.counter
+  };
+  const typedData = stringifyBigInts(
+    build1155OrderTypedData(orderParams, getChainId(cfg))
+  );
+  return { orderParams, typedData };
+}
+function registerPayload2(orderParams, signature) {
+  return stringifyBigInts({
+    parameters: {
+      ...orderParams,
+      offer: { ...orderParams.offer, item_type: shortString.encodeShortString(orderParams.offer.item_type) },
+      consideration: {
+        ...orderParams.consideration,
+        item_type: shortString.encodeShortString(orderParams.consideration.item_type)
+      }
+    },
+    signature
+  });
+}
+function buildRegister1155Calls(a, cfg) {
+  const registerCall = contractFor2(cfg).populate("register_order", [registerPayload2(a.orderParams, a.signature)]);
+  return a.approvalNeeded ? [a.approve, registerCall] : [registerCall];
+}
+function buildFulfill1155Calls(a, cfg) {
+  const u = cairo.uint256(a.totalPrice);
+  const approve = {
+    contractAddress: a.paymentToken,
+    entrypoint: "approve",
+    calldata: [cfg.marketplace1155Contract, u.low.toString(), u.high.toString()]
+  };
+  const fulfill = contractFor2(cfg).populate("fulfill_order", [a.orderHash, a.quantity]);
+  const fee = buildFeeCall(
+    { surface: "marketplace", token: a.paymentToken, grossAmount: BigInt(a.totalPrice) },
+    cfg.feeConfig
+  );
+  return fee ? [approve, fulfill, fee] : [approve, fulfill];
+}
+function buildCancel1155Calls(a, cfg) {
+  const cancelPayload = stringifyBigInts({
+    cancelation: { order_hash: a.orderHash, offerer: a.offerer },
+    signature: a.signature
+  });
+  return [contractFor2(cfg).populate("cancel_order", [cancelPayload])];
+}
+function buildCancel1155TypedData(orderHash, offerer, cfg) {
+  return stringifyBigInts(
+    build1155CancellationTypedData({ order_hash: orderHash, offerer }, getChainId(cfg))
+  );
+}
+
+// src/starknet/venue.ts
 var NO_EXPIRY_SECONDS = 100 * 365 * 24 * 3600;
 var StarknetVenue = class {
   constructor(deps) {
@@ -13438,7 +12882,31 @@ function buybackQuoteRaw(teamCoinsRawValue, quoteDecimals) {
 function fdvHuman(supplyHuman) {
   return supplyHuman * LAUNCH_PRICE_QUOTE_PER_COIN;
 }
+function encodeByteArray(str) {
+  const bytes = new TextEncoder().encode(str);
+  const fullChunks = [];
+  let i = 0;
+  while (i + 31 <= bytes.length) {
+    let val = 0n;
+    for (const b of bytes.slice(i, i + 31)) {
+      val = val << 8n | BigInt(b);
+    }
+    fullChunks.push(num.toHex(val));
+    i += 31;
+  }
+  const remaining = bytes.slice(i);
+  let pendingVal = 0n;
+  for (const b of remaining) {
+    pendingVal = pendingVal << 8n | BigInt(b);
+  }
+  return [
+    fullChunks.length.toString(),
+    ...fullChunks,
+    num.toHex(pendingVal),
+    remaining.length.toString()
+  ];
+}
 
-export { ADMIN_HEADERS, ADMIN_SCOPE, ApiClient, CHAINS, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, ClubService, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_CHAIN, DEFAULT_CURRENCY, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, FeeConfigSchema, IPClubABI, IPClubCollectionABI, IPClubFactoryABI, IPClubNFTABI, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPGenesisABI, IPMarketplaceABI, IPNftABI, IPSponsorshipABI, IPSponsorshipLicenseABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, LAUNCH_PRICE_QUOTE_PER_COIN, MarketplaceModule, Medialane1155ABI, Medialane1155Module, MedialaneApiError, MedialaneClient, MedialaneError, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, PUBLIC_RPC_FALLBACKS, PopService, STARKNET_COLLECTION_1155_CLASS_HASH, STARKNET_COLLECTION_1155_CONTRACT, STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH, STARKNET_COLLECTION_1155_START_BLOCK, STARKNET_COLLECTION_721_CONTRACT, STARKNET_COLLECTION_721_START_BLOCK, STARKNET_CREATOR_COIN_CLASS_HASH, STARKNET_CREATOR_COIN_EKUBO_LAUNCHER, STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH, STARKNET_CREATOR_COIN_FACTORY_CONTRACT, STARKNET_CREATOR_COIN_START_BLOCK, STARKNET_DROP_COLLECTION_CLASS_HASH, STARKNET_DROP_FACTORY_CONTRACT, STARKNET_EKUBO_CORE, STARKNET_IPCOLLECTION_CLASS_HASH, STARKNET_IPNFT_CLASS_HASH, STARKNET_IP_CLUB_COLLECTION_CLASS_HASH, STARKNET_IP_CLUB_FACTORY_CONTRACT, STARKNET_IP_CLUB_NFT_CLASS_HASH, STARKNET_IP_CLUB_REGISTRY_CONTRACT, STARKNET_IP_SPONSORSHIP_CONTRACT, STARKNET_IP_SPONSORSHIP_LICENSE_CONTRACT, STARKNET_IP_TICKETS_FACTORY_CONTRACT, STARKNET_IP_TICKET_COLLECTION_CLASS_HASH, STARKNET_MARKETPLACE_1155_CLASS_HASH, STARKNET_MARKETPLACE_1155_CONTRACT, STARKNET_MARKETPLACE_1155_START_BLOCK, STARKNET_MARKETPLACE_721_CLASS_HASH, STARKNET_MARKETPLACE_721_CONTRACT, STARKNET_MARKETPLACE_721_START_BLOCK, STARKNET_NFTCOMMENTS_CONTRACT, STARKNET_POP_COLLECTION_CLASS_HASH, STARKNET_POP_FACTORY_CONTRACT, SUPPORTED_TOKENS, SponsorshipService, StarknetVenue, TicketService, VALIDATED_EKUBO_PARAMS, adminRequestDigest, build1155CancellationTypedData, build1155OrderTypedData, buildAdminSessionTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createAdminSessionGrant, createFailoverFetch, encodeAdminHeaders, encodeByteArray, fdvHuman, formatAmount, getCoordinates, getCreatorCoinPrice, getListableTokens, getService, getServicesByCapability, getSiwsStorageKey, getStarknetCoordinates, getStoredSiwsToken, getTokenByAddress, getTokenBySymbol, hasCapability, isServiceId, isSiwsTokenValid, isTransientRpcError, listServices, normalizeAddress, normalizeHash, normalizeSiwsSignature, parseAdminHeaders, parseAmount, parseCreatorCoinCreated, randomNonce, requestSiwsToken, resolveConfig, resolveFeeConfig, sessionKeyHashOf, shortenAddress, signAdminRequest, storeSiwsToken, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol, verifyAdminRequestSig };
+export { ADMIN_HEADERS, ADMIN_SCOPE, ApiClient, CHAINS, MAX_SUPPLY as COIN_MAX_SUPPLY, MIN_SUPPLY as COIN_MIN_SUPPLY, ClubService, CreatorCoinFactoryABI, CreatorCoinService, DEFAULT_CHAIN, DEFAULT_CURRENCY, DropCollectionABI, DropFactoryABI, DropService, ERC1155CollectionService, FeeConfigSchema, IPClubABI, IPClubCollectionABI, IPClubFactoryABI, IPClubNFTABI, IPCollection1155ABI, IPCollection1155FactoryABI, IPCollectionABI, IPGenesisABI, IPMarketplaceABI, IPNftABI, IPSponsorshipABI, IPSponsorshipLicenseABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, LAUNCH_PRICE_QUOTE_PER_COIN, Medialane1155ABI, MedialaneApiError, MedialaneClient, MedialaneError, OPEN_LICENSES, POPCollectionABI, POPFactoryABI, PUBLIC_RPC_FALLBACKS, PopService, STARKNET_COLLECTION_1155_CLASS_HASH, STARKNET_COLLECTION_1155_CONTRACT, STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH, STARKNET_COLLECTION_1155_START_BLOCK, STARKNET_COLLECTION_721_CONTRACT, STARKNET_COLLECTION_721_START_BLOCK, STARKNET_CREATOR_COIN_CLASS_HASH, STARKNET_CREATOR_COIN_EKUBO_LAUNCHER, STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH, STARKNET_CREATOR_COIN_FACTORY_CONTRACT, STARKNET_CREATOR_COIN_START_BLOCK, STARKNET_DROP_COLLECTION_CLASS_HASH, STARKNET_DROP_FACTORY_CONTRACT, STARKNET_EKUBO_CORE, STARKNET_IPCOLLECTION_CLASS_HASH, STARKNET_IPNFT_CLASS_HASH, STARKNET_IP_CLUB_COLLECTION_CLASS_HASH, STARKNET_IP_CLUB_FACTORY_CONTRACT, STARKNET_IP_CLUB_NFT_CLASS_HASH, STARKNET_IP_CLUB_REGISTRY_CONTRACT, STARKNET_IP_SPONSORSHIP_CONTRACT, STARKNET_IP_SPONSORSHIP_LICENSE_CONTRACT, STARKNET_IP_TICKETS_FACTORY_CONTRACT, STARKNET_IP_TICKET_COLLECTION_CLASS_HASH, STARKNET_MARKETPLACE_1155_CLASS_HASH, STARKNET_MARKETPLACE_1155_CONTRACT, STARKNET_MARKETPLACE_1155_START_BLOCK, STARKNET_MARKETPLACE_721_CLASS_HASH, STARKNET_MARKETPLACE_721_CONTRACT, STARKNET_MARKETPLACE_721_START_BLOCK, STARKNET_NFTCOMMENTS_CONTRACT, STARKNET_POP_COLLECTION_CLASS_HASH, STARKNET_POP_FACTORY_CONTRACT, SUPPORTED_TOKENS, SponsorshipService, StarknetVenue, TicketService, VALIDATED_EKUBO_PARAMS, adminRequestDigest, build1155CancellationTypedData, build1155OrderTypedData, buildAdminSessionTypedData, buildCancellationTypedData, buildCreateCreatorCoinCall, buildFeeCall, buildLaunchOnEkuboCalls, buildOrderTypedData, buybackQuoteRaw, toRaw as coinToRaw, createAdminSessionGrant, createFailoverFetch, encodeAdminHeaders, encodeByteArray, fdvHuman, formatAmount, getCoordinates, getCounter, getCounter1155, getCreatorCoinPrice, getListableTokens, getOrderDetails, getOrderDetails1155, getService, getServicesByCapability, getSiwsStorageKey, getStarknetCoordinates, getStoredSiwsToken, getTokenByAddress, getTokenBySymbol, hasCapability, isServiceId, isSiwsTokenValid, isTransientRpcError, listServices, normalizeAddress, normalizeHash, normalizeSiwsSignature, parseAdminHeaders, parseAmount, parseCreatorCoinCreated, randomNonce, requestSiwsToken, resolveConfig, resolveFeeConfig, sessionKeyHashOf, shortenAddress, signAdminRequest, storeSiwsToken, stringifyBigInts, teamCoinsRaw, u256ToBigInt, validateName as validateCoinName, validateSupply as validateCoinSupply, validateSymbol as validateCoinSymbol, verifyAdminRequestSig };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

@@ -1,6 +1,4 @@
 import { type MedialaneConfig, resolveConfig, type ResolvedConfig } from "../config.js";
-import { MarketplaceModule } from "./marketplace/index.js";
-import { Medialane1155Module } from "./marketplace1155/index.js";
 import { ApiClient } from "../api/client.js";
 import { PopService } from "./services/pop.js";
 import { DropService } from "./services/drop.js";
@@ -10,13 +8,10 @@ import { TicketService } from "./services/ticket.js";
 import { ClubService } from "./services/club.js";
 import { SponsorshipService } from "./services/sponsorship.js";
 
+// Marketplace order execution is NOT on the client (0.64.0): it goes through
+// StarknetVenue over the VenueSigner capability port (./venue.ts) — the app's
+// wallet layer signs and submits; the venue builds and reads.
 export class MedialaneClient {
-  /** On-chain marketplace interactions for ERC-721 assets (create listing, fulfill order, etc.) */
-  readonly marketplace: MarketplaceModule;
-
-  /** On-chain marketplace interactions for ERC-1155 assets (Medialane1155 contract). */
-  readonly marketplace1155: Medialane1155Module;
-
   /**
    * Off-chain API client — covers all /v1/* backend endpoints.
    * Requires `backendUrl` in config; pass `apiKey` for authenticated routes.
@@ -37,9 +32,6 @@ export class MedialaneClient {
 
   constructor(rawConfig: MedialaneConfig = {}) {
     this.config = resolveConfig(rawConfig);
-
-    this.marketplace = new MarketplaceModule(this.config);
-    this.marketplace1155 = new Medialane1155Module(this.config);
 
     this.services = {
       pop: new PopService(this.config),

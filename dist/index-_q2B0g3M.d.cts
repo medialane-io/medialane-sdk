@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { C as Chain, V as VenueAdapter, O as OrderRef, A as AdapterTxResult, R as RegisterOrderParams, h as VenueSigner } from './types-Bx3ax9lW.js';
-import { AccountInterface, constants, TypedData, Call, ProviderInterface } from 'starknet';
+import { C as Chain, V as VenueAdapter, O as OrderRef, A as AdapterTxResult, R as RegisterOrderParams, h as VenueSigner } from './types-Bx3ax9lW.cjs';
+import { AccountInterface, Call, ProviderInterface, TypedData, constants } from 'starknet';
 
 interface RetryOptions {
     maxAttempts?: number;
@@ -1234,71 +1234,6 @@ interface Order {
     parameters: OrderParameters;
     signature: string[];
 }
-interface Cancelation {
-    order_hash: string;
-    offerer: string;
-}
-interface CreateListingParams {
-    nftContract: string;
-    tokenId: string;
-    price: string;
-    /** Currency symbol or token address. Defaults to "USDC" (native). */
-    currency?: string;
-    durationSeconds: number;
-    /** Signed EIP-2981 royalty cap in bps. Defaults to the NFT's live 2981 rate. */
-    royaltyMaxBps?: string;
-}
-interface MakeOfferParams {
-    nftContract: string;
-    tokenId: string;
-    price: string;
-    /** Currency symbol or token address. Defaults to "USDC" (native). */
-    currency?: string;
-    durationSeconds: number;
-    /** Signed EIP-2981 royalty cap in bps. Defaults to the NFT's live 2981 rate. */
-    royaltyMaxBps?: string;
-}
-interface FulfillOrderParams {
-    orderHash: string;
-    /** ERC-20 payment token address — the consideration token on the listing. */
-    paymentToken: string;
-    /** Total price in raw token units as a string (e.g. "1000000" for 1 USDC). */
-    totalPrice: string;
-}
-interface CancelOrderParams {
-    orderHash: string;
-}
-interface CartItem {
-    orderHash: string;
-    /** ERC20 token address of the consideration */
-    considerationToken: string;
-    /** Raw consideration amount (string, e.g. "1000000") */
-    considerationAmount: string;
-    /** Human-readable identifier for the NFT (for logging) */
-    offerIdentifier?: string;
-    /** ERC-1155 only: number of units to purchase per item (defaults to "1") */
-    quantity?: string;
-}
-interface MintParams {
-    collectionId: string;
-    recipient: string;
-    tokenUri: string;
-    /**
-     * EIP-2981 secondary-sale royalty in basis points (0–10_000). Set once at mint;
-     * the receiver is the immutable creator (the minting collection owner). Required
-     * since MIP v0.4.0 — pass 0 for no royalty.
-     */
-    royaltyBps: number;
-    /** Optional: override the collection contract from config */
-    collectionContract?: string;
-}
-interface CreateCollectionParams {
-    name: string;
-    symbol: string;
-    baseUri: string;
-    /** Optional: override the collection contract from config */
-    collectionContract?: string;
-}
 interface TxResult {
     txHash: string;
 }
@@ -1314,52 +1249,6 @@ interface OrderDetails {
     counter: string;
     /** ERC-1155 only — units still available. */
     remaining_amount?: string;
-}
-interface CreateListing1155Params {
-    /** ERC-1155 contract address */
-    nftContract: string;
-    /** Token type ID */
-    tokenId: string;
-    /** Number of tokens to sell */
-    amount: string;
-    /** Human-readable price per token (e.g. "1.5") */
-    pricePerUnit: string;
-    /** Currency symbol or token address. Defaults to "USDC". */
-    currency?: string;
-    /** How long the listing is valid, in seconds */
-    durationSeconds: number;
-    /** Signed EIP-2981 royalty cap in bps. Defaults to the NFT's live 2981 rate. */
-    royaltyMaxBps?: string;
-}
-interface FulfillOrder1155Params {
-    /** On-chain order hash */
-    orderHash: string;
-    /** ERC-20 payment token address (from order details) */
-    paymentToken: string;
-    /** Total price in raw token units (pricePerUnit × quantity, as string) */
-    totalPrice: string;
-    /** Number of units to purchase (1 ≤ quantity ≤ remaining_amount). Defaults to 1. */
-    quantity?: string;
-}
-interface CancelOrder1155Params {
-    /** On-chain order hash */
-    orderHash: string;
-}
-interface MakeOffer1155Params {
-    /** ERC-1155 contract address */
-    nftContract: string;
-    /** Token type ID */
-    tokenId: string;
-    /** Number of tokens requested */
-    amount: string;
-    /** Total offer price in human-readable units (e.g. "1.5") */
-    price: string;
-    /** Currency symbol or token address. Defaults to "USDC". */
-    currency?: string;
-    /** How long the offer is valid, in seconds */
-    durationSeconds: number;
-    /** Signed EIP-2981 royalty cap in bps. Defaults to the NFT's live 2981 rate. */
-    royaltyMaxBps?: string;
 }
 
 interface CreatePopCollectionParams {
@@ -1445,65 +1334,6 @@ interface CreateSponsorshipOfferParams {
     transferable: boolean;
     /** Restricts acceptance to one sponsor address; omit for open bidding. */
     specificSponsor?: string;
-}
-
-declare class MedialaneError extends Error {
-    readonly code: MedialaneErrorCode;
-    readonly cause?: unknown | undefined;
-    constructor(message: string, code?: MedialaneErrorCode, cause?: unknown | undefined);
-}
-
-declare class MarketplaceModule {
-    private readonly config;
-    constructor(config: ResolvedConfig);
-    createListing(account: AccountInterface, params: CreateListingParams): Promise<TxResult>;
-    makeOffer(account: AccountInterface, params: MakeOfferParams): Promise<TxResult>;
-    fulfillOrder(account: AccountInterface, params: FulfillOrderParams): Promise<TxResult>;
-    cancelOrder(account: AccountInterface, params: CancelOrderParams): Promise<TxResult>;
-    checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult>;
-    mint(account: AccountInterface, params: MintParams): Promise<TxResult>;
-    createCollection(account: AccountInterface, params: CreateCollectionParams): Promise<TxResult>;
-    /** Bulk-cancel: bump the caller's counter, invalidating all their open orders. */
-    incrementCounter(account: AccountInterface): Promise<TxResult>;
-    getOrderDetails(orderHash: string): Promise<OrderDetails>;
-    getCounter(address: string): Promise<bigint>;
-    buildListingTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
-    buildCancellationTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
-}
-
-declare class Medialane1155Module {
-    private readonly config;
-    constructor(config: ResolvedConfig);
-    /**
-     * Create an ERC-1155 sell listing.
-     * Optionally grants `set_approval_for_all` if not already approved.
-     */
-    createListing(account: AccountInterface, params: CreateListing1155Params): Promise<TxResult>;
-    /**
-     * Make an offer (bid) on an ERC-1155 token.
-     * Approves the ERC-20 spend then calls `register_order` atomically.
-     */
-    makeOffer(account: AccountInterface, params: MakeOffer1155Params): Promise<TxResult>;
-    /**
-     * Fulfill (buy) an ERC-1155 listing.
-     * Approves the payment token then calls `fulfill_order` atomically.
-     */
-    fulfillOrder(account: AccountInterface, params: FulfillOrder1155Params): Promise<TxResult>;
-    /**
-     * Cancel an ERC-1155 listing (offerer only).
-     */
-    cancelOrder(account: AccountInterface, params: CancelOrder1155Params): Promise<TxResult>;
-    /**
-     * Checkout a cart of ERC-1155 orders atomically.
-     * Signs one fulfillment per item (with quantity), sums ERC-20 approvals by token.
-     */
-    checkoutCart(account: AccountInterface, items: CartItem[]): Promise<TxResult>;
-    /** Bulk-cancel on the 1155 venue: bump the caller's counter. */
-    incrementCounter(account: AccountInterface): Promise<TxResult>;
-    getOrderDetails(orderHash: string): Promise<OrderDetails>;
-    getCounter(address: string): Promise<bigint>;
-    buildListingTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
-    buildCancellationTypedData(params: Record<string, unknown>, chainId: constants.StarknetChainId): TypedData;
 }
 
 declare class PopService {
@@ -1948,10 +1778,6 @@ declare class SponsorshipService {
 }
 
 declare class MedialaneClient {
-    /** On-chain marketplace interactions for ERC-721 assets (create listing, fulfill order, etc.) */
-    readonly marketplace: MarketplaceModule;
-    /** On-chain marketplace interactions for ERC-1155 assets (Medialane1155 contract). */
-    readonly marketplace1155: Medialane1155Module;
     /**
      * Off-chain API client — covers all /v1/* backend endpoints.
      * Requires `backendUrl` in config; pass `apiKey` for authenticated routes.
@@ -1972,6 +1798,18 @@ declare class MedialaneClient {
     get rpcUrl(): string;
     get marketplaceContract(): string;
 }
+
+declare class MedialaneError extends Error {
+    readonly code: MedialaneErrorCode;
+    readonly cause?: unknown | undefined;
+    constructor(message: string, code?: MedialaneErrorCode, cause?: unknown | undefined);
+}
+
+declare function getOrderDetails(orderHash: string, config: ResolvedConfig): Promise<OrderDetails>;
+declare function getCounter(address: string, config: ResolvedConfig): Promise<bigint>;
+
+declare function getOrderDetails1155(orderHash: string, config: ResolvedConfig): Promise<OrderDetails>;
+declare function getCounter1155(address: string, config: ResolvedConfig): Promise<bigint>;
 
 /** What a stored/registered order resolves to for fulfilment/cancellation. */
 interface ResolvedOrder {
@@ -10299,4 +10137,4 @@ declare function build1155CancellationTypedData(message: Record<string, unknown>
 
 type StarknetVenueSigner = VenueSigner<TypedData, Call>;
 
-export { type ApiRewardsConfig as $, ADMIN_HEADERS as A, type ApiCreatorProfile as B, type ApiIntent as C, type ApiIntentCreated as D, type ApiKeyStatus as E, type ApiMeta as F, type ApiMetadataSignedUrl as G, type ApiMetadataUpload as H, type ApiOrder as I, type ApiOrderConsideration as J, type ApiOrderOffer as K, type ApiOrderPrice as L, type ApiOrderTokenMeta as M, type ApiOrderTxHash as N, type ApiOrdersQuery as O, type ApiPointEvent as P, type ApiPortalKey as Q, type ApiPortalKeyCreated as R, type ServiceDefinition as S, type ApiPortalMe as T, type ApiPublicRemix as U, type ApiRemixOffer as V, type ApiRemixOfferPrice as W, type ApiRemixOffersQuery as X, type ApiResponse as Y, type ApiRewardsBadge as Z, type ApiRewardsBatchEntry as _, type ServiceCapability as a, FeeConfigSchema as a$, type ApiRewardsLeaderboardEntry as a0, type ApiRewardsLevel as a1, type ApiSearchCollectionResult as a2, type ApiSearchCreatorResult as a3, type ApiSearchResult as a4, type ApiSearchTokenResult as a5, type ApiToken as a6, type ApiTokenBalance as a7, type ApiTokenMetadata as a8, type ApiUsageDay as a9, type CreateCreatorCoinParams as aA, type CreateDropParams as aB, type CreateEventParams as aC, type CreateGrantOpts as aD, type CreateListing1155Params as aE, type CreateListingIntentParams as aF, type CreateListingParams as aG, type CreateMintIntentParams as aH, type CreatePopCollectionParams as aI, type CreateRemixOfferParams as aJ, type CreateSponsorshipOfferParams as aK, type CreateWebhookParams as aL, CreatorCoinFactoryABI as aM, type CreatorCoinPrice as aN, type CreatorCoinReceiptLike as aO, CreatorCoinService as aP, type DeployClubParams as aQ, type DeployCollectionParams as aR, DropCollectionABI as aS, DropFactoryABI as aT, type DropMintStatus as aU, DropService as aV, ERC1155CollectionService as aW, type EkuboLaunchParams as aX, type EkuboPoolParams as aY, type EnforcementDeclaration as aZ, type FeeConfig as a_, type ApiUserRewards as aa, type ApiUserWallet as ab, type ApiWebhookCreated as ac, type ApiWebhookEndpoint as ad, type AutoRemixOfferParams as ae, type BatchMintEditionParams as af, type BuildFeeCallParams as ag, MAX_SUPPLY as ah, MIN_SUPPLY as ai, type CancelOrder1155Params as aj, type CancelOrderIntentParams as ak, type CancelOrderParams as al, type Cancelation as am, type CartItem as an, type ChainFilter as ao, type ClaimConditions as ap, ClubService as aq, type CollectionSort as ar, type CollectionTokensSort as as, type ConfirmRemixOfferParams as at, type ConfirmSelfRemixParams as au, type ConsiderationItem as av, type CreateClubParams as aw, type CreateCollectionIntentParams as ax, type CreateCollectionParams as ay, type CreateCounterOfferIntentParams as az, ADMIN_SCOPE as b, StarknetVenue as b$, type FeeSurface as b0, type FulfillOrder1155Params as b1, type FulfillOrderIntentParams as b2, type FulfillOrderParams as b3, IPClubABI as b4, IPClubCollectionABI as b5, IPClubFactoryABI as b6, IPClubNFTABI as b7, IPCollection1155ABI as b8, IPCollection1155FactoryABI as b9, type MintEditionParams as bA, type MintParams as bB, type MintTicketsParams as bC, OPEN_LICENSES as bD, type OfferItem as bE, type OpenLicense as bF, type Order as bG, type OrderDetails as bH, type OrderParameters as bI, type OrderStatus as bJ, POPCollectionABI as bK, POPFactoryABI as bL, type ParsedAdminHeaders as bM, type PopBatchEligibilityItem as bN, type PopClaimStatus as bO, type PopEventType as bP, PopService as bQ, type RemixOfferStatus as bR, type RequestSiwsTokenArgs as bS, type ResolvedConfig as bT, type ResolvedFeeConfig as bU, type ResolvedOrder as bV, type RetryOptions as bW, type ServiceEventDeclaration as bX, type SiwsSigner as bY, type SortOrder as bZ, SponsorshipService as b_, IPCollectionABI as ba, IPGenesisABI as bb, IPMarketplaceABI as bc, IPNftABI as bd, IPSponsorshipABI as be, IPSponsorshipLicenseABI as bf, IPTicketCollectionABI as bg, IPTicketCollectionFactoryABI as bh, type IPType as bi, type IntentCall as bj, type IntentStatus as bk, type IntentType as bl, type IpAttribute as bm, type IpNftMetadata as bn, LAUNCH_PRICE_QUOTE_PER_COIN as bo, type MakeOffer1155Params as bp, type MakeOfferIntentParams as bq, type MakeOfferParams as br, MarketplaceModule as bs, Medialane1155ABI as bt, Medialane1155Module as bu, MedialaneApiError as bv, MedialaneClient as bw, type MedialaneConfig as bx, MedialaneError as by, type MedialaneErrorCode as bz, type ActivityType as c, type StarknetVenueDeps as c0, type StarknetVenueSigner as c1, type TenantPlan as c2, TicketService as c3, type TxResult as c4, VALIDATED_EKUBO_PARAMS as c5, type WebhookEventType as c6, type WebhookStatus as c7, adminRequestDigest as c8, build1155CancellationTypedData as c9, storeSiwsToken as cA, teamCoinsRaw as cB, validateName as cC, validateSupply as cD, validateSymbol as cE, verifyAdminRequestSig as cF, build1155OrderTypedData as ca, buildAdminSessionTypedData as cb, buildCancellationTypedData as cc, buildCreateCreatorCoinCall as cd, buildFeeCall as ce, buildLaunchOnEkuboCalls as cf, buildOrderTypedData as cg, buybackQuoteRaw as ch, toRaw as ci, createAdminSessionGrant as cj, encodeAdminHeaders as ck, encodeByteArray as cl, fdvHuman as cm, getCreatorCoinPrice as cn, getSiwsStorageKey as co, getStoredSiwsToken as cp, isSiwsTokenValid as cq, normalizeSiwsSignature as cr, parseAdminHeaders as cs, parseCreatorCoinCreated as ct, randomNonce as cu, requestSiwsToken as cv, resolveConfig as cw, resolveFeeConfig as cx, sessionKeyHashOf as cy, signAdminRequest as cz, type AddSupplyParams as d, type AdminGrant as e, type AdminRequest as f, type AdminRequestSig as g, type AdminSession as h, type AdminSessionTypedDataInput as i, type ApiActivitiesQuery as j, type ApiActivity as k, type ApiActivityPrice as l, type ApiAdminCollectionClaim as m, type ApiAppSource as n, type ApiChain as o, ApiClient as p, type ApiCoin as q, type ApiCoinsQuery as r, type ApiCollection as s, type ApiCollectionClaim as t, type ApiCollectionProfile as u, type ApiCollectionSlugClaim as v, type ApiCollectionsQuery as w, type ApiComment as x, type ApiCounterOffersQuery as y, type ApiCreatorListResult as z };
+export { type ApiRewardsConfig as $, ADMIN_HEADERS as A, type ApiCreatorProfile as B, type ApiIntent as C, type ApiIntentCreated as D, type ApiKeyStatus as E, type ApiMeta as F, type ApiMetadataSignedUrl as G, type ApiMetadataUpload as H, type ApiOrder as I, type ApiOrderConsideration as J, type ApiOrderOffer as K, type ApiOrderPrice as L, type ApiOrderTokenMeta as M, type ApiOrderTxHash as N, type ApiOrdersQuery as O, type ApiPointEvent as P, type ApiPortalKey as Q, type ApiPortalKeyCreated as R, type ServiceDefinition as S, type ApiPortalMe as T, type ApiPublicRemix as U, type ApiRemixOffer as V, type ApiRemixOfferPrice as W, type ApiRemixOffersQuery as X, type ApiResponse as Y, type ApiRewardsBadge as Z, type ApiRewardsBatchEntry as _, type ServiceCapability as a, IPCollection1155ABI as a$, type ApiRewardsLeaderboardEntry as a0, type ApiRewardsLevel as a1, type ApiSearchCollectionResult as a2, type ApiSearchCreatorResult as a3, type ApiSearchResult as a4, type ApiSearchTokenResult as a5, type ApiToken as a6, type ApiTokenBalance as a7, type ApiTokenMetadata as a8, type ApiUsageDay as a9, type CreateMintIntentParams as aA, type CreatePopCollectionParams as aB, type CreateRemixOfferParams as aC, type CreateSponsorshipOfferParams as aD, type CreateWebhookParams as aE, CreatorCoinFactoryABI as aF, type CreatorCoinPrice as aG, type CreatorCoinReceiptLike as aH, CreatorCoinService as aI, type DeployClubParams as aJ, type DeployCollectionParams as aK, DropCollectionABI as aL, DropFactoryABI as aM, type DropMintStatus as aN, DropService as aO, ERC1155CollectionService as aP, type EkuboLaunchParams as aQ, type EkuboPoolParams as aR, type EnforcementDeclaration as aS, type FeeConfig as aT, FeeConfigSchema as aU, type FeeSurface as aV, type FulfillOrderIntentParams as aW, IPClubABI as aX, IPClubCollectionABI as aY, IPClubFactoryABI as aZ, IPClubNFTABI as a_, type ApiUserRewards as aa, type ApiUserWallet as ab, type ApiWebhookCreated as ac, type ApiWebhookEndpoint as ad, type AutoRemixOfferParams as ae, type BatchMintEditionParams as af, type BuildFeeCallParams as ag, MAX_SUPPLY as ah, MIN_SUPPLY as ai, type CancelOrderIntentParams as aj, type ChainFilter as ak, type ClaimConditions as al, ClubService as am, type CollectionSort as an, type CollectionTokensSort as ao, type ConfirmRemixOfferParams as ap, type ConfirmSelfRemixParams as aq, type ConsiderationItem as ar, type CreateClubParams as as, type CreateCollectionIntentParams as at, type CreateCounterOfferIntentParams as au, type CreateCreatorCoinParams as av, type CreateDropParams as aw, type CreateEventParams as ax, type CreateGrantOpts as ay, type CreateListingIntentParams as az, ADMIN_SCOPE as b, buildCreateCreatorCoinCall as b$, IPCollection1155FactoryABI as b0, IPCollectionABI as b1, IPGenesisABI as b2, IPMarketplaceABI as b3, IPNftABI as b4, IPSponsorshipABI as b5, IPSponsorshipLicenseABI as b6, IPTicketCollectionABI as b7, IPTicketCollectionFactoryABI as b8, type IPType as b9, type PopClaimStatus as bA, type PopEventType as bB, PopService as bC, type RemixOfferStatus as bD, type RequestSiwsTokenArgs as bE, type ResolvedConfig as bF, type ResolvedFeeConfig as bG, type ResolvedOrder as bH, type RetryOptions as bI, type ServiceEventDeclaration as bJ, type SiwsSigner as bK, type SortOrder as bL, SponsorshipService as bM, StarknetVenue as bN, type StarknetVenueDeps as bO, type StarknetVenueSigner as bP, type TenantPlan as bQ, TicketService as bR, type TxResult as bS, VALIDATED_EKUBO_PARAMS as bT, type WebhookEventType as bU, type WebhookStatus as bV, adminRequestDigest as bW, build1155CancellationTypedData as bX, build1155OrderTypedData as bY, buildAdminSessionTypedData as bZ, buildCancellationTypedData as b_, type IntentCall as ba, type IntentStatus as bb, type IntentType as bc, type IpAttribute as bd, type IpNftMetadata as be, LAUNCH_PRICE_QUOTE_PER_COIN as bf, type MakeOfferIntentParams as bg, Medialane1155ABI as bh, MedialaneApiError as bi, MedialaneClient as bj, type MedialaneConfig as bk, MedialaneError as bl, type MedialaneErrorCode as bm, type MintEditionParams as bn, type MintTicketsParams as bo, OPEN_LICENSES as bp, type OfferItem as bq, type OpenLicense as br, type Order as bs, type OrderDetails as bt, type OrderParameters as bu, type OrderStatus as bv, POPCollectionABI as bw, POPFactoryABI as bx, type ParsedAdminHeaders as by, type PopBatchEligibilityItem as bz, type ActivityType as c, buildFeeCall as c0, buildLaunchOnEkuboCalls as c1, buildOrderTypedData as c2, buybackQuoteRaw as c3, toRaw as c4, createAdminSessionGrant as c5, encodeAdminHeaders as c6, encodeByteArray as c7, fdvHuman as c8, getCounter as c9, getCounter1155 as ca, getCreatorCoinPrice as cb, getOrderDetails as cc, getOrderDetails1155 as cd, getSiwsStorageKey as ce, getStoredSiwsToken as cf, isSiwsTokenValid as cg, normalizeSiwsSignature as ch, parseAdminHeaders as ci, parseCreatorCoinCreated as cj, randomNonce as ck, requestSiwsToken as cl, resolveConfig as cm, resolveFeeConfig as cn, sessionKeyHashOf as co, signAdminRequest as cp, storeSiwsToken as cq, teamCoinsRaw as cr, validateName as cs, validateSupply as ct, validateSymbol as cu, verifyAdminRequestSig as cv, type AddSupplyParams as d, type AdminGrant as e, type AdminRequest as f, type AdminRequestSig as g, type AdminSession as h, type AdminSessionTypedDataInput as i, type ApiActivitiesQuery as j, type ApiActivity as k, type ApiActivityPrice as l, type ApiAdminCollectionClaim as m, type ApiAppSource as n, type ApiChain as o, ApiClient as p, type ApiCoin as q, type ApiCoinsQuery as r, type ApiCollection as s, type ApiCollectionClaim as t, type ApiCollectionProfile as u, type ApiCollectionSlugClaim as v, type ApiCollectionsQuery as w, type ApiComment as x, type ApiCounterOffersQuery as y, type ApiCreatorListResult as z };

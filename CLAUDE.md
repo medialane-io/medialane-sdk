@@ -32,7 +32,7 @@ platform-federation spec §2):
 | Entry | Contents |
 |---|---|
 | `.` (root) | Chain-neutral core: config, `ApiClient` (all REST methods), types, `chains.ts` coordinate registry, service registry, tokens, utils, adapter interfaces. **Plus a deprecated transition re-export of `./starknet`** — root importers still pull the whole Starknet adapter; delete the block once backend + apps import from `@medialane/sdk/starknet` (audit C-3). |
-| `./starknet` | The Starknet chain adapter (~75% of the SDK): `MedialaneClient`, marketplace modules, `StarknetVenue` + `StarknetVenueSigner`, service classes, all Cairo ABIs, SIWS, admin-auth, fee builder, SNIP-12 builders, `encodeByteArray`. |
+| `./starknet` | The Starknet chain adapter (~75% of the SDK): `MedialaneClient`, `StarknetVenue` + `StarknetVenueSigner` (order execution), venue reads + pure builders, service classes, all Cairo ABIs, SIWS, admin-auth, fee builder, SNIP-12 builders, `encodeByteArray`. |
 | `./evm` | EVM adapter: EIP-712 orders (byte-verified vs the audited Solidity), venue + issuance (Ethereum + Base). |
 | `./solana` | Solana adapter: Anchor wire encoding (no Anchor client), venue. |
 | `./stellar` | Soroban adapter: invocation builders, venue, canonical order refs (`stellarOrderRef` = sha256(contract:offerer:salt), mirrored by the backend ingestor). |
@@ -52,7 +52,7 @@ src/
                           isTransientRpcError, createFailoverFetch)
   fee/                 ← chain-neutral fee config (resolveFeeConfig)
   adapters/            ← chain-neutral VenueAdapter/IssuanceAdapter/VenueSigner ports
-  starknet/            ← client.ts, venue.ts, marketplace/, marketplace1155/,
+  starknet/            ← client.ts, venue.ts, marketplace{,1155}/ (reads + builders + signing),
                           services/, abis/ (one file per contract), siws/,
                           admin-auth/, fee/, bytearray.ts
   evm/ · solana/ · stellar/  ← the other chain adapters
@@ -80,14 +80,12 @@ src/
   `starknet/services/*` classes still use the positional form — **sweep each
   service as its redesign lands** (audit S-1; latent `abi.find is not a
   function` under v8 until then).
-- **Two marketplace execution paths exist temporarily** (audit C-2): the
-  self-executing `MarketplaceModule`/`Medialane1155Module`, and `StarknetVenue`
+- **One marketplace execution path** (since 0.64.0, audit C-2): `StarknetVenue`
   + pure builders (`marketplace*/build.ts`) over the `VenueSigner` capability
   port (`{ address, signTypedData, execute }` — the app's wallet layer signs
-  and submits; the venue only builds and reads). The venue port is the keeper —
-  **delete the self-executing path outright** (no shims) once the dapp
-  venue-port branch is merged and smoked. Until then, protocol changes must be
-  applied to BOTH paths (the 1155 fee-parity gap came from missing one).
+  and submits; the venue only builds and reads). The self-executing
+  `MarketplaceModule`/`Medialane1155Module` were deleted; `marketplace*/orders.ts`
+  now hold only the pure venue reads (`getOrderDetails`/`getCounter`).
 - **Signing** (`starknet/marketplace/signing.ts`): SNIP-12 domains
   `{ name: "Medialane", version: "5" }` (ERC-721) / `version: "4"` (ERC-1155),
   nested single-`amount` OfferItem/ConsiderationItem with
@@ -112,8 +110,8 @@ const client = new MedialaneClient({ chain: "STARKNET", backendUrl, apiKey });
   proxy-throws descriptively if `backendUrl` is missing. Exponential-backoff
   retry (3 attempts, 4xx not retried). Backend reads accept `?chain=`
   (default STARKNET; `all` on list endpoints).
-- `client.marketplace` / `client.marketplace1155` — self-executing order flows
-  (see the C-2 note; `MedialaneError(message, cause?)` on failure).
+- Order execution is NOT on the client: use `StarknetVenue` (below).
+  `MedialaneError(message, code?, cause?)` is the on-chain error type.
 - `client.services.{pop, drop, erc1155Collection, creatorCoin, ticket, club, sponsorship}`
   — per-service on-chain classes. **Ticket is the v3 ERC-1155 surface**
   (`deployCollection`, `createEvent`, `mint`, `pauseEvent`, `isValid`,

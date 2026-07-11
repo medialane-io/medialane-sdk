@@ -3,8 +3,10 @@
 // spec §2). Peer dependency: starknet >= 6.
 
 export { MedialaneClient } from "./client.js";
-export { MarketplaceModule, MedialaneError } from "./marketplace/index.js";
-export { Medialane1155Module } from "./marketplace1155/index.js";
+export { MedialaneError } from "./marketplace/errors.js";
+// Venue order reads (order execution itself goes through StarknetVenue below).
+export { getOrderDetails, getCounter } from "./marketplace/orders.js";
+export { getOrderDetails1155, getCounter1155 } from "./marketplace1155/orders.js";
 
 // First-class Starknet venue adapter (implements the chain-neutral VenueAdapter
 // over the VenueSigner capability port). StarknetIssuance is deferred until the

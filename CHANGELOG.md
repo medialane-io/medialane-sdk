@@ -2,6 +2,26 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.64.0] — 2026-07-11
+
+### Removed — the self-executing marketplace path (BREAKING; audit C-2)
+
+Order construction now has exactly ONE source: `StarknetVenue` over the
+`VenueSigner` capability port + the pure builders. Removed:
+
+- `MarketplaceModule` / `Medialane1155Module` and `client.marketplace` /
+  `client.marketplace1155` — the self-executing write paths
+  (createListing/makeOffer/fulfillOrder/cancelOrder/checkoutCart/mint/
+  createCollection/incrementCounter and the 1155 equivalents). Verified
+  consumer-free before removal: the dapp is on the venue port, io drives
+  backend intents, portal uses only admin-auth, ui uses none.
+- Their dead param types (`CreateListingParams`, `CartItem`, `MintParams`, …).
+
+Kept: pure venue reads (`getOrderDetails`/`getCounter` + 1155 equivalents, now
+exported from `@medialane/sdk/starknet`), the pure builders (`build.ts`),
+SNIP-12 `signing.ts`, `MedialaneError`, and the shared order-shape types.
+Bulk-cancel lives on `StarknetVenue.incrementCounter(signer)`.
+
 ## [0.63.0] — 2026-07-10
 
 ### Changed — IP Tickets v3 (ERC-1155) deployed mainnet
