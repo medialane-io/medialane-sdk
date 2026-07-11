@@ -1,4 +1,5 @@
-import { CairoOption, CairoOptionVariant, Contract, cairo, type AccountInterface } from "starknet";
+import { newContract } from "../marketplace/utils.js";
+import { CairoOption, CairoOptionVariant, cairo, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { normalizeAddress } from "../../utils/address.js";
 import { IPClubABI, IPClubFactoryABI, IPClubCollectionABI } from "../abis/index.js";
@@ -21,17 +22,17 @@ export class ClubService {
   private _registry(account: AccountInterface, registryAddress?: string) {
     const address = registryAddress ?? this.registryAddress;
     if (!address) throw new Error("IP-Club registry address not configured for this chain");
-    return new Contract(IPClubABI as any, normalizeAddress("STARKNET", address), account as any);
+    return newContract(IPClubABI as any, normalizeAddress("STARKNET", address), account as any);
   }
 
   private _factory(account: AccountInterface, factoryAddress?: string) {
     const address = factoryAddress ?? this.factoryAddress;
     if (!address) throw new Error("IP-Club factory address not configured for this chain");
-    return new Contract(IPClubFactoryABI as any, normalizeAddress("STARKNET", address), account as any);
+    return newContract(IPClubFactoryABI as any, normalizeAddress("STARKNET", address), account as any);
   }
 
   private _collection(account: AccountInterface, collectionAddress: string) {
-    return new Contract(IPClubCollectionABI as any, normalizeAddress("STARKNET", collectionAddress), account as any);
+    return newContract(IPClubCollectionABI as any, normalizeAddress("STARKNET", collectionAddress), account as any);
   }
 
   /** Deploy a new per-creator membership ERC-721 collection via the factory. */

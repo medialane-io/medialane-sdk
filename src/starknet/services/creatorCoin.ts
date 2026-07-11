@@ -1,4 +1,5 @@
-import { Contract, RpcProvider, hash, uint256, type AccountInterface, type Call, type ProviderInterface } from "starknet";
+import { newContract } from "../marketplace/utils.js";
+import { RpcProvider, hash, uint256, type AccountInterface, type Call, type Contract, type ProviderInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { CreatorCoinFactoryABI } from "../abis/index.js";
 import { getStarknetCoordinates } from "../../chains.js";
@@ -134,7 +135,7 @@ export async function getCreatorCoinPrice(
 let _factoryContract: Contract | null = null;
 function factoryContract(): Contract {
   if (!_factoryContract) {
-    _factoryContract = new Contract(
+    _factoryContract = newContract(
       CreatorCoinFactoryABI as any,
       getStarknetCoordinates("STARKNET").creatorCoinFactory!,
     );
@@ -234,7 +235,7 @@ export class CreatorCoinService {
   }
 
   private _factory(account: AccountInterface) {
-    return new Contract(CreatorCoinFactoryABI as any, this.factoryAddress, account as any);
+    return newContract(CreatorCoinFactoryABI as any, this.factoryAddress, account as any);
   }
 
   /** Deploy a fixed-supply CreatorCoin (full supply minted to the Factory). */

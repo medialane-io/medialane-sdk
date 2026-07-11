@@ -2,6 +2,29 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.65.0] — 2026-07-11
+
+### Fixed — starknet-v8 `Contract` construction in every service class (closes audit S-1)
+
+All ~17 positional `new Contract(...)` sites in `starknet/services/*`
+(pop/drop/ticket/club/sponsorship/creatorCoin/erc1155collection) now route
+through the version-agnostic `newContract()` helper — the latent
+`abi.find is not a function` under starknet-v8 hosts is gone from the whole
+SDK, not just the marketplace (0.61.0).
+
+### Changed — the SDK now builds and tests against starknet v8
+
+devDependency `starknet` ^6.11 → ^8 (the version the dapp actually runs), so
+a reintroduced positional constructor fails typecheck immediately. The peer
+range stays `>=6.0.0` — `newContract()` handles both forms at runtime.
+
+### Changed — `dist/` is no longer committed; builds happen at publish
+
+`prepublishOnly` runs typecheck + tests + build. The committed-dist model
+shipped two stale-dist releases (0.60.0's dist predated its own ticket ABI;
+0.62.0 existed only to rebuild it) — that class of incident is now
+structurally impossible.
+
 ## [0.64.1] — 2026-07-11
 
 ### Added — `"sideEffects": false`

@@ -1,4 +1,5 @@
-import { Contract, type AccountInterface } from "starknet";
+import { newContract } from "../marketplace/utils.js";
+import { type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { normalizeAddress } from "../../utils/address.js";
 import { DropCollectionABI, DropFactoryABI } from "../abis/index.js";
@@ -29,7 +30,7 @@ export class DropService {
   }
 
   private _collection(address: string, account: AccountInterface) {
-    return new Contract(DropCollectionABI as any, normalizeAddress("STARKNET",address), account as any);
+    return newContract(DropCollectionABI as any, normalizeAddress("STARKNET",address), account as any);
   }
 
   async claim(
@@ -140,7 +141,7 @@ export class DropService {
   }
 
   async createDrop(account: AccountInterface, params: CreateDropParams): Promise<TxResult> {
-    const factory = new Contract(DropFactoryABI as any, this.factoryAddress, account as any);
+    const factory = newContract(DropFactoryABI as any, this.factoryAddress, account as any);
     const call = factory.populate("create_drop", [
       params.name,
       params.symbol,

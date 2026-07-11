@@ -1,4 +1,5 @@
-import { CairoOption, CairoOptionVariant, Contract, cairo, type AccountInterface } from "starknet";
+import { newContract } from "../marketplace/utils.js";
+import { CairoOption, CairoOptionVariant, cairo, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { normalizeAddress } from "../../utils/address.js";
 import { IPSponsorshipABI, IPGenesisABI } from "../abis/index.js";
@@ -22,7 +23,7 @@ export class SponsorshipService {
     if (!resolved) {
       throw new Error("IP-Sponsorship address not configured for this chain");
     }
-    return new Contract(IPSponsorshipABI as any, normalizeAddress("STARKNET", resolved), account as any);
+    return newContract(IPSponsorshipABI as any, normalizeAddress("STARKNET", resolved), account as any);
   }
 
   /** The offer author must currently own (nftContract, tokenId) — enforced on-chain at create and accept. */
@@ -120,7 +121,7 @@ export class SponsorshipService {
       cairo.uint256(params.offerId),
       params.sponsor,
     ]);
-    const receipt = new Contract(IPGenesisABI as any, normalizeAddress("STARKNET", receiptAddress), account as any);
+    const receipt = newContract(IPGenesisABI as any, normalizeAddress("STARKNET", receiptAddress), account as any);
     const mintCall = receipt.populate("mint_item", [params.sponsor, params.licenseTermsUri]);
     const res = await account.execute([acceptCall, mintCall]);
     return { txHash: res.transaction_hash };
@@ -150,7 +151,7 @@ export class SponsorshipService {
     ];
     const receiptAddress = params.licenseReceiptAddress ?? this.licenseReceiptAddress;
     if (receiptAddress && params.receiptTokenId != null) {
-      const receipt = new Contract(IPGenesisABI as any, normalizeAddress("STARKNET", receiptAddress), account as any);
+      const receipt = newContract(IPGenesisABI as any, normalizeAddress("STARKNET", receiptAddress), account as any);
       calls.push(receipt.populate("transfer_from", [account.address, params.to, cairo.uint256(params.receiptTokenId)]));
     }
     const res = await account.execute(calls);

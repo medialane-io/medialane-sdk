@@ -1,4 +1,5 @@
-import { CairoOption, CairoOptionVariant, Contract, RpcProvider, cairo, type AccountInterface } from "starknet";
+import { newContract } from "../marketplace/utils.js";
+import { CairoOption, CairoOptionVariant, RpcProvider, cairo, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { normalizeAddress } from "../../utils/address.js";
 import { IPTicketCollectionABI, IPTicketCollectionFactoryABI } from "../abis/index.js";
@@ -20,16 +21,16 @@ export class TicketService {
   private _factory(account: AccountInterface, factoryAddress?: string) {
     const address = factoryAddress ?? this.factoryAddress;
     if (!address) throw new Error("IP-Tickets factory address not configured for this chain");
-    return new Contract(IPTicketCollectionFactoryABI as any, normalizeAddress("STARKNET", address), account as any);
+    return newContract(IPTicketCollectionFactoryABI as any, normalizeAddress("STARKNET", address), account as any);
   }
 
   private _collection(address: string, account: AccountInterface) {
-    return new Contract(IPTicketCollectionABI as any, normalizeAddress("STARKNET", address), account as any);
+    return newContract(IPTicketCollectionABI as any, normalizeAddress("STARKNET", address), account as any);
   }
 
   private _collectionRead(address: string) {
     const provider = new RpcProvider({ nodeUrl: this.config.rpcUrl });
-    return new Contract(IPTicketCollectionABI as any, normalizeAddress("STARKNET", address), provider);
+    return newContract(IPTicketCollectionABI as any, normalizeAddress("STARKNET", address), provider);
   }
 
   /** Deploys a new IPTicketCollection via the factory. Caller becomes owner. */

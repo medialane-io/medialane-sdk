@@ -1,4 +1,5 @@
-import { Contract, type AccountInterface } from "starknet";
+import { newContract } from "../marketplace/utils.js";
+import { type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { normalizeAddress } from "../../utils/address.js";
 import { IPCollection1155FactoryABI, IPCollection1155ABI } from "../abis/index.js";
@@ -64,7 +65,7 @@ export class ERC1155CollectionService {
   }
 
   private _factory(account: AccountInterface) {
-    return new Contract(
+    return newContract(
       IPCollection1155FactoryABI as any,
       normalizeAddress("STARKNET",this.factoryAddress),
       account as any
@@ -72,7 +73,7 @@ export class ERC1155CollectionService {
   }
 
   private _collection(address: string, account: AccountInterface) {
-    return new Contract(
+    return newContract(
       IPCollection1155ABI as any,
       normalizeAddress("STARKNET",address),
       account as any

@@ -1,4 +1,5 @@
-import { Contract, type AccountInterface } from "starknet";
+import { newContract } from "../marketplace/utils.js";
+import { type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { normalizeAddress } from "../../utils/address.js";
 import { POPCollectionABI, POPFactoryABI } from "../abis/index.js";
@@ -16,7 +17,7 @@ export class PopService {
   }
 
   private _collection(address: string, account: AccountInterface) {
-    return new Contract(POPCollectionABI as any, normalizeAddress("STARKNET",address), account as any);
+    return newContract(POPCollectionABI as any, normalizeAddress("STARKNET",address), account as any);
   }
 
   async claim(account: AccountInterface, collectionAddress: string): Promise<TxResult> {
@@ -94,7 +95,7 @@ export class PopService {
     account: AccountInterface,
     params: CreatePopCollectionParams
   ): Promise<TxResult> {
-    const factory = new Contract(POPFactoryABI as any, this.factoryAddress, account as any);
+    const factory = newContract(POPFactoryABI as any, this.factoryAddress, account as any);
     const call = factory.populate("create_collection", [
       params.name,
       params.symbol,
