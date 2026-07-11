@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.64.1] — 2026-07-11
+
+### Added — `"sideEffects": false`
+
+The SDK has no import-time side effects (a documented convention), so
+bundlers can now tree-shake unused exports — including the deprecated root
+re-export of the Starknet adapter. Root importers stop paying for the ABIs
+and modules they don't use, without waiting for the subpath-import migration
+(audit C-3).
+
 ## [0.64.0] — 2026-07-11
 
 ### Removed — the self-executing marketplace path (BREAKING; audit C-2)
