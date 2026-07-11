@@ -2,6 +2,48 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.63.0] — 2026-07-10
+
+### Changed — IP Tickets v3 (ERC-1155) deployed mainnet
+
+New Starknet coordinates: `ipTicketsFactory` →
+`0x03ffef4162fe2c44e17d6be2aad3553cab0ac2274cd0b1bb3fafb12fd66695c1`
+(collection class hash `0x036393fb…b95e1d4`, start block 11689800) —
+supersedes the retired ERC-721 factory at `0x0664c2d6…` (prior-version
+collections reclassify `external-*`, per the protocol-upgrade routine).
+
+## [0.62.0] — 2026-07-10
+
+Dist rebuild of 0.60.0's ticket source (the published 0.60.0 dist predated
+the ERC-1155 `IPTicketCollectionABI`). No source change beyond the rebuild.
+
+### Changed — IP Tickets v3 SDK surface (BREAKING, from the 0.60-era source)
+
+- `IPTicketCollectionABI` regenerated from the v3 scarb build (ERC-1155);
+  `IPTicketCollectionFactoryABI` gains the renamed `deploy_collection`.
+- `TicketService`: `deployCollection`, `createEvent`, `mint`, `pauseEvent`,
+  `isValid`, `getEvent`. `CreateEventParams` replaces
+  `CreateTicketCollectionParams`; new `MintTicketsParams` (owner-only mint).
+- Removed v2 methods: `mintTicket`, `redeemTicket`, `setCollectionActive`,
+  `createTicketCollection`, `deployTicketCollection`.
+
+## [0.59.0] — 2026-07-10
+
+### Added — IPClubFactory
+
+`IPClubFactoryABI` + `IPClubCollectionABI`; `ClubService.deployClub` /
+`setOpen` / `mintMembership` (factory pattern replaces the single registry —
+registry methods are `@deprecated`). Published concurrently with the 0.57
+venue-port branch; reconciled into `latest` by 0.60.0.
+
+## [0.53.0 – 0.56.0] — 2026-07-09/10 (reconstructed)
+
+`StarknetVenue` adapter era, pre-VenueSigner: `registerOrder` (721+1155,
+receipt-derived orderRef), fulfill/cancel dispatch, `RegisterOrderParams.quantity`.
+0.53.0/0.54.0 were partially-regressed foreign publishes superseded by 0.55.0;
+0.56.0 fixed 1155 fulfil total = `unitPrice × quantity`. All superseded by
+0.57.0's capability port.
+
 ## [0.61.0] — 2026-07-10
 
 ### Fixed — starknet v8 `Contract` constructor incompatibility (marketplace)
