@@ -20,8 +20,11 @@ Run `bun test` and `typecheck` after significant changes. `bun` must be on
 PATH; use the absolute binary path if not.
 
 **Publishing:** bump `package.json`, add a `CHANGELOG.md` entry (**no publish
-without one** — 0.53–0.63 had to be reconstructed from git), `bun run build`,
-publish with a project-local `.npmrc`, delete it after.
+without one** — 0.53–0.63 had to be reconstructed from git), then publish with
+a project-local `.npmrc` and delete it after. `dist/` is **not committed**
+(since 0.65.0 — committed dist shipped two stale-dist releases);
+`prepublishOnly` runs typecheck + tests + build automatically at publish.
+`"sideEffects": false` is declared — never add import-time side effects.
 
 ## Package identity
 
@@ -75,11 +78,12 @@ src/
   EIP-55 / base58 / strkey; Bitcoin throws). Never `.toLowerCase()` alone.
   `ApiClient` normalizes internally via its `config.chain`.
 - **starknet v8 hosts:** v8's `Contract` constructor takes an options object;
-  route every construction through `newContract()`
-  (`starknet/marketplace/utils.ts`). The marketplace is migrated; the
-  `starknet/services/*` classes still use the positional form — **sweep each
-  service as its redesign lands** (audit S-1; latent `abi.find is not a
-  function` under v8 until then).
+  route EVERY construction through `newContract()`
+  (`starknet/marketplace/utils.ts`) — never `new Contract(...)` directly. The
+  whole SDK is swept (marketplace 0.61.0, all service classes 0.65.0) and the
+  devDependency is starknet **v8**, so a reintroduced positional constructor
+  fails typecheck at build time. The peer range stays `>=6` (`newContract`
+  handles both forms at runtime).
 - **One marketplace execution path** (since 0.64.0, audit C-2): `StarknetVenue`
   + pure builders (`marketplace*/build.ts`) over the `VenueSigner` capability
   port (`{ address, signTypedData, execute }` — the app's wallet layer signs
