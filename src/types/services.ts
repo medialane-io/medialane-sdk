@@ -35,7 +35,7 @@ export interface CreateDropParams {
 
 // ─── IP Tickets ────────────────────────────────────────────────────────────────
 
-export interface CreateEventParams {
+export interface CreateTicketParams {
   /** Address of the deployed IPTicketCollection contract. */
   collection: string;
   maxSupply: bigint | string;

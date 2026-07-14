@@ -59,6 +59,10 @@ export const IPTicketCollectionFactoryABI = [
           {
             "name": "symbol",
             "type": "core::byte_array::ByteArray"
+          },
+          {
+            "name": "base_uri",
+            "type": "core::byte_array::ByteArray"
           }
         ],
         "outputs": [

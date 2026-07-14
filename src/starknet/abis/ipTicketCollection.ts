@@ -93,12 +93,8 @@ export const IPTicketCollectionABI = [
   },
   {
     "type": "struct",
-    "name": "ip_ticket::types::EventRecord",
+    "name": "ip_ticket::types::Ticket",
     "members": [
-      {
-        "name": "creator",
-        "type": "core::starknet::contract_address::ContractAddress"
-      },
       {
         "name": "max_supply",
         "type": "core::integer::u256"
@@ -122,10 +118,6 @@ export const IPTicketCollectionABI = [
       {
         "name": "metadata_uri",
         "type": "core::byte_array::ByteArray"
-      },
-      {
-        "name": "active",
-        "type": "core::bool"
       }
     ]
   },
@@ -135,7 +127,7 @@ export const IPTicketCollectionABI = [
     "items": [
       {
         "type": "function",
-        "name": "create_event",
+        "name": "create_ticket",
         "inputs": [
           {
             "name": "max_supply",
@@ -187,22 +179,6 @@ export const IPTicketCollectionABI = [
       },
       {
         "type": "function",
-        "name": "pause_event",
-        "inputs": [
-          {
-            "name": "token_id",
-            "type": "core::integer::u256"
-          },
-          {
-            "name": "active",
-            "type": "core::bool"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
         "name": "is_valid",
         "inputs": [
           {
@@ -223,7 +199,7 @@ export const IPTicketCollectionABI = [
       },
       {
         "type": "function",
-        "name": "get_event",
+        "name": "get_ticket",
         "inputs": [
           {
             "name": "token_id",
@@ -232,7 +208,40 @@ export const IPTicketCollectionABI = [
         ],
         "outputs": [
           {
-            "type": "ip_ticket::types::EventRecord"
+            "type": "ip_ticket::types::Ticket"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "name",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "symbol",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "base_uri",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
           }
         ],
         "state_mutability": "view"
@@ -706,6 +715,10 @@ export const IPTicketCollectionABI = [
         "type": "core::byte_array::ByteArray"
       },
       {
+        "name": "base_uri",
+        "type": "core::byte_array::ByteArray"
+      },
+      {
         "name": "owner",
         "type": "core::starknet::contract_address::ContractAddress"
       }
@@ -900,7 +913,7 @@ export const IPTicketCollectionABI = [
   },
   {
     "type": "event",
-    "name": "ip_ticket::IPTicketCollection::IPTicketCollection::EventCreated",
+    "name": "ip_ticket::IPTicketCollection::IPTicketCollection::TicketCreated",
     "kind": "struct",
     "members": [
       {
@@ -937,23 +950,6 @@ export const IPTicketCollectionABI = [
   },
   {
     "type": "event",
-    "name": "ip_ticket::IPTicketCollection::IPTicketCollection::EventPaused",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "token_id",
-        "type": "core::integer::u256",
-        "kind": "key"
-      },
-      {
-        "name": "active",
-        "type": "core::bool",
-        "kind": "data"
-      }
-    ]
-  },
-  {
-    "type": "event",
     "name": "ip_ticket::IPTicketCollection::IPTicketCollection::Event",
     "kind": "enum",
     "variants": [
@@ -973,13 +969,8 @@ export const IPTicketCollectionABI = [
         "kind": "flat"
       },
       {
-        "name": "EventCreated",
-        "type": "ip_ticket::IPTicketCollection::IPTicketCollection::EventCreated",
-        "kind": "nested"
-      },
-      {
-        "name": "EventPaused",
-        "type": "ip_ticket::IPTicketCollection::IPTicketCollection::EventPaused",
+        "name": "TicketCreated",
+        "type": "ip_ticket::IPTicketCollection::IPTicketCollection::TicketCreated",
         "kind": "nested"
       }
     ]

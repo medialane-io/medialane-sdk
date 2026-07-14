@@ -117,9 +117,9 @@ const client = new MedialaneClient({ chain: "STARKNET", backendUrl, apiKey });
 - Order execution is NOT on the client: use `StarknetVenue` (below).
   `MedialaneError(message, code?, cause?)` is the on-chain error type.
 - `client.services.{pop, drop, erc1155Collection, creatorCoin, ticket, club, sponsorship}`
-  — per-service on-chain classes. **Ticket is the v3 ERC-1155 surface**
-  (`deployCollection`, `createEvent`, `mint`, `pauseEvent`, `isValid`,
-  `getEvent`). **Club is the factory pattern** (`deployClub`/`setOpen`/
+  — per-service on-chain classes. **Ticket is the redesigned ERC-1155 surface**
+  (`deployCollection` with `baseUri`, `createTicket`, `mint`, `isValid`,
+  `getTicket` — no pause switch). **Club is the factory pattern** (`deployClub`/`setOpen`/
   `mintMembership`; single-registry methods are `@deprecated`). `ip-club`
   membership is soulbound — capabilities `["subscribe"]`, no `transfer`.
 - `StarknetVenue` (`./starknet`) — the venue adapter over

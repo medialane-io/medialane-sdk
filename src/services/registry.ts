@@ -118,13 +118,20 @@ const SERVICES = {
   "ip-tickets": {
     id: "ip-tickets",
     displayName: "IP Tickets",
-    description: "Sell verifiable, redeemable tickets for events and experiences.",
-    standard: "ERC721",
+    description: "Create verifiable on-chain tickets — mint to attendees, trade like any collection.",
+    standard: "ERC1155",
     provenance: "MEDIALANE",
+    onchain: {
+      STARKNET: {
+        factoryAddress: SN.ipTicketsFactory!,
+        classHash: SN.ipTicketCollectionClassHash!,
+      },
+    },
     uiVariant: "ticket",
-    capabilities: ["mint", "redeem", "transfer"],
+    capabilities: ["mint", "redeem", "list", "buy", "make_offer", "cancel", "transfer"],
     events: [
       { name: "CollectionDeployed", emittedBy: "factory" },
+      { name: "TicketCreated", emittedBy: "instance" },
     ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },

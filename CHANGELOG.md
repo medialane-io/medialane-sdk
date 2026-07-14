@@ -2,6 +2,32 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.66.0] — 2026-07-14
+
+### Changed (breaking) — IP-Tickets redesigned contract
+
+The IP-Tickets contracts were redesigned with ticket-framed vocabulary and
+redeployed (factory `0x059802639b…11ac5`, start block 11836622; the previous
+factory's collections reclassify to `external-erc1155`). The SDK surface
+follows:
+
+- `TicketService.createEvent` → **`createTicket`** (`CreateEventParams` →
+  `CreateTicketParams`, same shape); `getEvent` → **`getTicket`** (returns
+  `TicketRecord` — the `creator` and `active` fields no longer exist on-chain,
+  royalty receiver is the collection owner).
+- `TicketService.deployCollection` now requires **`baseUri`** — the
+  collection-level metadata URI goes on-chain in the deploy transaction
+  (previously the factory silently dropped it). Collections expose
+  `name()`/`symbol()`/`base_uri()` views.
+- **`pauseEvent` removed** — the redesigned contract has no pause switch
+  (minting was already owner-only, the flag guarded nothing).
+- Fresh ABIs (`IPTicketCollectionABI`, `IPTicketCollectionFactoryABI`);
+  coordinates updated in `chains.ts` (+ new `ipTicketsFactoryClassHash`).
+- Registry: `ip-tickets.standard` corrected `ERC721` → **`ERC1155`**;
+  capabilities now include the marketplace set
+  (`list`/`buy`/`make_offer`/`cancel`); `onchain.STARKNET` coordinates added;
+  description reworded to tickets framing.
+
 ## [0.65.0] — 2026-07-11
 
 ### Fixed — starknet-v8 `Contract` construction in every service class (closes audit S-1)

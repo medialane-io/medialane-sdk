@@ -37,6 +37,7 @@ export interface StarknetCoordinates {
   ekuboCore?: `0x${string}`;
   ipTicketsFactory?: `0x${string}`;
   ipTicketCollectionClassHash?: `0x${string}`;
+  ipTicketsFactoryClassHash?: `0x${string}`;
   ipTicketsStartBlock?: number;
   ipClubRegistry?: `0x${string}`;
   ipClubNftClassHash?: `0x${string}`;
@@ -126,9 +127,10 @@ const COORDINATES: CoordinatesByChain = {
     creatorCoinFactoryClassHash: "0x51765926b1344c9a20b8cd4b5abe7b7d47375ae97cf6804db3ea5d4b05a9b55",
     creatorCoinStartBlock: 10474544,
     ekuboCore: "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b",
-    ipTicketsFactory: "0x03ffef4162fe2c44e17d6be2aad3553cab0ac2274cd0b1bb3fafb12fd66695c1",
-    ipTicketCollectionClassHash: "0x036393fb4241ed55bd12d8b328ed877d08100fadf9150a650e2b84cbab95e1d4",
-    ipTicketsStartBlock: 11689800,
+    ipTicketsFactory: "0x059802639b41e9c6449c3d557703e610ef639a91866dc1dd44216f9f37111ac5",
+    ipTicketCollectionClassHash: "0x047bd108881457c4f4db6c64671c1dd402f4d8c79fd9182f03a2dd841335a34b",
+    ipTicketsFactoryClassHash: "0x04a739ac3a673ebd0db96bb24475600797c3ed34827e79517f9b2b1640276e6a",
+    ipTicketsStartBlock: 11836622,
     ipClubRegistry: "0x00e189c619b6bb07d78973a149641c59c37eb0716f8584d7520bce12d303eede",
     ipClubNftClassHash: "0x02bc9b20cca21b04245e9215bf7121f4d7295b195890e449b472b573017fb889",
     ipClubStartBlock: 11404776,
