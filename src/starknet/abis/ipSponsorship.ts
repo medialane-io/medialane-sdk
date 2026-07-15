@@ -1,22 +1,8 @@
 export const IPSponsorshipABI = [
   {
     "type": "impl",
-    "name": "IPSponsorshipImpl",
-    "interface_name": "ip_sponsorship::interface::IIPSponsorship"
-  },
-  {
-    "type": "struct",
-    "name": "core::integer::u256",
-    "members": [
-      {
-        "name": "low",
-        "type": "core::integer::u128"
-      },
-      {
-        "name": "high",
-        "type": "core::integer::u128"
-      }
-    ]
+    "name": "ERC721MetadataImpl",
+    "interface_name": "openzeppelin_token::erc721::interface::IERC721Metadata"
   },
   {
     "type": "struct",
@@ -35,6 +21,96 @@ export const IPSponsorshipABI = [
         "type": "core::internal::bounded_int::BoundedInt::<0, 30>"
       }
     ]
+  },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::erc721::interface::IERC721Metadata",
+    "items": [
+      {
+        "type": "function",
+        "name": "name",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "symbol",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "token_uri",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "ERC721MetadataCamelOnlyImpl",
+    "interface_name": "openzeppelin_token::erc721::interface::IERC721MetadataCamelOnly"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::erc721::interface::IERC721MetadataCamelOnly",
+    "items": [
+      {
+        "type": "function",
+        "name": "tokenURI",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "IPSponsorshipImpl",
+    "interface_name": "ip_sponsorship::interface::IIPSponsorship"
   },
   {
     "type": "enum",
@@ -107,19 +183,19 @@ export const IPSponsorshipABI = [
       {
         "name": "open",
         "type": "core::bool"
+      },
+      {
+        "name": "royalty_bps",
+        "type": "core::integer::u256"
       }
     ]
   },
   {
     "type": "struct",
-    "name": "ip_sponsorship::types::License",
+    "name": "ip_sponsorship::types::SponsorshipProposal",
     "members": [
       {
-        "name": "author",
-        "type": "core::starknet::contract_address::ContractAddress"
-      },
-      {
-        "name": "sponsor",
+        "name": "proposer",
         "type": "core::starknet::contract_address::ContractAddress"
       },
       {
@@ -131,20 +207,36 @@ export const IPSponsorshipABI = [
         "type": "core::integer::u256"
       },
       {
-        "name": "amount_paid",
+        "name": "amount",
         "type": "core::integer::u256"
       },
       {
-        "name": "expires_at",
+        "name": "duration",
         "type": "core::integer::u64"
+      },
+      {
+        "name": "valid_until",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "payment_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "license_terms_uri",
+        "type": "core::byte_array::ByteArray"
       },
       {
         "name": "transferable",
         "type": "core::bool"
       },
       {
-        "name": "license_terms_uri",
-        "type": "core::byte_array::ByteArray"
+        "name": "open",
+        "type": "core::bool"
+      },
+      {
+        "name": "royalty_bps",
+        "type": "core::integer::u256"
       }
     ]
   },
@@ -183,6 +275,10 @@ export const IPSponsorshipABI = [
           {
             "name": "transferable",
             "type": "core::bool"
+          },
+          {
+            "name": "royalty_bps",
+            "type": "core::integer::u256"
           },
           {
             "name": "specific_sponsor",
@@ -262,22 +358,6 @@ export const IPSponsorshipABI = [
       },
       {
         "type": "function",
-        "name": "transfer_license",
-        "inputs": [
-          {
-            "name": "license_id",
-            "type": "core::integer::u256"
-          },
-          {
-            "name": "to",
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
         "name": "get_offer",
         "inputs": [
           {
@@ -314,38 +394,6 @@ export const IPSponsorshipABI = [
       },
       {
         "type": "function",
-        "name": "get_license",
-        "inputs": [
-          {
-            "name": "license_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "ip_sponsorship::types::License"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "is_license_valid",
-        "inputs": [
-          {
-            "name": "license_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::bool"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
         "name": "get_last_offer_id",
         "inputs": [],
         "outputs": [
@@ -362,6 +410,476 @@ export const IPSponsorshipABI = [
         "outputs": [
           {
             "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "propose_sponsorship",
+        "inputs": [
+          {
+            "name": "nft_contract",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "duration",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "valid_until",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "payment_token",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "license_terms_uri",
+            "type": "core::byte_array::ByteArray"
+          },
+          {
+            "name": "transferable",
+            "type": "core::bool"
+          },
+          {
+            "name": "royalty_bps",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "withdraw_proposal",
+        "inputs": [
+          {
+            "name": "proposal_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "accept_proposal",
+        "inputs": [
+          {
+            "name": "proposal_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "reject_proposal",
+        "inputs": [
+          {
+            "name": "proposal_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_proposal",
+        "inputs": [
+          {
+            "name": "proposal_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "ip_sponsorship::types::SponsorshipProposal"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_last_proposal_id",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "royalty_info",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "sale_price",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u256)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "royaltyInfo",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "sale_price",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u256)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "version",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "ERC721Impl",
+    "interface_name": "openzeppelin_token::erc721::interface::IERC721"
+  },
+  {
+    "type": "struct",
+    "name": "core::array::Span::<core::felt252>",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::erc721::interface::IERC721",
+    "items": [
+      {
+        "type": "function",
+        "name": "balance_of",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "owner_of",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "safe_transfer_from",
+        "inputs": [
+          {
+            "name": "from",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "data",
+            "type": "core::array::Span::<core::felt252>"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "transfer_from",
+        "inputs": [
+          {
+            "name": "from",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "approve",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "set_approval_for_all",
+        "inputs": [
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "approved",
+            "type": "core::bool"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_approved",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "is_approved_for_all",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "ERC721CamelOnly",
+    "interface_name": "openzeppelin_token::erc721::interface::IERC721CamelOnly"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::erc721::interface::IERC721CamelOnly",
+    "items": [
+      {
+        "type": "function",
+        "name": "balanceOf",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "ownerOf",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "safeTransferFrom",
+        "inputs": [
+          {
+            "name": "from",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "data",
+            "type": "core::array::Span::<core::felt252>"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "transferFrom",
+        "inputs": [
+          {
+            "name": "from",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "setApprovalForAll",
+        "inputs": [
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "approved",
+            "type": "core::bool"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "getApproved",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "isApprovedForAll",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
           }
         ],
         "state_mutability": "view"
@@ -398,7 +916,104 @@ export const IPSponsorshipABI = [
   {
     "type": "constructor",
     "name": "constructor",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "name",
+        "type": "core::byte_array::ByteArray"
+      },
+      {
+        "name": "symbol",
+        "type": "core::byte_array::ByteArray"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_token::erc721::erc721::ERC721Component::Transfer",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "from",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "to",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_token::erc721::erc721::ERC721Component::Approval",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "approved",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_token::erc721::erc721::ERC721Component::ApprovalForAll",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "operator",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "approved",
+        "type": "core::bool",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "openzeppelin_token::erc721::erc721::ERC721Component::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "Transfer",
+        "type": "openzeppelin_token::erc721::erc721::ERC721Component::Transfer",
+        "kind": "nested"
+      },
+      {
+        "name": "Approval",
+        "type": "openzeppelin_token::erc721::erc721::ERC721Component::Approval",
+        "kind": "nested"
+      },
+      {
+        "name": "ApprovalForAll",
+        "type": "openzeppelin_token::erc721::erc721::ERC721Component::ApprovalForAll",
+        "kind": "nested"
+      }
+    ]
   },
   {
     "type": "event",
@@ -454,6 +1069,11 @@ export const IPSponsorshipABI = [
       {
         "name": "transferable",
         "type": "core::bool",
+        "kind": "data"
+      },
+      {
+        "name": "royalty_bps",
+        "type": "core::integer::u256",
         "kind": "data"
       },
       {
@@ -578,26 +1198,182 @@ export const IPSponsorshipABI = [
   },
   {
     "type": "event",
-    "name": "ip_sponsorship::IPSponsorship::IPSponsorship::LicenseTransferred",
+    "name": "ip_sponsorship::IPSponsorship::IPSponsorship::ProposalCreated",
     "kind": "struct",
     "members": [
+      {
+        "name": "proposal_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
+      {
+        "name": "proposer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "nft_contract",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "data"
+      },
+      {
+        "name": "amount",
+        "type": "core::integer::u256",
+        "kind": "data"
+      },
+      {
+        "name": "duration",
+        "type": "core::integer::u64",
+        "kind": "data"
+      },
+      {
+        "name": "valid_until",
+        "type": "core::integer::u64",
+        "kind": "data"
+      },
+      {
+        "name": "payment_token",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "license_terms_uri",
+        "type": "core::byte_array::ByteArray",
+        "kind": "data"
+      },
+      {
+        "name": "transferable",
+        "type": "core::bool",
+        "kind": "data"
+      },
+      {
+        "name": "royalty_bps",
+        "type": "core::integer::u256",
+        "kind": "data"
+      },
+      {
+        "name": "created_at",
+        "type": "core::integer::u64",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ip_sponsorship::IPSponsorship::IPSponsorship::ProposalClosed",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "proposal_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
+      {
+        "name": "accepted",
+        "type": "core::bool",
+        "kind": "data"
+      },
+      {
+        "name": "closed_at",
+        "type": "core::integer::u64",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ip_sponsorship::IPSponsorship::IPSponsorship::ProposalAccepted",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "proposal_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
       {
         "name": "license_id",
         "type": "core::integer::u256",
         "kind": "key"
       },
       {
-        "name": "from",
+        "name": "sponsor",
         "type": "core::starknet::contract_address::ContractAddress",
         "kind": "key"
       },
       {
-        "name": "to",
+        "name": "author",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "amount",
+        "type": "core::integer::u256",
+        "kind": "data"
+      },
+      {
+        "name": "expires_at",
+        "type": "core::integer::u64",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ip_sponsorship::IPSponsorship::IPSponsorship::LicenseMinted",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
+      {
+        "name": "recipient",
         "type": "core::starknet::contract_address::ContractAddress",
         "kind": "key"
       },
       {
-        "name": "transferred_at",
+        "name": "author",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "asset_contract",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "asset_token_id",
+        "type": "core::integer::u256",
+        "kind": "data"
+      },
+      {
+        "name": "expires_at",
+        "type": "core::integer::u64",
+        "kind": "data"
+      },
+      {
+        "name": "transferable",
+        "type": "core::bool",
+        "kind": "data"
+      },
+      {
+        "name": "royalty_bps",
+        "type": "core::integer::u256",
+        "kind": "data"
+      },
+      {
+        "name": "license_terms_uri",
+        "type": "core::byte_array::ByteArray",
+        "kind": "data"
+      },
+      {
+        "name": "minted_at",
         "type": "core::integer::u64",
         "kind": "data"
       }
@@ -608,6 +1384,11 @@ export const IPSponsorshipABI = [
     "name": "ip_sponsorship::IPSponsorship::IPSponsorship::Event",
     "kind": "enum",
     "variants": [
+      {
+        "name": "ERC721Event",
+        "type": "openzeppelin_token::erc721::erc721::ERC721Component::Event",
+        "kind": "flat"
+      },
       {
         "name": "SRC5Event",
         "type": "openzeppelin_introspection::src5::SRC5Component::Event",
@@ -639,8 +1420,23 @@ export const IPSponsorshipABI = [
         "kind": "nested"
       },
       {
-        "name": "LicenseTransferred",
-        "type": "ip_sponsorship::IPSponsorship::IPSponsorship::LicenseTransferred",
+        "name": "ProposalCreated",
+        "type": "ip_sponsorship::IPSponsorship::IPSponsorship::ProposalCreated",
+        "kind": "nested"
+      },
+      {
+        "name": "ProposalClosed",
+        "type": "ip_sponsorship::IPSponsorship::IPSponsorship::ProposalClosed",
+        "kind": "nested"
+      },
+      {
+        "name": "ProposalAccepted",
+        "type": "ip_sponsorship::IPSponsorship::IPSponsorship::ProposalAccepted",
+        "kind": "nested"
+      },
+      {
+        "name": "LicenseMinted",
+        "type": "ip_sponsorship::IPSponsorship::IPSponsorship::LicenseMinted",
         "kind": "nested"
       }
     ]

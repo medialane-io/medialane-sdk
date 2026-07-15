@@ -47,8 +47,8 @@ export interface StarknetCoordinates {
   ipClubCollectionClassHash?: `0x${string}`;
   ipClubFactoryStartBlock?: number;
   ipSponsorship?: `0x${string}`;
+  ipSponsorshipClassHash?: `0x${string}`;
   ipSponsorshipStartBlock?: number;
-  ipSponsorshipLicense?: `0x${string}`;
 }
 
 /** Coordinates per chain. Only STARKNET is populated today; adding a chain
@@ -138,12 +138,14 @@ const COORDINATES: CoordinatesByChain = {
     ipClubFactoryClassHash: "0x07197062578375d962b2d42d3e91560770b11b1c97a9defb74c706a2c5299473",
     ipClubCollectionClassHash: "0x35b8836a2269523ae9176077ec525451cce1053b2acd9fae3b05354aa4eded3",
     ipClubFactoryStartBlock: 11884796,
-    ipSponsorship: "0x044d9b9c3bb29b94685b0a3fe27a5e2dfa30a3637ab55979c718ebcd3268bc2f",
-    ipSponsorshipStartBlock: 11405085,
-    // Dedicated ip-erc721/MIP instance for sponsorship receipts (class hash
-    // 0x01bd7e39c5135b32b664e34cbbb4eafbd707a0fbc3ec2ef28657f52577d277d7) —
-    // never the genesis-mint instance.
-    ipSponsorshipLicense: "0x06bcfc4e97758a2abf95af4bd49596efdbfd88ccd740caddc56ad0a4bd095839",
+    // v3 redesign (deployed 2026-07-15): single contract is both the
+    // offer/bid/proposal registry and the license collection (embeds
+    // ERC721Component directly) — no separate receipt contract, no
+    // set_minter bootstrap. Supersedes the 2026-07-02 v2 address, which had
+    // zero offers/licenses ever issued (clean cutover, no reclassification).
+    ipSponsorship: "0x03729ebe0fedf29ec97fca34db09174772af7f870af26a26e024a61040143e5c",
+    ipSponsorshipClassHash: "0x0626daac2ed7e2bf630ef5b10104b3202db1559216c0c1a504c0e99be2fbfec3",
+    ipSponsorshipStartBlock: 11896456,
   },
 };
 

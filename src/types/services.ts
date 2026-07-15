@@ -88,6 +88,11 @@ export interface DeployClubParams {
 }
 
 // ─── IP Sponsorship ────────────────────────────────────────────────────────────
+// v3: transferable/expiry are declarative terms only (never contract-enforced —
+// carried in license_terms_uri metadata + the LicenseMinted event, read back by
+// the indexer, not by an on-chain is_license_valid()). Either side can initiate:
+// an owner creates an offer and sponsors bid on it, or a sponsor proposes terms
+// directly and the owner accepts/rejects.
 
 export interface CreateSponsorshipOfferParams {
   nftContract: string;
@@ -98,6 +103,24 @@ export interface CreateSponsorshipOfferParams {
   paymentToken: string;
   licenseTermsUri: string;
   transferable: boolean;
+  /** Basis points, 0–10000. EIP-2981 royalty to the author on license resale. */
+  royaltyBps: bigint | string;
   /** Restricts acceptance to one sponsor address; omit for open bidding. */
   specificSponsor?: string;
+}
+
+/** Sponsor-initiated — the symmetric counterpart to CreateSponsorshipOfferParams. */
+export interface ProposeSponsorshipParams {
+  nftContract: string;
+  tokenId: bigint | string;
+  /** Fixed take-it-or-leave-it amount (not a bid floor). */
+  amount: bigint | string;
+  duration: number;
+  /** Unix seconds; the deadline for the asset owner to accept. 0 = no deadline. */
+  validUntil?: number;
+  paymentToken: string;
+  licenseTermsUri: string;
+  transferable: boolean;
+  /** Basis points, 0–10000. */
+  royaltyBps: bigint | string;
 }

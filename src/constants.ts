@@ -41,7 +41,7 @@ export const STARKNET_IP_CLUB_NFT_CLASS_HASH = SN.ipClubNftClassHash!;
 export const STARKNET_IP_CLUB_FACTORY_CONTRACT = SN.ipClubFactory!;
 export const STARKNET_IP_CLUB_COLLECTION_CLASS_HASH = SN.ipClubCollectionClassHash!;
 export const STARKNET_IP_SPONSORSHIP_CONTRACT = SN.ipSponsorship!;
-export const STARKNET_IP_SPONSORSHIP_LICENSE_CONTRACT = SN.ipSponsorshipLicense!;
+export const STARKNET_IP_SPONSORSHIP_CLASS_HASH = SN.ipSponsorshipClassHash!;
 
 // ── Creator Coin (Ekubo) ──────────────────────────────────────────────────────
 export const STARKNET_CREATOR_COIN_FACTORY_CONTRACT = SN.creatorCoinFactory!;

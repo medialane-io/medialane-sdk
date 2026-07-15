@@ -2,6 +2,61 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.68.0] — 2026-07-15
+
+### Changed (breaking) — IP Sponsorship v3: single contract, soft license, symmetric proposals
+
+`IPSponsorship` is now the whole service: it embeds `ERC721Component` directly
+and mints the issued license internally from `accept_bid`/`accept_proposal` —
+there is no more separate `IPSponsorshipLicense` contract, no `set_minter`
+bootstrap, and no non-authoritative receipt NFT minted through a second
+`ip-erc721` instance. `transferable`/expiry are now declarative terms only —
+never contract-enforced against a transfer — carried in `license_terms_uri`
+metadata and the `LicenseMinted` event; there is no on-chain
+`is_license_valid()`/`get_license()` anymore, so validity must be derived by
+an indexer from `LicenseMinted`, not read live. Adds symmetric initiation: a
+sponsor can `proposeSponsorship`/`withdrawProposal` on an asset with no open
+offer yet, and the asset owner `acceptProposal`s/`rejectProposal`s it —
+mirroring the existing owner-initiated `createOffer`/bid flow. `createOffer`
+and `proposeSponsorship` both now take a `royaltyBps` (EIP-2981, basis
+points) that didn't exist on the v2 offer shape.
+
+Deployed to Starknet mainnet 2026-07-15:
+`0x03729ebe0fedf29ec97fca34db09174772af7f870af26a26e024a61040143e5c`
+(class hash `0x0626daac2ed7e2bf630ef5b10104b3202db1559216c0c1a504c0e99be2fbfec3`,
+start block `11896456`). **Supersedes the 2026-07-02 v2
+`ipSponsorship`/`ipSponsorshipLicense` addresses** — the old registry had zero
+offers and zero licenses ever issued, so this is a clean cutover with no
+history to carry forward.
+
+- `chains.ts`: `ipSponsorship` swapped in place to the new address;
+  `ipSponsorshipClassHash` added; `ipSponsorshipLicense` **removed** (no
+  second contract to point at).
+- `constants.ts` / root `index.ts`: `STARKNET_IP_SPONSORSHIP_LICENSE_CONTRACT`
+  **removed**, replaced by `STARKNET_IP_SPONSORSHIP_CLASS_HASH`.
+- `IPSponsorshipABI` replaced wholesale (extracted from the deployed build
+  artifact — includes ERC-721 + ERC-2981 + the full v3 interface: proposal
+  entrypoints, `royalty_info`, `LicenseMinted`/`Proposal*` events).
+  `IPSponsorshipLicenseABI` **deleted**.
+- `SponsorshipService` (`starknet/services/sponsorship.ts`) rewritten:
+  `acceptBid`/`acceptProposal` are now single calls (no more paired
+  receipt-mint call); `transferLicense` **removed** — a v3 license is a
+  standard ERC-721 on the sponsorship contract itself, moved via ordinary
+  `transfer_from` like any other Medialane collection, not a bespoke
+  entrypoint. Added `proposeSponsorship`/`withdrawProposal`/`acceptProposal`/
+  `rejectProposal`/`getProposal`/`getLastProposalId`/`getOffer`/`getBid`/
+  `getLastOfferId`/`getLastLicenseId`/`royaltyInfo` read wrappers.
+- `types/services.ts`: `CreateSponsorshipOfferParams` gains `royaltyBps`; new
+  `ProposeSponsorshipParams`.
+- Service registry: `ip-sponsorship` gains an `onchain.STARKNET` block and a
+  `transfer` capability (the license is now genuinely transferable protocol
+  state, not a courtesy receipt); `ip-sponsorship-license` **retired** — it
+  described a receipt-NFT concept that no longer exists architecturally.
+
+Contract PRs:
+[mediolano-contracts#156](https://github.com/mediolano-os/mediolano-contracts/pull/156),
+[#158](https://github.com/mediolano-os/mediolano-contracts/pull/158).
+
 ## [0.67.0] — 2026-07-15
 
 ### Changed (breaking) — IP-Club redeployed on the standard per-token metadata fix

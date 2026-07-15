@@ -154,18 +154,28 @@ const SERVICES = {
     description: "Sponsorship offers and licenses anchored to an existing Medialane asset.",
     standard: "ERC721",
     provenance: "MEDIALANE",
+    onchain: {
+      STARKNET: {
+        factoryAddress: SN.ipSponsorship!,
+        classHash: SN.ipSponsorshipClassHash!,
+        startBlock: SN.ipSponsorshipStartBlock!,
+      },
+    },
     uiVariant: "standard",
-    capabilities: ["sponsor"],
-    metadataSchema: { licenseDefault: "CC BY-SA" },
-  },
-  "ip-sponsorship-license": {
-    id: "ip-sponsorship-license",
-    displayName: "Sponsorship License Receipt",
-    description: "Non-authoritative receipt NFT minted to a sponsor when a sponsorship bid is accepted.",
-    standard: "ERC721",
-    provenance: "MEDIALANE",
-    uiVariant: "standard",
-    capabilities: ["transfer"],
+    // v3: one contract is both the offer/bid/proposal registry and the
+    // issued license collection (a real, standard ERC-721 minted internally
+    // — no separate receipt contract). `transfer` reflects that a license is
+    // freely transferable at the protocol layer; transferable/expiry intent
+    // is declarative (carried in metadata + LicenseMinted), never
+    // contract-enforced. Supersedes the 2026-07-02 v2 `ip-sponsorship`
+    // (registry-only) + `ip-sponsorship-license` (non-authoritative receipt
+    // via a dedicated ip-erc721 instance) pair — retired as of this redesign.
+    capabilities: ["sponsor", "transfer"],
+    events: [
+      { name: "OfferCreated", emittedBy: "factory" },
+      { name: "ProposalCreated", emittedBy: "factory" },
+      { name: "LicenseMinted", emittedBy: "factory" },
+    ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },
   "creator-coin": {
