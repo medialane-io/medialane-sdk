@@ -2,6 +2,46 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.67.0] — 2026-07-15
+
+### Changed (breaking) — IP-Club redeployed on the standard per-token metadata fix
+
+`IPClubCollection` was redeclared and a new `IPClubFactory` instance deployed to
+pick up a standard-`token_uri` fix (previously every membership card in a club
+resolved to the same URI — the collection's `base_uri`, not `base_uri + token_id`
+— because `token_uri`/`tokenURI` were hand-rolled instead of using OZ's
+`ERC721Component` metadata impl; same class of bug as the IP-Tickets rebuild).
+
+- New coordinates in `chains.ts`: `ipClubFactory` →
+  `0x05519705345ce225db666253a21cf89d1c675658f16cc6ae4320cefd1a1219a3`,
+  `ipClubCollectionClassHash` →
+  `0x35b8836a2269523ae9176077ec525451cce1053b2acd9fae3b05354aa4eded3`,
+  `ipClubFactoryStartBlock` → `11884796`. `ipClubFactoryClassHash` is
+  **unchanged** (`0x07197062…`) — the factory's own logic didn't change (only
+  comments), so it reused its already-declared class; only its *constructor
+  argument* (the collection class hash) is new, hence a fresh factory
+  **instance** at a new address rather than a new factory class.
+- **`deploy_club`'s `baseUri` must now end with `/`** — the contract asserts
+  this on-chain; a bare `ipfs://CID` (no trailing slash) now reverts at
+  deploy time instead of silently producing broken per-token URIs. Same
+  requirement as `IPTicketCollectionFactory.deploy_collection`.
+- `IPClubCollectionABI`/`IPClubFactoryABI` unchanged (verified byte-for-byte
+  identical entry set against the freshly-compiled ABI — only impl
+  declaration order differs in source, which doesn't change the ABI's
+  semantic content).
+- The previous factory (`0x0107263…`) and its collections keep working
+  read/write as deployed but are legacy — new club creation should go through
+  the new factory address.
+- **Known quirk (not fixed):** the new `IPClubFactory` instance's own
+  `version()` still reports `"1.0.0"` (unchanged from the prior factory,
+  since only comments changed in `IPClubFactory.cairo`) while the
+  `IPClubCollection` it deploys reports `"3.0.0"`. This mismatch was caught
+  after the mainnet declare/deploy had already been paid for; fixing it would
+  cost an additional declare+deploy with no refund on the sunk cost, so it's
+  being left as a documented inconsistency rather than spending further to
+  correct a cosmetic version string. `collection_class_hash()` is the
+  authoritative way to confirm which collection version a factory deploys.
+
 ## [0.66.0] — 2026-07-14
 
 ### Changed (breaking) — IP-Tickets redesigned contract

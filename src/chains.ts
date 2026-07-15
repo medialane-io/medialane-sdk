@@ -134,10 +134,10 @@ const COORDINATES: CoordinatesByChain = {
     ipClubRegistry: "0x00e189c619b6bb07d78973a149641c59c37eb0716f8584d7520bce12d303eede",
     ipClubNftClassHash: "0x02bc9b20cca21b04245e9215bf7121f4d7295b195890e449b472b573017fb889",
     ipClubStartBlock: 11404776,
-    ipClubFactory: "0x010726346c264d1832a7303afaf5692dbd2b05446fecc6da30d958d0227c36d0",
+    ipClubFactory: "0x05519705345ce225db666253a21cf89d1c675658f16cc6ae4320cefd1a1219a3",
     ipClubFactoryClassHash: "0x07197062578375d962b2d42d3e91560770b11b1c97a9defb74c706a2c5299473",
-    ipClubCollectionClassHash: "0x049dc5e5ff00e67d5d457c6991ee70822f36a979b76cefd1b617aeccd7051d4b",
-    ipClubFactoryStartBlock: 11652766,
+    ipClubCollectionClassHash: "0x35b8836a2269523ae9176077ec525451cce1053b2acd9fae3b05354aa4eded3",
+    ipClubFactoryStartBlock: 11884796,
     ipSponsorship: "0x044d9b9c3bb29b94685b0a3fe27a5e2dfa30a3637ab55979c718ebcd3268bc2f",
     ipSponsorshipStartBlock: 11405085,
     // Dedicated ip-erc721/MIP instance for sponsorship receipts (class hash
