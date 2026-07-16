@@ -119,9 +119,10 @@ const client = new MedialaneClient({ chain: "STARKNET", backendUrl, apiKey });
 - `client.services.{pop, drop, erc1155Collection, creatorCoin, ticket, club, sponsorship}`
   — per-service on-chain classes. **Ticket is the redesigned ERC-1155 surface**
   (`deployCollection` with `baseUri`, `createTicket`, `mint`, `isValid`,
-  `getTicket` — no pause switch). **Club is the factory pattern** (`deployClub`/`setOpen`/
-  `mintMembership`; single-registry methods are `@deprecated`). `ip-club`
-  membership is soulbound — capabilities `["subscribe"]`, no `transfer`.
+  `getTicket` — no pause switch). **Club is the redesigned ERC-1155 surface**
+  (`deployCollection` with `baseUri`, `createMembership`, `mint`, `isMember`,
+  `isMemberOf`, `getMembership` — tiers with validity windows that gate
+  membership, never minting; memberships trade like any edition).
 - `StarknetVenue` (`./starknet`) — the venue adapter over
   `StarknetVenueSigner`; deps inject `resolveOrder`/`resolveStandard` (from the
   indexer — Starknet has no canonical ERC-165 id for 1155).

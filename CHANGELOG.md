@@ -2,6 +2,35 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.69.0] — 2026-07-16
+
+### Changed (breaking) — IP Club rebuild: membership tiers as regular assets
+
+`IPClubCollection` is now a per-creator **ERC-1155** deployed by
+`IPClubCollectionFactory.deploy_collection(name, symbol, base_uri)` (factory
+`0x06a0b0be…56a2b9`, mainnet block 11928775). Each token id is a membership
+tier with per-tier `metadata_uri`, optional validity window (gates
+`is_member`/`is_member_of`, never minting), supply, and royalty. Entry fee /
+payment token / `set_open` are gone — memberships are minted by the creator
+and trade on the marketplace like any edition.
+
+- `ClubService` rewritten: `deployCollection`, `createMembership`, `mint`,
+  `isMember`, `isMemberOf`, `getMembership`. Removed: `deployClub`, `setOpen`,
+  `mintMembership` and the legacy registry methods (`createClub`,
+  `setClubOpen`, `joinClub`, `leaveClub`).
+- Types: `CreateMembershipParams` / `MintMembershipsParams` replace
+  `CreateClubParams` / `DeployClubParams`.
+- ABIs: `IPClubCollectionABI` / `IPClubFactoryABI` regenerated; legacy
+  `IPClubABI` / `IPClubNFTABI` deleted.
+- `chains.ts`: club coordinates updated to the 2026-07-16 deploy; legacy
+  `ipClubRegistry` / `ipClubNftClassHash` / `ipClubStartBlock` removed (with
+  their `STARKNET_IP_CLUB_REGISTRY_CONTRACT` / `STARKNET_IP_CLUB_NFT_CLASS_HASH`
+  constants).
+- Registry: `ip-club` is `standard: "ERC1155"` with capabilities
+  `["mint", "list", "buy", "make_offer", "cancel", "transfer"]` (`subscribe`
+  dropped — nothing recurring remains) and events `ClubDeployed` (factory) /
+  `MembershipCreated` (instance).
+
 ## [0.68.0] — 2026-07-15
 
 ### Changed (breaking) — IP Sponsorship v3: single contract, soft license, symmetric proposals

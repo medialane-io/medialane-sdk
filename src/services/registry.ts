@@ -138,13 +138,20 @@ const SERVICES = {
   "ip-club": {
     id: "ip-club",
     displayName: "IP Club",
-    description: "Membership clubs with an on-chain NFT membership card.",
-    standard: "ERC721",
+    description: "Membership clubs — create tiers, mint membership cards, trade like any collection.",
+    standard: "ERC1155",
     provenance: "MEDIALANE",
+    onchain: {
+      STARKNET: {
+        factoryAddress: SN.ipClubFactory!,
+        classHash: SN.ipClubCollectionClassHash!,
+      },
+    },
     uiVariant: "club",
-    capabilities: ["subscribe"],
+    capabilities: ["mint", "list", "buy", "make_offer", "cancel", "transfer"],
     events: [
-      { name: "NewClubCreated", emittedBy: "factory" },
+      { name: "ClubDeployed", emittedBy: "factory" },
+      { name: "MembershipCreated", emittedBy: "instance" },
     ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },

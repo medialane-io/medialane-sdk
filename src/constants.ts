@@ -36,8 +36,6 @@ export const STARKNET_NFTCOMMENTS_CONTRACT = SN.nftComments!;
 // still behave correctly regardless.
 export const STARKNET_IP_TICKETS_FACTORY_CONTRACT = SN.ipTicketsFactory!;
 export const STARKNET_IP_TICKET_COLLECTION_CLASS_HASH = SN.ipTicketCollectionClassHash!;
-export const STARKNET_IP_CLUB_REGISTRY_CONTRACT = SN.ipClubRegistry!;
-export const STARKNET_IP_CLUB_NFT_CLASS_HASH = SN.ipClubNftClassHash!;
 export const STARKNET_IP_CLUB_FACTORY_CONTRACT = SN.ipClubFactory!;
 export const STARKNET_IP_CLUB_COLLECTION_CLASS_HASH = SN.ipClubCollectionClassHash!;
 export const STARKNET_IP_SPONSORSHIP_CONTRACT = SN.ipSponsorship!;

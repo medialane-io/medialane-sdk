@@ -58,33 +58,25 @@ export interface MintTicketsParams {
 
 // ─── IP Club ───────────────────────────────────────────────────────────────────
 
-export interface CreateClubParams {
-  name: string;
-  symbol: string;
-  /** ipfs:// or ar:// only — enforced on-chain. */
+export interface CreateMembershipParams {
+  /** Address of the deployed IPClubCollection contract. */
+  collection: string;
+  maxSupply: bigint | string;
+  /** Unix timestamp (seconds). Omit for "valid immediately". Gates membership, never minting. */
+  startTime?: number;
+  /** Unix timestamp (seconds). Omit for "lifetime membership". */
+  endTime?: number;
+  /** Basis points, 0–10000. */
+  royaltyBps: number;
+  /** ipfs:// or ar:// — enforced on-chain. */
   metadataUri: string;
-  maxMembers?: number;
-  /** Required (non-zero) with paymentToken set; omit for a free club. */
-  entryFee?: bigint | string;
-  paymentToken?: string;
 }
 
-/** Factory-pattern deploy — one ERC-721 collection per creator. */
-export interface DeployClubParams {
-  name: string;
-  symbol: string;
-  /** ipfs:// base URI for the collection. */
-  baseUri: string;
-  /** Max token supply; defaults to u128 max (effectively unlimited). */
-  maxSupply?: bigint | string;
-  /** Entry fee in payment token units; 0 = free. */
-  entryFee?: bigint | string;
-  /** Required when entryFee > 0. */
-  paymentToken?: string;
-  /** Royalty in basis points (0–10 000). */
-  royaltyBps?: bigint | string;
-  /** Override factory address. */
-  factoryAddress?: string;
+export interface MintMembershipsParams {
+  collection: string;
+  tokenId: bigint | string;
+  to: string;
+  amount: bigint | string;
 }
 
 // ─── IP Sponsorship ────────────────────────────────────────────────────────────

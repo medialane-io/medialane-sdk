@@ -13,13 +13,15 @@ test("a service has no coordinates on an unpopulated chain", () => {
   expect(svc.onchain?.ETHEREUM).toBeUndefined();
 });
 
-test("ip-club is not transferable (soulbound membership card)", () => {
+test("ip-club memberships trade like any collection", () => {
   const svc = getService("ip-club")!;
-  expect(svc.capabilities).not.toContain("transfer");
+  expect(svc.standard).toBe("ERC1155");
+  expect(svc.capabilities).toContain("transfer");
+  expect(svc.capabilities).toContain("list");
 });
 
 test("hasCapability reflects a service's capabilities array", () => {
-  expect(hasCapability("ip-club", "transfer")).toBe(false);
+  expect(hasCapability("ip-club", "subscribe")).toBe(false);
   expect(hasCapability("ip-tickets", "transfer")).toBe(true);
 });
 

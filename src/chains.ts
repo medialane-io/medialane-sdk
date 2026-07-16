@@ -39,9 +39,6 @@ export interface StarknetCoordinates {
   ipTicketCollectionClassHash?: `0x${string}`;
   ipTicketsFactoryClassHash?: `0x${string}`;
   ipTicketsStartBlock?: number;
-  ipClubRegistry?: `0x${string}`;
-  ipClubNftClassHash?: `0x${string}`;
-  ipClubStartBlock?: number;
   ipClubFactory?: `0x${string}`;
   ipClubFactoryClassHash?: `0x${string}`;
   ipClubCollectionClassHash?: `0x${string}`;
@@ -131,13 +128,10 @@ const COORDINATES: CoordinatesByChain = {
     ipTicketCollectionClassHash: "0x047bd108881457c4f4db6c64671c1dd402f4d8c79fd9182f03a2dd841335a34b",
     ipTicketsFactoryClassHash: "0x04a739ac3a673ebd0db96bb24475600797c3ed34827e79517f9b2b1640276e6a",
     ipTicketsStartBlock: 11836622,
-    ipClubRegistry: "0x00e189c619b6bb07d78973a149641c59c37eb0716f8584d7520bce12d303eede",
-    ipClubNftClassHash: "0x02bc9b20cca21b04245e9215bf7121f4d7295b195890e449b472b573017fb889",
-    ipClubStartBlock: 11404776,
-    ipClubFactory: "0x05519705345ce225db666253a21cf89d1c675658f16cc6ae4320cefd1a1219a3",
-    ipClubFactoryClassHash: "0x07197062578375d962b2d42d3e91560770b11b1c97a9defb74c706a2c5299473",
-    ipClubCollectionClassHash: "0x35b8836a2269523ae9176077ec525451cce1053b2acd9fae3b05354aa4eded3",
-    ipClubFactoryStartBlock: 11884796,
+    ipClubFactory: "0x06a0b0be16d70c78f2e18119dbf90e5911cbfd5d8d484bc555dc61d96f56a2b9",
+    ipClubFactoryClassHash: "0x05d9d431bd3532b1fa4d5bab572f49c5ad8034ee3cc83951aa41ae82c9cad266",
+    ipClubCollectionClassHash: "0x05b8477c72e6bf0cf64967d71155021fd4d77d9a57e8805c6b40709121c002c5",
+    ipClubFactoryStartBlock: 11928775,
     // v3 redesign (deployed 2026-07-15): single contract is both the
     // offer/bid/proposal registry and the license collection (embeds
     // ERC721Component directly) — no separate receipt contract, no

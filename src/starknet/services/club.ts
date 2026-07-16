@@ -1,28 +1,30 @@
 import { newContract } from "../marketplace/utils.js";
-import { CairoOption, CairoOptionVariant, cairo, type AccountInterface } from "starknet";
+import { CairoOption, CairoOptionVariant, RpcProvider, cairo, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { normalizeAddress } from "../../utils/address.js";
-import { IPClubABI, IPClubFactoryABI, IPClubCollectionABI } from "../abis/index.js";
+import { IPClubCollectionABI, IPClubFactoryABI } from "../abis/index.js";
 import { getStarknetCoordinates } from "../../chains.js";
-import type { CreateClubParams, DeployClubParams } from "../../types/services.js";
+import type { CreateMembershipParams, MintMembershipsParams } from "../../types/services.js";
 import type { TxResult } from "../../types/marketplace.js";
 
-export type { CreateClubParams, DeployClubParams };
+export type { CreateMembershipParams, MintMembershipsParams };
+
+export interface MembershipRecord {
+  maxSupply: bigint;
+  minted: bigint;
+  startTime: number | null;
+  endTime: number | null;
+  royaltyBps: number;
+  metadataUri: string;
+}
 
 export class ClubService {
-  private readonly registryAddress?: string;
   private readonly factoryAddress?: string;
+  private readonly config: ResolvedConfig;
 
   constructor(config: ResolvedConfig) {
-    const coords = getStarknetCoordinates(config.chain);
-    this.registryAddress = coords.ipClubRegistry;
-    this.factoryAddress = coords.ipClubFactory;
-  }
-
-  private _registry(account: AccountInterface, registryAddress?: string) {
-    const address = registryAddress ?? this.registryAddress;
-    if (!address) throw new Error("IP-Club registry address not configured for this chain");
-    return newContract(IPClubABI as any, normalizeAddress("STARKNET", address), account as any);
+    this.config = config;
+    this.factoryAddress = getStarknetCoordinates(config.chain).ipClubFactory;
   }
 
   private _factory(account: AccountInterface, factoryAddress?: string) {
@@ -31,143 +33,98 @@ export class ClubService {
     return newContract(IPClubFactoryABI as any, normalizeAddress("STARKNET", address), account as any);
   }
 
-  private _collection(account: AccountInterface, collectionAddress: string) {
-    return newContract(IPClubCollectionABI as any, normalizeAddress("STARKNET", collectionAddress), account as any);
+  private _collection(address: string, account: AccountInterface) {
+    return newContract(IPClubCollectionABI as any, normalizeAddress("STARKNET", address), account as any);
   }
 
-  /** Deploy a new per-creator membership ERC-721 collection via the factory. */
-  async deployClub(
+  private _collectionRead(address: string) {
+    const provider = new RpcProvider({ nodeUrl: this.config.rpcUrl });
+    return newContract(IPClubCollectionABI as any, normalizeAddress("STARKNET", address), provider);
+  }
+
+  /**
+   * Deploys a new IPClubCollection via the factory. Caller becomes owner.
+   * `baseUri` is the collection-level metadata URI, embedded on-chain in the
+   * deploy transaction.
+   */
+  async deployCollection(
     account: AccountInterface,
-    params: DeployClubParams
+    params: { name: string; symbol: string; baseUri: string; factoryAddress?: string }
   ): Promise<TxResult> {
-    const maxSupply = cairo.uint256(params.maxSupply ?? 0xffffffffffffffffn);
-    const entryFee = cairo.uint256(params.entryFee ?? 0n);
-    const paymentToken = params.paymentToken
-      ? new CairoOption(CairoOptionVariant.Some, params.paymentToken)
-      : new CairoOption(CairoOptionVariant.None);
-    const royaltyBps = cairo.uint256(params.royaltyBps ?? 0n);
-    const call = this._factory(account, params.factoryAddress).populate("deploy_club", [
+    const call = this._factory(account, params.factoryAddress).populate("deploy_collection", [
       params.name,
       params.symbol,
       params.baseUri,
-      maxSupply,
-      entryFee,
-      paymentToken,
-      royaltyBps,
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
 
-  /** Owner-only — pause or resume new mints on a club collection. */
-  async setOpen(
-    account: AccountInterface,
-    params: { collectionAddress: string; open: boolean }
-  ): Promise<TxResult> {
-    const call = this._collection(account, params.collectionAddress).populate("set_open", [params.open]);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
-  }
-
-  /** Public mint — caller pays entry fee (if any) and receives the membership NFT. */
-  async mintMembership(
-    account: AccountInterface,
-    params: { collectionAddress: string; to?: string; entryFee?: bigint | string; paymentToken?: string }
-  ): Promise<TxResult> {
-    const calls = [];
-    if (params.entryFee && params.paymentToken && BigInt(params.entryFee) > 0n) {
-      const amount = cairo.uint256(params.entryFee);
-      calls.push({
-        contractAddress: params.paymentToken,
-        entrypoint: "approve",
-        calldata: [
-          normalizeAddress("STARKNET", params.collectionAddress),
-          amount.low.toString(),
-          amount.high.toString(),
-        ],
-      });
-    }
-    calls.push(
-      this._collection(account, params.collectionAddress).populate("mint", [
-        params.to ?? account.address,
-      ])
-    );
-    const res = await account.execute(calls);
-    return { txHash: res.transaction_hash };
-  }
-
-  // ── Legacy registry methods (retained for backward compatibility) ──────────────
-
-  /** @deprecated Use deployClub — the factory pattern replaced the registry. */
-  async createClub(
-    account: AccountInterface,
-    params: CreateClubParams & { registryAddress?: string }
-  ): Promise<TxResult> {
-    const maxMembers = params.maxMembers != null
-      ? new CairoOption(CairoOptionVariant.Some, params.maxMembers)
+  /** Owner-only. Creates a new membership tier inside the caller's deployed collection. */
+  async createMembership(account: AccountInterface, params: CreateMembershipParams): Promise<TxResult> {
+    const startTime = params.startTime != null
+      ? new CairoOption(CairoOptionVariant.Some, params.startTime)
       : new CairoOption(CairoOptionVariant.None);
-    const entryFee = params.entryFee != null
-      ? new CairoOption(CairoOptionVariant.Some, cairo.uint256(params.entryFee))
+    const endTime = params.endTime != null
+      ? new CairoOption(CairoOptionVariant.Some, params.endTime)
       : new CairoOption(CairoOptionVariant.None);
-    const paymentToken = params.paymentToken
-      ? new CairoOption(CairoOptionVariant.Some, params.paymentToken)
-      : new CairoOption(CairoOptionVariant.None);
-    const call = this._registry(account, params.registryAddress).populate("create_club", [
-      params.name,
-      params.symbol,
+    const call = this._collection(params.collection, account).populate("create_membership", [
+      cairo.uint256(params.maxSupply),
+      startTime,
+      endTime,
+      params.royaltyBps,
       params.metadataUri,
-      maxMembers,
-      entryFee,
-      paymentToken,
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
 
-  /** @deprecated Legacy registry — use factory-deployed collection methods. */
-  async setClubOpen(
-    account: AccountInterface,
-    params: { clubId: bigint | string; open: boolean; registryAddress?: string }
-  ): Promise<TxResult> {
-    const call = this._registry(account, params.registryAddress).populate("set_club_open", [
-      cairo.uint256(params.clubId),
-      params.open,
-    ]);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
-  }
-
-  /** @deprecated Legacy registry — use mintMembership with factory-deployed collections. */
-  async joinClub(
-    account: AccountInterface,
-    params: { clubId: bigint | string; entryFee?: bigint | string; paymentToken?: string; registryAddress?: string }
-  ): Promise<TxResult> {
-    const registryAddress = params.registryAddress ?? this.registryAddress;
-    if (!registryAddress) throw new Error("IP-Club registry address not configured for this chain");
-    const calls = [];
-    if (params.paymentToken && params.entryFee && BigInt(params.entryFee) > 0n) {
-      const amount = cairo.uint256(params.entryFee);
-      calls.push({
-        contractAddress: params.paymentToken,
-        entrypoint: "approve",
-        calldata: [normalizeAddress("STARKNET", registryAddress), amount.low.toString(), amount.high.toString()],
-      });
-    }
-    calls.push(this._registry(account, registryAddress).populate("join_club", [cairo.uint256(params.clubId)]));
-    const res = await account.execute(calls);
-    return { txHash: res.transaction_hash };
-  }
-
-  /** @deprecated Legacy registry — use factory-deployed collection burn. */
-  async leaveClub(
-    account: AccountInterface,
-    params: { clubId: bigint | string; tokenId: bigint | string; registryAddress?: string }
-  ): Promise<TxResult> {
-    const call = this._registry(account, params.registryAddress).populate("leave_club", [
-      cairo.uint256(params.clubId),
+  /**
+   * Owner-only. Mints `amount` of `tokenId` to `to`. The validity window
+   * gates membership, never minting — future-window tiers mint fine.
+   */
+  async mint(account: AccountInterface, params: MintMembershipsParams): Promise<TxResult> {
+    const call = this._collection(params.collection, account).populate("mint", [
+      params.to,
       cairo.uint256(params.tokenId),
+      cairo.uint256(params.amount),
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
+  }
+
+  /** Read — true if holder holds any tier currently inside its validity window. */
+  async isMember(params: { collection: string; holder: string }): Promise<boolean> {
+    const result = await this._collectionRead(params.collection).call("is_member", [
+      params.holder,
+    ]);
+    return Boolean(result);
+  }
+
+  /** Read — true if holder holds `tokenId` and the current time is inside its window. */
+  async isMemberOf(params: { collection: string; tokenId: bigint | string; holder: string }): Promise<boolean> {
+    const result = await this._collectionRead(params.collection).call("is_member_of", [
+      cairo.uint256(params.tokenId),
+      params.holder,
+    ]);
+    return Boolean(result);
+  }
+
+  /** Read — returns the Membership record for a token ID. */
+  async getMembership(params: {
+    collection: string;
+    tokenId: bigint | string;
+  }): Promise<MembershipRecord> {
+    const m = await this._collectionRead(params.collection).call("get_membership", [
+      cairo.uint256(params.tokenId),
+    ]) as any;
+    return {
+      maxSupply: BigInt(m.max_supply),
+      minted: BigInt(m.minted),
+      startTime: m.start_time?.variant === "Some" ? Number(m.start_time.values[0] ?? m.start_time.value) : null,
+      endTime: m.end_time?.variant === "Some" ? Number(m.end_time.values[0] ?? m.end_time.value) : null,
+      royaltyBps: Number(m.royalty_bps),
+      metadataUri: m.metadata_uri as string,
+    };
   }
 }
