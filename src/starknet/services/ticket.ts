@@ -99,6 +99,12 @@ export class TicketService {
     return Boolean(result);
   }
 
+  /** Read — number of tickets created so far (ids are sequential from 1). */
+  async getTicketCount(params: { collection: string }): Promise<bigint> {
+    const result = await this._collectionRead(params.collection).call("ticket_count", []);
+    return BigInt(result as any);
+  }
+
   /** Read — returns the Ticket record for a token ID. */
   async getTicket(params: {
     collection: string;

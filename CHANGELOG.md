@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.70.0] — 2026-07-16
+
+### Changed — IP Tickets v5: window gates validity, not minting
+
+Coordinates cut over to the 2026-07-16 v5 deploy (factory instance
+`0x0767bf5b…c15e99`, mainnet block 11933694; collection class
+`0x0449e8eb…04acc`, on-chain `version()` "5.0.0"; factory class hash
+unchanged). `mint` no longer reverts outside a ticket's validity window —
+future-dated tickets can be minted and sold in advance; `is_valid` semantics
+unchanged. New `ticket_count()` view; `TicketService.getTicketCount` added.
+ABI regenerated. No breaking surface changes.
+
 ## [0.69.0] — 2026-07-16
 
 ### Changed (breaking) — IP Club rebuild: membership tiers as regular assets

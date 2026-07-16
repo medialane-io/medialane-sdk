@@ -215,6 +215,17 @@ export const IPTicketCollectionABI = [
       },
       {
         "type": "function",
+        "name": "ticket_count",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
         "name": "name",
         "inputs": [],
         "outputs": [
