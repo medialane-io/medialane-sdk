@@ -34,7 +34,7 @@ platform-federation spec §2):
 
 | Entry | Contents |
 |---|---|
-| `.` (root) | Chain-neutral core: config, `ApiClient` (all REST methods), types, `chains.ts` coordinate registry, service registry, tokens, utils, adapter interfaces. **Plus a deprecated transition re-export of `./starknet`** — root importers still pull the whole Starknet adapter; delete the block once backend + apps import from `@medialane/sdk/starknet` (audit C-3). |
+| `.` (root) | Chain-neutral core ONLY: config, `ApiClient` (all REST methods), types, `chains.ts` coordinate registry, service registry, tokens, utils, adapter interfaces. **The Starknet adapter is NOT re-exported here** — import it from `@medialane/sdk/starknet` (the transition re-export was removed in 0.71.0, audit C-3, so a chain-neutral import no longer pulls starknet.js). |
 | `./starknet` | The Starknet chain adapter (~75% of the SDK): `MedialaneClient`, `StarknetVenue` + `StarknetVenueSigner` (order execution), venue reads + pure builders, service classes, all Cairo ABIs, SIWS, admin-auth, fee builder, SNIP-12 builders, `encodeByteArray`. |
 | `./evm` | EVM adapter: EIP-712 orders (byte-verified vs the audited Solidity), venue + issuance (Ethereum + Base). |
 | `./solana` | Solana adapter: Anchor wire encoding (no Anchor client), venue. |
