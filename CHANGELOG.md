@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.72.0] — 2026-07-20
+
+### Added — chain-scoped URL routing helpers
+
+`SUPPORTED_URL_CHAINS`, `chainSlug`, `chainFromSlug`, `assetHref`,
+`collectionHref`, `coinHref` — the chain-scoped URL builders `medialane-io`
+already used locally, now the single source for both apps. `medialane-io`
+collapses its local `src/lib/routes.ts` to a re-export; `medialane-starknet`
+adopts the same shape for the first time.
+
 ## [0.71.1] — 2026-07-20
 
 ### Fixed — retry 429 (rate limited), honoring Retry-After
