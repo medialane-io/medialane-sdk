@@ -91,8 +91,8 @@ export type { FailoverFetchOptions } from "./utils/rpc.js";
 // Chain-neutral adapter interfaces (platform-federation spec §2.2)
 export * from "./adapters/index.js";
 
-// ─── Deprecated transition re-exports ────────────────────────────────────────
-// The Starknet surface moved to `@medialane/sdk/starknet` (an equal chain
-// adapter). These root re-exports keep existing imports working for one
-// transition window; migrate imports, then this block is removed.
-export * from "./starknet/index.js";
+// The Starknet adapter is NOT re-exported here. Import it from
+// `@medialane/sdk/starknet` — keeping the root chain-neutral means importing a
+// core helper (config, types, `hasCapability`, `ApiClient`, …) no longer pulls
+// starknet.js + its crypto deps into a chain-agnostic consumer's bundle
+// (audit C-3; the transition re-export was removed in 0.71.0).

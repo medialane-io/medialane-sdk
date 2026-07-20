@@ -2,6 +2,31 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.71.0] — 2026-07-20
+
+### Changed (breaking) — root no longer re-exports the Starknet adapter (audit C-3)
+
+The deprecated transition re-export (`export * from "./starknet"`) is removed
+from the root entry. Starknet-adapter symbols — `MedialaneClient`,
+`StarknetVenue`, all Cairo ABIs (`IPMarketplaceABI`, `IPNftABI`, …), service
+classes, SNIP-12 builders (`buildOrderTypedData`, …), `buildFeeCall`, SIWS +
+admin-auth helpers, coin math, `encodeByteArray`, `ADMIN_HEADERS` — must now be
+imported from **`@medialane/sdk/starknet`**, not `@medialane/sdk`.
+
+The root stays chain-neutral (config, types, `chains.ts`, service registry,
+`ApiClient`, `normalizeAddress`, token/bigint/rpc utils, adapter ports). The
+payoff: importing any core helper (e.g. `hasCapability`) no longer drags
+starknet.js + `@noble/curves`/`@noble/hashes` v1 into a chain-agnostic
+consumer's bundle — which had made `@medialane/ui` unbuildable in the pure
+content sites (dao/docs). Migrate imports:
+
+```diff
+-import { IPNftABI, MedialaneClient } from "@medialane/sdk";
++import { IPNftABI, MedialaneClient } from "@medialane/sdk/starknet";
+```
+
+Consumers (backend, io, starknet) migrated in lock-step.
+
 ## [0.70.1] — 2026-07-20
 
 ### Fixed — token utils
