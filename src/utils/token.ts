@@ -19,7 +19,7 @@ export function parseAmount(human: string, decimals: number): string {
  */
 export function formatAmount(raw: string, decimals: number): string {
   const value = BigInt(raw);
-  const factor = BigInt(Math.pow(10, decimals));
+  const factor = 10n ** BigInt(decimals);
   const whole = value / factor;
   const remainder = value % factor;
   const fractional = remainder.toString().padStart(decimals, "0");
@@ -27,11 +27,31 @@ export function formatAmount(raw: string, decimals: number): string {
 }
 
 /**
- * Find a supported token by its contract address (case-insensitive).
+ * Find a supported token by its contract address.
+ *
+ * Compares by numeric felt value so a caller-supplied address that isn't
+ * zero-padded to 64 hex chars (`0x33068f6…`) still matches the stored padded
+ * form (`0x033068f6…`) — a bare `.toLowerCase()` string compare would miss it,
+ * the exact padding trap the address invariant warns against. Non-hex inputs
+ * fall back to a case-insensitive string compare.
  */
 export function getTokenByAddress(address: string): SupportedToken | undefined {
-  const lower = address.toLowerCase();
-  return SUPPORTED_TOKENS.find((t) => t.address.toLowerCase() === lower);
+  let target: bigint | null = null;
+  try {
+    target = BigInt(address);
+  } catch {
+    target = null;
+  }
+  return SUPPORTED_TOKENS.find((t) => {
+    if (target !== null) {
+      try {
+        return BigInt(t.address) === target;
+      } catch {
+        /* stored address not hex — fall through to string compare */
+      }
+    }
+    return t.address.toLowerCase() === address.toLowerCase();
+  });
 }
 
 /**

@@ -101,18 +101,32 @@ export class ApiClient {
     return normalizeAddress(this.chain, a);
   }
 
-  private async request<T>(path: string, init?: RequestInit): Promise<T> {
+  /**
+   * The one HTTP path for the whole client: base headers (incl. x-api-key),
+   * JSON error unwrapping, and `withRetry` (5xx/network only — 4xx never
+   * retried). `allow404`/`allow403` turn those statuses into a `null` result
+   * instead of a throw, for "profile may not exist" / "not a holder" reads —
+   * so no method needs to hand-roll `fetch` to get that behavior.
+   */
+  private async request<T>(
+    path: string,
+    init?: RequestInit,
+    opts?: { allow404?: boolean; allow403?: boolean },
+  ): Promise<T> {
     const url = `${this.baseUrl.replace(/\/$/, "")}${path}`;
     const headers: Record<string, string> = { ...this.baseHeaders };
     if (!(init?.body instanceof FormData)) {
       headers["Content-Type"] = "application/json";
     }
+    const allowed = (status: number): boolean =>
+      (opts?.allow404 === true && status === 404) || (opts?.allow403 === true && status === 403);
+
     const res = await withRetry(async () => {
       const response = await fetch(url, {
         ...init,
         headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
       });
-      if (!response.ok) {
+      if (!response.ok && !allowed(response.status)) {
         const text = await response.text().catch(() => response.statusText);
         let message = text;
         try {
@@ -125,6 +139,8 @@ export class ApiClient {
       }
       return response;
     }, this.retryOptions);
+
+    if (allowed(res.status)) return null as T;
     return res.json() as Promise<T>;
   }
 
@@ -144,22 +160,9 @@ export class ApiClient {
     return this.request<T>(path, { method: "DELETE" });
   }
 
-  private async checkResponse<T>(
-    res: Response,
-    options?: { allow404?: boolean; allow403?: boolean }
-  ): Promise<T> {
-    if (options?.allow404 && res.status === 404) return null as T;
-    if (options?.allow403 && res.status === 403) return null as T;
-    if (!res.ok) {
-      const text = await res.text().catch(() => res.statusText);
-      let message = text;
-      try {
-        const body = JSON.parse(text) as { error?: string };
-        if (body.error) message = body.error;
-      } catch { /* use raw text */ }
-      throw new MedialaneApiError(res.status, message);
-    }
-    return res.json() as Promise<T>;
+  /** Bearer header for Clerk-JWT-authenticated routes. */
+  private bearer(clerkToken: string): Record<string, string> {
+    return { Authorization: `Bearer ${clerkToken}` };
   }
 
   // ─── Orders ────────────────────────────────────────────────────────────────
@@ -454,17 +457,11 @@ export class ApiClient {
     walletAddress: string,
     clerkToken: string
   ): Promise<{ verified: boolean; collection?: ApiCollection; reason?: string }> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/claim`;
-    const res = await fetch(url, {
+    return this.request("/v1/collections/claim", {
       method: "POST",
-      headers: {
-        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${clerkToken}`,
-      },
       body: JSON.stringify({ contractAddress, walletAddress }),
+      headers: this.bearer(clerkToken),
     });
-    return this.checkResponse(res);
   }
 
   /**
@@ -484,134 +481,120 @@ export class ApiClient {
 
   // ─── Collection Profiles ────────────────────────────────────────────────────
 
-  async getCollectionProfile(contractAddress: string): Promise<ApiCollectionProfile | null> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/profile`;
-    const res = await fetch(url, { headers: this.baseHeaders });
-    return this.checkResponse<ApiCollectionProfile>(res, { allow404: true });
+  getCollectionProfile(contractAddress: string): Promise<ApiCollectionProfile | null> {
+    return this.request<ApiCollectionProfile | null>(
+      `/v1/collections/${this.addr(contractAddress)}/profile`,
+      { method: "GET" },
+      { allow404: true },
+    );
   }
 
   /**
    * Update collection profile. Requires Clerk JWT for ownership check.
    */
-  async updateCollectionProfile(
+  updateCollectionProfile(
     contractAddress: string,
     data: Partial<Omit<ApiCollectionProfile, "contractAddress" | "chain" | "updatedBy" | "updatedAt">>,
     clerkToken: string
   ): Promise<ApiCollectionProfile> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/profile`;
-    const res = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${clerkToken}`,
-      },
-      body: JSON.stringify(data),
-    });
-    return this.checkResponse<ApiCollectionProfile>(res);
+    return this.request<ApiCollectionProfile>(
+      `/v1/collections/${this.addr(contractAddress)}/profile`,
+      { method: "PATCH", body: JSON.stringify(data), headers: this.bearer(clerkToken) },
+    );
   }
 
-  async getGatedContent(
+  getGatedContent(
     contractAddress: string,
     clerkToken: string
   ): Promise<{ title: string; url: string; type: string } | null> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/${this.addr(contractAddress)}/gated-content`;
-    const res = await fetch(url, {
-      headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` },
-    });
-    return this.checkResponse<{ title: string; url: string; type: string }>(res, { allow404: true, allow403: true });
+    return this.request<{ title: string; url: string; type: string } | null>(
+      `/v1/collections/${this.addr(contractAddress)}/gated-content`,
+      { method: "GET", headers: this.bearer(clerkToken) },
+      { allow404: true, allow403: true },
+    );
   }
 
   // ─── Creator Profiles ───────────────────────────────────────────────────────
 
   /** List all creators with an approved username. */
-  async getCreators(opts: { search?: string; page?: number; limit?: number } = {}): Promise<ApiCreatorListResult> {
+  getCreators(opts: { search?: string; page?: number; limit?: number } = {}): Promise<ApiCreatorListResult> {
     const params = new URLSearchParams();
     if (opts.search) params.set("search", opts.search);
     if (opts.page)  params.set("page",  String(opts.page));
     if (opts.limit) params.set("limit", String(opts.limit));
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators?${params}`;
-    const res = await fetch(url, { headers: this.baseHeaders });
-    return this.checkResponse<ApiCreatorListResult>(res);
+    const qs = params.toString();
+    return this.get<ApiCreatorListResult>(`/v1/creators${qs ? `?${qs}` : ""}`);
   }
 
-  async getCreatorProfile(walletAddress: string): Promise<ApiCreatorProfile | null> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${this.addr(walletAddress)}/profile`;
-    const res = await fetch(url, { headers: this.baseHeaders });
-    return this.checkResponse<ApiCreatorProfile>(res, { allow404: true });
+  getCreatorProfile(walletAddress: string): Promise<ApiCreatorProfile | null> {
+    return this.request<ApiCreatorProfile | null>(
+      `/v1/creators/${this.addr(walletAddress)}/profile`,
+      { method: "GET" },
+      { allow404: true },
+    );
   }
 
   /** Resolve a username slug to a creator profile (public). */
-  async getCreatorByUsername(username: string): Promise<ApiCreatorProfile | null> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/by-username/${encodeURIComponent(username.toLowerCase().trim())}`;
-    const res = await fetch(url, { headers: this.baseHeaders });
-    return this.checkResponse<ApiCreatorProfile>(res, { allow404: true });
+  getCreatorByUsername(username: string): Promise<ApiCreatorProfile | null> {
+    return this.request<ApiCreatorProfile | null>(
+      `/v1/creators/by-username/${encodeURIComponent(username.toLowerCase().trim())}`,
+      { method: "GET" },
+      { allow404: true },
+    );
   }
 
   /**
    * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
    */
-  async updateCreatorProfile(
+  updateCreatorProfile(
     walletAddress: string,
     data: Partial<Omit<ApiCreatorProfile, "walletAddress" | "chain" | "updatedAt">>,
     clerkToken: string
   ): Promise<ApiCreatorProfile> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/creators/${this.addr(walletAddress)}/profile`;
-    const res = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${clerkToken}`,
-      },
-      body: JSON.stringify(data),
-    });
-    return this.checkResponse<ApiCreatorProfile>(res);
+    return this.request<ApiCreatorProfile>(
+      `/v1/creators/${this.addr(walletAddress)}/profile`,
+      { method: "PATCH", body: JSON.stringify(data), headers: this.bearer(clerkToken) },
+    );
   }
 
   // ─── Collection Slug Claims ───────────────────────────────────────────────────
 
   /** Check if a collection slug is available (public, no auth). */
-  async checkCollectionSlugAvailability(slug: string): Promise<{ available: boolean; reason?: string }> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collection-slug-claims/check/${encodeURIComponent(slug.toLowerCase().trim())}`;
-    const res = await fetch(url, { headers: this.baseHeaders });
-    return this.checkResponse<{ available: boolean; reason?: string }>(res);
+  checkCollectionSlugAvailability(slug: string): Promise<{ available: boolean; reason?: string }> {
+    return this.get<{ available: boolean; reason?: string }>(
+      `/v1/collection-slug-claims/check/${encodeURIComponent(slug.toLowerCase().trim())}`,
+    );
   }
 
   /** Submit a slug claim for a collection. Requires Clerk JWT — caller must be the collection owner. */
-  async submitCollectionSlugClaim(
+  submitCollectionSlugClaim(
     contractAddress: string,
     slug: string,
     clerkToken: string,
     notifyEmail?: string
   ): Promise<{ claim: ApiCollectionSlugClaim }> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collection-slug-claims`;
-    const res = await fetch(url, {
+    return this.request<{ claim: ApiCollectionSlugClaim }>("/v1/collection-slug-claims", {
       method: "POST",
-      headers: {
-        "x-api-key": this.baseHeaders["x-api-key"] ?? "",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${clerkToken}`,
-      },
       body: JSON.stringify({ contractAddress, slug, notifyEmail }),
+      headers: this.bearer(clerkToken),
     });
-    return this.checkResponse<{ claim: ApiCollectionSlugClaim }>(res);
   }
 
   /** Returns all slug claims submitted by the authenticated wallet. Requires Clerk JWT. */
-  async getMyCollectionSlugClaims(clerkToken: string): Promise<{ claims: ApiCollectionSlugClaim[] }> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collection-slug-claims/me`;
-    const res = await fetch(url, {
-      headers: { ...this.baseHeaders, Authorization: `Bearer ${clerkToken}` },
+  getMyCollectionSlugClaims(clerkToken: string): Promise<{ claims: ApiCollectionSlugClaim[] }> {
+    return this.request<{ claims: ApiCollectionSlugClaim[] }>("/v1/collection-slug-claims/me", {
+      method: "GET",
+      headers: this.bearer(clerkToken),
     });
-    return this.checkResponse<{ claims: ApiCollectionSlugClaim[] }>(res);
   }
 
   /** Resolve a collection slug to a full collection. Returns null if not found. */
-  async getCollectionBySlug(slug: string): Promise<ApiCollection | null> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/collections/by-slug/${encodeURIComponent(slug.toLowerCase().trim())}`;
-    const res = await fetch(url, { headers: this.baseHeaders });
-    return this.checkResponse<ApiCollection>(res, { allow404: true });
+  getCollectionBySlug(slug: string): Promise<ApiCollection | null> {
+    return this.request<ApiCollection | null>(
+      `/v1/collections/by-slug/${encodeURIComponent(slug.toLowerCase().trim())}`,
+      { method: "GET" },
+      { allow404: true },
+    );
   }
 
   // ─── User Wallet ─────────────────────────────────────────────────────────────
@@ -662,21 +645,16 @@ export class ApiClient {
       chain?: ApiChain;
     } = {},
   ): Promise<ApiUserWallet> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/users/me`;
     const body: Record<string, string> = {
       walletType: options.walletType ?? "UNKNOWN",
       appSource: options.appSource ?? "MEDIALANE_SDK",
     };
     if (options.chain) body.chain = options.chain;
-    const res = await fetch(url, {
+    return this.request<ApiUserWallet>("/v1/users/me", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${clerkToken}`,
-      },
       body: JSON.stringify(body),
+      headers: this.bearer(clerkToken),
     });
-    return this.checkResponse<ApiUserWallet>(res);
   }
 
   /**
@@ -684,12 +662,12 @@ export class ApiClient {
    * Returns null if the user has not completed onboarding yet.
    * Requires Clerk JWT; no tenant API key needed.
    */
-  async getMyWallet(clerkToken: string): Promise<ApiUserWallet | null> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/users/me`;
-    const res = await fetch(url, {
-      headers: { "Authorization": `Bearer ${clerkToken}` },
-    });
-    return this.checkResponse<ApiUserWallet>(res, { allow404: true });
+  getMyWallet(clerkToken: string): Promise<ApiUserWallet | null> {
+    return this.request<ApiUserWallet | null>(
+      "/v1/users/me",
+      { method: "GET", headers: this.bearer(clerkToken) },
+      { allow404: true },
+    );
   }
 
   // ─── Remix Licensing ─────────────────────────────────────────────────────────
@@ -758,29 +736,27 @@ export class ApiClient {
    * role="creator" — offers where you are the original creator.
    * role="requester" — offers you made.
    */
-  async getRemixOffers(
+  getRemixOffers(
     query: ApiRemixOffersQuery,
     clerkToken: string
   ): Promise<ApiResponse<ApiRemixOffer[]>> {
     const params = new URLSearchParams({ role: query.role });
     if (query.page !== undefined) params.set("page", String(query.page));
     if (query.limit !== undefined) params.set("limit", String(query.limit));
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/remix-offers?${params}`;
-    const res = await fetch(url, {
-      headers: { ...this.baseHeaders, "Authorization": `Bearer ${clerkToken}` },
+    return this.request<ApiResponse<ApiRemixOffer[]>>(`/v1/remix-offers?${params}`, {
+      method: "GET",
+      headers: this.bearer(clerkToken),
     });
-    return this.checkResponse<ApiResponse<ApiRemixOffer[]>>(res);
   }
 
   /**
    * Get a single remix offer. Clerk JWT optional (price/currency hidden for non-participants).
    */
-  async getRemixOffer(id: string, clerkToken?: string): Promise<ApiResponse<ApiRemixOffer>> {
-    const url = `${this.baseUrl.replace(/\/$/, "")}/v1/remix-offers/${id}`;
-    const headers: Record<string, string> = { ...this.baseHeaders };
-    if (clerkToken) headers["Authorization"] = `Bearer ${clerkToken}`;
-    const res = await fetch(url, { headers });
-    return this.checkResponse<ApiResponse<ApiRemixOffer>>(res);
+  getRemixOffer(id: string, clerkToken?: string): Promise<ApiResponse<ApiRemixOffer>> {
+    return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}`, {
+      method: "GET",
+      headers: clerkToken ? this.bearer(clerkToken) : undefined,
+    });
   }
 
   /**

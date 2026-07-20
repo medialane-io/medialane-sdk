@@ -2,6 +2,26 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.70.1] — 2026-07-20
+
+### Fixed — token utils
+
+- `getTokenByAddress` now matches by numeric felt value instead of a bare
+  `.toLowerCase()` string compare, so an unpadded Starknet address
+  (`0x33068f6…`, as often seen from RPC/events) resolves to the padded stored
+  form (`0x033068f6…`). Non-hex inputs keep a case-insensitive fallback.
+- `formatAmount` computes its divisor with `10n ** BigInt(decimals)` instead of
+  `BigInt(Math.pow(10, decimals))` — exact BigInt math, consistent with
+  `parseAmount` (the float path was a latent precision trap above 18 decimals).
+
+### Changed — `ApiClient` internals (no public surface change)
+
+Unified the two HTTP paths into one. ~16 methods that hand-rolled `fetch()` +
+a `checkResponse()` helper (bypassing `withRetry`) now flow through `request()`,
+which gained `allow404`/`allow403` options. Every read gets the same
+5xx/network retry — profile, creator, gated-content, slug, and wallet reads
+previously had none. Method signatures are unchanged; `checkResponse` removed.
+
 ## [0.70.0] — 2026-07-16
 
 ### Changed — IP Tickets v5: window gates validity, not minting
