@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.71.1] — 2026-07-20
+
+### Fixed — retry 429 (rate limited), honoring Retry-After
+
+`withRetry` now retries HTTP 429 (previously it threw immediately, since 429 is
+`< 500`). When the server sends a `Retry-After` header (delta-seconds or
+HTTP-date), the retry waits that long instead of the exponential backoff —
+capped at `maxDelayMs` so a client never hangs on a long server-asked wait.
+`MedialaneApiError` carries the parsed `retryAfterMs`; `parseRetryAfter` is
+exported. Other 4xx still fail fast. Added `retry.test.ts`.
+
 ## [0.71.0] — 2026-07-20
 
 ### Changed (breaking) — root no longer re-exports the Starknet adapter (audit C-3)

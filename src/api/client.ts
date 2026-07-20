@@ -74,12 +74,24 @@ export class MedialaneApiError extends Error {
   readonly code: MedialaneErrorCode;
   constructor(
     public readonly status: number,
-    message: string
+    message: string,
+    /** Parsed `Retry-After` (ms) when the server sent one — used by withRetry on 429. */
+    public readonly retryAfterMs?: number,
   ) {
     super(message);
     this.name = "MedialaneApiError";
     this.code = deriveErrorCode(status);
   }
+}
+
+/** Parse an HTTP `Retry-After` header (delta-seconds or HTTP-date) to milliseconds. */
+export function parseRetryAfter(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const date = Date.parse(value);
+  if (!Number.isNaN(date)) return Math.max(0, date - Date.now());
+  return undefined;
 }
 
 export class ApiClient {
@@ -135,7 +147,7 @@ export class ApiClient {
         } catch {
           // use raw text
         }
-        throw new MedialaneApiError(response.status, message);
+        throw new MedialaneApiError(response.status, message, parseRetryAfter(response.headers.get("retry-after")));
       }
       return response;
     }, this.retryOptions);
