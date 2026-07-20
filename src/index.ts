@@ -67,6 +67,9 @@ export {
   type CoordinatesByChain,
 } from "./chains.js";
 
+// URL routing helpers (chain-scoped asset/collection/coin links)
+export { SUPPORTED_URL_CHAINS, chainSlug, chainFromSlug, assetHref, collectionHref, coinHref } from "./routes.js";
+
 // Service registry (05-service-model). Types (ServiceDefinition etc.) are
 // already public via `export * from "./types/index.js"`.
 export {
