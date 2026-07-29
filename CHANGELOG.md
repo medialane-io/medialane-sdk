@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.73.0] — 2026-07-29
+
+### Added — `ApiTokenMetadata.animationUrl`
+
+A top-level OpenSea-baseline media field (`animation_url`), mirroring how
+`image` is already typed — not a trait, a sibling media URI. Backing for the
+gol_starknet partner-launch living-render feature (a small `medialane-ui`
+allowlist + component render the token's own on-chain `animation_url` as a
+sandboxed iframe); the field itself is generic and usable by any collection.
+Depends on `medialane-backend`'s indexer parsing `metadata.animation_url` into
+the new `Token.animationUrl` column.
+
 ## [0.72.0] — 2026-07-20
 
 ### Added — chain-scoped URL routing helpers
