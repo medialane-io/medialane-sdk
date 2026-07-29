@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.74.0] — 2026-07-29
+
+### Removed (breaking) — `ApiCreatorProfile.bannerImage`
+
+The creator profile's `avatarImage` (an owned NFT) already fills the profile
+card and themes the platform — a separate creator banner was pure redundancy.
+Dropped `bannerImage` from `ApiCreatorProfile` (matching the backend's
+`AccountProfile.bannerImage` column removal); `collectionImage`'s fallback
+condition is now just `!avatarImage`, not `!avatarImage && !bannerImage`.
+`ApiCollectionProfile.bannerImage` (the collection cover image) is a separate,
+unrelated field — unaffected.
+
 ## [0.73.0] — 2026-07-29
 
 ### Added — `ApiTokenMetadata.animationUrl`
