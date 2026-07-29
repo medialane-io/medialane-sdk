@@ -275,6 +275,8 @@ export interface ApiTokenMetadata {
   name: string | null;
   description: string | null;
   image: string | null;
+  /** data: or ipfs:// URI to a fully self-contained animated/interactive renderer (OpenSea-baseline `animation_url`). Null until indexed. */
+  animationUrl: string | null;
   /** Parsed OpenSea-standard attributes array. Null when metadata hasn't been fetched. */
   attributes: IpAttribute[] | null;
   /** Short-circuit fields extracted from attributes by the indexer */
