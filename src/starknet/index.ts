@@ -46,6 +46,7 @@ export {
   buildCreateCreatorCoinCall,
   buildLaunchOnEkuboCalls,
   parseCreatorCoinCreated,
+  priceToEkuboParams,
 } from "./services/creatorCoin.js";
 export {
   validateName as validateCoinName,

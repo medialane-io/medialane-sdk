@@ -6,6 +6,7 @@ import { getStarknetCoordinates } from "../../chains.js";
 import { getTokenByAddress } from "../../utils/token.js";
 import { normalizeAddress } from "../../utils/address.js";
 import type { TxResult } from "../../types/marketplace.js";
+import { LAUNCH_PRICE_QUOTE_PER_COIN } from "./coinLaunchMath.js";
 
 export interface CreateCreatorCoinParams {
   /** Owner of the new coin — the only address allowed to launch it. */
@@ -62,6 +63,56 @@ export const VALIDATED_EKUBO_PARAMS: EkuboPoolParams = {
   startingPrice: { mag: 4600158n, sign: true },
   bound: 88719042n,
 };
+
+const TICK_BASE = 1.000001; // Ekubo's tick base (NOT Uniswap's 1.0001) — docs.ekubo.org/integration-guides/reference/math-1-pager
+
+/**
+ * Compute the Ekubo `EkuboPoolParams` for launching a coin at `price`
+ * (default: the fixed 0.01 quote/coin every launch already uses) against a
+ * quote token of any decimals — not just the 18-decimal case
+ * `VALIDATED_EKUBO_PARAMS` was smoke-tested for.
+ *
+ * No address/ordering parameters: the contract itself determines
+ * `is_token1_quote` on-chain (`launcher.cairo`) and flips the tick's SIGN
+ * accordingly — magnitude never changes with ordering. This function
+ * always computes the tick as if quote were token1; the contract
+ * compensates sign itself if that assumption doesn't hold for the real
+ * deployed addresses (this is exactly what "sign: true yields 0.01
+ * quote/coin regardless of token0/1 ordering" already meant).
+ *
+ * `fee`/`tickSpacing`/`bound` are decimal-independent (bound is a pure
+ * tick-count offset, not a price) and reused from `VALIDATED_EKUBO_PARAMS`
+ * as-is. Only `startingPrice` is computed:
+ *   decAdj   = 10^(coinDecimals − quoteDecimals)
+ *   rawRatio = price / decAdj
+ *   tick     = trunc(log(rawRatio) / log(1.000001) / tickSpacing) × tickSpacing
+ *              (rounds toward zero, not nearest — confirmed against the
+ *              known-good on-chain constant, which is 769×tickSpacing,
+ *              not the nearer 770×tickSpacing)
+ *   sign     = tick < 0
+ *
+ * Cross-verified against the real on-chain constant: for an 18-decimal
+ * quote this reproduces `VALIDATED_EKUBO_PARAMS.startingPrice` exactly
+ * (mag 4600158 = 769 × tickSpacing 5982).
+ */
+export function priceToEkuboParams(
+  quoteDecimals: number,
+  price: number = LAUNCH_PRICE_QUOTE_PER_COIN,
+): EkuboPoolParams {
+  const decAdj = 10 ** (COIN_DECIMALS - quoteDecimals);
+  const rawRatio = price / decAdj;
+
+  const tickSpacing = Number(VALIDATED_EKUBO_PARAMS.tickSpacing);
+  const rawTick = Math.log(rawRatio) / Math.log(TICK_BASE);
+  const roundedTick = Math.trunc(rawTick / tickSpacing) * tickSpacing;
+
+  return {
+    fee: VALIDATED_EKUBO_PARAMS.fee,
+    tickSpacing: VALIDATED_EKUBO_PARAMS.tickSpacing,
+    startingPrice: { mag: BigInt(Math.abs(roundedTick)), sign: roundedTick < 0 },
+    bound: VALIDATED_EKUBO_PARAMS.bound,
+  };
+}
 
 /** A Creator Coin's live spot price, read from its Ekubo pool. */
 export interface CreatorCoinPrice {
