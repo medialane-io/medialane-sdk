@@ -2,6 +2,23 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.75.0] — 2026-07-31
+
+### Added — `priceToEkuboParams`
+
+Creator Coin launches were fixed to `VALIDATED_EKUBO_PARAMS`, which only
+produces the intended 0.01 quote/coin price for an 18-decimal quote token
+(STRK, ETH). `priceToEkuboParams(quoteDecimals, price?)` computes the
+correct Ekubo starting-price tick for any quote token's decimals —
+verified against Ekubo's own tick-math docs (`docs.ekubo.org`) and
+cross-checked to reproduce `VALIDATED_EKUBO_PARAMS.startingPrice` exactly
+for the 18-decimal case (rounding is truncation toward zero, confirmed
+empirically against the known-good constant). Unblocks launching Creator
+Coins against USDC/USDT/WBTC, not just STRK/ETH. `fee`/`tickSpacing`/
+`bound` are unchanged (decimal-independent); only `startingPrice` is
+computed per-launch now. No address/ordering parameters — the contract
+itself determines `is_token1_quote` on-chain and compensates sign.
+
 ## [0.74.0] — 2026-07-29
 
 ### Removed (breaking) — `ApiCreatorProfile.bannerImage`
