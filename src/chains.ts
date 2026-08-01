@@ -46,6 +46,7 @@ export interface StarknetCoordinates {
   ipSponsorship?: `0x${string}`;
   ipSponsorshipClassHash?: `0x${string}`;
   ipSponsorshipStartBlock?: number;
+  mediaWalletClassHash?: `0x${string}`;
 }
 
 /** Coordinates per chain. Only STARKNET is populated today; adding a chain
@@ -140,6 +141,7 @@ const COORDINATES: CoordinatesByChain = {
     ipSponsorship: "0x03729ebe0fedf29ec97fca34db09174772af7f870af26a26e024a61040143e5c",
     ipSponsorshipClassHash: "0x0626daac2ed7e2bf630ef5b10104b3202db1559216c0c1a504c0e99be2fbfec3",
     ipSponsorshipStartBlock: 11896456,
+    mediaWalletClassHash: "0x014b210c7d47392691144bafecdca3c6c7791cc295ea305988da0a724c05ac31",
   },
 };
 

@@ -41,6 +41,9 @@ export const STARKNET_IP_CLUB_COLLECTION_CLASS_HASH = SN.ipClubCollectionClassHa
 export const STARKNET_IP_SPONSORSHIP_CONTRACT = SN.ipSponsorship!;
 export const STARKNET_IP_SPONSORSHIP_CLASS_HASH = SN.ipSponsorshipClassHash!;
 
+// ── MediaWallet (self-custody account) ─────────────────────────────────────────
+export const STARKNET_MEDIAWALLET_CLASS_HASH = SN.mediaWalletClassHash!;
+
 // ── Creator Coin (Ekubo) ──────────────────────────────────────────────────────
 export const STARKNET_CREATOR_COIN_FACTORY_CONTRACT = SN.creatorCoinFactory!;
 export const STARKNET_CREATOR_COIN_EKUBO_LAUNCHER = SN.creatorCoinEkuboLauncher!;

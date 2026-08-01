@@ -16,6 +16,13 @@ test("getCoordinates throws for an unconfigured chain", () => {
   expect(() => getCoordinates("SOLANA" as Chain)).toThrow(/no coordinates/i);
 });
 
+test("getCoordinates returns the MediaWallet account class hash", () => {
+  const c = getCoordinates("STARKNET");
+  expect(c.mediaWalletClassHash).toBe(
+    "0x014b210c7d47392691144bafecdca3c6c7791cc295ea305988da0a724c05ac31",
+  );
+});
+
 import { describe as d2, expect as e2, test as t2 } from "bun:test";
 
 d2("per-chain coordinate shapes", () => {
