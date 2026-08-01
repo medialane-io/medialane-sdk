@@ -22,6 +22,7 @@ import type {
   ApiCollectionClaim,
   ApiCollectionSlugClaim,
   ApiBusinessProvisioning,
+  ApiWalletActivity,
   ApiUserWallet,
   ApiAppSource,
   ApiChain,
@@ -529,6 +530,17 @@ export class ApiClient {
     return this.request<ApiCollectionProfile>(
       `/v1/collections/${this.addr(contractAddress)}/profile`,
       { method: "PATCH", body: JSON.stringify(data), headers: this.bearer(clerkToken) },
+    );
+  }
+
+  getWalletActivity(
+    address: string,
+    siwsToken: string,
+    chain: "STARKNET" = "STARKNET",
+  ): Promise<ApiResponse<ApiWalletActivity[]>> {
+    return this.request<ApiResponse<ApiWalletActivity[]>>(
+      `/v1/wallet-activity?address=${this.addr(address)}&chain=${chain}`,
+      { method: "GET", headers: this.bearer(siwsToken) },
     );
   }
 

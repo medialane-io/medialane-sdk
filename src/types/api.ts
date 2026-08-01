@@ -898,6 +898,25 @@ export interface ApiBusinessProvisioning {
   status: "DEPLOYED" | "HANDOFF" | "TRANSFERRED";
 }
 
+// ─── Wallet Activity ────────────────────────────────────────────────────────
+
+export interface ApiWalletActivity {
+  id: string;
+  chain: string;
+  accountAddress: string;
+  type: "SEND" | "RECEIVE" | "SWAP" | "DEPLOY" | "GUARDIAN_SET" | "GUARDIAN_TRIGGER_ESCAPE" | "GUARDIAN_COMPLETE_ESCAPE" | "GUARDIAN_CANCEL_ESCAPE";
+  txHash: string;
+  blockNumber: string;
+  timestamp: string;
+  tokenAddress: string | null;
+  amount: string | null;
+  counterparty: string | null;
+  tokenInAddress: string | null;
+  amountIn: string | null;
+  tokenOutAddress: string | null;
+  amountOut: string | null;
+}
+
 // ─── POP Protocol ──────────────────────────────────────────────────────────────
 
 export interface PopClaimStatus {
