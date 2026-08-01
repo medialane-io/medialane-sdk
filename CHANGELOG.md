@@ -2,6 +2,34 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.76.0] — 2026-08-01
+
+### Added — Business account provisioning
+
+`ApiClient.registerBusinessProvisioning(params)` / `completeBusinessProvisioning(id)`
+— a business registers a MediaWallet account deployed under its own
+business-derived interim key, then hands it off to the real recipient via the
+account contract's `change_owners` once they've onboarded. Keyed by
+`recipientScheme`/`recipientValue`, not `recipientEmail` — the identifier is
+deliberately free-form (mirrors `Identity.scheme`), so a business can key
+provisioning by phone, employee ID, or any other unique identifier it already
+uses, not just email. `registerBusinessProvisioning`'s response includes
+`claimUrl` — the backend only delivers the claim link itself for
+`recipientScheme: "email"`; every other scheme gets the URL back to deliver
+through its own channel. `ApiBusinessProvisioning.status`:
+`"DEPLOYED" | "HANDOFF" | "TRANSFERRED"`.
+
+### Added — Wallet-native activity
+
+`ApiClient.getWalletActivity(address, siwsToken, chain?)` — a MediaWallet
+account's chain-native activity (sends/receives of the platform's supported
+tokens, swaps, self-deploy, guardian actions), synced server-side from chain
+events and cached in Postgres. Complements the existing
+`getActivitiesByAddress` (protocol activity: mints/trades of Medialane-issued
+assets) rather than replacing it — the two stay separate feeds; merging them
+is a UI-layer concern. `ApiWalletActivity.type`:
+`"SEND" | "RECEIVE" | "SWAP" | "DEPLOY" | "GUARDIAN_SET" | "GUARDIAN_TRIGGER_ESCAPE" | "GUARDIAN_COMPLETE_ESCAPE" | "GUARDIAN_CANCEL_ESCAPE"`.
+
 ## [0.75.0] — 2026-07-31
 
 ### Added — `priceToEkuboParams`
