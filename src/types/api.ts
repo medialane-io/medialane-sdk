@@ -888,7 +888,11 @@ export interface ApiBusinessProvisioning {
   accountId: string;
   chain: string;
   walletAddress: string;
-  recipientEmail: string;
+  /** Free-form (mirrors Identity.scheme) — "email" is the only scheme the backend
+   *  delivers a claim link for on its own; any other scheme still registers, the
+   *  business gets `claimUrl` back on the register response and delivers it itself. */
+  recipientScheme: string;
+  recipientValue: string;
   interimOwnerPubkey: string;
   newOwnerPubkey: string | null;
   status: "DEPLOYED" | "HANDOFF" | "TRANSFERRED";

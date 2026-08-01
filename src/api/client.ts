@@ -497,10 +497,11 @@ export class ApiClient {
   registerBusinessProvisioning(params: {
     chain: "STARKNET";
     walletAddress: string;
-    recipientEmail: string;
+    recipientScheme: string;
+    recipientValue: string;
     interimOwnerPubkey: string;
-  }): Promise<ApiResponse<ApiBusinessProvisioning>> {
-    return this.post<ApiResponse<ApiBusinessProvisioning>>("/v1/business/provisioning", params);
+  }): Promise<ApiResponse<ApiBusinessProvisioning & { claimUrl: string }>> {
+    return this.post<ApiResponse<ApiBusinessProvisioning & { claimUrl: string }>>("/v1/business/provisioning", params);
   }
 
   completeBusinessProvisioning(id: string): Promise<ApiResponse<ApiBusinessProvisioning>> {

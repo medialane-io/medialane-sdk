@@ -604,7 +604,11 @@ export interface ApiBusinessProvisioning {
   accountId: string;
   chain: string;
   walletAddress: string;
-  recipientEmail: string;
+  /** Free-form (mirrors Identity.scheme) — "email" is the only scheme the backend
+   *  delivers a claim link for on its own; any other scheme still registers, the
+   *  business gets `claimUrl` back on the register response and delivers it itself. */
+  recipientScheme: string;
+  recipientValue: string;
   interimOwnerPubkey: string;
   newOwnerPubkey: string | null;
   status: "DEPLOYED" | "HANDOFF" | "TRANSFERRED";
@@ -640,22 +644,39 @@ function scriptFetch(script: (url: string) => { status: number; body?: unknown }
 }
 
 test("registerBusinessProvisioning posts to /v1/business/provisioning", async () => {
-  const calls = scriptFetch(() => ({ status: 201, body: { data: { id: "prov-1", status: "DEPLOYED" } } }));
+  const calls = scriptFetch(() => ({ status: 201, body: { data: { id: "prov-1", status: "DEPLOYED", claimUrl: "https://medialane.io/claim/tok_1" } } }));
   const client = new ApiClient("https://api.test.invalid", "test-key");
   const res = await client.registerBusinessProvisioning({
     chain: "STARKNET",
     walletAddress: "0x1",
-    recipientEmail: "worker@example.com",
+    recipientScheme: "email",
+    recipientValue: "worker@example.com",
     interimOwnerPubkey: "0x2",
   });
   expect(calls[0].url).toBe("https://api.test.invalid/v1/business/provisioning");
   expect(JSON.parse(calls[0].init.body as string)).toEqual({
     chain: "STARKNET",
     walletAddress: "0x1",
-    recipientEmail: "worker@example.com",
+    recipientScheme: "email",
+    recipientValue: "worker@example.com",
     interimOwnerPubkey: "0x2",
   });
   expect(res.data.id).toBe("prov-1");
+  expect(res.data.claimUrl).toBe("https://medialane.io/claim/tok_1");
+});
+
+test("registerBusinessProvisioning works with a non-email recipientScheme", async () => {
+  const calls = scriptFetch(() => ({ status: 201, body: { data: { id: "prov-2", status: "DEPLOYED", claimUrl: "https://medialane.io/claim/tok_2" } } }));
+  const client = new ApiClient("https://api.test.invalid", "test-key");
+  const res = await client.registerBusinessProvisioning({
+    chain: "STARKNET",
+    walletAddress: "0x1",
+    recipientScheme: "phone",
+    recipientValue: "+15550001111",
+    interimOwnerPubkey: "0x2",
+  });
+  expect(JSON.parse(calls[0].init.body as string).recipientScheme).toBe("phone");
+  expect(res.data.claimUrl).toBe("https://medialane.io/claim/tok_2");
 });
 
 test("completeBusinessProvisioning posts to /v1/business/provisioning/:id/complete", async () => {
@@ -685,10 +706,11 @@ section) a new section:
   registerBusinessProvisioning(params: {
     chain: "STARKNET";
     walletAddress: string;
-    recipientEmail: string;
+    recipientScheme: string;
+    recipientValue: string;
     interimOwnerPubkey: string;
-  }): Promise<ApiResponse<ApiBusinessProvisioning>> {
-    return this.post<ApiResponse<ApiBusinessProvisioning>>("/v1/business/provisioning", params);
+  }): Promise<ApiResponse<ApiBusinessProvisioning & { claimUrl: string }>> {
+    return this.post<ApiResponse<ApiBusinessProvisioning & { claimUrl: string }>>("/v1/business/provisioning", params);
   }
 
   completeBusinessProvisioning(id: string): Promise<ApiResponse<ApiBusinessProvisioning>> {
