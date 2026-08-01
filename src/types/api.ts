@@ -881,6 +881,19 @@ export interface ApiAdminCollectionClaim extends ApiCollectionClaim {
   updatedAt: string;
 }
 
+// ─── Business Provisioning ─────────────────────────────────────────────────────
+
+export interface ApiBusinessProvisioning {
+  id: string;
+  accountId: string;
+  chain: string;
+  walletAddress: string;
+  recipientEmail: string;
+  interimOwnerPubkey: string;
+  newOwnerPubkey: string | null;
+  status: "PROVISIONED" | "CLAIM_PENDING" | "CLAIMED";
+}
+
 // ─── POP Protocol ──────────────────────────────────────────────────────────────
 
 export interface PopClaimStatus {

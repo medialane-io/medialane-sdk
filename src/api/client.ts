@@ -21,6 +21,7 @@ import type {
   ApiCreatorListResult,
   ApiCollectionClaim,
   ApiCollectionSlugClaim,
+  ApiBusinessProvisioning,
   ApiUserWallet,
   ApiAppSource,
   ApiChain,
@@ -489,6 +490,21 @@ export class ApiClient {
       method: "POST",
       body: JSON.stringify(params),
     });
+  }
+
+  // ─── Business Provisioning ──────────────────────────────────────────────────
+
+  registerBusinessProvisioning(params: {
+    chain: "STARKNET";
+    walletAddress: string;
+    recipientEmail: string;
+    interimOwnerPubkey: string;
+  }): Promise<ApiResponse<ApiBusinessProvisioning>> {
+    return this.post<ApiResponse<ApiBusinessProvisioning>>("/v1/business/provisioning", params);
+  }
+
+  completeBusinessProvisioning(id: string): Promise<ApiResponse<ApiBusinessProvisioning>> {
+    return this.post<ApiResponse<ApiBusinessProvisioning>>(`/v1/business/provisioning/${id}/complete`, {});
   }
 
   // ─── Collection Profiles ────────────────────────────────────────────────────
