@@ -891,7 +891,7 @@ export interface ApiBusinessProvisioning {
   recipientEmail: string;
   interimOwnerPubkey: string;
   newOwnerPubkey: string | null;
-  status: "PROVISIONED" | "CLAIM_PENDING" | "CLAIMED";
+  status: "DEPLOYED" | "HANDOFF" | "TRANSFERRED";
 }
 
 // ─── POP Protocol ──────────────────────────────────────────────────────────────

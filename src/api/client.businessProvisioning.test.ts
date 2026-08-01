@@ -18,7 +18,7 @@ function scriptFetch(script: (url: string) => { status: number; body?: unknown }
 }
 
 test("registerBusinessProvisioning posts to /v1/business/provisioning", async () => {
-  const calls = scriptFetch(() => ({ status: 201, body: { data: { id: "prov-1", status: "PROVISIONED" } } }));
+  const calls = scriptFetch(() => ({ status: 201, body: { data: { id: "prov-1", status: "DEPLOYED" } } }));
   const client = new ApiClient("https://api.test.invalid", "test-key");
   const res = await client.registerBusinessProvisioning({
     chain: "STARKNET",
@@ -37,10 +37,10 @@ test("registerBusinessProvisioning posts to /v1/business/provisioning", async ()
 });
 
 test("completeBusinessProvisioning posts to /v1/business/provisioning/:id/complete", async () => {
-  const calls = scriptFetch(() => ({ status: 200, body: { data: { id: "prov-1", status: "CLAIMED" } } }));
+  const calls = scriptFetch(() => ({ status: 200, body: { data: { id: "prov-1", status: "TRANSFERRED" } } }));
   const client = new ApiClient("https://api.test.invalid", "test-key");
   const res = await client.completeBusinessProvisioning("prov-1");
   expect(calls[0].url).toBe("https://api.test.invalid/v1/business/provisioning/prov-1/complete");
   expect(calls[0].init.method).toBe("POST");
-  expect(res.data.status).toBe("CLAIMED");
+  expect(res.data.status).toBe("TRANSFERRED");
 });
