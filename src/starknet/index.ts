@@ -84,3 +84,15 @@ export {
   build1155OrderTypedData,
   build1155CancellationTypedData,
 } from "./marketplace/signing.js";
+
+// Business account provisioning — pure builders (key derivation, address
+// computation, deploy payload, change_owners handoff). The caller's own code
+// signs and submits everything; nothing here touches a live RPC.
+export {
+  deriveOwnerKeyPair,
+  ownerConstructorCalldata,
+  computeAccountAddress,
+  computeOwnerGuid,
+  buildChangeOwnersCall,
+  buildDeployAccountParams,
+} from "./business-provisioning/index.js";
