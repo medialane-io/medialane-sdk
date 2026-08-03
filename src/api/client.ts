@@ -877,6 +877,23 @@ export class ApiClient {
     return this.get<{ data: ApiCoin }>(`/v1/coins/${this.addr(contract)}`);
   }
 
+  /**
+   * Creator-authed coin profile edit (image/description). Backend authorizes
+   * via `coin.creator` (trustless — from the factory event), not a body param;
+   * `siwsToken` is the caller's SIWS/Clerk bearer token for `identityAuth`.
+   */
+  updateCoinProfile(
+    contract: string,
+    data: { image?: string; description?: string },
+    siwsToken: string
+  ): Promise<ApiResponse<ApiCoin>> {
+    return this.request<ApiResponse<ApiCoin>>(`/v1/coins/${this.addr(contract)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+      headers: this.bearer(siwsToken),
+    });
+  }
+
   // ─── Collection Drop ────────────────────────────────────────────────────────
 
   getDropCollections(opts: { page?: number; limit?: number; sort?: CollectionSort } = {}): Promise<ApiResponse<ApiCollection[]>> {

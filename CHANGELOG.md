@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.77.0] — 2026-08-03
+
+### Added
+
+`ApiClient.updateCoinProfile(contract, data, siwsToken)` — PATCH
+`/v1/coins/:contract` (creator-authed coin profile edit: image/description).
+Added so first-party apps can route this call through the SDK's transport
+(auth headers, error unwrapping, retry) instead of a hand-rolled `fetch`
+(media-wallet's `coin-profile.ts`, part of the metered-API-client cleanup).
+
 ## [0.76.0] — 2026-08-01
 
 ### Added — Business account provisioning
