@@ -533,14 +533,13 @@ export class ApiClient {
     );
   }
 
+  /** No signature required — wallet activity is public on-chain data, read like any other /v1 GET. */
   getWalletActivity(
     address: string,
-    siwsToken: string,
     chain: "STARKNET" = "STARKNET",
   ): Promise<ApiResponse<ApiWalletActivity[]>> {
-    return this.request<ApiResponse<ApiWalletActivity[]>>(
+    return this.get<ApiResponse<ApiWalletActivity[]>>(
       `/v1/wallet-activity?address=${this.addr(address)}&chain=${chain}`,
-      { method: "GET", headers: this.bearer(siwsToken) },
     );
   }
 

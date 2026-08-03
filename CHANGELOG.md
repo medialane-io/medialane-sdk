@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.78.0] — 2026-08-03
+
+### Changed — Breaking
+
+`ApiClient.getWalletActivity(address, chain?)` no longer takes a `siwsToken`
+parameter — the backend route it calls no longer requires a wallet-ownership
+signature (transaction history is public on-chain data; the old check
+protected nothing and only added passkey-signature friction to a plain
+read). Callers passing a token positionally will get a compile error, not a
+silent runtime failure.
+
 ## [0.77.0] — 2026-08-03
 
 ### Added

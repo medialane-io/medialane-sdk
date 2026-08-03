@@ -17,18 +17,18 @@ function scriptFetch(script: (url: string) => { status: number; body?: unknown }
   return captured;
 }
 
-test("getWalletActivity GETs /v1/wallet-activity with the address query param and a Bearer token", async () => {
+test("getWalletActivity GETs /v1/wallet-activity with the address query param — no signature required", async () => {
   const calls = scriptFetch(() => ({
     status: 200,
     body: { data: [{ id: "a1", chain: "STARKNET", accountAddress: "0x1", type: "SEND", txHash: "0xtx", blockNumber: "175", timestamp: "2026-08-01T00:00:00.000Z", tokenAddress: "0xtoken", amount: "100", counterparty: "0xother", tokenInAddress: null, amountIn: null, tokenOutAddress: null, amountOut: null }] },
   }));
   const client = new ApiClient("https://api.test.invalid", "test-key");
-  const res = await client.getWalletActivity("0x1", "siws-token-abc");
+  const res = await client.getWalletActivity("0x1");
   expect(calls[0].url).toBe(
     "https://api.test.invalid/v1/wallet-activity?address=0x0000000000000000000000000000000000000000000000000000000000000001&chain=STARKNET",
   );
   const headers = calls[0].init.headers as Record<string, string>;
-  expect(headers["Authorization"]).toBe("Bearer siws-token-abc");
+  expect(headers["Authorization"]).toBeUndefined();
   expect(headers["x-api-key"]).toBe("test-key");
   expect(res.data[0].blockNumber).toBe("175");
 });
@@ -36,6 +36,6 @@ test("getWalletActivity GETs /v1/wallet-activity with the address query param an
 test("getWalletActivity normalizes the address for the client's chain", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { data: [] } }));
   const client = new ApiClient("https://api.test.invalid", "test-key");
-  await client.getWalletActivity("0x1", "siws-token-abc");
+  await client.getWalletActivity("0x1");
   expect(calls[0].url).toContain("address=0x0000000000000000000000000000000000000000000000000000000000000001");
 });
