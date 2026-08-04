@@ -36,6 +36,27 @@ test("CreateMintIntentParams accepts factory-family mint fields (ip-tickets/ip-c
   expect(params.tokenId).toBe("5");
 });
 
+test("createTierIntent posts to /v1/intents/create-tier", async () => {
+  const calls: Array<{ url: string; body: unknown }> = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (url: string, init?: RequestInit) => {
+    calls.push({ url, body: init?.body ? JSON.parse(init.body as string) : null });
+    return new Response(JSON.stringify({ data: { id: "i2", requiresSignature: false, calls: [], expiresAt: "" } }), { status: 201 });
+  }) as typeof fetch;
+  try {
+    const client = new ApiClient("https://api.test", "key");
+    const res = await client.createTierIntent({
+      owner: "0x1", collection: "0x2", service: "ip-tickets",
+      maxSupply: "100", royaltyBps: 250, metadataUri: "ipfs://x",
+    });
+    expect(String(calls[0].url)).toContain("/v1/intents/create-tier");
+    expect((calls[0].body as { service?: string }).service).toBe("ip-tickets");
+    expect(res.data.id).toBe("i2");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("createCollectionIntent posts service through to the request body", async () => {
   const calls: unknown[] = [];
   const originalFetch = globalThis.fetch;

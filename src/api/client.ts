@@ -50,6 +50,7 @@ import type {
   CancelOrderIntentParams,
   CreateMintIntentParams,
   CreateCollectionIntentParams,
+  CreateTierIntentParams,
   CreateCounterOfferIntentParams,
   CreateRemixOfferParams,
   AutoRemixOfferParams,
@@ -366,6 +367,10 @@ export class ApiClient {
 
   createCollectionIntent(params: CreateCollectionIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-collection", params);
+  }
+
+  createTierIntent(params: CreateTierIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-tier", params);
   }
 
   /**

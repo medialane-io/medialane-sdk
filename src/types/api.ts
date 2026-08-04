@@ -609,6 +609,18 @@ export interface CreateCollectionIntentParams {
   service?: FactoryFamilyServiceId;
 }
 
+export interface CreateTierIntentParams {
+  owner: string;
+  /** The ip-tickets/ip-club collection contract to define the tier on. */
+  collection: string;
+  service: TierServiceId;
+  maxSupply: string;
+  startTime?: number;
+  endTime?: number;
+  royaltyBps: number;
+  metadataUri: string;
+}
+
 export interface CreateCounterOfferIntentParams {
   /** Wallet address of the NFT owner making the counter-offer. */
   sellerAddress: string;
