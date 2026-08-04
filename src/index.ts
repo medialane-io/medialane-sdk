@@ -85,10 +85,15 @@ export type { ServiceId } from "./services/registry.js";
 export { normalizeAddress, normalizeHash, shortenAddress } from "./utils/address.js";
 export { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol, getListableTokens } from "./utils/token.js";
 export type { SupportedToken } from "./utils/token.js";
-export { stringifyBigInts, u256ToBigInt } from "./utils/bigint.js";
+export { stringifyBigInts, u256ToBigInt, encodeU256 } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
 export { PUBLIC_RPC_FALLBACKS, isTransientRpcError, createFailoverFetch } from "./utils/rpc.js";
 export type { FailoverFetchOptions } from "./utils/rpc.js";
+
+// OpenSea-ERC721 + Berne-Convention asset metadata builder (chain-neutral —
+// used by both the single-asset and drop-collection upload routes).
+export { buildAssetMetadata, RESERVED_TRAITS } from "./metadata.js";
+export type { AssetAttribute, AssetMetadata, BuildAssetMetadataInput } from "./metadata.js";
 
 
 // Chain-neutral adapter interfaces (platform-federation spec §2.2)

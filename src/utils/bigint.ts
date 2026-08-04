@@ -27,3 +27,11 @@ export function stringifyBigInts(obj: unknown): unknown {
 export function u256ToBigInt(low: string, high: string): bigint {
   return BigInt(low) + (BigInt(high) << 128n);
 }
+
+/** Split a bigint into low/high felt252 halves for a Cairo u256 (inverse of `u256ToBigInt`). */
+export function encodeU256(n: bigint): [string, string] {
+  return [
+    (n & 0xffffffffffffffffffffffffffffffffn).toString(),
+    (n >> 128n).toString(),
+  ];
+}

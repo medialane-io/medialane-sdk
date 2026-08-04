@@ -37,3 +37,4 @@ next-env.d.ts
 
 # build output — built at publish (prepublishOnly), never committed
 /dist
+.npmrc
