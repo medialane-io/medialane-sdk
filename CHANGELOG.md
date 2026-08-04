@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.81.0] — 2026-08-04
+
+### Added
+
+`ApiActivity.chain` and `ApiActivity.token.animationUrl` — both were already present in the
+live backend response (`chain` via the feed item's own field; `animationUrl` added
+backend-side in the companion `medialane-backend` fix) but missing from the type. Needed by
+consumers rendering living-render collections (e.g. gol_starknet) in activity feeds — without
+`chain`, `isLivingRenderCollection(chain, contract)` can't be called; without `animationUrl`,
+there's nothing to render instead of a potentially near-blank cached static image.
+
 ## [0.80.0] — 2026-08-04
 
 ### Added
