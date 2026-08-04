@@ -2,6 +2,23 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.79.0] — 2026-08-04
+
+### Added
+
+`buildAssetMetadata(input)` (root export) — the OpenSea-ERC721 + Berne-Convention
+asset metadata builder, previously hand-duplicated verbatim in both
+`medialane-io` and `medialane-starknet`'s `lib/asset-metadata.ts`. Chain-neutral,
+pure function, used by the single-asset and drop-collection upload routes in
+both apps; they're now thin re-export shims.
+
+`encodeU256(bigint)` (root export) — splits a bigint into Cairo u256 low/high
+felt halves, the inverse of the existing `u256ToBigInt`. Was duplicated as
+`encodeU256` in both apps' `lib/cairo-calldata.ts` alongside `serializeByteArray`,
+which turned out to already be published here unused (as `encodeByteArray` in
+`@medialane/sdk/starknet`, since bytearray.ts landed) — both apps' calldata
+files are now shims over these two.
+
 ## [0.78.0] — 2026-08-03
 
 ### Changed — Breaking
