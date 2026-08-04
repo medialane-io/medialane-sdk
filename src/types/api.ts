@@ -562,18 +562,31 @@ export interface CancelOrderIntentParams {
   tokenStandard?: string;
 }
 
+/** Per-creator-factory services the intents API can create-collection/mint through. */
+export type FactoryFamilyServiceId = "mip-erc1155" | "ip-tickets" | "ip-club";
+/** The subset of FactoryFamilyServiceId that supports CREATE_TIER (ip-tickets, ip-club). */
+export type TierServiceId = "ip-tickets" | "ip-club";
+
 export interface CreateMintIntentParams {
   /** Collection owner wallet address — must be the collection owner on-chain */
   owner: string;
-  collectionId: string;
   recipient: string;
-  tokenUri: string;
+  /** Registry mint (mip-erc721/ip-erc721, the default): required together with tokenUri. */
+  collectionId?: string;
+  /** Registry mint: token metadata URI. mip-erc1155: required together with `value`. */
+  tokenUri?: string;
   /**
-   * EIP-2981 secondary-sale royalty in basis points (0–10_000). Set once at mint;
-   * receiver is the immutable creator. Required since MIP v0.4.0 — pass 0 for none.
+   * EIP-2981 secondary-sale royalty in basis points (0–10_000). Registry mint only —
+   * has no effect (and the backend rejects it) on mip-erc1155/ip-tickets/ip-club mints.
    */
-  royaltyBps: number;
-  /** Optional: override the default collection contract address */
+  royaltyBps?: number;
+  /** ip-tickets/ip-club mint: the existing tier's token id (create it first via createTierIntent). */
+  tokenId?: string;
+  /** ip-tickets/ip-club mint: copies to mint into `tokenId`. */
+  amount?: string;
+  /** mip-erc1155 mint: edition count for the newly-minted token. */
+  value?: string;
+  /** Required for every factory-family mint (mip-erc1155/ip-tickets/ip-club); omit for registry mint. */
   collectionContract?: string;
 }
 
@@ -587,8 +600,13 @@ export interface CreateCollectionIntentParams {
   image?: string;
   /** Base URI for token metadata. Defaults to empty string if not provided. */
   baseUri?: string;
-  /** Optional: override the default collection contract address */
+  /** Optional: override the default collection contract address (registry path only). */
   collectionContract?: string;
+  /**
+   * Omit for the registry path (mip-erc721/ip-erc721). Pass a factory-family id to
+   * deploy a new per-creator contract via that service's factory instead.
+   */
+  service?: FactoryFamilyServiceId;
 }
 
 export interface CreateCounterOfferIntentParams {
