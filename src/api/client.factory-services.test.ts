@@ -57,6 +57,27 @@ test("createTierIntent posts to /v1/intents/create-tier", async () => {
   }
 });
 
+test("createCheckoutIntent posts orderHashes and returns per-order results", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({
+      data: [
+        { id: "i3", orderHash: "0xaaa", requiresSignature: false, calls: [{ contractAddress: "0x1", entrypoint: "fulfill_order", calldata: [] }], expiresAt: "" },
+        { orderHash: "0xbbb", error: "Order not found in index" },
+      ],
+    }), { status: 201 })
+  ) as typeof fetch;
+  try {
+    const client = new ApiClient("https://api.test", "key");
+    const res = await client.createCheckoutIntent({ fulfiller: "0x1", orderHashes: ["0xaaa", "0xbbb"] });
+    expect(res.data).toHaveLength(2);
+    expect(res.data[0].orderHash).toBe("0xaaa");
+    expect(res.data[1].error).toBe("Order not found in index");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("createCollectionIntent posts service through to the request body", async () => {
   const calls: unknown[] = [];
   const originalFetch = globalThis.fetch;

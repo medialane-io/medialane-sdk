@@ -609,6 +609,26 @@ export interface CreateCollectionIntentParams {
   service?: FactoryFamilyServiceId;
 }
 
+export interface CreateCheckoutIntentParams {
+  fulfiller: string;
+  /**
+   * Order hashes to check out (1–20). The backend builds one FULFILL_ORDER
+   * intent per hash, not one atomic multi-item order — the client concatenates
+   * each result's `calls` into a single multicall.
+   */
+  orderHashes: string[];
+}
+
+export interface ApiCheckoutIntentResult {
+  id?: string;
+  orderHash: string;
+  requiresSignature?: false;
+  calls?: unknown;
+  expiresAt?: string;
+  /** Set instead of the above when this specific order couldn't be built (e.g. not yet indexed). */
+  error?: string;
+}
+
 export interface CreateTierIntentParams {
   owner: string;
   /** The ip-tickets/ip-club collection contract to define the tier on. */
