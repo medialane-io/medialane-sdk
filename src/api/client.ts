@@ -50,6 +50,9 @@ import type {
   CancelOrderIntentParams,
   CreateMintIntentParams,
   CreateCollectionIntentParams,
+  CreateTierIntentParams,
+  CreateCheckoutIntentParams,
+  ApiCheckoutIntentResult,
   CreateCounterOfferIntentParams,
   CreateRemixOfferParams,
   AutoRemixOfferParams,
@@ -348,6 +351,12 @@ export class ApiClient {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/cancel", params);
   }
 
+  createCheckoutIntent(
+    params: CreateCheckoutIntentParams
+  ): Promise<{ data: ApiCheckoutIntentResult[] }> {
+    return this.post<{ data: ApiCheckoutIntentResult[] }>("/v1/intents/checkout", params);
+  }
+
   getIntent(id: string): Promise<ApiResponse<ApiIntent>> {
     return this.get<ApiResponse<ApiIntent>>(`/v1/intents/${id}`);
   }
@@ -366,6 +375,10 @@ export class ApiClient {
 
   createCollectionIntent(params: CreateCollectionIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-collection", params);
+  }
+
+  createTierIntent(params: CreateTierIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-tier", params);
   }
 
   /**
