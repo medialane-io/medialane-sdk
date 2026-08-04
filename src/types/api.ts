@@ -397,6 +397,7 @@ export interface ApiActivityPrice {
 
 export interface ApiActivity {
   type: ActivityType;
+  chain: import("../chains.js").Chain;
   // Transfer fields
   contractAddress?: string;
   tokenId?: string;
@@ -417,7 +418,7 @@ export interface ApiActivity {
   txHash: string | null;
   timestamp: string;
   /** Batch-enriched token metadata — avoids per-row fetches. */
-  token?: { name: string | null; image: string | null } | null;
+  token?: { name: string | null; image: string | null; animationUrl: string | null } | null;
 }
 
 export interface ApiActivitiesQuery {
