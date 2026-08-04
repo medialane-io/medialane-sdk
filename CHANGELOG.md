@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.80.0] — 2026-08-04
+
+### Added
+
+`CreateCollectionIntentParams.service` and `CreateMintIntentParams.{collectionId,tokenId,amount,value}` —
+factory-family (mip-erc1155/ip-tickets/ip-club) create-collection and mint intents were already live on
+the backend (2026-07-28) but had no typed client surface. Added `createTierIntent` and
+`createCheckoutIntent` client methods (routes already existed, no client method). Closes the SDK-side
+gap behind `medialane-core/docs/audits/2026-08-04-medialane-starknet-backend-bypass-audit.md` C2.
+
 ## [0.79.0] — 2026-08-04
 
 ### Added
