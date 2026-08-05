@@ -189,6 +189,7 @@ export interface ApiOrderTokenMeta {
   name: string | null;
   image: string | null;
   description: string | null;
+  animationUrl: string | null;
 }
 
 export interface ApiOrder {
