@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.84.0] — 2026-08-05
+
+### Added
+
+`FeeSurface` extends to `"sponsorship"`; `ResolvedFeeConfig.sponsorshipBps` (default 100 = 1%) — closes
+the fee gap on `ACCEPT_SPONSORSHIP_BID`/`ACCEPT_SPONSORSHIP_PROPOSAL`, which previously charged 0%
+platform fee anywhere. The fee is bundled by the calling app (not the backend), matching the existing
+marketplace `fulfill_order` precedent — see
+`medialane-core/docs/superpowers/plans/2026-08-05-sponsorship-backend-intents.md`.
+
 ## [0.83.0] — 2026-08-05
 
 ### Added

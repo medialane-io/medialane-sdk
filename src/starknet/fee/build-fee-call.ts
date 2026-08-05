@@ -1,7 +1,7 @@
 import { cairo, type Call } from "starknet";
 import type { ResolvedFeeConfig } from "../../fee/config.js";
 
-export type FeeSurface = "marketplace" | "launchpad";
+export type FeeSurface = "marketplace" | "launchpad" | "sponsorship";
 
 export interface BuildFeeCallParams {
   surface: FeeSurface;
@@ -23,7 +23,9 @@ export function buildFeeCall(
   cfg: ResolvedFeeConfig
 ): Call | null {
   if (!cfg.enabled || !cfg.fundAddress) return null;
-  const bps = p.surface === "marketplace" ? cfg.marketplaceBps : cfg.launchpadBps;
+  const bps = p.surface === "marketplace" ? cfg.marketplaceBps
+    : p.surface === "launchpad" ? cfg.launchpadBps
+    : cfg.sponsorshipBps;
   if (bps <= 0) return null;
   const fee = (p.grossAmount * BigInt(bps)) / 10000n;
   if (fee <= 0n) return null;
