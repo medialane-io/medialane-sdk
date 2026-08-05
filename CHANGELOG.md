@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.82.0] — 2026-08-05
+
+### Added
+
+`ApiOrderTokenMeta.animationUrl` — the same living-render gap as 0.81.0's `ApiActivity.token.animationUrl`,
+but on the orders side: `ListingCard` (Discover's "Activity" strip, marketplace grid — both apps) had no
+way to render a living-render collection's on-chain animation, only its cached static `image`.
+
 ## [0.81.0] — 2026-08-04
 
 ### Added
