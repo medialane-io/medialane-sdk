@@ -643,6 +643,89 @@ export interface CreateTierIntentParams {
   metadataUri: string;
 }
 
+// ── IP-Sponsorship intents ──────────────────────────────────────────────────
+// None of these require a SNIP-12 signature — the contract has no order-signing
+// scheme, msg.sender is the account executing the call. Every one of these
+// returns { requiresSignature: false, calls } from ApiIntentCreated, same shape
+// as CreateMintIntentParams.
+
+export interface CreateSponsorshipOfferIntentParams {
+  /** The offer author — must currently own (nftContract, tokenId) on-chain. */
+  author: string;
+  nftContract: string;
+  tokenId: string;
+  minAmount: string;
+  /** Seconds, applied from acceptance (not from offer creation). */
+  duration: number;
+  paymentToken: string;
+  licenseTermsUri: string;
+  transferable: boolean;
+  /** Basis points, 0–10000. EIP-2981 royalty to the author on license resale. */
+  royaltyBps: number;
+  /** Restricts acceptance to one sponsor address; omit for open bidding. */
+  specificSponsor?: string;
+}
+
+export interface SetSponsorshipOfferOpenIntentParams {
+  /** Must be the offer's author. */
+  author: string;
+  offerId: string;
+  open: boolean;
+}
+
+export interface PlaceSponsorshipBidIntentParams {
+  /** The sponsor placing the bid — becomes the ERC-20 approve + place_bid caller. */
+  sponsor: string;
+  offerId: string;
+  amount: string;
+  paymentToken: string;
+}
+
+export interface RetractSponsorshipBidIntentParams {
+  sponsor: string;
+  offerId: string;
+}
+
+export interface AcceptSponsorshipBidIntentParams {
+  /** Must be the offer's author — re-verified on-chain. */
+  author: string;
+  offerId: string;
+  /** The bidder whose bid is being accepted. */
+  sponsor: string;
+}
+
+export interface CreateSponsorshipProposalIntentParams {
+  /** The sponsor proposing terms — pays if accepted. */
+  proposer: string;
+  nftContract: string;
+  tokenId: string;
+  /** Fixed take-it-or-leave-it amount (not a bid floor). */
+  amount: string;
+  duration: number;
+  /** Unix seconds; the deadline for the asset owner to accept. Omit/0 = no deadline. */
+  validUntil?: number;
+  paymentToken: string;
+  licenseTermsUri: string;
+  transferable: boolean;
+  royaltyBps: number;
+}
+
+export interface WithdrawSponsorshipProposalIntentParams {
+  proposer: string;
+  proposalId: string;
+}
+
+export interface AcceptSponsorshipProposalIntentParams {
+  /** Must currently own the asset — re-verified on-chain (binds to the asset, not a person). */
+  owner: string;
+  proposalId: string;
+}
+
+export interface RejectSponsorshipProposalIntentParams {
+  owner: string;
+  proposalId: string;
+}
+
 export interface CreateCounterOfferIntentParams {
   /** Wallet address of the NFT owner making the counter-offer. */
   sellerAddress: string;
