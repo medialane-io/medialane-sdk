@@ -5,6 +5,7 @@ export const FeeConfigSchema = z.object({
   fundAddress: z.string().min(1).optional(),
   marketplaceBps: z.number().int().min(0).max(10000).default(100),
   launchpadBps: z.number().int().min(0).max(10000).default(100),
+  sponsorshipBps: z.number().int().min(0).max(10000).default(100),
 });
 
 export type FeeConfig = z.input<typeof FeeConfigSchema>;
@@ -14,6 +15,7 @@ export interface ResolvedFeeConfig {
   fundAddress: string | undefined;
   marketplaceBps: number;
   launchpadBps: number;
+  sponsorshipBps: number;
 }
 
 export function resolveFeeConfig(raw: FeeConfig | undefined): ResolvedFeeConfig {
@@ -23,5 +25,6 @@ export function resolveFeeConfig(raw: FeeConfig | undefined): ResolvedFeeConfig 
     fundAddress: p.fundAddress,
     marketplaceBps: p.marketplaceBps,
     launchpadBps: p.launchpadBps,
+    sponsorshipBps: p.sponsorshipBps,
   };
 }

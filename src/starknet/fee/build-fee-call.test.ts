@@ -38,6 +38,17 @@ describe("buildFeeCall", () => {
     expect(buildFeeCall({ surface: "marketplace", token: TOKEN, grossAmount: 99n }, cfg)).toBeNull();
   });
 
+  it("computes 1% sponsorship fee at the default 100 bps", () => {
+    const cfg = resolveFeeConfig({ enabled: true, fundAddress: "0xfund" });
+    const call = buildFeeCall({ surface: "sponsorship", token: TOKEN, grossAmount: 1_000_000n }, cfg);
+    // 1% of 1_000_000 = 10_000
+    expect(call).toEqual({
+      contractAddress: TOKEN,
+      entrypoint: "transfer",
+      calldata: ["0xfund", "10000", "0"],
+    });
+  });
+
   it("splits large fee into u256 low/high", () => {
     const cfg = resolveFeeConfig({ fundAddress: "0xfund", marketplaceBps: 10000 });
     const gross = (1n << 130n); // fee == gross when bps == 10000
