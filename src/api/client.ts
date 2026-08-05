@@ -51,6 +51,15 @@ import type {
   CreateMintIntentParams,
   CreateCollectionIntentParams,
   CreateTierIntentParams,
+  CreateSponsorshipOfferIntentParams,
+  SetSponsorshipOfferOpenIntentParams,
+  PlaceSponsorshipBidIntentParams,
+  RetractSponsorshipBidIntentParams,
+  AcceptSponsorshipBidIntentParams,
+  CreateSponsorshipProposalIntentParams,
+  WithdrawSponsorshipProposalIntentParams,
+  AcceptSponsorshipProposalIntentParams,
+  RejectSponsorshipProposalIntentParams,
   CreateCheckoutIntentParams,
   ApiCheckoutIntentResult,
   CreateCounterOfferIntentParams,
@@ -379,6 +388,42 @@ export class ApiClient {
 
   createTierIntent(params: CreateTierIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-tier", params);
+  }
+
+  createSponsorshipOfferIntent(params: CreateSponsorshipOfferIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-offer", params);
+  }
+
+  setSponsorshipOfferOpenIntent(params: SetSponsorshipOfferOpenIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-offer-open", params);
+  }
+
+  placeSponsorshipBidIntent(params: PlaceSponsorshipBidIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-bid", params);
+  }
+
+  retractSponsorshipBidIntent(params: RetractSponsorshipBidIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-bid-retract", params);
+  }
+
+  acceptSponsorshipBidIntent(params: AcceptSponsorshipBidIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-bid-accept", params);
+  }
+
+  createSponsorshipProposalIntent(params: CreateSponsorshipProposalIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-proposal", params);
+  }
+
+  withdrawSponsorshipProposalIntent(params: WithdrawSponsorshipProposalIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-proposal-withdraw", params);
+  }
+
+  acceptSponsorshipProposalIntent(params: AcceptSponsorshipProposalIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-proposal-accept", params);
+  }
+
+  rejectSponsorshipProposalIntent(params: RejectSponsorshipProposalIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-proposal-reject", params);
   }
 
   /**

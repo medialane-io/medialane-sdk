@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.83.0] — 2026-08-05
+
+### Added
+
+9 sponsorship intent client methods (`createSponsorshipOfferIntent`, `setSponsorshipOfferOpenIntent`,
+`placeSponsorshipBidIntent`, `retractSponsorshipBidIntent`, `acceptSponsorshipBidIntent`,
+`createSponsorshipProposalIntent`, `withdrawSponsorshipProposalIntent`, `acceptSponsorshipProposalIntent`,
+`rejectSponsorshipProposalIntent`) and their param types — closes the `ip-sponsorship` backend-bypass
+gap found in the 2026-08-05 medialane-io audit. None require SNIP-12 signing (the contract has no
+order-signing scheme); every one returns `{ requiresSignature: false, calls }`, same shape as
+`createMintIntent`. See `medialane-core/docs/superpowers/plans/2026-08-05-sponsorship-backend-intents.md`.
+
 ## [0.82.0] — 2026-08-05
 
 ### Added
