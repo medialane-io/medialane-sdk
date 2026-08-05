@@ -2,6 +2,27 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.85.0] — 2026-08-05
+
+### Added
+
+- `CollectionServiceId` (`FactoryFamilyServiceId | "pop-protocol" | "drop-collection"`);
+  `CreateCollectionIntentParams` widened with `claimEndTimestamp`/`eventType` (pop-protocol) and
+  `maxSupply`/`conditions` (drop-collection) — closes the pop-protocol/drop-collection backend-bypass
+  gap: both were deploying their per-creator collection entirely client-side, so despite being priced
+  services they were charged $0 in production.
+- `CreateCoinIntentParams`/`LaunchCoinIntentParams` + `ApiClient.createCoinIntent`/`.launchCoinIntent`
+  (`POST /v1/intents/create-coin`, `POST /v1/intents/launch-coin`) — same gap for creator-coin, closed
+  with a new two-step intent shape (mirrors `createTierIntent` → `createMintIntent`; the coin address
+  is only known from the create-coin receipt).
+- `toDropContractConditions` exported from `@medialane/sdk/starknet` — the backend orchestrator now
+  builds `create_drop` calldata with the exact same conversion `DropService` always used client-side,
+  rather than a second hand-rolled copy.
+
+See `medialane-core/docs/audits/2026-08-04-medialane-starknet-backend-bypass-audit.md` (the "Not a
+violation (backend gap)" row this closes) and
+`medialane-core/docs/superpowers/plans/2026-08-05-pop-drop-coin-backend-intents.md`.
+
 ## [0.84.0] — 2026-08-05
 
 ### Added

@@ -34,7 +34,7 @@ export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, D
 
 // Starknet services
 export { PopService } from "./services/pop.js";
-export { DropService } from "./services/drop.js";
+export { DropService, toContractConditions as toDropContractConditions } from "./services/drop.js";
 export { TicketService } from "./services/ticket.js";
 export { ClubService } from "./services/club.js";
 export { SponsorshipService } from "./services/sponsorship.js";
@@ -73,6 +73,7 @@ export type {
   BatchMintEditionParams,
   AddSupplyParams,
 } from "./services/erc1155collection.js";
+export type { ClaimConditions, CreateDropParams, CreatePopCollectionParams } from "../types/services.js";
 
 // Cairo ByteArray encoding
 export { encodeByteArray } from "./bytearray.js";

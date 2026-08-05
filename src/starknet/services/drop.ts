@@ -10,7 +10,9 @@ import { buildFeeCall } from "../fee/index.js";
 
 export type { ClaimConditions, CreateDropParams };
 
-function toContractConditions(c: ClaimConditions) {
+/** Exported so the backend orchestrator can build `create_drop`/`set_claim_conditions`
+ *  calldata with the exact same conversion this service uses client-side. */
+export function toContractConditions(c: ClaimConditions) {
   return {
     start_time: c.startTime,
     end_time: c.endTime,

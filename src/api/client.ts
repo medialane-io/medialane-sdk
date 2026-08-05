@@ -51,6 +51,8 @@ import type {
   CreateMintIntentParams,
   CreateCollectionIntentParams,
   CreateTierIntentParams,
+  CreateCoinIntentParams,
+  LaunchCoinIntentParams,
   CreateSponsorshipOfferIntentParams,
   SetSponsorshipOfferOpenIntentParams,
   PlaceSponsorshipBidIntentParams,
@@ -388,6 +390,14 @@ export class ApiClient {
 
   createTierIntent(params: CreateTierIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-tier", params);
+  }
+
+  createCoinIntent(params: CreateCoinIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-coin", params);
+  }
+
+  launchCoinIntent(params: LaunchCoinIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/launch-coin", params);
   }
 
   createSponsorshipOfferIntent(params: CreateSponsorshipOfferIntentParams): Promise<ApiResponse<ApiIntentCreated>> {

@@ -568,6 +568,10 @@ export interface CancelOrderIntentParams {
 export type FactoryFamilyServiceId = "mip-erc1155" | "ip-tickets" | "ip-club";
 /** The subset of FactoryFamilyServiceId that supports CREATE_TIER (ip-tickets, ip-club). */
 export type TierServiceId = "ip-tickets" | "ip-club";
+/** Services CREATE_COLLECTION can deploy — the factory-family ones plus pop-protocol/drop-collection,
+ *  which take extra service-specific fields (see CreateCollectionIntentParams) since their factories
+ *  don't share the uniform `deploy_collection(name, symbol, baseUri)` entrypoint. */
+export type CollectionServiceId = FactoryFamilyServiceId | "pop-protocol" | "drop-collection";
 
 export interface CreateMintIntentParams {
   /** Collection owner wallet address — must be the collection owner on-chain */
@@ -605,10 +609,24 @@ export interface CreateCollectionIntentParams {
   /** Optional: override the default collection contract address (registry path only). */
   collectionContract?: string;
   /**
-   * Omit for the registry path (mip-erc721/ip-erc721). Pass a factory-family id to
+   * Omit for the registry path (mip-erc721/ip-erc721). Pass a collection-service id to
    * deploy a new per-creator contract via that service's factory instead.
    */
-  service?: FactoryFamilyServiceId;
+  service?: CollectionServiceId;
+  /** pop-protocol only: unix seconds after which `claim()` stops working. */
+  claimEndTimestamp?: number;
+  /** pop-protocol only: the POPFactory's EventType variant name (e.g. "Conference"). */
+  eventType?: PopEventType;
+  /** drop-collection only: total mintable supply across the whole drop. */
+  maxSupply?: string;
+  /** drop-collection only: the initial claim window/price/per-wallet cap. */
+  conditions?: {
+    startTime: number;
+    endTime: number;
+    price: string;
+    paymentToken: string;
+    maxQuantityPerWallet: string;
+  };
 }
 
 export interface CreateCheckoutIntentParams {
@@ -641,6 +659,36 @@ export interface CreateTierIntentParams {
   endTime?: number;
   royaltyBps: number;
   metadataUri: string;
+}
+
+export interface CreateCoinIntentParams {
+  /** Owner of the new coin — the only address allowed to launch it. */
+  owner: string;
+  name: string;
+  symbol: string;
+  /** Full fixed supply (raw, 18 decimals). Minted to the Factory until launch. */
+  initialSupply: string;
+  /** Deterministic deploy salt. Omitted = timestamp-derived. */
+  salt?: string;
+}
+
+export interface LaunchCoinIntentParams {
+  /** Wallet that must own the coin — the contract itself is the authority; an
+   *  unauthorized caller simply reverts. */
+  owner: string;
+  /** The deployed CreatorCoin contract (from a prior createCoinIntent deploy). */
+  creatorCoin: string;
+  /** Quote token (e.g. STRK). Must NOT itself be a Creator Coin. */
+  quoteToken: string;
+  /** Team-allocation recipients (≤10% of supply, summed). */
+  initialHolders: string[];
+  initialHoldersAmounts: string[];
+  /** Anti-snipe window in seconds. Omitted = none. */
+  transferRestrictionDelay?: number;
+  /** Max % of supply buyable per tx during the window, in bps. Omitted = the SDK default. */
+  maxPercentageBuyLaunch?: number;
+  /** Quote (raw units) to transfer to the Factory in the same multicall, to fund the team-allocation buyback. */
+  quoteFundAmount?: string;
 }
 
 // ── IP-Sponsorship intents ──────────────────────────────────────────────────
