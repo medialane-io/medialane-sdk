@@ -46,6 +46,22 @@ test("Clerk-authed methods send both x-api-key and Authorization through the uni
   expect(calls[0].init.method).toBe("PATCH");
 });
 
+test("upsertMyWallet forwards emailVerificationToken in the request body when provided", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  await c.upsertMyWallet("clerk_tok", { emailVerificationToken: "email_verified_abc.def" });
+  const body = JSON.parse(String(calls[0].init.body));
+  expect(body.emailVerificationToken).toBe("email_verified_abc.def");
+});
+
+test("upsertMyWallet omits emailVerificationToken from the body when not provided", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  await c.upsertMyWallet("clerk_tok", {});
+  const body = JSON.parse(String(calls[0].init.body));
+  expect(body.emailVerificationToken).toBeUndefined();
+});
+
 test("5xx reads are retried (unified retry parity for profile reads)", async () => {
   let n = 0;
   scriptFetch(() => {
