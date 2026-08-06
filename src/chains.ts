@@ -47,7 +47,6 @@ export interface StarknetCoordinates {
   ipSponsorshipClassHash?: `0x${string}`;
   ipSponsorshipStartBlock?: number;
   mediaWalletClassHash?: `0x${string}`;
-  mediaWalletFactoryClassHash?: `0x${string}`;
 }
 
 /** Coordinates per chain. Only STARKNET is populated today; adding a chain
@@ -143,11 +142,6 @@ const COORDINATES: CoordinatesByChain = {
     ipSponsorshipClassHash: "0x0626daac2ed7e2bf630ef5b10104b3202db1559216c0c1a504c0e99be2fbfec3",
     ipSponsorshipStartBlock: 11896456,
     mediaWalletClassHash: "0x014b210c7d47392691144bafecdca3c6c7791cc295ea305988da0a724c05ac31",
-    // Placeholder pending the actual mainnet declare receipt (see the
-    // io wallet-native migration plan's "Non-code prerequisites" — this must
-    // be reconfirmed against a fresh `scarb build` immediately before
-    // declaring, then replaced with the real on-chain class hash).
-    mediaWalletFactoryClassHash: "0x008b6ff8c3675f35fc440a94ebbdd03b083f1046b8f565eaa360962e13d11ce1",
   },
 };
 

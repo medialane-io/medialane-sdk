@@ -23,12 +23,6 @@ test("getCoordinates returns the MediaWallet account class hash", () => {
   );
 });
 
-test("STARKNET coordinates expose a pinned mediaWalletFactoryClassHash", () => {
-  const coords = getCoordinates("STARKNET");
-  expect(coords.mediaWalletFactoryClassHash).toBeDefined();
-  expect(coords.mediaWalletFactoryClassHash).toMatch(/^0x[0-9a-f]+$/);
-});
-
 import { describe as d2, expect as e2, test as t2 } from "bun:test";
 
 d2("per-chain coordinate shapes", () => {
