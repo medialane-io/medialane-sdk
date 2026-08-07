@@ -751,6 +751,11 @@ export class ApiClient {
       // auth path can only prove Starknet ownership); the field exists
       // so the year-2 multichain shape is locked in.
       chain?: ApiChain;
+      // Proves the caller's email was verified moments ago via a one-time
+      // code (medialane-io's /wallet-onboarding flow) — additive only, the
+      // backend silently skips attaching an email if this is missing,
+      // expired, or invalid. Never a login credential (07-identity §II).
+      emailVerificationToken?: string;
     } = {},
   ): Promise<ApiUserWallet> {
     const body: Record<string, string> = {
@@ -758,6 +763,7 @@ export class ApiClient {
       appSource: options.appSource ?? "MEDIALANE_SDK",
     };
     if (options.chain) body.chain = options.chain;
+    if (options.emailVerificationToken) body.emailVerificationToken = options.emailVerificationToken;
     return this.request<ApiUserWallet>("/v1/users/me", {
       method: "POST",
       body: JSON.stringify(body),
