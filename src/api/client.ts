@@ -761,6 +761,10 @@ export class ApiClient {
       // practice (callers send one or the other), both accepted by the
       // backend independently (07-identity §II).
       email?: string;
+      // Proves this wallet is being deployed for an account that already
+      // exists (created at the email step). Additive only — the backend
+      // falls back to its normal wallet-first lookup if missing/invalid.
+      accountToken?: string;
     } = {},
   ): Promise<ApiUserWallet> {
     const body: Record<string, string> = {
@@ -770,6 +774,7 @@ export class ApiClient {
     if (options.chain) body.chain = options.chain;
     if (options.emailVerificationToken) body.emailVerificationToken = options.emailVerificationToken;
     if (options.email) body.email = options.email;
+    if (options.accountToken) body.accountToken = options.accountToken;
     return this.request<ApiUserWallet>("/v1/users/me", {
       method: "POST",
       body: JSON.stringify(body),

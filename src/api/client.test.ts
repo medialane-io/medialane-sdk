@@ -70,6 +70,14 @@ test("upsertMyWallet forwards a plain email in the request body when provided", 
   expect(body.email).toBe("alice@example.com");
 });
 
+test("upsertMyWallet forwards accountToken in the request body when provided", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  await c.upsertMyWallet("clerk_tok", { accountToken: "account_session_abc.def" });
+  const body = JSON.parse(String(calls[0].init.body));
+  expect(body.accountToken).toBe("account_session_abc.def");
+});
+
 test("checkEmailExists returns true when the backend reports exists:true", async () => {
   scriptFetch(() => ({ status: 200, body: { exists: true } }));
   const c = new ApiClient("https://api.test", "ml_live_x");
