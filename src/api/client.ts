@@ -756,6 +756,11 @@ export class ApiClient {
       // backend silently skips attaching an email if this is missing,
       // expired, or invalid. Never a login credential (07-identity §II).
       emailVerificationToken?: string;
+      // Collected at signup, unverified — additive only, never a login
+      // credential. Mutually exclusive with emailVerificationToken in
+      // practice (callers send one or the other), both accepted by the
+      // backend independently (07-identity §II).
+      email?: string;
     } = {},
   ): Promise<ApiUserWallet> {
     const body: Record<string, string> = {
@@ -764,11 +769,20 @@ export class ApiClient {
     };
     if (options.chain) body.chain = options.chain;
     if (options.emailVerificationToken) body.emailVerificationToken = options.emailVerificationToken;
+    if (options.email) body.email = options.email;
     return this.request<ApiUserWallet>("/v1/users/me", {
       method: "POST",
       body: JSON.stringify(body),
       headers: this.bearer(clerkToken),
     });
+  }
+
+  /** Whether an email already has an account attached — used by io's onboarding to branch into an "already exists" message instead of creating a duplicate account. */
+  async checkEmailExists(email: string): Promise<boolean> {
+    const { exists } = await this.get<{ exists: boolean }>(
+      `/v1/auth/email/exists?email=${encodeURIComponent(email)}`,
+    );
+    return exists;
   }
 
   /**

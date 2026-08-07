@@ -62,6 +62,33 @@ test("upsertMyWallet omits emailVerificationToken from the body when not provide
   expect(body.emailVerificationToken).toBeUndefined();
 });
 
+test("upsertMyWallet forwards a plain email in the request body when provided", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  await c.upsertMyWallet("clerk_tok", { email: "alice@example.com" });
+  const body = JSON.parse(String(calls[0].init.body));
+  expect(body.email).toBe("alice@example.com");
+});
+
+test("checkEmailExists returns true when the backend reports exists:true", async () => {
+  scriptFetch(() => ({ status: 200, body: { exists: true } }));
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  expect(await c.checkEmailExists("alice@example.com")).toBe(true);
+});
+
+test("checkEmailExists returns false when the backend reports exists:false", async () => {
+  scriptFetch(() => ({ status: 200, body: { exists: false } }));
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  expect(await c.checkEmailExists("alice@example.com")).toBe(false);
+});
+
+test("checkEmailExists sends the email as a query param", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { exists: false } }));
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  await c.checkEmailExists("alice@example.com");
+  expect(calls[0].url).toContain("/v1/auth/email/exists?email=alice%40example.com");
+});
+
 test("5xx reads are retried (unified retry parity for profile reads)", async () => {
   let n = 0;
   scriptFetch(() => {
