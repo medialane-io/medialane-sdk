@@ -188,9 +188,9 @@ export class ApiClient {
     return this.request<T>(path, { method: "DELETE" });
   }
 
-  /** Bearer header for Clerk-JWT-authenticated routes. */
-  private bearer(clerkToken: string): Record<string, string> {
-    return { Authorization: `Bearer ${clerkToken}` };
+  /** Bearer header for SIWS-token-authenticated routes. */
+  private bearer(siwsToken: string): Record<string, string> {
+    return { Authorization: `Bearer ${siwsToken}` };
   }
 
   // ─── Orders ────────────────────────────────────────────────────────────────
@@ -438,14 +438,14 @@ export class ApiClient {
 
   /**
    * Create a counter-offer intent. The seller proposes a new price in response
-   * to a buyer's active bid. clerkToken is optional — the endpoint authenticates
-   * via the tenant API key; pass a Clerk JWT only if your backend requires it.
+   * to a buyer's active bid. siwsToken is optional — the endpoint authenticates
+   * via the tenant API key; pass a SIWS token only if your backend requires it.
    */
   createCounterOfferIntent(
     params: CreateCounterOfferIntentParams,
-    clerkToken?: string
+    siwsToken?: string
   ): Promise<ApiResponse<ApiIntentCreated>> {
-    const extraHeaders: Record<string, string> = clerkToken ? { "Authorization": `Bearer ${clerkToken}` } : {};
+    const extraHeaders: Record<string, string> = siwsToken ? { "Authorization": `Bearer ${siwsToken}` } : {};
     return this.request<ApiResponse<ApiIntentCreated>>("/v1/intents/counter-offer", {
       method: "POST",
       body: JSON.stringify(params),
@@ -532,17 +532,17 @@ export class ApiClient {
 
   /**
    * Path 1: On-chain auto claim. Sends both x-api-key (tenant auth) and
-   * Authorization: Bearer (Clerk JWT) simultaneously.
+   * Authorization: Bearer (SIWS token) simultaneously.
    */
   async claimCollection(
     contractAddress: string,
     walletAddress: string,
-    clerkToken: string
+    siwsToken: string
   ): Promise<{ verified: boolean; collection?: ApiCollection; reason?: string }> {
     return this.request("/v1/collections/claim", {
       method: "POST",
       body: JSON.stringify({ contractAddress, walletAddress }),
-      headers: this.bearer(clerkToken),
+      headers: this.bearer(siwsToken),
     });
   }
 
@@ -588,16 +588,16 @@ export class ApiClient {
   }
 
   /**
-   * Update collection profile. Requires Clerk JWT for ownership check.
+   * Update collection profile. Requires SIWS token for ownership check.
    */
   updateCollectionProfile(
     contractAddress: string,
     data: Partial<Omit<ApiCollectionProfile, "contractAddress" | "chain" | "updatedBy" | "updatedAt">>,
-    clerkToken: string
+    siwsToken: string
   ): Promise<ApiCollectionProfile> {
     return this.request<ApiCollectionProfile>(
       `/v1/collections/${this.addr(contractAddress)}/profile`,
-      { method: "PATCH", body: JSON.stringify(data), headers: this.bearer(clerkToken) },
+      { method: "PATCH", body: JSON.stringify(data), headers: this.bearer(siwsToken) },
     );
   }
 
@@ -613,11 +613,11 @@ export class ApiClient {
 
   getGatedContent(
     contractAddress: string,
-    clerkToken: string
+    siwsToken: string
   ): Promise<{ title: string; url: string; type: string } | null> {
     return this.request<{ title: string; url: string; type: string } | null>(
       `/v1/collections/${this.addr(contractAddress)}/gated-content`,
-      { method: "GET", headers: this.bearer(clerkToken) },
+      { method: "GET", headers: this.bearer(siwsToken) },
       { allow404: true, allow403: true },
     );
   }
@@ -652,16 +652,16 @@ export class ApiClient {
   }
 
   /**
-   * Update creator profile. Requires Clerk JWT; wallet must match authenticated user.
+   * Update creator profile. Requires SIWS token; wallet must match authenticated user.
    */
   updateCreatorProfile(
     walletAddress: string,
     data: Partial<Omit<ApiCreatorProfile, "walletAddress" | "chain" | "updatedAt">>,
-    clerkToken: string
+    siwsToken: string
   ): Promise<ApiCreatorProfile> {
     return this.request<ApiCreatorProfile>(
       `/v1/creators/${this.addr(walletAddress)}/profile`,
-      { method: "PATCH", body: JSON.stringify(data), headers: this.bearer(clerkToken) },
+      { method: "PATCH", body: JSON.stringify(data), headers: this.bearer(siwsToken) },
     );
   }
 
@@ -674,25 +674,25 @@ export class ApiClient {
     );
   }
 
-  /** Submit a slug claim for a collection. Requires Clerk JWT — caller must be the collection owner. */
+  /** Submit a slug claim for a collection. Requires SIWS token — caller must be the collection owner. */
   submitCollectionSlugClaim(
     contractAddress: string,
     slug: string,
-    clerkToken: string,
+    siwsToken: string,
     notifyEmail?: string
   ): Promise<{ claim: ApiCollectionSlugClaim }> {
     return this.request<{ claim: ApiCollectionSlugClaim }>("/v1/collection-slug-claims", {
       method: "POST",
       body: JSON.stringify({ contractAddress, slug, notifyEmail }),
-      headers: this.bearer(clerkToken),
+      headers: this.bearer(siwsToken),
     });
   }
 
-  /** Returns all slug claims submitted by the authenticated wallet. Requires Clerk JWT. */
-  getMyCollectionSlugClaims(clerkToken: string): Promise<{ claims: ApiCollectionSlugClaim[] }> {
+  /** Returns all slug claims submitted by the authenticated wallet. Requires SIWS token. */
+  getMyCollectionSlugClaims(siwsToken: string): Promise<{ claims: ApiCollectionSlugClaim[] }> {
     return this.request<{ claims: ApiCollectionSlugClaim[] }>("/v1/collection-slug-claims/me", {
       method: "GET",
-      headers: this.bearer(clerkToken),
+      headers: this.bearer(siwsToken),
     });
   }
 
@@ -708,18 +708,13 @@ export class ApiClient {
   // ─── User Wallet ─────────────────────────────────────────────────────────────
 
   /**
-   * Upsert the authenticated user's wallet address in the backend DB.
-   * Call after onboarding when ChipiPay confirms the wallet address.
-   * Requires Clerk JWT; no tenant API key needed.
-   */
-  /**
-   * Frictionless wallet registration. Tenant API key only (no Clerk JWT required).
+   * Frictionless wallet registration. Tenant API key only (no SIWS token required).
    * Idempotent — backend's ensureAccountForWallet upserts and upgrades existing
    * UNKNOWN walletType rows when a more specific value is supplied.
    */
   async registerUser(params: {
     walletAddress: string;
-    // Free-form wallet-software label ("braavos" / "ready" / "chipipay" / …).
+    // Free-form wallet-software label ("braavos" / "ready" / "passkey" / …).
     // The backend lowercases it into Identity.provider and never gates on it
     // (07-identity §II) — so it's a plain string, not a closed enum.
     walletType?: string;
@@ -731,7 +726,7 @@ export class ApiClient {
     walletAddress: string;
     chain: string;
     // The wallet identity's free-form provider label, echoed back from
-    // Identity.provider ("braavos" / "chipipay" / "unknown" / …).
+    // Identity.provider ("braavos" / "passkey" / "unknown" / …).
     provider: string;
     appSource: ApiAppSource;
     createdAt: string;
@@ -740,7 +735,7 @@ export class ApiClient {
   }
 
   async upsertMyWallet(
-    clerkToken: string,
+    siwsToken: string,
     options: {
       // Free-form provider label (see registerUser); lowercased into
       // Identity.provider by the backend, never gated on.
@@ -778,7 +773,7 @@ export class ApiClient {
     return this.request<ApiUserWallet>("/v1/users/me", {
       method: "POST",
       body: JSON.stringify(body),
-      headers: this.bearer(clerkToken),
+      headers: this.bearer(siwsToken),
     });
   }
 
@@ -793,12 +788,12 @@ export class ApiClient {
   /**
    * Get the authenticated user's stored wallet address from the backend DB.
    * Returns null if the user has not completed onboarding yet.
-   * Requires Clerk JWT; no tenant API key needed.
+   * Requires SIWS token; no tenant API key needed.
    */
-  getMyWallet(clerkToken: string): Promise<ApiUserWallet | null> {
+  getMyWallet(siwsToken: string): Promise<ApiUserWallet | null> {
     return this.request<ApiUserWallet | null>(
       "/v1/users/me",
-      { method: "GET", headers: this.bearer(clerkToken) },
+      { method: "GET", headers: this.bearer(siwsToken) },
       { allow404: true },
     );
   }
@@ -823,110 +818,110 @@ export class ApiClient {
   }
 
   /**
-   * Submit a custom remix offer for a token. Requires Clerk JWT.
+   * Submit a custom remix offer for a token. Requires SIWS token.
    */
   submitRemixOffer(
     params: CreateRemixOfferParams,
-    clerkToken: string
+    siwsToken: string
   ): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>("/v1/remix-offers", {
       method: "POST",
       body: JSON.stringify(params),
-      headers: { "Authorization": `Bearer ${clerkToken}` },
+      headers: { "Authorization": `Bearer ${siwsToken}` },
     });
   }
 
   /**
-   * Submit an auto remix offer for a token with an open license. Requires Clerk JWT.
+   * Submit an auto remix offer for a token with an open license. Requires SIWS token.
    */
   submitAutoRemixOffer(
     params: AutoRemixOfferParams,
-    clerkToken: string
+    siwsToken: string
   ): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>("/v1/remix-offers/auto", {
       method: "POST",
       body: JSON.stringify(params),
-      headers: { "Authorization": `Bearer ${clerkToken}` },
+      headers: { "Authorization": `Bearer ${siwsToken}` },
     });
   }
 
   /**
-   * Record a self-remix (owner remixing their own token). Requires Clerk JWT.
+   * Record a self-remix (owner remixing their own token). Requires SIWS token.
    */
   confirmSelfRemix(
     params: ConfirmSelfRemixParams,
-    clerkToken: string
+    siwsToken: string
   ): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>("/v1/remix-offers/self/confirm", {
       method: "POST",
       body: JSON.stringify(params),
-      headers: { "Authorization": `Bearer ${clerkToken}` },
+      headers: { "Authorization": `Bearer ${siwsToken}` },
     });
   }
 
   /**
-   * List remix offers by role. Requires Clerk JWT.
+   * List remix offers by role. Requires SIWS token.
    * role="creator" — offers where you are the original creator.
    * role="requester" — offers you made.
    */
   getRemixOffers(
     query: ApiRemixOffersQuery,
-    clerkToken: string
+    siwsToken: string
   ): Promise<ApiResponse<ApiRemixOffer[]>> {
     const params = new URLSearchParams({ role: query.role });
     if (query.page !== undefined) params.set("page", String(query.page));
     if (query.limit !== undefined) params.set("limit", String(query.limit));
     return this.request<ApiResponse<ApiRemixOffer[]>>(`/v1/remix-offers?${params}`, {
       method: "GET",
-      headers: this.bearer(clerkToken),
+      headers: this.bearer(siwsToken),
     });
   }
 
   /**
-   * Get a single remix offer. Clerk JWT optional (price/currency hidden for non-participants).
+   * Get a single remix offer. SIWS token optional (price/currency hidden for non-participants).
    */
-  getRemixOffer(id: string, clerkToken?: string): Promise<ApiResponse<ApiRemixOffer>> {
+  getRemixOffer(id: string, siwsToken?: string): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}`, {
       method: "GET",
-      headers: clerkToken ? this.bearer(clerkToken) : undefined,
+      headers: siwsToken ? this.bearer(siwsToken) : undefined,
     });
   }
 
   /**
-   * Creator approves a remix offer (authorises the requester to mint). Requires Clerk JWT.
+   * Creator approves a remix offer (authorises the requester to mint). Requires SIWS token.
    */
   confirmRemixOffer(
     id: string,
     params: ConfirmRemixOfferParams,
-    clerkToken: string
+    siwsToken: string
   ): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/confirm`, {
       method: "POST",
       body: JSON.stringify(params),
-      headers: { "Authorization": `Bearer ${clerkToken}` },
+      headers: { "Authorization": `Bearer ${siwsToken}` },
     });
   }
 
   /**
-   * Creator rejects a remix offer. Requires Clerk JWT.
+   * Creator rejects a remix offer. Requires SIWS token.
    */
-  rejectRemixOffer(id: string, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>> {
+  rejectRemixOffer(id: string, siwsToken: string): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/reject`, {
       method: "POST",
       body: JSON.stringify({}),
-      headers: { "Authorization": `Bearer ${clerkToken}` },
+      headers: { "Authorization": `Bearer ${siwsToken}` },
     });
   }
 
   /**
    * Requester extends the expiry of a pending remix offer by 1–30 days.
-   * Requires Clerk JWT.
+   * Requires SIWS token.
    */
-  extendRemixOffer(id: string, days: number, clerkToken: string): Promise<ApiResponse<ApiRemixOffer>> {
+  extendRemixOffer(id: string, days: number, siwsToken: string): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/extend`, {
       method: "POST",
       body: JSON.stringify({ days }),
-      headers: { "Authorization": `Bearer ${clerkToken}` },
+      headers: { "Authorization": `Bearer ${siwsToken}` },
     });
   }
 
@@ -972,7 +967,7 @@ export class ApiClient {
   /**
    * Creator-authed coin profile edit (image/description). Backend authorizes
    * via `coin.creator` (trustless — from the factory event), not a body param;
-   * `siwsToken` is the caller's SIWS/Clerk bearer token for `identityAuth`.
+   * `siwsToken` is the caller's SIWS bearer token for `identityAuth`.
    */
   updateCoinProfile(
     contract: string,

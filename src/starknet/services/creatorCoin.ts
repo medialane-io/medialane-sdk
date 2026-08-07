@@ -176,7 +176,7 @@ export async function getCreatorCoinPrice(
 }
 
 // ── Account-free call builders ───────────────────────────────────────────────
-// Apps that execute through their own pipeline (io's ChipiPay atomic chokepoint,
+// Apps that execute through their own pipeline (io's previous custodial-wallet execution chokepoint,
 // paymaster flows) need the calls, not an executor. The service methods below
 // build on these — one calldata source for every app.
 

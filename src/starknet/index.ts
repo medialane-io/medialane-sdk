@@ -78,7 +78,7 @@ export type { ClaimConditions, CreateDropParams, CreatePopCollectionParams } fro
 // Cairo ByteArray encoding
 export { encodeByteArray } from "./bytearray.js";
 
-// SNIP-12 signing builders (for advanced / ChipiPay integrations)
+// SNIP-12 signing builders (for advanced/custodial-wallet integrations)
 export {
   buildOrderTypedData,
   buildCancellationTypedData,

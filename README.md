@@ -210,7 +210,7 @@ const result = await client.marketplace1155.cancelOrder(account, {
 });
 ```
 
-### SNIP-12 Typed Data Builders (ChipiPay / custom flows)
+### SNIP-12 Typed Data Builders (custodial-wallet / custom flows)
 
 Listing/offer and cancellation are signed; fulfilment is an **unsigned** call (the buyer is
 the fulfiller, since v0.26.0) — there is no fulfillment typed-data builder.
@@ -486,7 +486,7 @@ try {
 
 ## Advanced: SNIP-12 Typed Data Builders
 
-For integrations that handle signing externally (e.g. ChipiPay, Cartridge Controller):
+For integrations that handle signing externally (e.g. a custodial wallet service, Cartridge Controller):
 
 ```typescript
 import {
@@ -562,7 +562,7 @@ Built with:
 - **`ApiCollectionProfile.gatedContentTitle: string | null`** — public title of gated content (shown to all users; URL is accessible to holders only via the backend gated-content endpoint)
 
 ### v0.5.5
-- **`extendRemixOffer(id, days, clerkToken)`** — requester extends expiry of a PENDING/AUTO_PENDING remix offer by 1–30 days (`POST /v1/remix-offers/:id/extend`)
+- **`extendRemixOffer(id, days, siwsToken)`** — requester extends expiry of a PENDING/AUTO_PENDING remix offer by 1–30 days (`POST /v1/remix-offers/:id/extend`)
 - **`ApiRemixOfferPrice`** type — `{ raw, formatted, currency, decimals }` replaces flat `proposedPrice`/`proposedCurrency` fields on `ApiRemixOffer.price` (visible to participants only)
 
 ### v0.5.4
@@ -573,17 +573,17 @@ Built with:
 - **`ApiComment`** type — `{ id, author, content, txHash, blockNumber, blockTimestamp, isHidden, createdAt }`
 
 ### v0.5.0
-- **Counter-offer support** — `createCounterOfferIntent(params, clerkToken)`, `getCounterOffers(query)`, `ApiCounterOffersQuery`, `CreateCounterOfferIntentParams`
+- **Counter-offer support** — `createCounterOfferIntent(params, siwsToken)`, `getCounterOffers(query)`, `ApiCounterOffersQuery`, `CreateCounterOfferIntentParams`
 - **`OrderStatus`** extended with `"COUNTER_OFFERED"`; **`IntentType`** with `"COUNTER_OFFER"`
 - **`ApiOrder`** extended: `parentOrderHash?: string | null`, `counterOfferMessage?: string | null`
 - **Remix licensing** — full set of remix offer methods and types:
-  - `submitRemixOffer(params, clerkToken)` — custom offer
-  - `submitAutoRemixOffer(params, clerkToken)` — auto offer for open-license tokens
-  - `confirmSelfRemix(params, clerkToken)` — record owner self-remix
-  - `getRemixOffers(query, clerkToken)` — list by role
-  - `getRemixOffer(id, clerkToken?)` — single offer
-  - `confirmRemixOffer(id, params, clerkToken)` — creator approves
-  - `rejectRemixOffer(id, clerkToken)` — creator rejects
+  - `submitRemixOffer(params, siwsToken)` — custom offer
+  - `submitAutoRemixOffer(params, siwsToken)` — auto offer for open-license tokens
+  - `confirmSelfRemix(params, siwsToken)` — record owner self-remix
+  - `getRemixOffers(query, siwsToken)` — list by role
+  - `getRemixOffer(id, siwsToken?)` — single offer
+  - `confirmRemixOffer(id, params, siwsToken)` — creator approves
+  - `rejectRemixOffer(id, siwsToken)` — creator rejects
   - `getTokenRemixes(contract, tokenId, opts?)` — public remix list
 - **New types** — `RemixOfferStatus`, `ApiRemixOffer`, `ApiPublicRemix`, `OPEN_LICENSES`, `OpenLicense`, `CreateRemixOfferParams`, `AutoRemixOfferParams`, `ConfirmSelfRemixParams`, `ConfirmRemixOfferParams`, `ApiRemixOffersQuery`
 
@@ -594,7 +594,7 @@ Built with:
 - **`IPType`** union type exported — `"Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom"`
 
 ### v0.4.6
-- **`ApiUserWallet`** type + `upsertMyWallet(clerkToken)` / `getMyWallet(clerkToken)` for ChipiPay wallet registration fallback (`POST/GET /v1/users/me`)
+- **`ApiUserWallet`** type + `upsertMyWallet(siwsToken)` / `getMyWallet(siwsToken)` for wallet registration fallback (`POST/GET /v1/users/me`)
 
 ### v0.4.5
 - **`ApiSearchCreatorResult`** type + `ApiSearchResult.creators` — creator profiles now included in search results
@@ -613,9 +613,9 @@ Built with:
 - **USDC.e removed** — bridged USDC (`0x053c91...`) removed entirely; only Circle-native USDC remains, to avoid user confusion
 
 ### v0.4.1
-- **Collection claims** — `claimCollection(contractAddress, walletAddress, clerkToken)` for on-chain ownership verification; `requestCollectionClaim({ contractAddress, walletAddress?, email, notes? })` for manual review
-- **Collection profiles** — `getCollectionProfile(contractAddress)` and `updateCollectionProfile(contractAddress, data, clerkToken)` for enriched display metadata (displayName, description, image, bannerImage, social links)
-- **Creator profiles** — `getCreatorProfile(walletAddress)` and `updateCreatorProfile(walletAddress, data, clerkToken)` for creator display metadata
+- **Collection claims** — `claimCollection(contractAddress, walletAddress, siwsToken)` for on-chain ownership verification; `requestCollectionClaim({ contractAddress, walletAddress?, email, notes? })` for manual review
+- **Collection profiles** — `getCollectionProfile(contractAddress)` and `updateCollectionProfile(contractAddress, data, siwsToken)` for enriched display metadata (displayName, description, image, bannerImage, social links)
+- **Creator profiles** — `getCreatorProfile(walletAddress)` and `updateCreatorProfile(walletAddress, data, siwsToken)` for creator display metadata
 - **New types** — `ApiCollectionClaim`, `ApiAdminCollectionClaim`, `ApiCollectionProfile`, `ApiCreatorProfile`
 - **`ApiCollection`** extended with `source` (`"MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME"`) and `claimedBy: string | null`
 - `profile?: ApiCollectionProfile | null` optionally embedded on `ApiCollection` when `?include=profile`

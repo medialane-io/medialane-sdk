@@ -27,7 +27,7 @@ test("allow404 read returns null instead of throwing", async () => {
 test("allow403 read returns null (gated-content non-holder)", async () => {
   scriptFetch(() => ({ status: 403, body: { error: "not a holder" } }));
   const c = new ApiClient("https://api.test", "ml_live_x");
-  expect(await c.getGatedContent("0x1", "clerk_tok")).toBeNull();
+  expect(await c.getGatedContent("0x1", "siws_tok")).toBeNull();
 });
 
 test("a non-allowlisted error still throws MedialaneApiError", async () => {
@@ -36,20 +36,20 @@ test("a non-allowlisted error still throws MedialaneApiError", async () => {
   await expect(c.getCollectionProfile("0x1")).rejects.toBeInstanceOf(MedialaneApiError);
 });
 
-test("Clerk-authed methods send both x-api-key and Authorization through the unified path", async () => {
+test("SIWS-authed methods send both x-api-key and Authorization through the unified path", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { ok: true } }));
   const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.updateCreatorProfile("0x1", { displayName: "Ada" } as never, "clerk_tok");
+  await c.updateCreatorProfile("0x1", { displayName: "Ada" } as never, "siws_tok");
   const headers = calls[0].init.headers as Record<string, string>;
   expect(headers["x-api-key"]).toBe("ml_live_x");
-  expect(headers["Authorization"]).toBe("Bearer clerk_tok");
+  expect(headers["Authorization"]).toBe("Bearer siws_tok");
   expect(calls[0].init.method).toBe("PATCH");
 });
 
 test("upsertMyWallet forwards emailVerificationToken in the request body when provided", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
   const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.upsertMyWallet("clerk_tok", { emailVerificationToken: "email_verified_abc.def" });
+  await c.upsertMyWallet("siws_tok", { emailVerificationToken: "email_verified_abc.def" });
   const body = JSON.parse(String(calls[0].init.body));
   expect(body.emailVerificationToken).toBe("email_verified_abc.def");
 });
@@ -57,7 +57,7 @@ test("upsertMyWallet forwards emailVerificationToken in the request body when pr
 test("upsertMyWallet omits emailVerificationToken from the body when not provided", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
   const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.upsertMyWallet("clerk_tok", {});
+  await c.upsertMyWallet("siws_tok", {});
   const body = JSON.parse(String(calls[0].init.body));
   expect(body.emailVerificationToken).toBeUndefined();
 });
@@ -65,7 +65,7 @@ test("upsertMyWallet omits emailVerificationToken from the body when not provide
 test("upsertMyWallet forwards a plain email in the request body when provided", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
   const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.upsertMyWallet("clerk_tok", { email: "alice@example.com" });
+  await c.upsertMyWallet("siws_tok", { email: "alice@example.com" });
   const body = JSON.parse(String(calls[0].init.body));
   expect(body.email).toBe("alice@example.com");
 });
@@ -73,7 +73,7 @@ test("upsertMyWallet forwards a plain email in the request body when provided", 
 test("upsertMyWallet forwards accountToken in the request body when provided", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
   const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.upsertMyWallet("clerk_tok", { accountToken: "account_session_abc.def" });
+  await c.upsertMyWallet("siws_tok", { accountToken: "account_session_abc.def" });
   const body = JSON.parse(String(calls[0].init.body));
   expect(body.accountToken).toBe("account_session_abc.def");
 });
