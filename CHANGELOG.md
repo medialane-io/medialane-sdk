@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.85.4] — 2026-08-11
+
+### Added
+
+- `ApiActivitiesQuery.contract` + `ApiClient.getActivities()` now accept a `contract` filter, scoping
+  the activity feed (mints, listings, offers, sales, transfers) to one collection instead of only the
+  global or per-address feeds.
+
 ## [0.85.0] — 2026-08-05
 
 ### Added

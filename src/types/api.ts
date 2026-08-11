@@ -425,6 +425,8 @@ export interface ApiActivity {
 export interface ApiActivitiesQuery {
   chain?: ChainFilter;
   type?: ActivityType;
+  /** Scope the feed to one collection's contract address instead of the global/per-address feed. */
+  contract?: string;
   page?: number;
   limit?: number;
 }
