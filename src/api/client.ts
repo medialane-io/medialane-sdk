@@ -293,6 +293,7 @@ export class ApiClient {
   getActivities(query: ApiActivitiesQuery = {}): Promise<ApiResponse<ApiActivity[]>> {
     const params = new URLSearchParams();
     if (query.type) params.set("type", query.type);
+    if (query.contract) params.set("contract", query.contract);
     if (query.page !== undefined) params.set("page", String(query.page));
     if (query.limit !== undefined) params.set("limit", String(query.limit));
     if (query.chain) params.set("chain", query.chain);
