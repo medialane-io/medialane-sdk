@@ -258,13 +258,16 @@ export class ApiClient {
     isKnown?: boolean,
     sort?: CollectionSort,
     service?: string,
-    chain?: ChainFilter
+    chain?: ChainFilter,
+    /** Token standard filter — single value or comma-separated list (e.g. "ERC721,ERC1155"). */
+    standard?: string
   ): Promise<ApiResponse<ApiCollection[]>> {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (isKnown !== undefined) params.set("isKnown", String(isKnown));
     if (sort) params.set("sort", sort);
     if (service) params.set("service", service);
     if (chain) params.set("chain", chain);
+    if (standard) params.set("standard", standard);
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
   }
 
