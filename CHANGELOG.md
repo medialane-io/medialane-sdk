@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.85.5] — 2026-08-12
+
+### Added
+
+- `ApiCollectionsQuery.standard` + `ApiClient.getCollections()` now accept a `standard` filter
+  (CSV of `ERC721`/`ERC1155`), matching the backend's existing `/v1/collections` query param so
+  callers no longer need a raw fetch to filter by standard.
+
 ## [0.85.4] — 2026-08-11
 
 ### Added
