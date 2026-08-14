@@ -21,14 +21,12 @@ export interface EvmVenueOptions {
   chain: EvmChain;
   chainId: number;
   publicClient: PublicClient;
-  /** "721" (unique assets) or "1155" (partial fills). */
+
   variant: "721" | "1155";
-  /** Defaults to the chain registry's venue address (populated at deploy). */
+
   contract?: `0x${string}`;
 }
 
-/** The Medialane venue adapter for EVM chains — one implementation serves
- *  Ethereum and Base (same bytecode; the EIP-712 domain separates them). */
 export class EvmVenue implements VenueAdapter<WalletClient> {
   readonly chain: Chain;
   private readonly chainId: number;
@@ -48,8 +46,6 @@ export class EvmVenue implements VenueAdapter<WalletClient> {
     this.contract = contract;
   }
 
-  /** Builds the order struct, signs the EIP-712 digest, and registers it.
-   *  The digest is the canonical order id on EVM chains. */
   async registerOrder(
     signer: WalletClient,
     params: RegisterOrderParams,
@@ -191,7 +187,6 @@ export class EvmVenue implements VenueAdapter<WalletClient> {
   }
 }
 
-/** Payment-token sentinel for native ETH (spec §3.2b currency encoding). */
 export const NATIVE_SENTINEL = "native";
 
 function commonFields(params: RegisterOrderParams) {

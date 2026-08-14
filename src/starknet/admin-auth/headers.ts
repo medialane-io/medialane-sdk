@@ -9,7 +9,7 @@ export const ADMIN_HEADERS = {
 } as const;
 
 function b64urlEncode(s: string): string {
-  // browser + node/bun safe
+
   const bytes = new TextEncoder().encode(s);
   let bin = ""; for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -27,7 +27,6 @@ export function randomNonce(): string {
   return "0x" + hex;
 }
 
-/** Build the four request headers from a session + (method, path, body). */
 export function encodeAdminHeaders(
   session: AdminSession,
   reqInit: { method: string; path: string; body?: string; now?: () => number },
@@ -51,7 +50,6 @@ export interface ParsedAdminHeaders {
   ts: number;
 }
 
-/** Parse + shape-check the headers on the backend. Returns null if malformed. */
 export function parseAdminHeaders(get: (name: string) => string | null | undefined): ParsedAdminHeaders | null {
   const rawGrant = get(ADMIN_HEADERS.grant);
   const sig = get(ADMIN_HEADERS.sig);

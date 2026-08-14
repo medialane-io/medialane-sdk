@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { normalizeAddress } from "./address.js";
 
-// Documented Stellar strkeys: the SDF docs example account and the mainnet
-// native-asset (XLM) contract id. Both carry CRC16-XModem checksums, so a
-// passing validation is self-evident.
 const STELLAR_ACCOUNT = "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVSGZ";
 const STELLAR_CONTRACT = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
 

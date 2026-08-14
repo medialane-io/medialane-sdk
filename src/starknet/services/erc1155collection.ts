@@ -7,39 +7,31 @@ import { getStarknetCoordinates } from "../../chains.js";
 import type { TxResult } from "../../types/marketplace.js";
 
 export interface DeployCollectionParams {
-  /** Human-readable collection name (e.g. "My IP Collection") */
+
   name: string;
-  /** Short ticker symbol (e.g. "MIP") */
+
   symbol: string;
-  /**
-   * Collection-level metadata URI (e.g. "ipfs://Qm…/collection.json").
-   * Should point to a JSON containing `name`, `description`, `image`, and `external_link`.
-   * Stored on-chain at deploy time. Pass an empty string if not available.
-   */
+
   baseUri: string;
 }
 
 export interface MintEditionParams {
-  /** ERC-1155 collection contract address */
+
   collection: string;
-  /** Recipient wallet address */
+
   to: string;
-  /** Number of copies of this new edition to mint */
+
   value: bigint | string;
-  /**
-   * Metadata URI — must start with `ipfs://` or `ar://`.
-   * Immutable: validated and stored at mint. The token id is assigned on-chain
-   * (sequential from 1); read it from the `IPMinted` event of the returned tx.
-   */
+
   tokenUri: string;
 }
 
 export interface BatchMintEditionParams {
-  /** ERC-1155 collection contract address */
+
   collection: string;
-  /** Recipient wallet address */
+
   to: string;
-  /** New editions to create; ids are assigned sequentially on-chain. */
+
   items: Array<{
     value: bigint | string;
     tokenUri: string;
@@ -47,13 +39,13 @@ export interface BatchMintEditionParams {
 }
 
 export interface AddSupplyParams {
-  /** ERC-1155 collection contract address */
+
   collection: string;
-  /** Recipient wallet address */
+
   to: string;
-  /** Existing edition id to mint more copies of (reverts if it doesn't exist) */
+
   tokenId: bigint | string;
-  /** Number of additional copies */
+
   value: bigint | string;
 }
 
@@ -80,12 +72,6 @@ export class ERC1155CollectionService {
     );
   }
 
-  /**
-   * Deploy a new ERC-1155 IP collection.
-   * Caller becomes the collection owner and can mint items.
-   * Returns the transaction hash; the deployed collection address is emitted
-   * in the `CollectionDeployed` event of the factory.
-   */
   async deployCollection(
     account: AccountInterface,
     params: DeployCollectionParams
@@ -96,12 +82,6 @@ export class ERC1155CollectionService {
     return { txHash: res.transaction_hash };
   }
 
-  /**
-   * Mint a new edition into an existing ERC-1155 collection.
-   * Caller must be the collection owner. The token id is assigned on-chain
-   * (sequential from 1) — read it from the `IPMinted` event of the returned tx.
-   * The `tokenUri` is immutable.
-   */
   async mintEdition(
     account: AccountInterface,
     params: MintEditionParams
@@ -116,11 +96,6 @@ export class ERC1155CollectionService {
     return { txHash: res.transaction_hash };
   }
 
-  /**
-   * Batch-mint multiple new editions into an existing ERC-1155 collection.
-   * All editions go to the same `to` address; ids are assigned sequentially
-   * on-chain. Caller must be the collection owner.
-   */
   async batchMintEdition(
     account: AccountInterface,
     params: BatchMintEditionParams
@@ -137,11 +112,6 @@ export class ERC1155CollectionService {
     return { txHash: res.transaction_hash };
   }
 
-  /**
-   * Mint additional copies of an EXISTING edition into an ERC-1155 collection.
-   * Reverts on-chain if `tokenId` has never been minted. Provenance/URI unchanged.
-   * Caller must be the collection owner.
-   */
   async addSupply(
     account: AccountInterface,
     params: AddSupplyParams
@@ -156,11 +126,6 @@ export class ERC1155CollectionService {
     return { txHash: res.transaction_hash };
   }
 
-  /**
-   * Set the default ERC-2981 royalty for the entire collection.
-   * `feeNumerator` is out of 10 000 (e.g. 500 = 5%).
-   * Caller must be the collection owner.
-   */
   async setDefaultRoyalty(
     account: AccountInterface,
     params: { collection: string; receiver: string; feeNumerator: number }
@@ -174,10 +139,6 @@ export class ERC1155CollectionService {
     return { txHash: res.transaction_hash };
   }
 
-  /**
-   * Set a per-token ERC-2981 royalty override.
-   * `feeNumerator` is out of 10 000. Caller must be the collection owner.
-   */
   async setTokenRoyalty(
     account: AccountInterface,
     params: { collection: string; tokenId: bigint | string; receiver: string; feeNumerator: number }
@@ -192,10 +153,6 @@ export class ERC1155CollectionService {
     return { txHash: res.transaction_hash };
   }
 
-  /**
-   * Approve the Medialane1155 marketplace (or any operator) to transfer
-   * all tokens on behalf of `account`. Required before listing.
-   */
   async setApprovalForAll(
     account: AccountInterface,
     params: { collection: string; operator: string; approved: boolean }

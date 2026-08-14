@@ -8,14 +8,8 @@ import { TicketService } from "./services/ticket.js";
 import { ClubService } from "./services/club.js";
 import { SponsorshipService } from "./services/sponsorship.js";
 
-// Marketplace order execution is NOT on the client (0.64.0): it goes through
-// StarknetVenue over the VenueSigner capability port (./venue.ts) — the app's
-// wallet layer signs and submits; the venue builds and reads.
 export class MedialaneClient {
-  /**
-   * Off-chain API client — covers all /v1/* backend endpoints.
-   * Requires `backendUrl` in config; pass `apiKey` for authenticated routes.
-   */
+
   readonly api: ApiClient;
 
   readonly services: {
@@ -44,12 +38,7 @@ export class MedialaneClient {
     };
 
     if (!this.config.backendUrl) {
-      // When backendUrl is not configured, `client.api.*()` must fail with a
-      // helpful message. Wrap a real ApiClient (built with a sentinel URL so
-      // it never silently dispatches) in a Proxy that intercepts ONLY actual
-      // ApiClient methods — Symbol access, .then (Promise unwrapping),
-      // .toString, .inspect (Node/Bun debug) and other host introspection
-      // are returned unchanged so they don't fabricate throwing functions.
+
       const sentinel = new ApiClient("https://medialane-sdk-no-backend.invalid", this.config.apiKey);
       const apiMethodNames = new Set<string | symbol>(
         Object.getOwnPropertyNames(ApiClient.prototype).filter(

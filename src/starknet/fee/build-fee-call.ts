@@ -5,19 +5,12 @@ export type FeeSurface = "marketplace" | "launchpad" | "sponsorship";
 
 export interface BuildFeeCallParams {
   surface: FeeSurface;
-  /** ERC-20 address the gross amount is denominated in. */
+
   token: string;
-  /** Gross amount in raw token units (e.g. price in wei, or price * quantity). */
+
   grossAmount: bigint;
 }
 
-/**
- * The single source of truth for the platform fee. Returns one ERC-20
- * `transfer(fundAddress, feeAmount)` Call to bundle into the settlement
- * multicall, or `null` when no fee should be charged.
- *
- * Fail-safe: returns null if disabled, no fund address, or the fee floors to 0.
- */
 export function buildFeeCall(
   p: BuildFeeCallParams,
   cfg: ResolvedFeeConfig

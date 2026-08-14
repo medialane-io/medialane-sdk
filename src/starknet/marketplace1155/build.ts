@@ -7,23 +7,13 @@ import { buildFeeCall } from "../fee/index.js";
 import { getChainId, getProvider, newContract } from "../marketplace/utils.js";
 import type { OrderParams } from "../marketplace/build.js";
 
-/**
- * Pure calldata builders for the ERC-1155 marketplace — the 1155 mirror of
- * `marketplace/build.ts`. Salt/counter/times are injected so output is
- * deterministic. Both the legacy `Medialane1155Module` and `StarknetVenue` build
- * through here, so their calldata is identical by construction — except that
- * `buildFulfill1155Calls` now composes the platform fee (the legacy
- * `fulfillOrder1155` did not; this closes the 1155 fee-parity gap so 721 and 1155
- * buys charge the creators-fund fee uniformly).
- */
-
 export interface Build1155ListingInput {
   offerer: string;
   nftContract: string;
   tokenId: string;
-  /** ERC-1155 unit quantity offered. */
+
   quantity: string;
-  /** ERC-20 consideration amount PER UNIT, base units. */
+
   priceWeiPerUnit: string;
   paymentTokenAddress: string;
   royaltyMaxBps: string;
@@ -144,7 +134,6 @@ export function buildCancel1155Calls(
   return [contractFor(cfg).populate("cancel_order", [cancelPayload])];
 }
 
-/** SNIP-12 typed data for a 1155 cancellation (offerer signs `{ order_hash, offerer }`). */
 export function buildCancel1155TypedData(orderHash: string, offerer: string, cfg: ResolvedConfig): TypedData {
   return stringifyBigInts(
     build1155CancellationTypedData({ order_hash: orderHash, offerer }, getChainId(cfg)),

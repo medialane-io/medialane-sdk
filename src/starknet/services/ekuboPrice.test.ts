@@ -26,11 +26,7 @@ describe("priceToEkuboParams", () => {
   });
 
   it("decodes back to ~0.01 (within one tickSpacing step) via the existing read-side formula", () => {
-    // Mirrors getCreatorCoinPrice's price = (sqrt_ratio/2^128)^2 conversion,
-    // but starting from a tick instead of a live sqrt_ratio: price = TICK_BASE^tick.
-    // Truncation toward zero means the decoded price can be off by up to one
-    // tickSpacing step (~0.6%, since TICK_BASE^tickSpacing ≈ 1.006) — not
-    // floating-point noise, so the tolerance here is relative, not absolute.
+
     const TICK_BASE = 1.000001;
     for (const quoteDecimals of [6, 8, 18]) {
       const result = priceToEkuboParams(quoteDecimals);
@@ -38,7 +34,7 @@ describe("priceToEkuboParams", () => {
       const rawRatio = TICK_BASE ** tick;
       const decAdj = 10 ** (18 - quoteDecimals);
       const decodedPrice = rawRatio * decAdj;
-      expect(Math.abs(decodedPrice - 0.01) / 0.01).toBeLessThan(0.01); // within 1%
+      expect(Math.abs(decodedPrice - 0.01) / 0.01).toBeLessThan(0.01);
     }
   });
 });

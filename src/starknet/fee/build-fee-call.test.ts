@@ -18,7 +18,7 @@ describe("buildFeeCall", () => {
   it("computes 1% marketplace fee and floors", () => {
     const cfg = resolveFeeConfig({ fundAddress: "0xfund", marketplaceBps: 100 });
     const call = buildFeeCall({ surface: "marketplace", token: TOKEN, grossAmount: 1_000_005n }, cfg);
-    // 1_000_005 * 100 / 10000 = 10000.05 -> floor 10000
+
     expect(call).toEqual({
       contractAddress: TOKEN,
       entrypoint: "transfer",
@@ -29,7 +29,7 @@ describe("buildFeeCall", () => {
   it("uses launchpadBps for launchpad surface", () => {
     const cfg = resolveFeeConfig({ fundAddress: "0xfund", launchpadBps: 50 });
     const call = buildFeeCall({ surface: "launchpad", token: TOKEN, grossAmount: 1_000_000n }, cfg);
-    // 1_000_000 * 50 / 10000 = 5000
+
     expect(call?.calldata).toEqual(["0xfund", "5000", "0"]);
   });
 
@@ -41,7 +41,7 @@ describe("buildFeeCall", () => {
   it("computes 1% sponsorship fee at the default 100 bps", () => {
     const cfg = resolveFeeConfig({ enabled: true, fundAddress: "0xfund" });
     const call = buildFeeCall({ surface: "sponsorship", token: TOKEN, grossAmount: 1_000_000n }, cfg);
-    // 1% of 1_000_000 = 10_000
+
     expect(call).toEqual({
       contractAddress: TOKEN,
       entrypoint: "transfer",
@@ -51,7 +51,7 @@ describe("buildFeeCall", () => {
 
   it("splits large fee into u256 low/high", () => {
     const cfg = resolveFeeConfig({ fundAddress: "0xfund", marketplaceBps: 10000 });
-    const gross = (1n << 130n); // fee == gross when bps == 10000
+    const gross = (1n << 130n);
     const call = buildFeeCall({ surface: "marketplace", token: TOKEN, grossAmount: gross }, cfg);
     const low = (gross % (1n << 128n)).toString();
     const high = (gross >> 128n).toString();

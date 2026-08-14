@@ -1,7 +1,5 @@
 import { type TypedData, TypedDataRevision, constants } from "starknet";
 
-// ── Shared SNIP-12 building blocks ─────────────────────────────────────────────
-
 const STARKNET_DOMAIN = [
   { name: "name", type: "shortstring" },
   { name: "version", type: "shortstring" },
@@ -41,14 +39,6 @@ const ORDER_CANCELLATION = [
   { name: "offerer", type: "ContractAddress" },
 ];
 
-/**
- * SNIP-12 domain version per marketplace contract:
- *   ERC-721 marketplace → "1"
- *   ERC-1155 marketplace V2 → "2"
- *
- * If the Cairo contracts are ever redeployed with different SNIP-12 domains,
- * update only this lookup — every builder reads through it.
- */
 const DOMAIN_VERSION: Record<"erc721" | "erc1155", string> = {
   erc721: "5",
   erc1155: "4",
@@ -63,13 +53,6 @@ function buildDomain(standard: "erc721" | "erc1155", chainId: constants.Starknet
   };
 }
 
-// ── Public builders ────────────────────────────────────────────────────────────
-
-/**
- * Build SNIP-12 typed data for signing an OrderParameters struct.
- * The shape is identical across ERC-721 and ERC-1155 (nested OfferItem +
- * ConsiderationItem) — only the domain version differs.
- */
 export function buildOrderTypedData(
   message: Record<string, unknown>,
   chainId: constants.StarknetChainId | string,
@@ -104,7 +87,6 @@ export function build1155OrderTypedData(
   };
 }
 
-/** OrderCancellation typed data — identical shape across both standards. */
 export function buildCancellationTypedData(
   message: Record<string, unknown>,
   chainId: constants.StarknetChainId | string,

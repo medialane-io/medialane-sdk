@@ -42,11 +42,6 @@ export class TicketService {
     return newContract(IPTicketCollectionABI as any, normalizeAddress("STARKNET", address), provider);
   }
 
-  /**
-   * Deploys a new IPTicketCollection via the factory. Caller becomes owner.
-   * `baseUri` is the collection-level metadata URI, embedded on-chain in the
-   * deploy transaction.
-   */
   async deployCollection(
     account: AccountInterface,
     params: { name: string; symbol: string; baseUri: string; factoryAddress?: string }
@@ -60,7 +55,6 @@ export class TicketService {
     return { txHash: res.transaction_hash };
   }
 
-  /** Owner-only. Creates a new ticket inside the caller's deployed collection. */
   async createTicket(account: AccountInterface, params: CreateTicketParams): Promise<TxResult> {
     const startTime = params.startTime != null
       ? new CairoOption(CairoOptionVariant.Some, params.startTime)
@@ -79,7 +73,6 @@ export class TicketService {
     return { txHash: res.transaction_hash };
   }
 
-  /** Owner-only. Mints `amount` of `tokenId` to `to`. */
   async mint(account: AccountInterface, params: MintTicketsParams): Promise<TxResult> {
     const call = this._collection(params.collection, account).populate("mint", [
       params.to,
@@ -90,7 +83,6 @@ export class TicketService {
     return { txHash: res.transaction_hash };
   }
 
-  /** Read — true if holder has balance > 0 and current time is within the ticket window. */
   async isValid(params: { collection: string; tokenId: bigint | string; holder: string }): Promise<boolean> {
     const result = await this._collectionRead(params.collection).call("is_valid", [
       cairo.uint256(params.tokenId),
@@ -99,13 +91,11 @@ export class TicketService {
     return Boolean(result);
   }
 
-  /** Read — number of tickets created so far (ids are sequential from 1). */
   async getTicketCount(params: { collection: string }): Promise<bigint> {
     const result = await this._collectionRead(params.collection).call("ticket_count", []);
     return BigInt(result as any);
   }
 
-  /** Read — returns the Ticket record for a token ID. */
   async getTicket(params: {
     collection: string;
     tokenId: bigint | string;

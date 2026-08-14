@@ -1,5 +1,5 @@
-// @medialane/sdk/solana — the Solana chain adapter. An equal adapter beside
-// /starknet, /evm, /stellar. Optional peer: @solana/web3.js.
+
+
 export {
   BorshWriter,
   instructionDiscriminator,

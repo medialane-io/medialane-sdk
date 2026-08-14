@@ -1,4 +1,4 @@
-// Auto-generated from Medialane1155 class (redesigned venue). Do not hand-edit.
+
 export const Medialane1155ABI = [
   {
     "type": "impl",

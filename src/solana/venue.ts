@@ -22,7 +22,6 @@ import {
   settlementPda,
 } from "./encoding.js";
 
-/** Wallet-adapter-compatible signer. */
 export interface SolanaSigner {
   publicKey: PublicKey;
   signTransaction(tx: Transaction): Promise<Transaction>;
@@ -30,14 +29,10 @@ export interface SolanaSigner {
 
 export interface SolanaVenueOptions {
   connection: Connection;
-  /** Defaults to the chain registry's marketplace program (populated at deploy). */
+
   programId?: string;
 }
 
-/** The Medialane venue adapter for Solana. The canonical order id is the
- *  order PDA (spec §3.2b). Native SOL is the payment when `paymentToken`
- *  is the "native" sentinel; SPL mints otherwise (bids are SPL-only,
- *  enforced by the program). */
 export class SolanaVenue implements VenueAdapter<SolanaSigner> {
   readonly chain: Chain = "SOLANA";
   private readonly connection: Connection;
@@ -129,7 +124,7 @@ export class SolanaVenue implements VenueAdapter<SolanaSigner> {
     const pda = counterPda(this.program, new PublicKey(address));
     const info = await this.connection.getAccountInfo(pda);
     if (!info || info.data.length < 16) return 0n;
-    // Anchor account: 8-byte discriminator + u64 count (LE).
+
     return new DataView(info.data.buffer, info.data.byteOffset + 8, 8).getBigUint64(0, true);
   }
 

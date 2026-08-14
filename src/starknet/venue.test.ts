@@ -16,8 +16,6 @@ const CFG = resolveConfig({
 });
 const asset = { chain: "STARKNET" as const, contract: "0xbeef", tokenId: "7" };
 
-/** A read provider: get_counter → 3, everything else → 0 (approval needed),
- *  and a receipt carrying one OrderCreated event with `orderHash`. */
 function readProvider(orderHash = "0xabc") {
   return {
     callContract: mock(async (req: any) => (req?.entrypoint === "get_counter" ? ["0x3"] : ["0x0"])),
@@ -27,7 +25,6 @@ function readProvider(orderHash = "0xabc") {
   } as any;
 }
 
-/** A capability-port mock that records what it is asked to sign and execute. */
 function mockSigner(rec: { typed: unknown[]; calls: unknown[][] }): StarknetVenueSigner {
   return {
     address: "0xa11ce",
@@ -74,7 +71,7 @@ test("fulfillOrder (721) executes [approve, fulfill_order], never signs", async 
   const signer = mockSigner(rec);
   const r = await new StarknetVenue(deps()).fulfillOrder(signer, "0xdigest");
   expect(rec.calls[0].map((c: any) => c.entrypoint)).toEqual(["approve", "fulfill_order"]);
-  expect(rec.typed).toHaveLength(0); // fulfilment is unsigned
+  expect(rec.typed).toHaveLength(0);
   expect(r.txHash).toBe("0xtx");
 });
 
@@ -85,7 +82,7 @@ test("fulfillOrder (1155) computes total = unitPrice × quantity and routes to t
   });
   await new StarknetVenue(d).fulfillOrder(mockSigner(rec), "0xd", { quantity: "3" });
   const fulfill = (rec.calls[0] as any[]).find((c) => c.entrypoint === "fulfill_order");
-  // fulfill_order([orderHash, quantity]); approve (raw Call) targets the 1155 marketplace 0x101.
+
   expect(fulfill.calldata[1]).toBe("3");
   expect((rec.calls[0][0] as any).calldata[0]).toBe("0x101");
 });
@@ -129,7 +126,7 @@ test("registerOrder (721 bid) executes [approve(erc20), register_order]", async 
   });
   const calls = rec.calls[0] as any[];
   expect(calls.map((c) => c.entrypoint)).toEqual(["approve", "register_order"]);
-  // the approve targets the resolved ERC-20 (USDC), not the NFT contract.
+
   expect(calls[0].contractAddress).not.toBe(asset.contract);
 });
 
@@ -149,7 +146,7 @@ test("registerOrder (1155 listing) reads the 1155 counter and uses set_approval_
   });
   const calls = rec.calls[0] as any[];
   expect(calls.map((c) => c.entrypoint)).toEqual(["set_approval_for_all", "register_order"]);
-  // counter read hit the 1155 marketplace 0x101.
+
   const counterCall = (d.provider.callContract as any).mock.calls.find((a: any[]) => a[0].entrypoint === "get_counter");
   expect(counterCall[0].contractAddress).toBe("0x101");
 });

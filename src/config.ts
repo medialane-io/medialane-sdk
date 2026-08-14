@@ -4,13 +4,12 @@ import type { RetryOptions } from "./utils/retry.js";
 import { FeeConfigSchema, resolveFeeConfig, type ResolvedFeeConfig } from "./fee/index.js";
 
 export const MedialaneConfigSchema = z.object({
-  // Chain-scoped client (spec 2026-06-13 Decision B): one client per chain,
-  // coordinates resolved from the registry. Replaces the removed `network` axis.
+
   chain: z.enum(CHAINS).default(DEFAULT_CHAIN),
   rpcUrl: z.string().url().optional(),
   backendUrl: z.string().url().optional(),
   apiKey: z.string().optional(),
-  // Per-contract overrides remain for tests/forks; default from the registry.
+
   marketplace721Contract: z.string().optional(),
   marketplaceContract: z.string().optional(),
   marketplace1155Contract: z.string().optional(),
@@ -45,9 +44,7 @@ export interface ResolvedConfig {
 export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
   const parsed = MedialaneConfigSchema.parse(raw);
   const coords = getCoordinates(parsed.chain);
-  // The resolved contract fields are the Starknet module surface; on other
-  // chains they stay unset and the per-chain adapters resolve their own
-  // coordinates.
+
   const sn = (parsed.chain === "STARKNET" ? coords : {}) as import("./chains.js").StarknetCoordinates;
 
   const marketplace721Contract =

@@ -6,14 +6,6 @@ import { buildOrderTypedData, buildCancellationTypedData } from "./signing.js";
 import { buildFeeCall } from "../fee/index.js";
 import { getChainId, getProvider, newContract } from "./utils.js";
 
-/**
- * Pure calldata builders for the 721 marketplace — no signing, no execution, no
- * provider *writes*. Salt, counter, and times are injected by the caller so the
- * output is deterministic and testable. Both the legacy `MarketplaceModule`
- * execute-methods and the chain-neutral `StarknetVenue` build calls through here,
- * so their calldata is identical by construction.
- */
-
 export interface OrderLeg {
   item_type: string;
   token: string;
@@ -38,7 +30,7 @@ export interface BuildListingInput {
   offerer: string;
   nftContract: string;
   tokenId: string;
-  /** ERC-20 consideration amount, base units. */
+
   priceWei: string;
   paymentTokenAddress: string;
   royaltyMaxBps: string;
@@ -155,7 +147,6 @@ export function buildCancelCalls(
   return [contractFor(cfg).populate("cancel_order", [cancelRequest])];
 }
 
-/** SNIP-12 typed data for a cancellation (offerer signs `{ order_hash, offerer }`). */
 export function buildCancelTypedData(orderHash: string, offerer: string, cfg: ResolvedConfig): TypedData {
   return stringifyBigInts(buildCancellationTypedData({ order_hash: orderHash, offerer }, getChainId(cfg))) as TypedData;
 }

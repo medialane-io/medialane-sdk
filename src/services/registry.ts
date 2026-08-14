@@ -1,24 +1,8 @@
 import type { ServiceDefinition, ServiceCapability } from "../types/api.js";
 import { getStarknetCoordinates } from "../chains.js";
 
-// The registry re-projects a service's chain coordinates into the generic
-// `onchain` shape (factoryAddress/classHash/startBlock). Single source = the
-// chain registry. Only STARKNET is populated today.
 const SN = getStarknetCoordinates("STARKNET");
 
-/**
- * The Medialane service registry (05-service-model §II, §VI).
- * Canonical long-form IDs (01-core-model §III). SDK-resident in v1;
- * on-chain registry later (08-dao-governance §IV).
- *
- * `onchain` is keyed per chain (spec 2026-06-13 §3.1, Decision A): the SDK
- * registry is the single source of a service's coordinates on each chain.
- * Only STARKNET is populated today; adding a chain adds a key here.
- *
- * Phase 2B.2 of the service-model refactor. `ip-erc721` has no dedicated
- * on-chain constant in src/constants.ts, so its `onchain` is omitted rather
- * than invented (the genesis contract address ships with that service).
- */
 const SERVICES = {
   "mip-erc721": {
     id: "mip-erc721",
@@ -36,10 +20,7 @@ const SERVICES = {
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
     events: [
       { name: "CollectionCreated", emittedBy: "factory" },
-      // Per-instance ERC-721 Transfer emitted by each deployed collection; not
-      // yet declared here because the indexer polls discovered instances on a
-      // slow schedule. Plan 2026-05-24-data-driven-event-registry.md covers
-      // the migration.
+
     ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },
@@ -51,8 +32,7 @@ const SERVICES = {
     provenance: "MEDIALANE",
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
-    // No factory — single shared contract. Events declared when the genesis
-    // contract address is wired into onchain.STARKNET.factoryAddress here.
+
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },
   "mip-erc1155": {
@@ -169,14 +149,7 @@ const SERVICES = {
       },
     },
     uiVariant: "standard",
-    // v3: one contract is both the offer/bid/proposal registry and the
-    // issued license collection (a real, standard ERC-721 minted internally
-    // — no separate receipt contract). `transfer` reflects that a license is
-    // freely transferable at the protocol layer; transferable/expiry intent
-    // is declarative (carried in metadata + LicenseMinted), never
-    // contract-enforced. Supersedes the 2026-07-02 v2 `ip-sponsorship`
-    // (registry-only) + `ip-sponsorship-license` (non-authoritative receipt
-    // via a dedicated ip-erc721 instance) pair — retired as of this redesign.
+
     capabilities: ["sponsor", "transfer"],
     events: [
       { name: "OfferCreated", emittedBy: "factory" },
@@ -200,10 +173,7 @@ const SERVICES = {
       },
     },
     uiVariant: "coin",
-    // `swap` is a UI affordance (05 §III): the marketplace renders an embedded
-    // Ekubo swap (via StarkZapp) for the coin. Settlement is Ekubo — Medialane
-    // operates NO trading venue and custodies nothing. No venue service exists
-    // for coins (unlike NFTs, whose Medialane marketplace contract settles them).
+
     capabilities: ["launch", "swap", "transfer"],
     events: [
       { name: "CreatorCoinCreated", emittedBy: "factory" },
@@ -282,43 +252,26 @@ const SERVICES = {
   },
 } as const satisfies Record<string, ServiceDefinition>;
 
-/**
- * Literal-union of every registered service ID. Use this as the type for
- * `Collection.service` write sites in consumers — typos like "pop_protocol"
- * (underscore instead of hyphen) become compile errors.
- *
- * `getService()` still accepts loose `string` for read-side lookups where the
- * value came from the DB and is trusted to already be valid.
- */
 export type ServiceId = keyof typeof SERVICES;
 
-/** Type guard: narrows a string to ServiceId if it's registered. */
 export function isServiceId(id: string | null | undefined): id is ServiceId {
   return typeof id === "string" && id in SERVICES;
 }
 
-/** Lookup. Returns undefined for unregistered service IDs — callers should
- *  treat that as a data error, since every Collection.service value is
- *  expected to map to a registered ServiceDefinition. */
 export function getService(id: string | null | undefined): ServiceDefinition | undefined {
   return id && id in SERVICES ? (SERVICES as Record<string, ServiceDefinition>)[id] : undefined;
 }
 
-/** All registered services (e.g. the launchpad grid). */
 export function listServices(): ServiceDefinition[] {
   return Object.values(SERVICES);
 }
 
-/** Services that declare a capability (e.g. "where can users mint"). */
 export function getServicesByCapability(cap: ServiceCapability): ServiceDefinition[] {
   return Object.values(SERVICES).filter(
     (s) => (s.capabilities as readonly ServiceCapability[]).includes(cap),
   );
 }
 
-/** Whether a service declares a given capability — e.g. whether an asset
- *  type is transferable. Returns false for an unregistered/missing id rather
- *  than throwing, since callers use this for UI copy, not authority checks. */
 export function hasCapability(
   id: string | null | undefined,
   cap: ServiceCapability,

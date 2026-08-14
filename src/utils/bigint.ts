@@ -1,8 +1,4 @@
-/**
- * Recursively convert all BigInt values to their decimal string representations.
- * Required before JSON serialisation and before passing objects to starknet.js
- * functions that expect string felts.
- */
+
 export function stringifyBigInts(obj: unknown): unknown {
   if (typeof obj === "bigint") {
     return obj.toString();
@@ -21,14 +17,10 @@ export function stringifyBigInts(obj: unknown): unknown {
   return obj;
 }
 
-/**
- * Convert a u256 represented as { low: string; high: string } to a single BigInt.
- */
 export function u256ToBigInt(low: string, high: string): bigint {
   return BigInt(low) + (BigInt(high) << 128n);
 }
 
-/** Split a bigint into low/high felt252 halves for a Cairo u256 (inverse of `u256ToBigInt`). */
 export function encodeU256(n: bigint): [string, string] {
   return [
     (n & 0xffffffffffffffffffffffffffffffffn).toString(),

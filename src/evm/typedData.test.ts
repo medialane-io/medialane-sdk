@@ -2,8 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { hashTypedData } from "viem";
 import { EVM_ORDER_TYPES, evmOrderDigest, type EvmOrderParameters } from "./typedData.js";
 
-// The audited Solidity type strings (Medialane721.sol) — the TS types must
-// encode to exactly these.
 const OFFER_STR = "OfferItem(uint8 itemType,address token,uint256 identifier,uint256 amount)";
 const CONSIDERATION_STR =
   "ConsiderationItem(uint8 itemType,address token,uint256 identifier,uint256 amount,address recipient)";
@@ -56,7 +54,7 @@ describe("EVM order typed data", () => {
   });
   test("digest binds chainId and verifyingContract", () => {
     const eth = evmOrderDigest(1, VENUE, sample);
-    expect(evmOrderDigest(8453, VENUE, sample)).not.toBe(eth); // Base
+    expect(evmOrderDigest(8453, VENUE, sample)).not.toBe(eth);
     expect(
       evmOrderDigest(1, "0x00000000000000000000000000000000000000bb", sample),
     ).not.toBe(eth);

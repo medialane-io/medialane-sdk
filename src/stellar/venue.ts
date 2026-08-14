@@ -16,8 +16,6 @@ import type {
   VenueAdapter,
 } from "../adapters/types.js";
 
-/** Signer shape: the account's public key + a transaction signer (a wallet
- *  kit or a Keypair-backed callback). */
 export interface StellarSigner {
   publicKey: string;
   signTransaction(xdr: string, networkPassphrase: string): Promise<string>;
@@ -26,21 +24,16 @@ export interface StellarSigner {
 export interface StellarVenueOptions {
   server: rpc.Server;
   networkPassphrase: string;
-  /** Defaults to the chain registry's venue contract (populated at deploy). */
+
   contractId?: string;
   baseFee?: string;
 }
 
-/** Canonical order id on Stellar (spec §3.2b): a stable hex digest of
- *  (contract, offerer, salt) — orders are storage-keyed, not hashed on-chain. */
 export function stellarOrderRef(contractId: string, offerer: string, salt: bigint): OrderRef {
   const payload = new TextEncoder().encode(`${contractId}:${offerer}:${salt.toString()}`);
   return "0x" + Buffer.from(sha256(payload)).toString("hex");
 }
 
-/** The Medialane venue adapter for Stellar (Soroban). Both directions settle
- *  in any SEP-41 token including native XLM (the native SAC) — the chain with
- *  no native-bid restriction. */
 export class StellarVenue implements VenueAdapter<StellarSigner> {
   readonly chain: Chain = "STELLAR";
   private readonly server: rpc.Server;
@@ -168,8 +161,6 @@ export class StellarVenue implements VenueAdapter<StellarSigner> {
   }
 }
 
-/** Public "muxed-free" placeholder for view simulations (any funded account
- *  works as a simulation source; callers can override via getAccount). */
 const PLACEHOLDER_SOURCE = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
 function maybeCoords(): StellarCoordinates | undefined {

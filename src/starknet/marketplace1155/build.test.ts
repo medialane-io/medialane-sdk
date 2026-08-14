@@ -109,7 +109,7 @@ describe("1155 builders", () => {
     );
     expect(noFee).toHaveLength(2);
     expect(noFee[1].entrypoint).toBe("fulfill_order");
-    // populate normalizes the felt order hash to decimal; quantity is a plain felt.
+
     expect(noFee[1].calldata).toEqual([String(0xc0de), "10"]);
 
     const feeCfg = resolveConfig({

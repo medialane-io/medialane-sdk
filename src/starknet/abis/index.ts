@@ -1,5 +1,5 @@
-// Re-exports of per-ABI files. Each ABI lives in its own file so diffs
-// stay reviewable when a single contract's ABI changes.
+
+
 export { IPMarketplaceABI } from "./ipMarketplace.js";
 export { POPCollectionABI } from "./popCollection.js";
 export { POPFactoryABI } from "./popFactory.js";

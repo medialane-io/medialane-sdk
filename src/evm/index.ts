@@ -1,5 +1,5 @@
-// @medialane/sdk/evm — the EVM chain adapter (Ethereum + Base). An equal
-// adapter beside /starknet, /solana, /stellar. Optional peer: viem.
+
+
 export {
   EVM_ORDER_TYPES,
   evmOrderDomain,

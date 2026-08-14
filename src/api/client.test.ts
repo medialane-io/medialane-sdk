@@ -6,7 +6,6 @@ afterEach(() => { globalThis.fetch = realFetch; });
 
 interface Captured { url: string; init: RequestInit }
 
-/** Mock fetch that records each call and returns a scripted status/body. */
 function scriptFetch(script: (url: string) => { status: number; body?: unknown }) {
   const captured: Captured[] = [];
   globalThis.fetch = mock(async (input: unknown, init?: RequestInit) => {
@@ -106,5 +105,5 @@ test("5xx reads are retried (unified retry parity for profile reads)", async () 
   const c = new ApiClient("https://api.test", "ml_live_x", { baseDelayMs: 1, maxDelayMs: 2 });
   const out = await c.getCollectionProfile("0x1");
   expect(out).toEqual({ ok: true } as never);
-  expect(n).toBe(3); // two 503s retried, third succeeds
+  expect(n).toBe(3);
 });

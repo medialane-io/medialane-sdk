@@ -16,8 +16,6 @@ export type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 
 export type CollectionTokensSort = "recent" | "oldest" | "name" | "price";
 
-/** Bounded capability set (05-service-model §III). Expand the union when a
- *  service needs behavior outside it — never make it free-form. */
 export type ServiceCapability =
   | "list" | "buy" | "make_offer" | "cancel"
   | "transfer" | "burn"
@@ -27,9 +25,6 @@ export type ServiceCapability =
   | "launch" | "swap"
   | "sponsor";
 
-/** A service that bakes enforcement into its own contract declares it here
- *  (04-licensing-model §V, 05-service-model §IV). Absence/all-falsey =
- *  soft enforcement (the 00-principles §9 default). */
 export interface EnforcementDeclaration {
   royalty?: "erc2981" | "service-split" | "none";
   escrow?: boolean;
@@ -37,42 +32,17 @@ export interface EnforcementDeclaration {
   revocable?: boolean;
 }
 
-/** An on-chain event the service emits. The indexer consumes this list to
- *  decide what to poll and how to parse — the year-2 "data-driven event
- *  parser registry" foundation (02-protocol-app-split §V).
- *
- *  The Cairo selector is derivable from `name` via
- *  `starknet.hash.getSelectorFromName(name)` — not stored to avoid
- *  duplication and keep the SDK runtime-free of pre-computed hashes.
- */
 export interface ServiceEventDeclaration {
-  /** Cairo event struct name (e.g. "OrderCreated", "CollectionCreated"). */
+
   name: string;
-  /**
-   * Where this event is emitted:
-   *  - "factory":  at the service's `onchain.factoryAddress` (fixed address).
-   *                Examples: marketplace OrderCreated, factory CollectionCreated.
-   *  - "instance": at the address of each deployed collection contract
-   *                (variable; the indexer iterates discovered instances).
-   *                Examples: ERC-721 Transfer, POP AllowlistUpdated.
-   */
+
   emittedBy: "factory" | "instance";
-  /**
-   * Polling cadence the indexer should use:
-   *  - "fast" (default): every indexer tick (~6s). Right for low-volume
-   *                      protocol events like order/factory events.
-   *  - "slow":           a separate slower loop (~2min). Right for
-   *                      high-volume per-instance events like Transfer
-   *                      and AllowlistUpdated — polling them every tick
-   *                      against every known instance is RPC-expensive.
-   */
+
   poll?: "fast" | "slow";
 }
 
-/** Declarative description of a service (05-service-model §II).
- *  SDK-resident in v1; on-chain registry in year 2. */
 export interface ServiceDefinition {
-  /** Stable kebab-case id. NO version number (05 §II). */
+
   id: string;
   displayName: string;
   description: string;
@@ -83,18 +53,14 @@ export interface ServiceDefinition {
     classHash?: string;
     startBlock?: number;
   }>>;
-  /** Drives the dapp asset/collection page variant. */
+
   uiVariant: string;
   capabilities: ServiceCapability[];
-  /** Events the indexer should poll + parse for this service.
-   *  Optional during the year-1 transition — backend hand-coded pollers
-   *  (medialane-backend/src/mirror/poller.ts) take precedence today.
-   *  Populated here so consumers and the future data-driven indexer can
-   *  read what events a service emits without code-spelunking. */
+
   events?: ServiceEventDeclaration[];
   metadataSchema?: {
     requiredTraits?: string[];
-    /** Canonical platform default is "CC BY-SA" (04-licensing-model §III). */
+
     licenseDefault?: string;
     enforcement?: EnforcementDeclaration;
   };
@@ -106,18 +72,10 @@ export interface ApiCollectionsQuery {
   isKnown?: boolean;
   sort?: CollectionSort;
   owner?: string;
-  /** Filter by service id. */
+
   service?: string;
 }
 
-/**
- * Order lifecycle states. **Four canonical values** per `01-core-model §V`.
- *
- * The legacy `"COUNTER_OFFERED"` value was removed in 0.23.0 (audit P0-1
- * Phase D). Counter-offers are linked orders via `parentOrderHash`, not a
- * third lifecycle state on the parent bid. Use `ApiOrder.hasActiveCounterOffer`
- * (added in 0.22.0) for the "this bid has been countered" affordance.
- */
 export type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
 export type SortOrder = "price_asc" | "price_desc" | "recent";
 export type ActivityType = "mint" | "transfer" | "sale" | "listing" | "offer" | "cancelled";
@@ -127,8 +85,6 @@ export type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANC
 export type WebhookStatus = "ACTIVE" | "DISABLED";
 export type ApiKeyStatus = "ACTIVE" | "REVOKED";
 export type TenantPlan = "FREE" | "PREMIUM";
-
-// ─── Shared ───────────────────────────────────────────────────────────────────
 
 export interface ApiMeta {
   page: number;
@@ -141,10 +97,6 @@ export interface ApiResponse<T> {
   meta?: ApiMeta;
 }
 
-// ─── Orders ───────────────────────────────────────────────────────────────────
-
-/** Cross-chain read filter — a concrete chain, or "all" for aggregation
- *  (platform-federation spec §2.3). Omitted = the backend default (STARKNET). */
 export type ChainFilter = import("../chains.js").Chain | "all";
 
 export interface ApiOrdersQuery {
@@ -208,56 +160,32 @@ export interface ApiOrder {
   price: ApiOrderPrice;
   txHash: ApiOrderTxHash;
   createdBlockNumber: string;
-  /** ERC-1155 only: units still available after the last partial fill. Null for ERC-721 or unfilled orders. */
+
   remainingAmount: string | null;
   createdAt: string;
   updatedAt: string;
-  /** Embedded token metadata (name/image/description). Null when not yet indexed. */
+
   token: ApiOrderTokenMeta | null;
-  /** Set when this is a counter-offer listing — points to the original buyer bid.
-   *  Now always emitted by the backend (was conditional); kept optional in the
-   *  type for back-compat with older response shapes. */
+
   parentOrderHash?: string | null;
-  /** Optional seller message accompanying a counter-offer. */
+
   counterOfferMessage?: string | null;
-  /** True when this order is a bid (ERC-20 offer) AND at least one ACTIVE counter
-   *  exists with `parentOrderHash = this.orderHash`. Set by endpoints that compute
-   *  it (currently `GET /v1/orders/user/:address` and `GET /v1/orders/:orderHash`);
-   *  undefined on endpoints that don't.
-   *
-   *  Use this instead of `status === "COUNTER_OFFERED"` for "this bid has been
-   *  countered" affordances. The status pattern is being phased out per
-   *  01-core-model §V — counter-offers are linked orders, not a lifecycle state. */
+
   hasActiveCounterOffer?: boolean;
 }
 
-// ─── IP / IPFS Metadata types ──────────────────────────────────────────────────
-
-/**
- * A single OpenSea-compatible ERC-721 attribute.
- * Medialane embeds licensing, provenance, and IP metadata as attributes.
- */
 export interface IpAttribute {
   trait_type: string;
   value: string;
 }
 
-/**
- * Full on-chain + IPFS metadata for a Medialane IP NFT.
- * Conforms to the OpenSea ERC-721 metadata standard and embeds
- * Berne Convention-compatible licensing data in `attributes`.
- *
- * Common licensing attributes (all optional — absent on pre-v2 tokens):
- *   License · Commercial Use · Derivatives · Attribution · Territory
- *   AI Policy · Royalty · Standard ("Berne Convention") · Registration
- */
 export interface IpNftMetadata {
   name: string;
   description?: string;
   image?: string | null;
   external_url?: string;
   attributes?: IpAttribute[];
-  /** Populated by the indexer for fast access — not stored in IPFS */
+
   ipType?: string | null;
   licenseType?: string | null;
   commercialUse?: string | null;
@@ -269,18 +197,15 @@ export interface IpNftMetadata {
   registration?: string | null;
 }
 
-// ─── Tokens ───────────────────────────────────────────────────────────────────
-
-/** Indexed token metadata as returned by the Medialane API. */
 export interface ApiTokenMetadata {
   name: string | null;
   description: string | null;
   image: string | null;
-  /** data: or ipfs:// URI to a fully self-contained animated/interactive renderer (OpenSea-baseline `animation_url`). Null until indexed. */
+
   animationUrl: string | null;
-  /** Parsed OpenSea-standard attributes array. Null when metadata hasn't been fetched. */
+
   attributes: IpAttribute[] | null;
-  /** Short-circuit fields extracted from attributes by the indexer */
+
   ipType: string | null;
   licenseType: string | null;
   commercialUse: string | null;
@@ -293,10 +218,9 @@ export interface ApiTokenMetadata {
   author: string | null;
 }
 
-/** Per-holder balance entry. Present for ERC-1155 (multi-holder); single entry for ERC-721. */
 export interface ApiTokenBalance {
   owner: string;
-  /** Quantity held. Always "1" for ERC-721. */
+
   amount: string;
 }
 
@@ -305,21 +229,19 @@ export interface ApiToken {
   chain: string;
   contractAddress: string;
   tokenId: string;
-  /** @deprecated Use `balances` for ownership checks — always null after ERC-1155 migration. */
+
   owner: string | null;
   tokenUri: string | null;
   metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
-  /** Token standard derived from the parent collection. Use this to determine ERC-721 vs ERC-1155 behavior. */
+
   standard: "ERC721" | "ERC1155" | "UNKNOWN";
   metadata: ApiTokenMetadata;
-  /** Current holders with amounts. Only present on single-token fetches; null on list responses. */
+
   balances: ApiTokenBalance[] | null;
   activeOrders: ApiOrder[];
   createdAt: string;
   updatedAt: string;
 }
-
-// ─── Collections ──────────────────────────────────────────────────────────────
 
 export interface ApiCollection {
   id: string;
@@ -333,18 +255,14 @@ export interface ApiCollection {
   owner: string | null;
   startBlock: string;
   metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
-  /** Token standard detected via ERC-165. Collection is NFT-only since the
-   *  2026-06-14 coin split — fungible coins are `ApiCoin`, served by getCoins(). */
+
   standard: "ERC721" | "ERC1155";
   isKnown: boolean;
-  /** Hidden by ops/admin (content moderation). When true, list endpoints
-   *  already filter the row out; single-collection fetches still return
-   *  it so the UI can render a "hidden" banner instead of a 404. */
+
   isHidden: boolean;
-  /** Promoted on homepage / browse surfaces. */
+
   isFeatured: boolean;
-  /** Stable Medialane service ID, or null for external collections.
-   *  Resolve via getService() (05-service-model). Primary field. */
+
   service: string | null;
   claimedBy: string | null;
   profile?: ApiCollectionProfile | null;
@@ -356,20 +274,17 @@ export interface ApiCollection {
   updatedAt: string;
 }
 
-/** A fungible coin (ERC-20 today; SPL/etc. later). Distinct from ApiCollection:
- *  a coin has a supply + decimals + a market price (read live from Ekubo), no
- *  tokens, no orders. Served by getCoins()/getCoin() (spec 2026-06-14). */
 export interface ApiCoin {
   id: string;
   chain: string;
   contractAddress: string;
   standard: "ERC20";
-  /** "creator-coin" | "external-erc20" */
+
   service: string;
   name: string | null;
   symbol: string | null;
   decimals: number;
-  /** Fungible supply as a decimal string — NOT an item count. */
+
   totalSupply: string | null;
   description: string | null;
   image: string | null;
@@ -384,11 +299,9 @@ export interface ApiCoinsQuery {
   chain?: ChainFilter;
   page?: number;
   limit?: number;
-  /** Filter by coin service id ("creator-coin" | "external-erc20"). */
+
   service?: string;
 }
-
-// ─── Activities ───────────────────────────────────────────────────────────────
 
 export interface ApiActivityPrice {
   raw: string | null;
@@ -399,53 +312,49 @@ export interface ApiActivityPrice {
 export interface ApiActivity {
   type: ActivityType;
   chain: import("../chains.js").Chain;
-  // Transfer fields
+
   contractAddress?: string;
   tokenId?: string;
   from?: string;
   to?: string;
   blockNumber?: string;
-  /** ERC-1155 quantity (transfer/mint rows). "1" for ERC-721. */
+
   amount?: string;
-  // Order fields
+
   orderHash?: string;
   nftContract?: string;
   nftTokenId?: string;
   offerer?: string;
   fulfiller?: string | null;
   price?: ApiActivityPrice;
-  /** Token standard — present on order rows. */
+
   tokenStandard?: "ERC721" | "ERC1155";
   txHash: string | null;
   timestamp: string;
-  /** Batch-enriched token metadata — avoids per-row fetches. */
+
   token?: { name: string | null; image: string | null; animationUrl: string | null } | null;
 }
 
 export interface ApiActivitiesQuery {
   chain?: ChainFilter;
   type?: ActivityType;
-  /** Scope the feed to one collection's contract address instead of the global/per-address feed. */
+
   contract?: string;
   page?: number;
   limit?: number;
 }
 
-// ─── Comments ─────────────────────────────────────────────────────────────────
-
 export interface ApiComment {
   id: string;
-  chain: string;           // "starknet"
-  contractAddress: string; // normalized 0x-padded Starknet address
+  chain: string;
+  contractAddress: string;
   tokenId: string;
-  author: string;          // normalized 0x-padded Starknet address
-  content: string;         // sanitized plain text
+  author: string;
+  content: string;
   txHash: string | null;
-  blockNumber: string;     // BigInt serialized as string
-  postedAt: string;        // ISO 8601 derived from blockTimestamp — use for display
+  blockNumber: string;
+  postedAt: string;
 }
-
-// ─── Search ───────────────────────────────────────────────────────────────────
 
 export interface ApiSearchTokenResult {
   contractAddress: string;
@@ -479,8 +388,6 @@ export interface ApiSearchResult {
   creators: ApiSearchCreatorResult[];
 }
 
-// ─── Intents ──────────────────────────────────────────────────────────────────
-
 export interface ApiIntent {
   id: string;
   chain: string;
@@ -492,34 +399,21 @@ export interface ApiIntent {
   signature: string[];
   txHash: string | null;
   orderHash: string | null;
-  /** Set on COUNTER_OFFER intents — the original bid order hash being countered. */
+
   parentOrderHash?: string | null;
-  /** Optional seller message on counter-offer intents. */
+
   counterOfferMessage?: string | null;
   expiresAt: string;
   createdAt: string;
   updatedAt: string;
 }
 
-/** A single Starknet call as returned in intent calldata. */
 export interface IntentCall {
   contractAddress: string;
   entrypoint: string;
   calldata: string[];
 }
 
-/**
- * Response from any `createXIntent` call. Discriminated on `requiresSignature`:
- *   • true  — SNIP-12 intent (listing / offer / cancel / counter-offer). Sign
- *             `typedData`, then call `submitIntentSignature(id, sig)` to obtain
- *             the executable calls.
- *   • false — prebuilt intent (fulfill / mint / create-collection). `calls` are
- *             ready to execute directly; there is no signature step.
- *
- * The discriminant makes the wrong access a compile error: `typedData` does not
- * exist on the `false` variant, nor `calls` on the `true` variant. Consumers
- * MUST narrow on `requiresSignature` before reading either.
- */
 export type ApiIntentCreated =
   | { id: string; expiresAt: string; requiresSignature: true; typedData: unknown }
   | { id: string; expiresAt: string; requiresSignature: false; calls: IntentCall[] };
@@ -532,7 +426,7 @@ export interface CreateListingIntentParams {
   price: string;
   endTime: number;
   salt?: string;
-  /** Number of units to list — required for ERC-1155, omit for ERC-721. */
+
   amount?: string;
 }
 
@@ -544,57 +438,51 @@ export interface MakeOfferIntentParams {
   price: string;
   endTime: number;
   salt?: string;
-  /** Caller hint — "ERC1155" creates the bid on the ERC-1155 marketplace. */
+
   tokenStandard?: string;
-  /** ERC-1155 only: number of editions requested. Defaults to 1. */
+
   quantity?: string;
 }
 
 export interface FulfillOrderIntentParams {
   fulfiller: string;
   orderHash: string;
-  /** Caller hint — "ERC1155" forces 1155 routing even if the order isn't in the DB yet */
+
   tokenStandard?: string;
-  /** ERC-1155 only: units to purchase (1 ≤ quantity ≤ remaining_amount). Defaults to 1. */
+
   quantity?: string;
 }
 
 export interface CancelOrderIntentParams {
   offerer: string;
   orderHash: string;
-  /** Caller hint — "ERC1155" forces 1155 routing even if the order isn't in the DB yet */
+
   tokenStandard?: string;
 }
 
-/** Per-creator-factory services the intents API can create-collection/mint through. */
 export type FactoryFamilyServiceId = "mip-erc1155" | "ip-tickets" | "ip-club";
-/** The subset of FactoryFamilyServiceId that supports CREATE_TIER (ip-tickets, ip-club). */
+
 export type TierServiceId = "ip-tickets" | "ip-club";
-/** Services CREATE_COLLECTION can deploy — the factory-family ones plus pop-protocol/drop-collection,
- *  which take extra service-specific fields (see CreateCollectionIntentParams) since their factories
- *  don't share the uniform `deploy_collection(name, symbol, baseUri)` entrypoint. */
+
 export type CollectionServiceId = FactoryFamilyServiceId | "pop-protocol" | "drop-collection";
 
 export interface CreateMintIntentParams {
-  /** Collection owner wallet address — must be the collection owner on-chain */
+
   owner: string;
   recipient: string;
-  /** Registry mint (mip-erc721/ip-erc721, the default): required together with tokenUri. */
+
   collectionId?: string;
-  /** Registry mint: token metadata URI. mip-erc1155: required together with `value`. */
+
   tokenUri?: string;
-  /**
-   * EIP-2981 secondary-sale royalty in basis points (0–10_000). Registry mint only —
-   * has no effect (and the backend rejects it) on mip-erc1155/ip-tickets/ip-club mints.
-   */
+
   royaltyBps?: number;
-  /** ip-tickets/ip-club mint: the existing tier's token id (create it first via createTierIntent). */
+
   tokenId?: string;
-  /** ip-tickets/ip-club mint: copies to mint into `tokenId`. */
+
   amount?: string;
-  /** mip-erc1155 mint: edition count for the newly-minted token. */
+
   value?: string;
-  /** Required for every factory-family mint (mip-erc1155/ip-tickets/ip-club); omit for registry mint. */
+
   collectionContract?: string;
 }
 
@@ -602,26 +490,23 @@ export interface CreateCollectionIntentParams {
   owner: string;
   name: string;
   symbol: string;
-  /** Optional description stored server-side and surfaced on the collection page. */
+
   description?: string;
-  /** Optional IPFS image URI (ipfs://...) for the collection cover image. */
+
   image?: string;
-  /** Base URI for token metadata. Defaults to empty string if not provided. */
+
   baseUri?: string;
-  /** Optional: override the default collection contract address (registry path only). */
+
   collectionContract?: string;
-  /**
-   * Omit for the registry path (mip-erc721/ip-erc721). Pass a collection-service id to
-   * deploy a new per-creator contract via that service's factory instead.
-   */
+
   service?: CollectionServiceId;
-  /** pop-protocol only: unix seconds after which `claim()` stops working. */
+
   claimEndTimestamp?: number;
-  /** pop-protocol only: the POPFactory's EventType variant name (e.g. "Conference"). */
+
   eventType?: PopEventType;
-  /** drop-collection only: total mintable supply across the whole drop. */
+
   maxSupply?: string;
-  /** drop-collection only: the initial claim window/price/per-wallet cap. */
+
   conditions?: {
     startTime: number;
     endTime: number;
@@ -633,11 +518,7 @@ export interface CreateCollectionIntentParams {
 
 export interface CreateCheckoutIntentParams {
   fulfiller: string;
-  /**
-   * Order hashes to check out (1–20). The backend builds one FULFILL_ORDER
-   * intent per hash, not one atomic multi-item order — the client concatenates
-   * each result's `calls` into a single multicall.
-   */
+
   orderHashes: string[];
 }
 
@@ -647,13 +528,13 @@ export interface ApiCheckoutIntentResult {
   requiresSignature?: false;
   calls?: unknown;
   expiresAt?: string;
-  /** Set instead of the above when this specific order couldn't be built (e.g. not yet indexed). */
+
   error?: string;
 }
 
 export interface CreateTierIntentParams {
   owner: string;
-  /** The ip-tickets/ip-club collection contract to define the tier on. */
+
   collection: string;
   service: TierServiceId;
   maxSupply: string;
@@ -664,67 +545,60 @@ export interface CreateTierIntentParams {
 }
 
 export interface CreateCoinIntentParams {
-  /** Owner of the new coin — the only address allowed to launch it. */
+
   owner: string;
   name: string;
   symbol: string;
-  /** Full fixed supply (raw, 18 decimals). Minted to the Factory until launch. */
+
   initialSupply: string;
-  /** Deterministic deploy salt. Omitted = timestamp-derived. */
+
   salt?: string;
 }
 
 export interface LaunchCoinIntentParams {
-  /** Wallet that must own the coin — the contract itself is the authority; an
-   *  unauthorized caller simply reverts. */
+
   owner: string;
-  /** The deployed CreatorCoin contract (from a prior createCoinIntent deploy). */
+
   creatorCoin: string;
-  /** Quote token (e.g. STRK). Must NOT itself be a Creator Coin. */
+
   quoteToken: string;
-  /** Team-allocation recipients (≤10% of supply, summed). */
+
   initialHolders: string[];
   initialHoldersAmounts: string[];
-  /** Anti-snipe window in seconds. Omitted = none. */
+
   transferRestrictionDelay?: number;
-  /** Max % of supply buyable per tx during the window, in bps. Omitted = the SDK default. */
+
   maxPercentageBuyLaunch?: number;
-  /** Quote (raw units) to transfer to the Factory in the same multicall, to fund the team-allocation buyback. */
+
   quoteFundAmount?: string;
 }
 
-// ── IP-Sponsorship intents ──────────────────────────────────────────────────
-// None of these require a SNIP-12 signature — the contract has no order-signing
-// scheme, msg.sender is the account executing the call. Every one of these
-// returns { requiresSignature: false, calls } from ApiIntentCreated, same shape
-// as CreateMintIntentParams.
-
 export interface CreateSponsorshipOfferIntentParams {
-  /** The offer author — must currently own (nftContract, tokenId) on-chain. */
+
   author: string;
   nftContract: string;
   tokenId: string;
   minAmount: string;
-  /** Seconds, applied from acceptance (not from offer creation). */
+
   duration: number;
   paymentToken: string;
   licenseTermsUri: string;
   transferable: boolean;
-  /** Basis points, 0–10000. EIP-2981 royalty to the author on license resale. */
+
   royaltyBps: number;
-  /** Restricts acceptance to one sponsor address; omit for open bidding. */
+
   specificSponsor?: string;
 }
 
 export interface SetSponsorshipOfferOpenIntentParams {
-  /** Must be the offer's author. */
+
   author: string;
   offerId: string;
   open: boolean;
 }
 
 export interface PlaceSponsorshipBidIntentParams {
-  /** The sponsor placing the bid — becomes the ERC-20 approve + place_bid caller. */
+
   sponsor: string;
   offerId: string;
   amount: string;
@@ -737,22 +611,22 @@ export interface RetractSponsorshipBidIntentParams {
 }
 
 export interface AcceptSponsorshipBidIntentParams {
-  /** Must be the offer's author — re-verified on-chain. */
+
   author: string;
   offerId: string;
-  /** The bidder whose bid is being accepted. */
+
   sponsor: string;
 }
 
 export interface CreateSponsorshipProposalIntentParams {
-  /** The sponsor proposing terms — pays if accepted. */
+
   proposer: string;
   nftContract: string;
   tokenId: string;
-  /** Fixed take-it-or-leave-it amount (not a bid floor). */
+
   amount: string;
   duration: number;
-  /** Unix seconds; the deadline for the asset owner to accept. Omit/0 = no deadline. */
+
   validUntil?: number;
   paymentToken: string;
   licenseTermsUri: string;
@@ -766,7 +640,7 @@ export interface WithdrawSponsorshipProposalIntentParams {
 }
 
 export interface AcceptSponsorshipProposalIntentParams {
-  /** Must currently own the asset — re-verified on-chain (binds to the asset, not a person). */
+
   owner: string;
   proposalId: string;
 }
@@ -777,28 +651,26 @@ export interface RejectSponsorshipProposalIntentParams {
 }
 
 export interface CreateCounterOfferIntentParams {
-  /** Wallet address of the NFT owner making the counter-offer. */
+
   sellerAddress: string;
-  /** Order hash of the original buyer bid being countered. */
+
   originalOrderHash: string;
-  /** Counter price as a raw wei integer string (not human-readable). */
+
   priceRaw: string;
-  /** Duration in seconds the counter-offer will be valid (3600–2592000). */
+
   durationSeconds: number;
-  /** Optional message from the seller to the buyer. Max 500 chars. */
+
   message?: string;
 }
 
 export interface ApiCounterOffersQuery {
-  /** Original bid order hash — returns the counter-offer for this specific bid. */
+
   originalOrderHash?: string;
-  /** Seller address — returns all counter-offers sent by this seller. */
+
   sellerAddress?: string;
   page?: number;
   limit?: number;
 }
-
-// ─── Remix Licensing ──────────────────────────────────────────────────────────
 
 export const OPEN_LICENSES = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC"] as const;
 export type OpenLicense = (typeof OPEN_LICENSES)[number];
@@ -827,7 +699,7 @@ export interface ApiRemixOffer {
   creatorAddress: string;
   requesterAddress: string | null;
   message?: string | null;
-  /** Visible only to creator and requester — includes formatted price */
+
   price?: ApiRemixOfferPrice;
   licenseType: string;
   commercial: boolean;
@@ -842,7 +714,6 @@ export interface ApiRemixOffer {
   updatedAt: string;
 }
 
-/** Public remix record — price/currency omitted for non-participants */
 export interface ApiPublicRemix {
   id: string;
   remixContract: string | null;
@@ -863,7 +734,7 @@ export interface CreateRemixOfferParams {
   proposedPrice?: string;
   proposedCurrency?: string;
   message?: string;
-  /** Offer validity in days (server default applies if omitted) */
+
   expiresInDays?: number;
 }
 
@@ -878,7 +749,7 @@ export interface ConfirmSelfRemixParams {
   originalTokenId: string;
   remixContract: string;
   remixTokenId: string;
-  /** On-chain transaction hash of the mint tx */
+
   txHash?: string;
   licenseType: string;
   commercial: boolean;
@@ -894,13 +765,11 @@ export interface ConfirmRemixOfferParams {
 }
 
 export interface ApiRemixOffersQuery {
-  /** "creator" = offers where you are the original creator; "requester" = offers you made */
+
   role: "creator" | "requester";
   page?: number;
   limit?: number;
 }
-
-// ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export interface ApiMetadataSignedUrl {
   url: string;
@@ -910,8 +779,6 @@ export interface ApiMetadataUpload {
   cid: string;
   url: string;
 }
-
-// ─── Portal (tenant self-service) ─────────────────────────────────────────────
 
 export interface ApiPortalMe {
   id: string;
@@ -934,7 +801,7 @@ export interface ApiPortalKeyCreated {
   id: string;
   prefix: string;
   label: string | null;
-  /** Plaintext key — shown ONCE at creation */
+
   plaintext: string;
 }
 
@@ -952,7 +819,7 @@ export interface ApiWebhookEndpoint {
 }
 
 export interface ApiWebhookCreated extends ApiWebhookEndpoint {
-  /** Signing secret — shown ONCE at creation, not stored in plaintext */
+
   secret: string;
 }
 
@@ -961,8 +828,6 @@ export interface CreateWebhookParams {
   events: WebhookEventType[];
   label?: string;
 }
-
-// ─── Collection & Creator Profiles ────────────────────────────────────────────
 
 export interface ApiCollectionProfile {
   contractAddress: string;
@@ -1003,11 +868,7 @@ export interface ApiCreatorProfile {
   displayName: string | null;
   bio: string | null;
   avatarImage: string | null;
-  /** Computed fallback used by the creator-list / creator-page endpoints
-   *  ONLY when `avatarImage` is null: image of any collection owned by
-   *  this creator. Undefined on profile-detail endpoints where this
-   *  lookup isn't performed. UI may use this to populate hero banners
-   *  without an extra fetch. */
+
   collectionImage?: string | null;
   websiteUrl: string | null;
   twitterUrl: string | null;
@@ -1023,22 +884,14 @@ export interface ApiCreatorListResult {
   limit: number;
 }
 
-// ─── User Wallet ───────────────────────────────────────────────────────────────
-
 export type ApiAppSource =
-  | "MEDIALANE_STARKNET" // the Starknet dapp (renamed from MEDIALANE_DAPP — the platform is multichain)
+  | "MEDIALANE_STARKNET"
   | "MEDIALANE_IO"
   | "MEDIALANE_PORTAL"
   | "MEDIALANE_SDK"
-  // Deprecated alias for MEDIALANE_STARKNET. The backend still accepts it (normalizes
-  // to MEDIALANE_STARKNET) so existing apps keep working; migrate to MEDIALANE_STARKNET
-  // and drop this in a later major.
+
   | "MEDIALANE_DAPP";
 
-// 07-identity §I: the Wallet identifier is (chain, address). Mirrors
-// the backend Chain enum. v1 callers only ever pass STARKNET; the rest
-// are present so the type doesn't need a breaking change when SIWE/SIWB
-// authentication lands and other chains become callable.
 export type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BASE" | "BITCOIN";
 
 export interface ApiUserWallet {
@@ -1046,8 +899,6 @@ export interface ApiUserWallet {
   email?: string | null;
   emailVerified?: boolean;
 }
-
-// ─── Collection Claims ─────────────────────────────────────────────────────────
 
 export interface ApiCollectionClaim {
   id: string;
@@ -1068,24 +919,18 @@ export interface ApiAdminCollectionClaim extends ApiCollectionClaim {
   updatedAt: string;
 }
 
-// ─── Business Provisioning ─────────────────────────────────────────────────────
-
 export interface ApiBusinessProvisioning {
   id: string;
   accountId: string;
   chain: string;
   walletAddress: string;
-  /** Free-form (mirrors Identity.scheme) — "email" is the only scheme the backend
-   *  delivers a claim link for on its own; any other scheme still registers, the
-   *  business gets `claimUrl` back on the register response and delivers it itself. */
+
   recipientScheme: string;
   recipientValue: string;
   interimOwnerPubkey: string;
   newOwnerPubkey: string | null;
   status: "DEPLOYED" | "HANDOFF" | "TRANSFERRED";
 }
-
-// ─── Wallet Activity ────────────────────────────────────────────────────────
 
 export interface ApiWalletActivity {
   id: string;
@@ -1103,8 +948,6 @@ export interface ApiWalletActivity {
   tokenOutAddress: string | null;
   amountOut: string | null;
 }
-
-// ─── POP Protocol ──────────────────────────────────────────────────────────────
 
 export interface PopClaimStatus {
   isEligible: boolean;
@@ -1125,14 +968,10 @@ export type PopEventType =
   | "Course"
   | "Other";
 
-// ─── Collection Drop ───────────────────────────────────────────────────────────
-
 export interface DropMintStatus {
   mintedByWallet: number;
   totalMinted: number;
 }
-
-// ─── Rewards (v0.49.0) ─────────────────────────────────────────────────────────
 
 export interface ApiRewardsBadge {
   key: string;

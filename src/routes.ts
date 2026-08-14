@@ -1,21 +1,16 @@
 import type { Chain } from "./chains.js";
 
-/** Chains that resolve in a URL today. Extend when a second chain is displayable. */
 export const SUPPORTED_URL_CHAINS = ["STARKNET"] as const satisfies readonly Chain[];
 
-/** Chain enum → lowercase URL slug. The ONLY place the slug literal is produced. */
 export function chainSlug(chain: Chain): string {
   return chain.toLowerCase();
 }
 
-/** URL slug → Chain enum, or null for an unknown/unsupported slug (caller 404s). */
 export function chainFromSlug(slug: string): Chain | null {
   const upper = slug.toUpperCase() as Chain;
   return (SUPPORTED_URL_CHAINS as readonly Chain[]).includes(upper) ? upper : null;
 }
 
-/** Nullish contract/token/address values coerce to "" — an absent id was never
- *  a valid link anyway, and this keeps callers free of artificial null guards. */
 type Idish = string | number | null | undefined;
 const seg = (v: Idish): string => (v == null ? "" : String(v));
 

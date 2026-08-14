@@ -26,10 +26,6 @@ export interface Order {
   signature: string[];
 }
 
-// Fulfillment type removed — fulfill is unsigned (caller is the fulfiller).
-
-// SDK-level param types for the public API
-
 export interface TxResult {
   txHash: string;
 }
@@ -42,11 +38,9 @@ export interface OrderDetails {
   start_time: bigint;
   end_time: bigint;
   order_status: string;
-  /** The offerer's bulk-cancel epoch at registration; re-checked at fulfilment. */
+
   counter: string;
-  /** ERC-1155 only — units still available. */
+
   remaining_amount?: string;
 }
-
-// ─── ERC-1155 Marketplace (Medialane1155) ─────────────────────────────────────
 

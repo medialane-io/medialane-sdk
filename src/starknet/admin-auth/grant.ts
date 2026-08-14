@@ -9,7 +9,6 @@ export interface AdminSessionTypedDataInput {
   chainId?: string;
 }
 
-/** The SNIP-12 typed data the wallet signs — rebuilt identically on the backend. */
 export function buildAdminSessionTypedData(p: AdminSessionTypedDataInput) {
   return {
     types: {
@@ -37,23 +36,18 @@ export function buildAdminSessionTypedData(p: AdminSessionTypedDataInput) {
   } as const;
 }
 
-/** felt commitment to a full session public key (fits in the signed message). */
 export function sessionKeyHashOf(sessionPublicKey: string): string {
   return num.toHex(hash.starknetKeccak(sessionPublicKey));
 }
 
 export interface CreateGrantOpts {
   wallet: string;
-  chain?: string;       // default "STARKNET"
-  chainId?: string;     // default "SN_MAIN"
-  ttlSeconds?: number;  // default 7200 (2h)
-  now?: () => number;   // injectable for tests
+  chain?: string;
+  chainId?: string;
+  ttlSeconds?: number;
+  now?: () => number;
 }
 
-/**
- * Generate an ephemeral session keypair and have `signTypedData` (the connected
- * wallet's signMessage) sign the grant. The private key never leaves the caller.
- */
 export async function createAdminSessionGrant(
   signTypedData: (data: ReturnType<typeof buildAdminSessionTypedData>) => Promise<string[]>,
   opts: CreateGrantOpts,

@@ -29,7 +29,7 @@ export interface SponsorshipProposalRecord {
   tokenId: bigint;
   amount: bigint;
   duration: number;
-  /** Unix seconds; 0 = no deadline. */
+
   validUntil: number;
   paymentToken: string;
   licenseTermsUri: string;
@@ -38,17 +38,6 @@ export interface SponsorshipProposalRecord {
   royaltyBps: bigint;
 }
 
-/**
- * IP Sponsorship v3 — one contract is both the offer/bid/proposal registry
- * AND the issued license collection (a standard ERC-721; embeds
- * ERC721Component directly, no separate receipt contract, no `set_minter`
- * bootstrap). `transferable`/expiry are declarative terms only — never
- * contract-enforced against a transfer — carried in `license_terms_uri`
- * metadata and the `LicenseMinted` event; the indexer, not this contract,
- * derives validity. A license moves through the standard ERC-721
- * `transfer_from`/`safe_transfer_from` on this same contract address, so
- * there is no bespoke transfer wrapper here.
- */
 export class SponsorshipService {
   private readonly sponsorshipAddress?: string;
   private readonly config: ResolvedConfig;
@@ -75,9 +64,6 @@ export class SponsorshipService {
     return newContract(IPSponsorshipABI as any, normalizeAddress("STARKNET", resolved), provider);
   }
 
-  // ── Offers (owner-initiated) ───────────────────────────────────────────────
-
-  /** The offer author must currently own (nftContract, tokenId) — enforced on-chain at create and accept. */
   async createOffer(
     account: AccountInterface,
     params: CreateSponsorshipOfferParams & { sponsorshipAddress?: string }
@@ -101,7 +87,6 @@ export class SponsorshipService {
     return { txHash: res.transaction_hash };
   }
 
-  /** Reversible — gates new bids/acceptance only. */
   async setOfferOpen(
     account: AccountInterface,
     params: { offerId: bigint | string; open: boolean; sponsorshipAddress?: string }
@@ -114,7 +99,6 @@ export class SponsorshipService {
     return { txHash: res.transaction_hash };
   }
 
-  /** A bid is a signal plus an open ERC-20 allowance — no tokens move until accepted. Prepends the approve. */
   async placeBid(
     account: AccountInterface,
     params: { offerId: bigint | string; amount: bigint | string; paymentToken: string; sponsorshipAddress?: string }
@@ -148,11 +132,6 @@ export class SponsorshipService {
     return { txHash: res.transaction_hash };
   }
 
-  /**
-   * Author-only. Re-verifies IP ownership, settles the sponsor's payment
-   * (allowance pull, no escrow), and mints the license — a real ERC-721 on
-   * this same contract — to the sponsor, all atomically in one call.
-   */
   async acceptBid(
     account: AccountInterface,
     params: { offerId: bigint | string; sponsor: string; sponsorshipAddress?: string }
@@ -164,13 +143,6 @@ export class SponsorshipService {
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
-
-  // ── Proposals (sponsor-initiated) ──────────────────────────────────────────
-  // The symmetric counterpart to offers/bids: a sponsor proposes fixed terms
-  // on an asset with no open offer yet; only the asset's current owner may
-  // accept or reject. Unlike an offer, the SPONSOR chooses `paymentToken` here
-  // — an accepting owner's UI should surface only recognized tokens, since a
-  // bad-faith ERC-20 could return `true` on `transfer_from` without moving funds.
 
   async proposeSponsorship(
     account: AccountInterface,
@@ -191,7 +163,6 @@ export class SponsorshipService {
     return { txHash: res.transaction_hash };
   }
 
-  /** Proposer-only. Advisory against an acceptance in flight in the same block. */
   async withdrawProposal(
     account: AccountInterface,
     params: { proposalId: bigint | string; sponsorshipAddress?: string }
@@ -203,12 +174,6 @@ export class SponsorshipService {
     return { txHash: res.transaction_hash };
   }
 
-  /**
-   * Asset-owner-only (re-verified on-chain — a proposal binds to the asset,
-   * not a person: whoever owns it at acceptance time is paid and issues the
-   * license). Settles payment and mints the license atomically, same as
-   * `acceptBid`.
-   */
   async acceptProposal(
     account: AccountInterface,
     params: { proposalId: bigint | string; sponsorshipAddress?: string }
@@ -220,7 +185,6 @@ export class SponsorshipService {
     return { txHash: res.transaction_hash };
   }
 
-  /** Asset-owner-only. */
   async rejectProposal(
     account: AccountInterface,
     params: { proposalId: bigint | string; sponsorshipAddress?: string }
@@ -231,8 +195,6 @@ export class SponsorshipService {
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
-
-  // ── Reads ───────────────────────────────────────────────────────────────────
 
   async getOffer(params: { offerId: bigint | string; sponsorshipAddress?: string }): Promise<SponsorshipOfferRecord> {
     const o = await this._contractRead(params.sponsorshipAddress).call("get_offer", [
@@ -297,7 +259,6 @@ export class SponsorshipService {
     return BigInt(result as any);
   }
 
-  /** EIP-2981 — royalty recipient (the license's issuing author) and amount owed on a resale at `salePrice`. */
   async royaltyInfo(params: {
     licenseId: bigint | string;
     salePrice: bigint | string;

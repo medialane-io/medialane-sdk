@@ -1,13 +1,6 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 import { PublicKey } from "@solana/web3.js";
 
-/**
- * Anchor wire encoding for the Medialane Solana programs — discriminators,
- * a minimal borsh writer for our argument shapes, and the programs' PDAs.
- * Verified against the audited Rust (Solana-MIP-Collections,
- * Solana-Marketplace); no Anchor client dependency.
- */
-
 export function instructionDiscriminator(name: string): Uint8Array {
   return sha256(new TextEncoder().encode(`global:${name}`)).slice(0, 8);
 }
@@ -16,7 +9,6 @@ export function eventDiscriminator(name: string): Uint8Array {
   return sha256(new TextEncoder().encode(`event:${name}`)).slice(0, 8);
 }
 
-/** Minimal borsh writer covering our programs' argument types. */
 export class BorshWriter {
   private chunks: Uint8Array[] = [];
 
@@ -80,8 +72,6 @@ export function u64le(v: bigint): Uint8Array {
   new DataView(b.buffer).setBigUint64(0, v, true);
   return b;
 }
-
-// ─── PDAs (seeds copied from the Rust) ───────────────────────────────────────
 
 export function orderPda(program: PublicKey, offerer: PublicKey, salt: bigint): PublicKey {
   return PublicKey.findProgramAddressSync(

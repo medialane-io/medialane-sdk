@@ -43,7 +43,7 @@ describe("withRetry", () => {
     const started = Date.now();
     const out = await withRetry(async () => {
       n++;
-      if (n < 2) throw new MedialaneApiError(429, "slow down", 8); // 8ms
+      if (n < 2) throw new MedialaneApiError(429, "slow down", 8);
       return "ok";
     }, { baseDelayMs: 1, maxDelayMs: 50 });
     expect(out).toBe("ok");

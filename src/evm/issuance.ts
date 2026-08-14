@@ -9,11 +9,10 @@ import type { EvmChain } from "./venue.js";
 export interface EvmIssuanceOptions {
   chain: EvmChain;
   publicClient: PublicClient;
-  /** Defaults to the chain registry's MIP registry (populated at deploy). */
+
   registry?: `0x${string}`;
 }
 
-/** The Mediolano issuance adapter for EVM chains. */
 export class EvmIssuance implements IssuanceAdapter<WalletClient> {
   readonly chain: Chain;
   private readonly registry: `0x${string}`;

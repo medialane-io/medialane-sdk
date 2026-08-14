@@ -1,4 +1,4 @@
-// Auto-generated from Medialane721 class (redesigned venue). Do not hand-edit.
+
 export const IPMarketplaceABI = [
   {
     "type": "impl",

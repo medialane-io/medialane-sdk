@@ -1,13 +1,8 @@
-// Single source of per-chain coordinates for Medialane's own services
-// (spec 2026-06-13 §3.1, Decision A). Keyed by CHAIN ALONE — Medialane is
-// mainnet-only, so there is no network axis (refines decisions.md D-9).
 
-/** Mirrors the backend Prisma `Chain` enum. */
+
 export const CHAINS = ["STARKNET", "ETHEREUM", "SOLANA", "BASE", "STELLAR", "BITCOIN"] as const;
 export type Chain = (typeof CHAINS)[number];
 
-/** Starknet coordinates of Medialane services + venues. All fields optional
- *  because not every service exists on every chain. */
 export interface StarknetCoordinates {
   rpcUrl: string;
   marketplace721?: `0x${string}`;
@@ -49,10 +44,6 @@ export interface StarknetCoordinates {
   mediaWalletClassHash?: `0x${string}`;
 }
 
-/** Coordinates per chain. Only STARKNET is populated today; adding a chain
- *  means adding an entry here (litmus test, spec §7). */
-/** EVM coordinates — one shape for Ethereum and Base (same bytecode, two
- *  chains). Populated at deploy time (federation Phase 4). */
 export interface EvmCoordinates {
   rpcUrl: string;
   marketplace721?: `0x${string}`;
@@ -65,7 +56,6 @@ export interface EvmCoordinates {
   mipEditionsRegistryStartBlock?: number;
 }
 
-/** Solana coordinates — base58 program ids. Populated at deploy time. */
 export interface SolanaCoordinates {
   rpcUrl: string;
   mipCollectionsProgram?: string;
@@ -73,8 +63,6 @@ export interface SolanaCoordinates {
   startSlot?: number;
 }
 
-/** Stellar (Soroban) coordinates — strkey contract ids. Populated at deploy
- *  time; the registry takes the collection WASM hash as a constructor arg. */
 export interface StellarCoordinates {
   rpcUrl: string;
   mipRegistry?: string;
@@ -83,8 +71,6 @@ export interface StellarCoordinates {
   startLedger?: number;
 }
 
-/** Per-chain coordinate shapes. Every chain is an equal entry — no chain is
- *  privileged in core (chain-sovereignty I2/I4). */
 export interface CoordinatesByChain {
   STARKNET?: StarknetCoordinates;
   ETHEREUM?: EvmCoordinates;
@@ -94,7 +80,6 @@ export interface CoordinatesByChain {
   BITCOIN?: never;
 }
 
-/** @deprecated Renamed — use `StarknetCoordinates` (coordinates are per-chain-shaped). */
 export type ChainCoordinates = StarknetCoordinates;
 
 const COORDINATES: CoordinatesByChain = {
@@ -133,11 +118,7 @@ const COORDINATES: CoordinatesByChain = {
     ipClubFactoryClassHash: "0x05d9d431bd3532b1fa4d5bab572f49c5ad8034ee3cc83951aa41ae82c9cad266",
     ipClubCollectionClassHash: "0x05b8477c72e6bf0cf64967d71155021fd4d77d9a57e8805c6b40709121c002c5",
     ipClubFactoryStartBlock: 11928775,
-    // v3 redesign (deployed 2026-07-15): single contract is both the
-    // offer/bid/proposal registry and the license collection (embeds
-    // ERC721Component directly) — no separate receipt contract, no
-    // set_minter bootstrap. Supersedes the 2026-07-02 v2 address, which had
-    // zero offers/licenses ever issued (clean cutover, no reclassification).
+
     ipSponsorship: "0x03729ebe0fedf29ec97fca34db09174772af7f870af26a26e024a61040143e5c",
     ipSponsorshipClassHash: "0x0626daac2ed7e2bf630ef5b10104b3202db1559216c0c1a504c0e99be2fbfec3",
     ipSponsorshipStartBlock: 11896456,
@@ -162,8 +143,6 @@ export function getCoordinates(
 
 export const DEFAULT_CHAIN: Chain = "STARKNET";
 
-/** Typed Starknet coordinates for Starknet-only modules; throws when the
- *  client is scoped to another chain. */
 export function getStarknetCoordinates(chain: Chain): StarknetCoordinates {
   if (chain !== "STARKNET") {
     throw new Error(`This module is Starknet-only (client chain: "${chain}")`);

@@ -1,9 +1,4 @@
-/**
- * Shared OpenSea-ERC721 + Berne-Convention metadata builder.
- *
- * Single source of truth for how a Medialane asset's metadata JSON is shaped.
- * Pure function — no network calls, no FormData. Server-safe and chain-neutral.
- */
+
 
 export type AssetAttribute = { trait_type: string; value: string };
 
@@ -30,13 +25,12 @@ export interface BuildAssetMetadataInput {
   aiPolicy?: string | null;
   royalty?: string | null;
   edition?: string | null;
-  /** Already-extracted `tmpl_*` template/custom traits (reserved names are filtered here). */
+
   templateTraits?: { traitType: string; value: string }[];
-  /** ISO date (YYYY-MM-DD) stamped as the Berne registration trait. Defaults to today. */
+
   registrationDate?: string;
 }
 
-// Trait names this builder owns — must not be overridden by template traits.
 export const RESERVED_TRAITS = new Set([
   "Creator", "IP Type", "License", "Commercial Use", "Derivatives",
   "Attribution", "Territory", "AI Policy", "Royalty", "Edition",
@@ -71,7 +65,6 @@ export function buildAssetMetadata(input: BuildAssetMetadataInput): AssetMetadat
     attributes.push({ trait_type: traitType, value: traitValue });
   }
 
-  // Berne Convention marker — only when licensing data is provided.
   if (input.licenseType) {
     attributes.push({ trait_type: "Standard", value: "Berne Convention" });
     attributes.push({

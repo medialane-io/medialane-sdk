@@ -1,38 +1,27 @@
-// @medialane/sdk/starknet — the Starknet chain adapter. Starknet is an equal
-// adapter, not the SDK's core (chain-sovereignty I2/I4; platform-federation
-// spec §2). Peer dependency: starknet >= 6.
+
 
 export { MedialaneClient } from "./client.js";
 export { MedialaneError } from "./marketplace/errors.js";
-// Venue order reads (order execution itself goes through StarknetVenue below).
+
 export { getOrderDetails, getCounter } from "./marketplace/orders.js";
 export { getOrderDetails1155, getCounter1155 } from "./marketplace1155/orders.js";
 
-// First-class Starknet venue adapter (implements the chain-neutral VenueAdapter
-// over the VenueSigner capability port). StarknetIssuance is deferred until the
-// app's mint flow is refactored onto IssuanceAdapter.
 export { StarknetVenue } from "./venue.js";
 export type { StarknetVenueDeps, ResolvedOrder } from "./venue.js";
 
-// The capability port the app implements over its wallet layer, and its Starknet
-// specialization (SNIP-12 typed data in, felt-array signature out).
 export type { VenueSigner } from "../adapters/types.js";
 import type { TypedData, Call } from "starknet";
 import type { VenueSigner as _VenueSigner } from "../adapters/types.js";
 export type StarknetVenueSigner = _VenueSigner<TypedData, Call>;
 
-// Platform-layer fee call builder (creators-fund fee)
 export { buildFeeCall } from "./fee/build-fee-call.js";
 export type { FeeSurface, BuildFeeCallParams } from "./fee/build-fee-call.js";
 
-// Admin signed-request auth + SIWS (Starknet-signed session protocol)
 export * from "./admin-auth/index.js";
 export * from "./siws/index.js";
 
-// Cairo ABIs
 export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, IPClubFactoryABI, IPClubCollectionABI, IPSponsorshipABI, IPGenesisABI } from "./abis/index.js";
 
-// Starknet services
 export { PopService } from "./services/pop.js";
 export { DropService, toContractConditions as toDropContractConditions } from "./services/drop.js";
 export { TicketService } from "./services/ticket.js";
@@ -75,10 +64,8 @@ export type {
 } from "./services/erc1155collection.js";
 export type { ClaimConditions, CreateDropParams, CreatePopCollectionParams } from "../types/services.js";
 
-// Cairo ByteArray encoding
 export { encodeByteArray } from "./bytearray.js";
 
-// SNIP-12 signing builders (for advanced/custodial-wallet integrations)
 export {
   buildOrderTypedData,
   buildCancellationTypedData,
@@ -86,9 +73,6 @@ export {
   build1155CancellationTypedData,
 } from "./marketplace/signing.js";
 
-// Business account provisioning — pure builders (key derivation, address
-// computation, deploy payload, change_owners handoff). The caller's own code
-// signs and submits everything; nothing here touches a live RPC.
 export {
   deriveOwnerKeyPair,
   ownerConstructorCalldata,

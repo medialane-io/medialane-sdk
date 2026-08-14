@@ -1,15 +1,5 @@
 import { num } from "starknet";
 
-/**
- * Serialize a string as Cairo ByteArray calldata felts using UTF-8 encoding.
- *
- * starknet.js byteArray.byteArrayFromString calls encodeShortString internally
- * which rejects non-ASCII characters (accented letters, CJK, Arabic, etc.).
- * This implementation packs raw UTF-8 bytes into 31-byte chunks as big-endian
- * felts, matching the Cairo ByteArray struct layout.
- *
- * Return layout: [chunks_len, ...chunk_felts, pending_word, pending_word_len]
- */
 export function encodeByteArray(str: string): string[] {
   const bytes = new TextEncoder().encode(str);
   const fullChunks: string[] = [];

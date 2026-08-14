@@ -1,10 +1,5 @@
-// Pure view reads on the ERC-721 venue. The self-executing order writes that
-// used to live here (createListing/makeOffer/fulfillOrder/cancelOrder/
-// checkoutCart/mint/createCollection/incrementCounter) were removed in 0.64.0:
-// order execution goes through StarknetVenue over the VenueSigner capability
-// port (../venue.ts) — one source for order construction; the app's wallet
-// layer signs and submits. Calldata/typed-data construction lives in the pure
-// builders (./build.ts, ./signing.ts).
+
+
 import { type Abi, Contract } from "starknet";
 import { IPMarketplaceABI } from "../abis/index.js";
 import type { ResolvedConfig } from "../../config.js";

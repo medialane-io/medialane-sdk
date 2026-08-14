@@ -10,8 +10,6 @@ import { buildFeeCall } from "../fee/index.js";
 
 export type { ClaimConditions, CreateDropParams };
 
-/** Exported so the backend orchestrator can build `create_drop`/`set_claim_conditions`
- *  calldata with the exact same conversion this service uses client-side. */
 export function toContractConditions(c: ClaimConditions) {
   return {
     start_time: c.startTime,
@@ -44,7 +42,6 @@ export class DropService {
     const qty = BigInt(quantity);
     const claimCall = collection.populate("claim", [qty]);
 
-    // get_claim_conditions() → { price (u256), payment_token, ... }
     const conditions = (await collection.get_claim_conditions()) as {
       price: bigint;
       payment_token: bigint | string;

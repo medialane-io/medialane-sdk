@@ -91,7 +91,7 @@ export class MedialaneApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
-    /** Parsed `Retry-After` (ms) when the server sent one — used by withRetry on 429. */
+
     public readonly retryAfterMs?: number,
   ) {
     super(message);
@@ -100,7 +100,6 @@ export class MedialaneApiError extends Error {
   }
 }
 
-/** Parse an HTTP `Retry-After` header (delta-seconds or HTTP-date) to milliseconds. */
 export function parseRetryAfter(value: string | null): number | undefined {
   if (!value) return undefined;
   const seconds = Number(value);
@@ -124,18 +123,10 @@ export class ApiClient {
     this.retryOptions = retryOptions;
   }
 
-  /** Normalize an address for this client's chain (chain-scoped — Decision B). */
   private addr(a: string): string {
     return normalizeAddress(this.chain, a);
   }
 
-  /**
-   * The one HTTP path for the whole client: base headers (incl. x-api-key),
-   * JSON error unwrapping, and `withRetry` (5xx/network only — 4xx never
-   * retried). `allow404`/`allow403` turn those statuses into a `null` result
-   * instead of a throw, for "profile may not exist" / "not a holder" reads —
-   * so no method needs to hand-roll `fetch` to get that behavior.
-   */
   private async request<T>(
     path: string,
     init?: RequestInit,
@@ -161,7 +152,7 @@ export class ApiClient {
           const body = JSON.parse(text) as { error?: string };
           if (body.error) message = body.error;
         } catch {
-          // use raw text
+
         }
         throw new MedialaneApiError(response.status, message, parseRetryAfter(response.headers.get("retry-after")));
       }
@@ -188,12 +179,9 @@ export class ApiClient {
     return this.request<T>(path, { method: "DELETE" });
   }
 
-  /** Bearer header for SIWS-token-authenticated routes. */
   private bearer(siwsToken: string): Record<string, string> {
     return { Authorization: `Bearer ${siwsToken}` };
   }
-
-  // ─── Orders ────────────────────────────────────────────────────────────────
 
   getOrders(query: ApiOrdersQuery = {}): Promise<ApiResponse<ApiOrder[]>> {
     const params = new URLSearchParams();
@@ -225,8 +213,6 @@ export class ApiClient {
     );
   }
 
-  // ─── Tokens ────────────────────────────────────────────────────────────────
-
   getToken(contract: string, tokenId: string, wait = false): Promise<ApiResponse<ApiToken>> {
     return this.get<ApiResponse<ApiToken>>(
       `/v1/tokens/${contract}/${tokenId}${wait ? "?wait=true" : ""}`
@@ -250,8 +236,6 @@ export class ApiClient {
     );
   }
 
-  // ─── Collections ───────────────────────────────────────────────────────────
-
   getCollections(
     page = 1,
     limit = 20,
@@ -259,7 +243,7 @@ export class ApiClient {
     sort?: CollectionSort,
     service?: string,
     chain?: ChainFilter,
-    /** Token standard filter — single value or comma-separated list (e.g. "ERC721,ERC1155"). */
+
     standard?: string
   ): Promise<ApiResponse<ApiCollection[]>> {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -291,8 +275,6 @@ export class ApiClient {
     );
   }
 
-  // ─── Activities ────────────────────────────────────────────────────────────
-
   getActivities(query: ApiActivitiesQuery = {}): Promise<ApiResponse<ApiActivity[]>> {
     const params = new URLSearchParams();
     if (query.type) params.set("type", query.type);
@@ -314,8 +296,6 @@ export class ApiClient {
     );
   }
 
-  // ─── Comments ──────────────────────────────────────────────────────────────
-
   getTokenComments(
     contract: string,
     tokenId: string,
@@ -330,8 +310,6 @@ export class ApiClient {
     );
   }
 
-  // ─── Search ────────────────────────────────────────────────────────────────
-
   search(q: string, limit = 10, chain?: ChainFilter): Promise<ApiResponse<ApiSearchResult> & { query: string }> {
     const params = new URLSearchParams({ q, limit: String(limit) });
     if (chain) params.set("chain", chain);
@@ -339,8 +317,6 @@ export class ApiClient {
       `/v1/search?${params.toString()}`
     );
   }
-
-  // ─── Intents ───────────────────────────────────────────────────────────────
 
   createListingIntent(
     params: CreateListingIntentParams
@@ -440,11 +416,6 @@ export class ApiClient {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/sponsorship-proposal-reject", params);
   }
 
-  /**
-   * Create a counter-offer intent. The seller proposes a new price in response
-   * to a buyer's active bid. siwsToken is optional — the endpoint authenticates
-   * via the tenant API key; pass a SIWS token only if your backend requires it.
-   */
   createCounterOfferIntent(
     params: CreateCounterOfferIntentParams,
     siwsToken?: string
@@ -457,10 +428,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * Fetch counter-offers. Pass `originalOrderHash` (buyer view) or
-   * `sellerAddress` (seller view) — at least one is required.
-   */
   getCounterOffers(query: ApiCounterOffersQuery): Promise<ApiResponse<ApiOrder[]>> {
     const params = new URLSearchParams();
     if (query.originalOrderHash) params.set("originalOrderHash", query.originalOrderHash);
@@ -469,8 +436,6 @@ export class ApiClient {
     if (query.limit !== undefined) params.set("limit", String(query.limit));
     return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/counter-offers?${params}`);
   }
-
-  // ─── Metadata ──────────────────────────────────────────────────────────────
 
   getMetadataSignedUrl(): Promise<ApiResponse<ApiMetadataSignedUrl>> {
     return this.get<ApiResponse<ApiMetadataSignedUrl>>("/v1/metadata/signed-url");
@@ -488,15 +453,12 @@ export class ApiClient {
   uploadFile(file: File): Promise<ApiResponse<ApiMetadataUpload>> {
     const formData = new FormData();
     formData.append("file", file);
-    // Content-Type is intentionally omitted — request() detects FormData and
-    // lets the runtime set multipart/form-data with the correct boundary.
+
     return this.request<ApiResponse<ApiMetadataUpload>>("/v1/metadata/upload-file", {
       method: "POST",
       body: formData,
     });
   }
-
-  // ─── Portal (tenant self-service) ──────────────────────────────────────────
 
   getMe(): Promise<ApiResponse<ApiPortalMe>> {
     return this.get<ApiResponse<ApiPortalMe>>("/v1/portal/me");
@@ -532,12 +494,6 @@ export class ApiClient {
     );
   }
 
-  // ─── Collection Claims ──────────────────────────────────────────────────────
-
-  /**
-   * Path 1: On-chain auto claim. Sends both x-api-key (tenant auth) and
-   * Authorization: Bearer (SIWS token) simultaneously.
-   */
   async claimCollection(
     contractAddress: string,
     walletAddress: string,
@@ -550,9 +506,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * Path 3: Manual off-chain claim request (email-based).
-   */
   requestCollectionClaim(params: {
     contractAddress: string;
     walletAddress?: string;
@@ -564,8 +517,6 @@ export class ApiClient {
       body: JSON.stringify(params),
     });
   }
-
-  // ─── Business Provisioning ──────────────────────────────────────────────────
 
   registerBusinessProvisioning(params: {
     chain: "STARKNET";
@@ -581,8 +532,6 @@ export class ApiClient {
     return this.post<ApiResponse<ApiBusinessProvisioning>>(`/v1/business/provisioning/${id}/complete`, {});
   }
 
-  // ─── Collection Profiles ────────────────────────────────────────────────────
-
   getCollectionProfile(contractAddress: string): Promise<ApiCollectionProfile | null> {
     return this.request<ApiCollectionProfile | null>(
       `/v1/collections/${this.addr(contractAddress)}/profile`,
@@ -591,9 +540,6 @@ export class ApiClient {
     );
   }
 
-  /**
-   * Update collection profile. Requires SIWS token for ownership check.
-   */
   updateCollectionProfile(
     contractAddress: string,
     data: Partial<Omit<ApiCollectionProfile, "contractAddress" | "chain" | "updatedBy" | "updatedAt">>,
@@ -605,7 +551,6 @@ export class ApiClient {
     );
   }
 
-  /** No signature required — wallet activity is public on-chain data, read like any other /v1 GET. */
   getWalletActivity(
     address: string,
     chain: "STARKNET" = "STARKNET",
@@ -626,9 +571,6 @@ export class ApiClient {
     );
   }
 
-  // ─── Creator Profiles ───────────────────────────────────────────────────────
-
-  /** List all creators with an approved username. */
   getCreators(opts: { search?: string; page?: number; limit?: number } = {}): Promise<ApiCreatorListResult> {
     const params = new URLSearchParams();
     if (opts.search) params.set("search", opts.search);
@@ -646,7 +588,6 @@ export class ApiClient {
     );
   }
 
-  /** Resolve a username slug to a creator profile (public). */
   getCreatorByUsername(username: string): Promise<ApiCreatorProfile | null> {
     return this.request<ApiCreatorProfile | null>(
       `/v1/creators/by-username/${encodeURIComponent(username.toLowerCase().trim())}`,
@@ -655,9 +596,6 @@ export class ApiClient {
     );
   }
 
-  /**
-   * Update creator profile. Requires SIWS token; wallet must match authenticated user.
-   */
   updateCreatorProfile(
     walletAddress: string,
     data: Partial<Omit<ApiCreatorProfile, "walletAddress" | "chain" | "updatedAt">>,
@@ -669,16 +607,12 @@ export class ApiClient {
     );
   }
 
-  // ─── Collection Slug Claims ───────────────────────────────────────────────────
-
-  /** Check if a collection slug is available (public, no auth). */
   checkCollectionSlugAvailability(slug: string): Promise<{ available: boolean; reason?: string }> {
     return this.get<{ available: boolean; reason?: string }>(
       `/v1/collection-slug-claims/check/${encodeURIComponent(slug.toLowerCase().trim())}`,
     );
   }
 
-  /** Submit a slug claim for a collection. Requires SIWS token — caller must be the collection owner. */
   submitCollectionSlugClaim(
     contractAddress: string,
     slug: string,
@@ -692,7 +626,6 @@ export class ApiClient {
     });
   }
 
-  /** Returns all slug claims submitted by the authenticated wallet. Requires SIWS token. */
   getMyCollectionSlugClaims(siwsToken: string): Promise<{ claims: ApiCollectionSlugClaim[] }> {
     return this.request<{ claims: ApiCollectionSlugClaim[] }>("/v1/collection-slug-claims/me", {
       method: "GET",
@@ -700,7 +633,6 @@ export class ApiClient {
     });
   }
 
-  /** Resolve a collection slug to a full collection. Returns null if not found. */
   getCollectionBySlug(slug: string): Promise<ApiCollection | null> {
     return this.request<ApiCollection | null>(
       `/v1/collections/by-slug/${encodeURIComponent(slug.toLowerCase().trim())}`,
@@ -709,18 +641,9 @@ export class ApiClient {
     );
   }
 
-  // ─── User Wallet ─────────────────────────────────────────────────────────────
-
-  /**
-   * Frictionless wallet registration. Tenant API key only (no SIWS token required).
-   * Idempotent — backend's ensureAccountForWallet upserts and upgrades existing
-   * UNKNOWN walletType rows when a more specific value is supplied.
-   */
   async registerUser(params: {
     walletAddress: string;
-    // Free-form wallet-software label ("braavos" / "ready" / "passkey" / …).
-    // The backend lowercases it into Identity.provider and never gates on it
-    // (07-identity §II) — so it's a plain string, not a closed enum.
+
     walletType?: string;
     appSource?: ApiAppSource;
     chain?: ApiChain;
@@ -729,8 +652,7 @@ export class ApiClient {
     publicId: string;
     walletAddress: string;
     chain: string;
-    // The wallet identity's free-form provider label, echoed back from
-    // Identity.provider ("braavos" / "passkey" / "unknown" / …).
+
     provider: string;
     appSource: ApiAppSource;
     createdAt: string;
@@ -741,28 +663,16 @@ export class ApiClient {
   async upsertMyWallet(
     siwsToken: string,
     options: {
-      // Free-form provider label (see registerUser); lowercased into
-      // Identity.provider by the backend, never gated on.
+
       walletType?: string;
       appSource?: ApiAppSource;
-      // 07-identity §I: the Wallet identifier is (chain, address). v1
-      // backend rejects anything other than STARKNET on this route (the
-      // auth path can only prove Starknet ownership); the field exists
-      // so the year-2 multichain shape is locked in.
+
       chain?: ApiChain;
-      // Proves the caller's email was verified moments ago via a one-time
-      // code (medialane-io's /wallet-onboarding flow) — additive only, the
-      // backend silently skips attaching an email if this is missing,
-      // expired, or invalid. Never a login credential (07-identity §II).
+
       emailVerificationToken?: string;
-      // Collected at signup, unverified — additive only, never a login
-      // credential. Mutually exclusive with emailVerificationToken in
-      // practice (callers send one or the other), both accepted by the
-      // backend independently (07-identity §II).
+
       email?: string;
-      // Proves this wallet is being deployed for an account that already
-      // exists (created at the email step). Additive only — the backend
-      // falls back to its normal wallet-first lookup if missing/invalid.
+
       accountToken?: string;
     } = {},
   ): Promise<ApiUserWallet> {
@@ -781,7 +691,6 @@ export class ApiClient {
     });
   }
 
-  /** Whether an email already has an account attached — used by io's onboarding to branch into an "already exists" message instead of creating a duplicate account. */
   async checkEmailExists(email: string): Promise<boolean> {
     const { exists } = await this.get<{ exists: boolean }>(
       `/v1/auth/email/exists?email=${encodeURIComponent(email)}`,
@@ -789,11 +698,6 @@ export class ApiClient {
     return exists;
   }
 
-  /**
-   * Get the authenticated user's stored wallet address from the backend DB.
-   * Returns null if the user has not completed onboarding yet.
-   * Requires SIWS token; no tenant API key needed.
-   */
   getMyWallet(siwsToken: string): Promise<ApiUserWallet | null> {
     return this.request<ApiUserWallet | null>(
       "/v1/users/me",
@@ -802,11 +706,6 @@ export class ApiClient {
     );
   }
 
-  // ─── Remix Licensing ─────────────────────────────────────────────────────────
-
-  /**
-   * Get public remixes of a token (open to everyone).
-   */
   getTokenRemixes(
     contract: string,
     tokenId: string,
@@ -821,9 +720,6 @@ export class ApiClient {
     );
   }
 
-  /**
-   * Submit a custom remix offer for a token. Requires SIWS token.
-   */
   submitRemixOffer(
     params: CreateRemixOfferParams,
     siwsToken: string
@@ -835,9 +731,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * Submit an auto remix offer for a token with an open license. Requires SIWS token.
-   */
   submitAutoRemixOffer(
     params: AutoRemixOfferParams,
     siwsToken: string
@@ -849,9 +742,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * Record a self-remix (owner remixing their own token). Requires SIWS token.
-   */
   confirmSelfRemix(
     params: ConfirmSelfRemixParams,
     siwsToken: string
@@ -863,11 +753,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * List remix offers by role. Requires SIWS token.
-   * role="creator" — offers where you are the original creator.
-   * role="requester" — offers you made.
-   */
   getRemixOffers(
     query: ApiRemixOffersQuery,
     siwsToken: string
@@ -881,9 +766,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * Get a single remix offer. SIWS token optional (price/currency hidden for non-participants).
-   */
   getRemixOffer(id: string, siwsToken?: string): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}`, {
       method: "GET",
@@ -891,9 +773,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * Creator approves a remix offer (authorises the requester to mint). Requires SIWS token.
-   */
   confirmRemixOffer(
     id: string,
     params: ConfirmRemixOfferParams,
@@ -906,9 +785,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * Creator rejects a remix offer. Requires SIWS token.
-   */
   rejectRemixOffer(id: string, siwsToken: string): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/reject`, {
       method: "POST",
@@ -917,10 +793,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * Requester extends the expiry of a pending remix offer by 1–30 days.
-   * Requires SIWS token.
-   */
   extendRemixOffer(id: string, days: number, siwsToken: string): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/extend`, {
       method: "POST",
@@ -928,8 +800,6 @@ export class ApiClient {
       headers: { "Authorization": `Bearer ${siwsToken}` },
     });
   }
-
-  // ─── POP Protocol ──────────────────────────────────────────────────────────
 
   getPopCollections(opts: { page?: number; limit?: number; sort?: CollectionSort } = {}): Promise<ApiResponse<ApiCollection[]>> {
     return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "POP_PROTOCOL");
@@ -950,10 +820,6 @@ export class ApiClient {
     return res.data;
   }
 
-  // ─── Coins (fungible — ERC-20 etc.) ───────────────────────────────────────────
-  // Coins are a separate model from Collections (spec 2026-06-14). Price/liquidity
-  // is read live from Ekubo (CreatorCoinService.getPrice), never from these.
-
   getCoins(opts: ApiCoinsQuery = {}): Promise<ApiResponse<ApiCoin[]>> {
     const params = new URLSearchParams();
     if (opts.page) params.set("page", String(opts.page));
@@ -968,11 +834,6 @@ export class ApiClient {
     return this.get<{ data: ApiCoin }>(`/v1/coins/${this.addr(contract)}`);
   }
 
-  /**
-   * Creator-authed coin profile edit (image/description). Backend authorizes
-   * via `coin.creator` (trustless — from the factory event), not a body param;
-   * `siwsToken` is the caller's SIWS bearer token for `identityAuth`.
-   */
   updateCoinProfile(
     contract: string,
     data: { image?: string; description?: string },
@@ -985,8 +846,6 @@ export class ApiClient {
     });
   }
 
-  // ─── Collection Drop ────────────────────────────────────────────────────────
-
   getDropCollections(opts: { page?: number; limit?: number; sort?: CollectionSort } = {}): Promise<ApiResponse<ApiCollection[]>> {
     return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "COLLECTION_DROP");
   }
@@ -998,34 +857,26 @@ export class ApiClient {
     return res.data;
   }
 
-  // ─── Rewards (v0.49.0) ─────────────────────────────────────────────────────
-  // Scores are recomputed on a schedule by the backend (~15 min) — reads only.
-
-  /** Score + level + progress + badges for one address (zeroed for unknown). */
   async getRewards(address: string): Promise<ApiUserRewards> {
     const res = await this.get<{ data: ApiUserRewards }>(`/v1/rewards/${this.addr(address)}`);
     return res.data;
   }
 
-  /** Paginated XP leaderboard. */
   getRewardsLeaderboard(page = 1, limit = 50): Promise<ApiResponse<ApiRewardsLeaderboardEntry[]>> {
     return this.get<ApiResponse<ApiRewardsLeaderboardEntry[]>>(`/v1/rewards?page=${page}&limit=${limit}`);
   }
 
-  /** Point-event history for an address. */
   getRewardsEvents(address: string, page = 1, limit = 20): Promise<ApiResponse<ApiPointEvent[]>> {
     return this.get<ApiResponse<ApiPointEvent[]>>(
       `/v1/rewards/${this.addr(address)}/events?page=${page}&limit=${limit}`
     );
   }
 
-  /** Reward configuration: level ladder, enabled action XP values, badge catalog. */
   async getRewardsConfig(): Promise<ApiRewardsConfig> {
     const res = await this.get<{ data: ApiRewardsConfig }>(`/v1/rewards/config`);
     return res.data;
   }
 
-  /** Minimal level info for up to 50 addresses — one call per list page. */
   async getRewardsBatch(addresses: string[]): Promise<ApiRewardsBatchEntry[]> {
     if (addresses.length === 0) return [];
     const params = new URLSearchParams({ addresses: addresses.map((a) => this.addr(a)).join(",") });

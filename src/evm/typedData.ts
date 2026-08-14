@@ -1,12 +1,5 @@
 import { hashTypedData, type TypedDataDomain } from "viem";
 
-/**
- * EIP-712 order typing for the Medialane EVM venues — byte-identical to the
- * audited Solidity (contracts/EVM-Marketplace-ERC721/src/Medialane721.sol and
- * the 1155 venue, which shares the type strings; the domain's
- * verifyingContract separates deployments and venues).
- */
-
 export const EVM_ORDER_TYPES = {
   OfferItem: [
     { name: "itemType", type: "uint8" },
@@ -33,7 +26,6 @@ export const EVM_ORDER_TYPES = {
   ],
 } as const;
 
-/** NATIVE=0, ERC20=1, ERC721=2 on the 721 venue; NATIVE=0, ERC20=1, ERC1155=2 on the 1155 venue. */
 export type EvmItemType = 0 | 1 | 2;
 
 export interface EvmOfferItem {
@@ -62,8 +54,6 @@ export function evmOrderDomain(chainId: number, verifyingContract: `0x${string}`
   return { name: "Medialane", version: "1", chainId, verifyingContract };
 }
 
-/** The order's EIP-712 digest — the venue's order hash and the platform's
- *  canonical order id on EVM chains. */
 export function evmOrderDigest(
   chainId: number,
   verifyingContract: `0x${string}`,

@@ -1,9 +1,5 @@
-// Pure view reads on the ERC-1155 venue. The self-executing order writes that
-// used to live here (createListing1155/makeOffer1155/fulfillOrder1155/
-// cancelOrder1155/checkoutCart1155/incrementCounter1155) were removed in
-// 0.64.0 — order execution goes through StarknetVenue over the VenueSigner
-// capability port (../venue.ts). Calldata/typed-data construction lives in
-// the pure builders (./build.ts, ../marketplace/signing.ts).
+
+
 import { type Abi, Contract } from "starknet";
 import { Medialane1155ABI } from "../abis/index.js";
 import type { ResolvedConfig } from "../../config.js";

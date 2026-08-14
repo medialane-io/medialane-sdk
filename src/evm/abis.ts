@@ -1,7 +1,5 @@
 import { parseAbi } from "viem";
 
-/** Minimal venue ABI — verified against Medialane721.sol / Medialane1155.sol.
- *  The 1155 venue's fulfillOrder additionally takes a quantity. */
 export const EvmVenueABI = parseAbi([
   "struct OfferItem { uint8 itemType; address token; uint256 identifier; uint256 amount; }",
   "struct ConsiderationItem { uint8 itemType; address token; uint256 identifier; uint256 amount; address recipient; }",
@@ -24,8 +22,6 @@ export const EvmVenue1155ABI = parseAbi([
   "event OrderFulfilled(bytes32 indexed orderHash, address indexed offerer, address indexed fulfiller, uint256 quantity, uint256 remainingAmount, uint256 saleAmount, address royaltyReceiver, uint256 royaltyAmount)",
 ]);
 
-/** MIP issuance — verified against MIPRegistry.sol / MIPCollection.sol (and
- *  the editions pair, which shares the registry surface). */
 export const EvmMipRegistryABI = parseAbi([
   "function createCollection(string name, string symbol, string baseUri, uint96 royaltyBps) returns (uint256 collectionId, address collection)",
   "function getCollection(uint256 collectionId) view returns (address collection, address creator)",

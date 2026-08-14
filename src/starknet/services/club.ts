@@ -42,11 +42,6 @@ export class ClubService {
     return newContract(IPClubCollectionABI as any, normalizeAddress("STARKNET", address), provider);
   }
 
-  /**
-   * Deploys a new IPClubCollection via the factory. Caller becomes owner.
-   * `baseUri` is the collection-level metadata URI, embedded on-chain in the
-   * deploy transaction.
-   */
   async deployCollection(
     account: AccountInterface,
     params: { name: string; symbol: string; baseUri: string; factoryAddress?: string }
@@ -60,7 +55,6 @@ export class ClubService {
     return { txHash: res.transaction_hash };
   }
 
-  /** Owner-only. Creates a new membership tier inside the caller's deployed collection. */
   async createMembership(account: AccountInterface, params: CreateMembershipParams): Promise<TxResult> {
     const startTime = params.startTime != null
       ? new CairoOption(CairoOptionVariant.Some, params.startTime)
@@ -79,10 +73,6 @@ export class ClubService {
     return { txHash: res.transaction_hash };
   }
 
-  /**
-   * Owner-only. Mints `amount` of `tokenId` to `to`. The validity window
-   * gates membership, never minting — future-window tiers mint fine.
-   */
   async mint(account: AccountInterface, params: MintMembershipsParams): Promise<TxResult> {
     const call = this._collection(params.collection, account).populate("mint", [
       params.to,
@@ -93,7 +83,6 @@ export class ClubService {
     return { txHash: res.transaction_hash };
   }
 
-  /** Read — true if holder holds any tier currently inside its validity window. */
   async isMember(params: { collection: string; holder: string }): Promise<boolean> {
     const result = await this._collectionRead(params.collection).call("is_member", [
       params.holder,
@@ -101,7 +90,6 @@ export class ClubService {
     return Boolean(result);
   }
 
-  /** Read — true if holder holds `tokenId` and the current time is inside its window. */
   async isMemberOf(params: { collection: string; tokenId: bigint | string; holder: string }): Promise<boolean> {
     const result = await this._collectionRead(params.collection).call("is_member_of", [
       cairo.uint256(params.tokenId),
@@ -110,7 +98,6 @@ export class ClubService {
     return Boolean(result);
   }
 
-  /** Read — returns the Membership record for a token ID. */
   async getMembership(params: {
     collection: string;
     tokenId: bigint | string;

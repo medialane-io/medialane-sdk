@@ -32,7 +32,6 @@ export function isSiwsTokenValid(token: string | null | undefined): token is str
   return Boolean(expiry && expiry > Math.floor(Date.now() / 1000));
 }
 
-/** Browser-only (returns null server-side, same as a cache miss). */
 export function getStoredSiwsToken(address: string): string | null {
   if (typeof window === "undefined") return null;
   const key = getSiwsStorageKey(address);
@@ -42,7 +41,6 @@ export function getStoredSiwsToken(address: string): string | null {
   return null;
 }
 
-/** Browser-only (no-op server-side). */
 export function storeSiwsToken(address: string, token: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(getSiwsStorageKey(address), token);
@@ -63,13 +61,6 @@ export function normalizeSiwsSignature(signature: unknown): string[] {
   return [String(signature)];
 }
 
-/**
- * Request a nonce, sign it with `signer`, verify with the backend, and cache
- * the resulting token in localStorage (expiry-aware). Single source for the
- * SIWS client protocol — medialane-starknet and medialane-io both delegate
- * to this instead of keeping their own copies (see medialane-core/docs/specs/
- * 2026-06-30-remove-clerk-from-backend-design.md §IX).
- */
 export async function requestSiwsToken({
   backendUrl,
   walletAddress,
@@ -100,16 +91,13 @@ export async function requestSiwsToken({
   });
 
   if (!verifyRes.ok) {
-    // Backend distinguishes counterfactual-wallet errors with code
-    // "account_not_deployed" + a user-facing `message` field so callers can
-    // surface "Check if your wallet is deployed on Starknet." instead of the
-    // generic "sign-in failed" toast.
+
     let backendMessage: string | undefined;
     try {
       const body = await verifyRes.json() as { error?: string; message?: string };
       if (body?.message) backendMessage = body.message;
     } catch {
-      // body wasn't JSON — fall through to generic message
+
     }
     throw new Error(backendMessage ?? "Wallet sign-in failed");
   }

@@ -146,7 +146,7 @@ describe("721 builders", () => {
     expect(calls[1].entrypoint).toBe("fulfill_order");
     expect(calls[2].entrypoint).toBe("transfer");
     expect(calls[2].contractAddress).toBe("0xusdc");
-    // 1% of 10000 = 100 to the fund.
+
     expect(calls[2].calldata?.[0]).toBe("0xfund");
   });
 
