@@ -898,6 +898,7 @@ export interface ApiUserWallet {
   walletAddress: string;
   email?: string | null;
   emailVerified?: boolean;
+  requiresEmailVerification?: boolean;
 }
 
 export interface ApiCollectionClaim {
