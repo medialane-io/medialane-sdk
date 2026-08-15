@@ -706,6 +706,14 @@ export class ApiClient {
     );
   }
 
+  changeMyEmail(email: string, siwsToken: string): Promise<{ email: string; emailVerified: boolean }> {
+    return this.request<{ email: string; emailVerified: boolean }>("/v1/users/me/email", {
+      method: "POST",
+      headers: this.bearer(siwsToken),
+      body: JSON.stringify({ email }),
+    });
+  }
+
   getTokenRemixes(
     contract: string,
     tokenId: string,
