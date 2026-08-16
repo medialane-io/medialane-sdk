@@ -80,4 +80,19 @@ export {
   computeOwnerGuid,
   buildChangeOwnersCall,
   buildDeployAccountParams,
+  buildSetFirstGuardianCall,
+  buildTriggerEscapeOwnerCall,
+  buildCompleteEscapeOwnerCall,
+  buildCancelEscapeCall,
+  decodeGuardiansInfo,
+  decodeEscapeAndStatus,
+  getGuardians,
+  getEscape,
+  getEscapeSecurityPeriod,
+} from "./business-provisioning/index.js";
+export type {
+  GuardianInfo,
+  EscapeInfo,
+  EscapeTypeName,
+  EscapeStatusName,
 } from "./business-provisioning/index.js";
