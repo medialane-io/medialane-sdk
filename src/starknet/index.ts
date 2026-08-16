@@ -90,6 +90,13 @@ export {
   getEscape,
   getEscapeSecurityPeriod,
 } from "./business-provisioning/index.js";
+export {
+  deriveAesKey,
+  generateStarkKeyPair,
+  sealPrivateKey,
+  unsealPrivateKey,
+  signWithPrivateKey,
+} from "./passkey-wallet/index.js";
 export type {
   GuardianInfo,
   EscapeInfo,
