@@ -4,7 +4,7 @@
 
 **Framework-agnostic TypeScript SDK for the Medialane IP marketplace on Starknet**
 
-The Medialane SDK provides a unified interface for interacting with the Medialane marketplace — both **on-chain operations** (create listings, make offers, fulfill orders, mint IP assets) and **REST API access** (search tokens, manage orders, upload metadata to IPFS). Built for [medialane.io](https://medialane.io), [starknet.medialane.io](https://starknet.medialane.io), [portal.medialane.io](https://portal.medialane.io), and `media-wallet`.
+The Medialane SDK provides a unified interface for interacting with the Medialane marketplace: both **on-chain operations** (create listings, make offers, fulfill orders, mint IP assets) and **REST API access** (search tokens, manage orders, upload metadata to IPFS). Built for [medialane.io](https://medialane.io), [starknet.medialane.io](https://starknet.medialane.io), [portal.medialane.io](https://portal.medialane.io), and `media-wallet`.
 
 ---
 
@@ -30,9 +30,9 @@ The Medialane SDK provides a unified interface for interacting with the Medialan
 - ERC-1155 multi-holder ownership via `token.balances`
 
 **IP Metadata Types**
-- `IpAttribute` — typed OpenSea ERC-721 attribute
-- `IpNftMetadata` — full IPFS metadata shape with licensing fields
-- `ApiTokenMetadata` — indexed token metadata with all licensing attributes
+- `IpAttribute`: typed OpenSea ERC-721 attribute
+- `IpNftMetadata`: full IPFS metadata shape with licensing fields
+- `ApiTokenMetadata`: indexed token metadata with all licensing attributes
 - Berne Convention-compatible licensing data model
 
 **Developer-Friendly**
@@ -75,11 +75,11 @@ const client = new MedialaneClient({
 
 ## Marketplace Operations (On-Chain)
 
-All methods require a `starknet.js` `AccountInterface`. SNIP-12 signing and `waitForTransaction` are handled automatically. Fulfilment is **unsigned** — the caller is the fulfiller, so there is no `fulfiller`/`offerer` field to pass; cancellation still signs, but without a nonce (a per-offerer `counter` replaces it, see `incrementCounter`).
+All methods require a `starknet.js` `AccountInterface`. SNIP-12 signing and `waitForTransaction` are handled automatically. Fulfilment is **unsigned**: the caller is the fulfiller, so there is no `fulfiller`/`offerer` field to pass; cancellation still signs, but without a nonce (a per-offerer `counter` replaces it, see `incrementCounter`).
 
 Two marketplace modules are available:
-- `client.marketplace` — ERC-721 marketplace (`Medialane721`)
-- `client.marketplace1155` — ERC-1155 marketplace (`Medialane1155`)
+- `client.marketplace`: ERC-721 marketplace (`Medialane721`)
+- `client.marketplace1155`: ERC-1155 marketplace (`Medialane1155`)
 
 ### Create a Listing (ERC-721)
 
@@ -141,7 +141,7 @@ const result = await client.marketplace.cancelOrder(account, {
 ### Bulk-Cancel (Invalidate All Open Orders)
 
 ```typescript
-// Bumps the caller's counter — every previously-registered order becomes unfulfillable.
+// Bumps the caller's counter: every previously-registered order becomes unfulfillable.
 await client.marketplace.incrementCounter(account);
 ```
 
@@ -170,7 +170,7 @@ const result = await client.marketplace.createCollection(account, {
 
 ## ERC-1155 Marketplace (Medialane1155)
 
-For IP assets from ERC-1155 collections (e.g. IP-Programmable-ERC1155-Collections). Contract address: see `getCoordinates("STARKNET").marketplace1155` in `src/chains.ts` (the single source — do not hardcode it here, it changes on redeploy).
+For IP assets from ERC-1155 collections (e.g. IP-Programmable-ERC1155-Collections). Contract address: read `getCoordinates("STARKNET").marketplace1155` from `src/chains.ts`, the single source of truth across redeploys.
 
 ### Create an ERC-1155 Listing
 
@@ -213,7 +213,7 @@ const result = await client.marketplace1155.cancelOrder(account, {
 ### SNIP-12 Typed Data Builders (custodial-wallet / custom flows)
 
 Listing/offer and cancellation are signed; fulfilment is an **unsigned** call (the buyer is
-the fulfiller, since v0.26.0) — there is no fulfillment typed-data builder.
+the fulfiller, since v0.26.0): there is no fulfillment typed-data builder.
 
 ```typescript
 import { build1155OrderTypedData, build1155CancellationTypedData } from "@medialane/sdk";
@@ -252,7 +252,7 @@ const history = await client.api.getTokenHistory(contract, tokenId);
 
 ### ERC-1155 Ownership
 
-For ERC-1155 tokens, a single token ID can be held by many wallets simultaneously. Use `token.balances` instead of `token.owner`:
+For ERC-1155 tokens, a single token ID can be held by many wallets simultaneously; read ownership from `token.balances`:
 
 ```typescript
 import type { ApiTokenBalance } from "@medialane/sdk";
@@ -274,12 +274,12 @@ token.balances?.forEach((b: ApiTokenBalance) => {
 });
 ```
 
-`token.owner` is deprecated and always `null` post-migration. `token.balances` is only populated on single-token fetches (`getToken`) — it is `null` on list responses.
+`token.owner` is deprecated and always `null` post-migration. `token.balances` is only populated on single-token fetches (`getToken`): it is `null` on list responses.
 
 ### Query Collections
 
 ```typescript
-// All collections — newest first by default
+// All collections: newest first by default
 const collections = await client.api.getCollections();
 
 // With sort and pagination
@@ -295,9 +295,9 @@ const tokens = await client.api.getCollectionTokens(contract);
 
 ```typescript
 const results = await client.api.search("landscape painting", 10);
-// results.data.tokens — matching tokens
-// results.data.collections — matching collections
-// results.data.creators — matching creator profiles (v0.4.5)
+// results.data.tokens: matching tokens
+// results.data.collections: matching collections
+// results.data.creators: matching creator profiles (v0.4.5)
 ```
 
 ### Activities
@@ -351,7 +351,7 @@ const signature = await account.signMessage(intent.data.typedData);
 await client.api.submitIntentSignature(intent.data.id, toSignatureArray(signature));
 ```
 
-Mint and collection intents are pre-signed — no signature step needed:
+Mint and collection intents are pre-signed: no signature step needed:
 
 ```typescript
 const mintIntent = await client.api.createMintIntent({
@@ -393,7 +393,7 @@ const metadata: IpNftMetadata = {
   ],
 };
 
-// Token from the API — includes indexed licensing fields for fast access
+// Token from the API: includes indexed licensing fields for fast access
 const token = await client.api.getToken(contract, tokenId);
 token.data.metadata.licenseType;   // "CC BY-NC-SA"
 token.data.metadata.commercialUse; // "No"
@@ -473,8 +473,8 @@ try {
 |---|---|---|---|
 | `chain` | `Chain` (`"STARKNET" \| "ETHEREUM" \| "SOLANA" \| "BASE" \| "BITCOIN"`) | `"STARKNET"` | The chain this client is scoped to. Coordinates resolve from the `coordinates[chain]` registry (`chains.ts`). Replaces `network` (v0.37.0). |
 | `rpcUrl` | `string` | the chain's registry `rpcUrl` | JSON-RPC URL override |
-| `backendUrl` | `string` | — | Medialane API base URL (required for `.api.*`) |
-| `apiKey` | `string` | — | API key from [Medialane Portal](https://medialane.xyz) |
+| `backendUrl` | `string` | (none) | Medialane API base URL (required for `.api.*`) |
+| `apiKey` | `string` | (none) | API key from [Medialane Portal](https://portal.medialane.io) |
 | `marketplace721Contract` | `string` | Mainnet default | ERC-721 marketplace protocol override |
 | `marketplaceContract` | `string` | Mainnet default | Legacy alias for `marketplace721Contract` |
 | `marketplace1155Contract` | `string` | Mainnet default | ERC-1155 marketplace protocol override |
@@ -511,9 +511,9 @@ bun run typecheck  # tsc --noEmit
 ```
 
 Built with:
-- **tsup** — dual ESM/CJS bundling
-- **TypeScript** — full type safety
-- **Zod** — runtime config validation
+- **tsup**: dual ESM/CJS bundling
+- **TypeScript**: full type safety
+- **Zod**: runtime config validation
 - Peer dep: `starknet >= 6.0.0`
 
 ---
@@ -522,125 +522,125 @@ Built with:
 
 > Full history in [CHANGELOG.md](./CHANGELOG.md). Highlights below.
 
-### v0.37.0 — multichain readiness (BREAKING)
+### v0.37.0: multichain readiness (BREAKING)
 - **Chain is a first-class axis.** New `chains.ts` `coordinates[chain]` registry is the single source of per-chain service coordinates (`CHAINS`, `getCoordinates`, `DEFAULT_CHAIN`, `Chain`, `ChainCoordinates`); the flat `*_MAINNET` constants derive from it.
-- **`MedialaneConfig.chain` replaces `network`** — the client is chain-scoped; `client.network` getter → `client.chain`.
-- **`ServiceDefinition.onchain` is per-chain** — `Partial<Record<Chain, …>>`; read `service.onchain?.STARKNET?.factoryAddress`.
-- **`normalizeAddress(chain, address)`** — per-chain codec (Starknet pad / EVM EIP-55 / Solana base58; Bitcoin not yet implemented).
-- **Removed** `SUPPORTED_NETWORKS`, `DEFAULT_RPC_URL`, `Network` (mainnet-only — coordinates key by chain alone). `getChainId(config)` throws for non-Starknet.
+- **`MedialaneConfig.chain` replaces `network`**: the client is chain-scoped; `client.network` getter → `client.chain`.
+- **`ServiceDefinition.onchain` is per-chain**: `Partial<Record<Chain, …>>`; read `service.onchain?.STARKNET?.factoryAddress`.
+- **`normalizeAddress(chain, address)`**: per-chain codec (Starknet pad / EVM EIP-55 / Solana base58; Bitcoin not yet implemented).
+- **Removed** `SUPPORTED_NETWORKS`, `DEFAULT_RPC_URL`, `Network` (mainnet-only: coordinates key by chain alone). `getChainId(config)` throws for non-Starknet.
 
 ### v0.6.7
-- **`CollectionRegistryABI`** exported from `@medialane/sdk` — minimal ABI covering `list_user_collections` and `get_collection` on the collection registry contract. Eliminates duplicated inline ABI definitions in consuming apps.
+- **`CollectionRegistryABI`** exported from `@medialane/sdk`: minimal ABI covering `list_user_collections` and `get_collection` on the collection registry contract. Eliminates duplicated inline ABI definitions in consuming apps.
 
 ### v0.6.6
 - **`COLLECTION_CONTRACT_MAINNET`** updated to audited v2 contract address `0x05c49ee5d3208a2c2e150fdd0c247d1195ed9ab54fa2d5dea7a633f39e4b205b`
 
 ### v0.6.5
-- **ERC-1155 support** — `ApiToken.balances: ApiTokenBalance[] | null` replaces the single `owner` field for ownership checks
-- **`ApiTokenBalance`** type — `{ owner: string; amount: string }` — each entry represents one holder and their quantity
-- **`ApiToken.owner`** deprecated — always `null` after the ERC-1155 migration; use `balances` instead
-- **`ApiCollection.standard`** — `"ERC721" | "ERC1155" | "UNKNOWN"` detected via ERC-165 `supportsInterface`
-- **`totalSupply` fix** — ERC-1155 collections now report `SUM(holder amounts)` instead of distinct token ID count
+- **ERC-1155 support**: `ApiToken.balances: ApiTokenBalance[] | null` replaces the single `owner` field for ownership checks
+- **`ApiTokenBalance`** type: `{ owner: string; amount: string }`: each entry represents one holder and their quantity
+- **`ApiToken.owner`** deprecated: always `null` after the ERC-1155 migration; use `balances` instead
+- **`ApiCollection.standard`**: `"ERC721" | "ERC1155" | "UNKNOWN"` detected via ERC-165 `supportsInterface`
+- **`totalSupply` fix**: ERC-1155 collections now report `SUM(holder amounts)` for an accurate circulating total
 
 ### v0.6.1
-- **Collection Drop** — new `DropService` (`client.services.drop`) with full on-chain drop management: `claim`, `adminMint`, `setClaimConditions`, `setAllowlistEnabled`, `addToAllowlist`, `batchAddToAllowlist`, `setPaused`, `withdrawPayments`, `createDrop`
-- **`client.api.getDropCollections(opts?)`** — list all `COLLECTION_DROP` collections
-- **`client.api.getDropMintStatus(collection, wallet)`** — returns `{ mintedByWallet, totalMinted }`
+- **Collection Drop**: new `DropService` (`client.services.drop`) with full on-chain drop management: `claim`, `adminMint`, `setClaimConditions`, `setAllowlistEnabled`, `addToAllowlist`, `batchAddToAllowlist`, `setPaused`, `withdrawPayments`, `createDrop`
+- **`client.api.getDropCollections(opts?)`**: list all `COLLECTION_DROP` collections
+- **`client.api.getDropMintStatus(collection, wallet)`**: returns `{ mintedByWallet, totalMinted }`
 - **`DropMintStatus`**, **`ClaimConditions`**, **`CreateDropParams`** types exported
 - **`DropCollectionABI`** and **`DropFactoryABI`** exported from `@medialane/sdk`
 - **`DROP_FACTORY_CONTRACT_MAINNET`** and **`DROP_COLLECTION_CLASS_HASH_MAINNET`** constants exported
 - **`CollectionSource`** union extended with `"COLLECTION_DROP"`
 
 ### v0.6.0
-- **POP Protocol** — `PopService` (`client.services.pop`): `claim`, `adminMint`, `addToAllowlist`, `batchAddToAllowlist`, `removeFromAllowlist`, `setTokenUri`, `setPaused`, `createCollection`
+- **POP Protocol**: `PopService` (`client.services.pop`): `claim`, `adminMint`, `addToAllowlist`, `batchAddToAllowlist`, `removeFromAllowlist`, `setTokenUri`, `setPaused`, `createCollection`
 - **`client.api.getPopCollections(opts?)`** and **`client.api.getPopEligibility(collection, wallet)`**
 - **`POPCollectionABI`** and **`POPFactoryABI`** exported
 - **`POP_FACTORY_CONTRACT_MAINNET`** and **`POP_COLLECTION_CLASS_HASH_MAINNET`** constants exported
 
 ### v0.5.7
-- **`ApiCollectionProfile.hasGatedContent: boolean`** — whether the collection has token-gated content configured
-- **`ApiCollectionProfile.gatedContentTitle: string | null`** — public title of gated content (shown to all users; URL is accessible to holders only via the backend gated-content endpoint)
+- **`ApiCollectionProfile.hasGatedContent: boolean`**: whether the collection has token-gated content configured
+- **`ApiCollectionProfile.gatedContentTitle: string | null`**: public title of gated content (shown to all users; URL is accessible to holders only via the backend gated-content endpoint)
 
 ### v0.5.5
-- **`extendRemixOffer(id, days, siwsToken)`** — requester extends expiry of a PENDING/AUTO_PENDING remix offer by 1–30 days (`POST /v1/remix-offers/:id/extend`)
-- **`ApiRemixOfferPrice`** type — `{ raw, formatted, currency, decimals }` replaces flat `proposedPrice`/`proposedCurrency` fields on `ApiRemixOffer.price` (visible to participants only)
+- **`extendRemixOffer(id, days, siwsToken)`**: requester extends expiry of a PENDING/AUTO_PENDING remix offer by 1–30 days (`POST /v1/remix-offers/:id/extend`)
+- **`ApiRemixOfferPrice`** type: `{ raw, formatted, currency, decimals }` replaces flat `proposedPrice`/`proposedCurrency` fields on `ApiRemixOffer.price` (visible to participants only)
 
 ### v0.5.4
-- **`ApiRemixOffer.price`** shape introduced — backend now serializes price as a structured object (`raw`, `formatted`, `currency`, `decimals`) instead of raw wei strings
+- **`ApiRemixOffer.price`** shape introduced: backend now serializes price as a structured object (`raw`, `formatted`, `currency`, `decimals`), replacing raw wei strings
 
 ### v0.5.3
-- **`getTokenComments(contract, tokenId, opts?)`** — fetch on-chain NFT comments for a token (`GET /v1/tokens/:contract/:tokenId/comments`)
-- **`ApiComment`** type — `{ id, author, content, txHash, blockNumber, blockTimestamp, isHidden, createdAt }`
+- **`getTokenComments(contract, tokenId, opts?)`**: fetch on-chain NFT comments for a token (`GET /v1/tokens/:contract/:tokenId/comments`)
+- **`ApiComment`** type: `{ id, author, content, txHash, blockNumber, blockTimestamp, isHidden, createdAt }`
 
 ### v0.5.0
-- **Counter-offer support** — `createCounterOfferIntent(params, siwsToken)`, `getCounterOffers(query)`, `ApiCounterOffersQuery`, `CreateCounterOfferIntentParams`
+- **Counter-offer support**: `createCounterOfferIntent(params, siwsToken)`, `getCounterOffers(query)`, `ApiCounterOffersQuery`, `CreateCounterOfferIntentParams`
 - **`OrderStatus`** extended with `"COUNTER_OFFERED"`; **`IntentType`** with `"COUNTER_OFFER"`
 - **`ApiOrder`** extended: `parentOrderHash?: string | null`, `counterOfferMessage?: string | null`
-- **Remix licensing** — full set of remix offer methods and types:
-  - `submitRemixOffer(params, siwsToken)` — custom offer
-  - `submitAutoRemixOffer(params, siwsToken)` — auto offer for open-license tokens
-  - `confirmSelfRemix(params, siwsToken)` — record owner self-remix
-  - `getRemixOffers(query, siwsToken)` — list by role
-  - `getRemixOffer(id, siwsToken?)` — single offer
-  - `confirmRemixOffer(id, params, siwsToken)` — creator approves
-  - `rejectRemixOffer(id, siwsToken)` — creator rejects
-  - `getTokenRemixes(contract, tokenId, opts?)` — public remix list
-- **New types** — `RemixOfferStatus`, `ApiRemixOffer`, `ApiPublicRemix`, `OPEN_LICENSES`, `OpenLicense`, `CreateRemixOfferParams`, `AutoRemixOfferParams`, `ConfirmSelfRemixParams`, `ConfirmRemixOfferParams`, `ApiRemixOffersQuery`
+- **Remix licensing**: full set of remix offer methods and types:
+  - `submitRemixOffer(params, siwsToken)`: custom offer
+  - `submitAutoRemixOffer(params, siwsToken)`: auto offer for open-license tokens
+  - `confirmSelfRemix(params, siwsToken)`: record owner self-remix
+  - `getRemixOffers(query, siwsToken)`: list by role
+  - `getRemixOffer(id, siwsToken?)`: single offer
+  - `confirmRemixOffer(id, params, siwsToken)`: creator approves
+  - `rejectRemixOffer(id, siwsToken)`: creator rejects
+  - `getTokenRemixes(contract, tokenId, opts?)`: public remix list
+- **New types**: `RemixOfferStatus`, `ApiRemixOffer`, `ApiPublicRemix`, `OPEN_LICENSES`, `OpenLicense`, `CreateRemixOfferParams`, `AutoRemixOfferParams`, `ConfirmSelfRemixParams`, `ConfirmRemixOfferParams`, `ApiRemixOffersQuery`
 
 ### v0.4.8
 - **`ApiComment`** type + **`getTokenComments`** (patch release, backported into v0.5.3)
 
 ### v0.4.7
-- **`IPType`** union type exported — `"Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom"`
+- **`IPType`** union type exported: `"Audio" | "Art" | "Documents" | "NFT" | "Video" | "Photography" | "Patents" | "Posts" | "Publications" | "RWA" | "Software" | "Custom"`
 
 ### v0.4.6
 - **`ApiUserWallet`** type + `upsertMyWallet(siwsToken)` / `getMyWallet(siwsToken)` for wallet registration fallback (`POST/GET /v1/users/me`)
 
 ### v0.4.5
-- **`ApiSearchCreatorResult`** type + `ApiSearchResult.creators` — creator profiles now included in search results
+- **`ApiSearchCreatorResult`** type + `ApiSearchResult.creators`: creator profiles now included in search results
 
 ### v0.4.4
-- **`ApiCreatorListResult`** + `getCreators(opts?)` — list creators with search/pagination via `GET /v1/creators`
+- **`ApiCreatorListResult`** + `getCreators(opts?)`: list creators with search/pagination via `GET /v1/creators`
 
 ### v0.4.3
-- **`ApiCreatorProfile.username`** field + `getCreatorByUsername(username)` — resolve username slug to creator profile
+- **`ApiCreatorProfile.username`** field + `getCreatorByUsername(username)`: resolve username slug to creator profile
 
 ### v0.4.2
 - **WBTC** added to `SUPPORTED_TOKENS` (`0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac`, 8 decimals)
-- **`listable` field** on every `SUPPORTED_TOKENS` entry — controls whether a token appears in listing/offer dialogs vs filter-only
-- **`getListableTokens()`** — returns tokens filtered to `listable: true`; exported from package root
-- **ETH** promoted to `listable: true` — now available in listing and offer dialogs
-- **USDC.e removed** — bridged USDC (`0x053c91...`) removed entirely; only Circle-native USDC remains, to avoid user confusion
+- **`listable` field** on every `SUPPORTED_TOKENS` entry: controls whether a token appears in listing/offer dialogs vs filter-only
+- **`getListableTokens()`**: returns tokens filtered to `listable: true`; exported from package root
+- **ETH** promoted to `listable: true`: now available in listing and offer dialogs
+- **USDC.e removed**: bridged USDC (`0x053c91...`) removed entirely; only Circle-native USDC remains, to avoid user confusion
 
 ### v0.4.1
-- **Collection claims** — `claimCollection(contractAddress, walletAddress, siwsToken)` for on-chain ownership verification; `requestCollectionClaim({ contractAddress, walletAddress?, email, notes? })` for manual review
-- **Collection profiles** — `getCollectionProfile(contractAddress)` and `updateCollectionProfile(contractAddress, data, siwsToken)` for enriched display metadata (displayName, description, image, bannerImage, social links)
-- **Creator profiles** — `getCreatorProfile(walletAddress)` and `updateCreatorProfile(walletAddress, data, siwsToken)` for creator display metadata
-- **New types** — `ApiCollectionClaim`, `ApiAdminCollectionClaim`, `ApiCollectionProfile`, `ApiCreatorProfile`
+- **Collection claims**: `claimCollection(contractAddress, walletAddress, siwsToken)` for on-chain ownership verification; `requestCollectionClaim({ contractAddress, walletAddress?, email, notes? })` for manual review
+- **Collection profiles**: `getCollectionProfile(contractAddress)` and `updateCollectionProfile(contractAddress, data, siwsToken)` for enriched display metadata (displayName, description, image, bannerImage, social links)
+- **Creator profiles**: `getCreatorProfile(walletAddress)` and `updateCreatorProfile(walletAddress, data, siwsToken)` for creator display metadata
+- **New types**: `ApiCollectionClaim`, `ApiAdminCollectionClaim`, `ApiCollectionProfile`, `ApiCreatorProfile`
 - **`ApiCollection`** extended with `source` (`"MEDIALANE_REGISTRY" | "EXTERNAL" | "PARTNERSHIP" | "IP_TICKET" | "IP_CLUB" | "GAME"`) and `claimedBy: string | null`
 - `profile?: ApiCollectionProfile | null` optionally embedded on `ApiCollection` when `?include=profile`
 
 ### v0.4.0
-- **Typed error codes** — `MedialaneError` and `MedialaneApiError` now expose a `.code: MedialaneErrorCode` property (`"TOKEN_NOT_FOUND"` | `"RATE_LIMITED"` | `"INTENT_EXPIRED"` | `"UNAUTHORIZED"` | `"INVALID_PARAMS"` | `"NETWORK_NOT_SUPPORTED"` | `"UNKNOWN"`)
-- **Automatic retry** — all API requests retry up to 3 times with exponential backoff (300ms base, 5s cap); 4xx errors are not retried. Configure via `retryOptions` in `MedialaneConfig`
+- **Typed error codes**: `MedialaneError` and `MedialaneApiError` now expose a `.code: MedialaneErrorCode` property (`"TOKEN_NOT_FOUND"` | `"RATE_LIMITED"` | `"INTENT_EXPIRED"` | `"UNAUTHORIZED"` | `"INVALID_PARAMS"` | `"NETWORK_NOT_SUPPORTED"` | `"UNKNOWN"`)
+- **Automatic retry**: all API requests retry up to 3 times with exponential backoff (300ms base, 5s cap) on transient failures. Configure via `retryOptions` in `MedialaneConfig`
 - **`RetryOptions`** type exported from index
 - **`CollectionSort`** named union type exported (`"recent" | "supply" | "floor" | "volume" | "name"`)
-- **Sepolia guard** — constructing a client with `network: "sepolia"` and no explicit contract addresses now throws `NETWORK_NOT_SUPPORTED` immediately
+- **Sepolia guard**: constructing a client with `network: "sepolia"` and no explicit contract addresses now throws `NETWORK_NOT_SUPPORTED` immediately
 
 ### v0.3.3
-- `getCollections(page?, limit?, isKnown?, sort?)` — added `sort` parameter: `"recent"` (default) | `"supply"` | `"floor"` | `"volume"` | `"name"`
-- Default sort changed from `totalSupply DESC` to `createdAt DESC` (newest first) — matches backend default
+- `getCollections(page?, limit?, isKnown?, sort?)`: added `sort` parameter: `"recent"` (default) | `"supply"` | `"floor"` | `"volume"` | `"name"`
+- Default sort changed from `totalSupply DESC` to `createdAt DESC` (newest first): matches backend default
 
 ### v0.3.1
-- `ApiCollection.collectionId: string | null` — on-chain registry numeric ID (decimal string). Required for `createMintIntent`. Populated for collections indexed after 2026-03-09.
+- `ApiCollection.collectionId: string | null`: on-chain registry numeric ID (decimal string). Required for `createMintIntent`. Populated for collections indexed after 2026-03-09.
 
 ### v0.3.0
-- `normalizeAddress()` applied internally before all API calls — callers no longer need to normalize Starknet addresses
-- `ApiCollection.owner: string | null` — populated from intent typedData or on-chain `owner()` call
-- `getCollectionsByOwner(owner)` — fetch collections by wallet address via `GET /v1/collections?owner=`
+- `normalizeAddress()` applied internally before all API calls: callers no longer need to normalize Starknet addresses
+- `ApiCollection.owner: string | null`: populated from intent typedData or on-chain `owner()` call
+- `getCollectionsByOwner(owner)`: fetch collections by wallet address via `GET /v1/collections?owner=`
 
 ### v0.2.6
-- `ApiOrder.token: ApiOrderTokenMeta | null` — token name/image/description embedded on orders (batchTokenMeta); no per-row `getToken` calls needed
+- `ApiOrder.token: ApiOrderTokenMeta | null`: token name/image/description embedded on orders (batchTokenMeta); no per-row `getToken` calls needed
 
 ### v0.2.0
 - `IpAttribute` and `IpNftMetadata` interfaces for IP metadata
@@ -649,7 +649,7 @@ Built with:
 - Added `USDC.e` (bridged USDC via Starkgate) to `SUPPORTED_TOKENS`
 
 ### v0.1.0
-- Initial release — orders, tokens, collections, activities, intents, metadata, portal
+- Initial release: orders, tokens, collections, activities, intents, metadata, portal
 
 ---
 
