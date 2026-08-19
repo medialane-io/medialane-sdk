@@ -79,6 +79,8 @@ export { stringifyBigInts, u256ToBigInt, encodeU256 } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
 export { PUBLIC_RPC_FALLBACKS, isTransientRpcError, createFailoverFetch } from "./utils/rpc.js";
 export type { FailoverFetchOptions } from "./utils/rpc.js";
+export { DEFAULT_STARKNET_RPC_METHODS, createRpcProxyHandler } from "./server/rpc-proxy.js";
+export type { RpcProxyConfig } from "./server/rpc-proxy.js";
 
 export { buildAssetMetadata, RESERVED_TRAITS } from "./metadata.js";
 export type { AssetAttribute, AssetMetadata, BuildAssetMetadataInput } from "./metadata.js";
