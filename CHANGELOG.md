@@ -2,6 +2,45 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.85.10] — 2026-08-19
+
+### Added
+
+- `isValidIpfsCidPath`, `resolveSafeImageContentType`, `IPFS_SAFE_CONTENT_TYPE_PREFIXES`,
+  `MAX_IPFS_GATEWAY_RESPONSE_BYTES` — the CID-validation and safe-content-type logic
+  duplicated across the backend's and both apps' `/api/ipfs` gateway proxies, unified
+  behind one shared implementation.
+
+## [0.85.9] — 2026-08-16
+
+### Added
+
+- `starknet` subpath: `deriveAesKey`, `generateStarkKeyPair`, `sealPrivateKey`,
+  `unsealPrivateKey`, `signWithPrivateKey` — the passkey crypto kernel (HKDF key
+  derivation, AES-GCM sealing, Stark keypair generation/signing) for self-custody
+  wallets with a passkey-derived owner key.
+
+## [0.85.8] — 2026-08-16
+
+### Added
+
+- `starknet` subpath: guardian calldata builders exported —
+  `buildSetFirstGuardianCall`, `buildTriggerEscapeOwnerCall`,
+  `buildCompleteEscapeOwnerCall`, `buildCancelEscapeCall`, `decodeGuardiansInfo`,
+  `decodeEscapeAndStatus`, and related guardian/escape types.
+
+## [0.85.7] — 2026-08-15
+
+### Added
+
+- `changeMyEmail` — API client method to update the authenticated user's email.
+
+## [0.85.6] — 2026-08-15
+
+### Added
+
+- `ApiUserWallet.requiresEmailVerification` field.
+
 ## [0.85.5] — 2026-08-12
 
 ### Added

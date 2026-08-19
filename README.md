@@ -4,7 +4,7 @@
 
 **Framework-agnostic TypeScript SDK for the Medialane IP marketplace on Starknet**
 
-The Medialane SDK provides a unified interface for interacting with the Medialane marketplace — both **on-chain operations** (create listings, make offers, fulfill orders, mint IP assets) and **REST API access** (search tokens, manage orders, upload metadata to IPFS). Built for [Medialane.io](https://medialane.io) and [Medialane.xyz](https://medialane.xyz).
+The Medialane SDK provides a unified interface for interacting with the Medialane marketplace — both **on-chain operations** (create listings, make offers, fulfill orders, mint IP assets) and **REST API access** (search tokens, manage orders, upload metadata to IPFS). Built for [medialane.io](https://medialane.io), [starknet.medialane.io](https://starknet.medialane.io), [portal.medialane.io](https://portal.medialane.io), and `media-wallet`.
 
 ---
 
@@ -656,7 +656,8 @@ Built with:
 ## Links
 
 - **Marketplace**: [medialane.io](https://medialane.io)
-- **Developer Portal**: [medialane.xyz](https://medialane.xyz)
+- **Starknet App**: [starknet.medialane.io](https://starknet.medialane.io)
+- **Developer Portal**: [portal.medialane.io](https://portal.medialane.io)
 - **npm**: [npmjs.com/package/@medialane/sdk](https://www.npmjs.com/package/@medialane/sdk)
 - **GitHub**: [github.com/medialane-io](https://github.com/medialane-io)
 
