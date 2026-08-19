@@ -83,5 +83,12 @@ export type { FailoverFetchOptions } from "./utils/rpc.js";
 export { buildAssetMetadata, RESERVED_TRAITS } from "./metadata.js";
 export type { AssetAttribute, AssetMetadata, BuildAssetMetadataInput } from "./metadata.js";
 
+export {
+  isValidIpfsCidPath,
+  resolveSafeImageContentType,
+  IPFS_SAFE_CONTENT_TYPE_PREFIXES,
+  MAX_IPFS_GATEWAY_RESPONSE_BYTES,
+} from "./utils/ipfs-gateway.js";
+
 export * from "./adapters/index.js";
 
