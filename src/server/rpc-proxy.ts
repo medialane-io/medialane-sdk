@@ -1,4 +1,5 @@
 import { isTransientRpcError } from "../utils/rpc.js";
+import { requestIp } from "./rate-limit.js";
 
 export const DEFAULT_STARKNET_RPC_METHODS: readonly string[] = [
   "starknet_call",
@@ -93,8 +94,7 @@ export function createRpcProxyHandler(config: RpcProxyConfig): (req: Request) =>
       return rpcError(-32600, "Cross-origin requests are not allowed", 403);
     }
 
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-    if (!config.checkRateLimit(ip)) {
+    if (!config.checkRateLimit(requestIp(req))) {
       return rpcError(-32005, "Too many requests", 429);
     }
 
