@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.85.13] — 2026-08-20
+
+### Added
+
+- `getMetadataSignedUrl(kind)` — accepts an optional `"image" | "document" | "media"` kind,
+  matching the backend's `/v1/metadata/signed-url` kinds. Previously always requested the
+  `image` kind with no way to reach `document` or the new `media` kind (100MB, covers
+  image/video/audio/PDF) through the typed client.
+
 ## [0.85.10] — 2026-08-19
 
 ### Added
