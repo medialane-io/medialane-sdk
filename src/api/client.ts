@@ -437,8 +437,9 @@ export class ApiClient {
     return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/counter-offers?${params}`);
   }
 
-  getMetadataSignedUrl(): Promise<ApiResponse<ApiMetadataSignedUrl>> {
-    return this.get<ApiResponse<ApiMetadataSignedUrl>>("/v1/metadata/signed-url");
+  getMetadataSignedUrl(kind?: "image" | "document" | "media"): Promise<ApiResponse<ApiMetadataSignedUrl>> {
+    const params = kind ? `?kind=${kind}` : "";
+    return this.get<ApiResponse<ApiMetadataSignedUrl>>(`/v1/metadata/signed-url${params}`);
   }
 
   uploadMetadata(metadata: Record<string, unknown>): Promise<ApiResponse<ApiMetadataUpload>> {
