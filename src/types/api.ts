@@ -516,10 +516,18 @@ export interface CreateCollectionIntentParams {
   };
 }
 
+export interface CheckoutIntentItem {
+  orderHash: string;
+
+  quantity?: string;
+}
+
 export interface CreateCheckoutIntentParams {
   fulfiller: string;
 
-  orderHashes: string[];
+  items?: CheckoutIntentItem[];
+
+  orderHashes?: string[];
 }
 
 export interface ApiCheckoutIntentResult {

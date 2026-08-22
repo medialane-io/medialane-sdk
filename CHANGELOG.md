@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.91.0] — 2026-08-22
+
+### Changed
+
+- `CreateCheckoutIntentParams` accepts `items: [{ orderHash, quantity? }]` alongside
+  the existing `orderHashes: string[]`. Checkout previously discarded quantity, so an
+  ERC-1155 purchase of N units was fulfilled as one unit while the caller had already
+  computed the platform fee on N. `orderHashes` still works and behaves as before.
+
 ## [0.90.0] — 2026-08-22
 
 ### Added
