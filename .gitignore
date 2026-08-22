@@ -38,3 +38,6 @@ next-env.d.ts
 # build output — built at publish (prepublishOnly), never committed
 /dist
 .npmrc
+
+# Internal planning/spec documents must never be committed to a public repo.
+docs/
