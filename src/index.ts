@@ -2,8 +2,8 @@
 
 export { type MedialaneConfig, type ResolvedConfig, resolveConfig } from "./config.js";
 
-export { resolveFeeConfig, FeeConfigSchema } from "./fee/index.js";
-export type { FeeConfig, ResolvedFeeConfig } from "./fee/index.js";
+export { resolveFeeConfig, FeeConfigSchema, resolveAppFeeConfig } from "./fee/index.js";
+export type { FeeConfig, ResolvedFeeConfig, FeeEnv } from "./fee/index.js";
 
 export { ApiClient, MedialaneApiError } from "./api/client.js";
 
@@ -87,6 +87,8 @@ export type { RpcProxyConfig } from "./server/rpc-proxy.js";
 export type { BackendProxyConfig } from "./server/backend-proxy.js";
 
 export { buildAssetMetadata, RESERVED_TRAITS } from "./metadata.js";
+export { getDerivativesTerm, resolveRemixPolicy } from "./remix-policy.js";
+export type { RemixPolicy, RemixPolicyInput } from "./remix-policy.js";
 export type { AssetAttribute, AssetMetadata, BuildAssetMetadataInput } from "./metadata.js";
 
 export {

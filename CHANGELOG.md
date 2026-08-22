@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.88.0] — 2026-08-22
+
+### Added
+
+- `resolveAppFeeConfig(env)` — reads the four `NEXT_PUBLIC_FEE_*` variables with the
+  platform defaults. Both apps had an identical `lib/fee.ts` differing only in the
+  exported constant name.
+- `getDerivativesTerm(attributes)` and `resolveRemixPolicy(input)` — the licensing
+  logic behind whether an asset can be remixed directly or needs a deal. Both apps
+  carried a byte-identical copy; it is license-attribute logic and belongs here.
+
 ## [0.87.0] — 2026-08-22
 
 ### Added
