@@ -32,6 +32,9 @@ export {
   CreatorCoinService,
   VALIDATED_EKUBO_PARAMS,
   getCreatorCoinMarket,
+  getCreatorCoinGuarantees,
+  MAX_TEAM_ALLOCATION_PERCENT,
+  MAX_HOLDERS_AT_LAUNCH,
   buildCreateCreatorCoinCall,
   buildLaunchOnEkuboCalls,
   parseCreatorCoinCreated,
@@ -56,6 +59,7 @@ export type {
   EkuboPoolParams,
   CreatorCoinPrice,
   CreatorCoinMarket,
+  CreatorCoinGuarantees,
 } from "./services/creatorCoin.js";
 export type {
   DeployCollectionParams,

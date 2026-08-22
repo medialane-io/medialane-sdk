@@ -84,6 +84,68 @@ export type CreatorCoinMarket =
   | { status: "live"; price: CreatorCoinPrice }
   | { status: "pre-launch" };
 
+export const MAX_TEAM_ALLOCATION_PERCENT = 10;
+
+export const MAX_HOLDERS_AT_LAUNCH = 10;
+
+export interface CreatorCoinGuarantees {
+  isLaunched: boolean;
+
+  launchedAtBlock: number | null;
+
+  totalSupplyRaw: string;
+
+  teamAllocationRaw: string;
+
+  teamAllocationPercent: number | null;
+
+  liquidityPositionId: string | null;
+}
+
+function u256(parts: string[], offset = 0): bigint {
+  return BigInt(parts[offset] ?? "0x0") + (BigInt(parts[offset + 1] ?? "0x0") << 128n);
+}
+
+export async function getCreatorCoinGuarantees(
+  coinAddress: string,
+  provider: ProviderInterface,
+): Promise<CreatorCoinGuarantees> {
+  const call = (entrypoint: string) =>
+    provider.callContract({ contractAddress: coinAddress, entrypoint, calldata: [] });
+
+  const [launchedRes, supplyRes, allocRes, blockRes, liquidityRes] = await Promise.all([
+    call("is_launched"),
+    call("total_supply"),
+    call("get_team_allocation"),
+    call("launched_at_block_number").catch(() => null),
+    call("liquidity_type").catch(() => null),
+  ]);
+
+  const isLaunched = BigInt(launchedRes[0] ?? "0x0") !== 0n;
+  const totalSupply = u256(supplyRes);
+  const teamAllocation = u256(allocRes);
+
+  const teamAllocationPercent =
+    totalSupply > 0n ? Number((teamAllocation * 10_000n) / totalSupply) / 100 : null;
+
+  const launchedAtBlock =
+    isLaunched && blockRes?.[0] != null ? Number(BigInt(blockRes[0])) : null;
+
+  const liquidityPositionId =
+    liquidityRes && BigInt(liquidityRes[0] ?? "0x1") === 0n && liquidityRes[2] != null
+      ? BigInt(liquidityRes[2]).toString()
+      : null;
+
+  return {
+    isLaunched,
+    launchedAtBlock,
+    totalSupplyRaw: totalSupply.toString(),
+    teamAllocationRaw: teamAllocation.toString(),
+    teamAllocationPercent,
+    liquidityPositionId,
+  };
+}
+
 const COIN_DECIMALS = 18;
 
 export async function getCreatorCoinMarket(
