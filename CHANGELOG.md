@@ -2,6 +2,29 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.86.0] — 2026-08-22
+
+### Changed
+
+- `createRpcProxyHandler` now forwards to the backend's `POST /v1/rpc` with the API
+  key attached, instead of billing through `/v1/rpc/meter` and then calling the RPC
+  node itself. Billing was previously self-reported by the caller, so any path that
+  skipped the meter call reached the node for free. Forwarding through the backend
+  means the credit is deducted by the backend's own middleware before the call is
+  made, and the node URL no longer needs to exist in an app.
+- `RpcProxyConfig` drops `rpcUrls` and `allowedMethods`; the upstream list and the
+  method allowlist now live in the backend. It gains an optional `fetchImpl` for
+  testing.
+
+### Added
+
+- `isSameOrigin(req)` — the same-origin check both apps had copied locally.
+
+### Removed
+
+- `DEFAULT_STARKNET_RPC_METHODS` — the allowlist moved to the backend, next to the
+  gate that enforces it.
+
 ## [0.85.13] — 2026-08-20
 
 ### Added

@@ -1,141 +1,155 @@
 import { test, expect } from "bun:test";
-import { DEFAULT_STARKNET_RPC_METHODS, createRpcProxyHandler } from "./rpc-proxy.js";
+import { createRpcProxyHandler } from "./rpc-proxy.js";
 
-test("DEFAULT_STARKNET_RPC_METHODS is the union of all three apps' current allowlists", () => {
-  const expected = [
-    "starknet_call",
-    "starknet_addInvokeTransaction",
-    "starknet_getTransactionReceipt",
-    "starknet_getTransactionStatus",
-    "starknet_getTransactionByHash",
-    "starknet_getTransaction",
-    "starknet_getBlockWithReceipts",
-    "starknet_estimateFee",
-    "starknet_getNonce",
-    "starknet_simulateTransactions",
-    "starknet_specVersion",
-    "starknet_chainId",
-    "starknet_blockNumber",
-    "starknet_blockHashAndNumber",
-    "starknet_getClassAt",
-    "starknet_getClass",
-    "starknet_getClassHashAt",
-    "starknet_getStorageAt",
-    "starknet_getBlockWithTxHashes",
-    "starknet_getBlockWithTxs",
-    "starknet_getEvents",
-  ];
-  for (const method of expected) {
-    expect(DEFAULT_STARKNET_RPC_METHODS).toContain(method);
-  }
-  expect(DEFAULT_STARKNET_RPC_METHODS.length).toBe(expected.length);
-});
+const allow = () => true;
+const deny = () => false;
 
-test("createRpcProxyHandler rejects when billing fails, without calling any RPC url", async () => {
-  let rpcUrlWasCalled = false;
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (url: string) => {
-    if (String(url).includes("v1/rpc/meter")) {
-      return new Response("", { status: 402 });
-    }
-    rpcUrlWasCalled = true;
-    return new Response(JSON.stringify({ jsonrpc: "2.0", result: "0x1", id: 1 }));
-  }) as typeof fetch;
+function request(body: unknown, headers: Record<string, string> = {}): Request {
+  return new Request("https://app.test/api/rpc", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+  });
+}
+
+test("forwards the body to the backend RPC endpoint with the api key attached", async () => {
+  let seenUrl = "";
+  let seenKey: string | null = null;
+  let seenBody: unknown;
 
   const handler = createRpcProxyHandler({
-    rpcUrls: ["https://example-rpc.test"],
     backendUrl: "https://backend.test",
-    apiKey: "test-key",
-    checkRateLimit: () => true,
+    apiKey: "secret-key",
+    checkRateLimit: allow,
+    fetchImpl: (async (url: string, init?: RequestInit) => {
+      seenUrl = String(url);
+      seenKey = new Headers(init?.headers).get("x-api-key");
+      seenBody = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify({ jsonrpc: "2.0", result: "0x1", id: 1 }), { status: 200 });
+    }) as unknown as typeof fetch,
   });
 
-  const req = new Request("https://app.test/api/rpc", {
-    method: "POST",
-    body: JSON.stringify({ jsonrpc: "2.0", method: "starknet_chainId", id: 1 }),
-  });
-  const res = await handler(req);
-  const body = await res.json();
+  const res = await handler(request({ jsonrpc: "2.0", method: "starknet_call", id: 1 }));
 
-  expect(body.error.code).toBe(-32003);
-  expect(rpcUrlWasCalled).toBe(false);
-
-  globalThis.fetch = originalFetch;
+  expect(seenUrl).toBe("https://backend.test/v1/rpc");
+  expect(seenKey).toBe("secret-key");
+  expect(seenBody).toEqual({ jsonrpc: "2.0", method: "starknet_call", id: 1 });
+  expect(await res.json()).toEqual({ jsonrpc: "2.0", result: "0x1", id: 1 });
 });
 
-test("createRpcProxyHandler forwards to the RPC url once billed, and fails over on a transient error", async () => {
-  const calledUrls: string[] = [];
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (url: string) => {
-    if (String(url).includes("v1/rpc/meter")) return new Response("", { status: 200 });
-    calledUrls.push(String(url));
-    if (String(url).includes("primary")) {
-      return new Response(JSON.stringify({ jsonrpc: "2.0", error: { code: -32603, message: "temporarily unavailable" } }), { status: 200 });
-    }
-    return new Response(JSON.stringify({ jsonrpc: "2.0", result: "0x534e5f4d41494e", id: 1 }));
-  }) as typeof fetch;
-
+test("trims a trailing slash from the backend url", async () => {
+  let seenUrl = "";
   const handler = createRpcProxyHandler({
-    rpcUrls: ["https://primary.test", "https://fallback.test"],
-    backendUrl: "https://backend.test",
-    apiKey: "test-key",
-    checkRateLimit: () => true,
+    backendUrl: "https://backend.test/",
+    apiKey: "k",
+    checkRateLimit: allow,
+    fetchImpl: (async (url: string) => {
+      seenUrl = String(url);
+      return new Response("{}", { status: 200 });
+    }) as unknown as typeof fetch,
   });
-
-  const req = new Request("https://app.test/api/rpc", {
-    method: "POST",
-    body: JSON.stringify({ jsonrpc: "2.0", method: "starknet_chainId", id: 1 }),
-  });
-  const res = await handler(req);
-  const body = await res.json();
-
-  expect(calledUrls).toEqual(["https://primary.test", "https://fallback.test"]);
-  expect(body.result).toBe("0x534e5f4d41494e");
-
-  globalThis.fetch = originalFetch;
+  await handler(request({ method: "starknet_call" }));
+  expect(seenUrl).toBe("https://backend.test/v1/rpc");
 });
 
-test("createRpcProxyHandler rejects a disallowed method before billing", async () => {
-  let meterWasCalled = false;
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (url: string) => {
-    if (String(url).includes("v1/rpc/meter")) meterWasCalled = true;
-    return new Response("", { status: 200 });
-  }) as typeof fetch;
-
+test("refuses cross-origin requests without calling the backend", async () => {
+  let called = false;
   const handler = createRpcProxyHandler({
-    rpcUrls: ["https://example-rpc.test"],
     backendUrl: "https://backend.test",
-    apiKey: "test-key",
-    checkRateLimit: () => true,
+    apiKey: "k",
+    checkRateLimit: allow,
+    fetchImpl: (async () => {
+      called = true;
+      return new Response("{}");
+    }) as unknown as typeof fetch,
   });
 
-  const req = new Request("https://app.test/api/rpc", {
-    method: "POST",
-    body: JSON.stringify({ jsonrpc: "2.0", method: "starknet_traceBlockTransactions", id: 1 }),
-  });
-  const res = await handler(req);
-  const body = await res.json();
+  const res = await handler(
+    request({ method: "starknet_call" }, { origin: "https://evil.example", host: "app.test" }),
+  );
 
-  expect(body.error.code).toBe(-32601);
-  expect(meterWasCalled).toBe(false);
-
-  globalThis.fetch = originalFetch;
+  expect(called).toBe(false);
+  expect(res.status).toBe(403);
 });
 
-test("createRpcProxyHandler rejects when the rate limiter says no", async () => {
+test("refuses when the rate limiter says no, without calling the backend", async () => {
+  let called = false;
   const handler = createRpcProxyHandler({
-    rpcUrls: ["https://example-rpc.test"],
     backendUrl: "https://backend.test",
-    apiKey: "test-key",
-    checkRateLimit: () => false,
+    apiKey: "k",
+    checkRateLimit: deny,
+    fetchImpl: (async () => {
+      called = true;
+      return new Response("{}");
+    }) as unknown as typeof fetch,
   });
 
-  const req = new Request("https://app.test/api/rpc", {
-    method: "POST",
-    headers: { "x-forwarded-for": "1.2.3.4" },
-    body: JSON.stringify({ jsonrpc: "2.0", method: "starknet_chainId", id: 1 }),
-  });
-  const res = await handler(req);
-
+  const res = await handler(request({ method: "starknet_call" }));
+  expect(called).toBe(false);
   expect(res.status).toBe(429);
+});
+
+test("refuses when no api key is configured, so an unbilled call is impossible", async () => {
+  let called = false;
+  const handler = createRpcProxyHandler({
+    backendUrl: "https://backend.test",
+    apiKey: undefined,
+    checkRateLimit: allow,
+    fetchImpl: (async () => {
+      called = true;
+      return new Response("{}");
+    }) as unknown as typeof fetch,
+  });
+
+  const res = await handler(request({ method: "starknet_call" }));
+  expect(called).toBe(false);
+  const json = await res.json();
+  expect(json.error.code).toBe(-32003);
+});
+
+test("surfaces a 402 from the backend to the caller", async () => {
+  const handler = createRpcProxyHandler({
+    backendUrl: "https://backend.test",
+    apiKey: "k",
+    checkRateLimit: allow,
+    fetchImpl: (async () =>
+      new Response(JSON.stringify({ error: "Payment required" }), { status: 402 })) as unknown as typeof fetch,
+  });
+
+  const res = await handler(request({ method: "starknet_call" }));
+  expect(res.status).toBe(402);
+});
+
+test("reports an unreachable backend as a JSON-RPC error rather than throwing", async () => {
+  const handler = createRpcProxyHandler({
+    backendUrl: "https://backend.test",
+    apiKey: "k",
+    checkRateLimit: allow,
+    fetchImpl: (async () => {
+      throw new Error("backend unreachable");
+    }) as unknown as typeof fetch,
+  });
+
+  const res = await handler(request({ method: "starknet_call" }));
+  const json = await res.json();
+  expect(json.error.code).toBe(-32603);
+});
+
+test("rejects an unparseable body", async () => {
+  const handler = createRpcProxyHandler({
+    backendUrl: "https://backend.test",
+    apiKey: "k",
+    checkRateLimit: allow,
+    fetchImpl: (async () => new Response("{}")) as unknown as typeof fetch,
+  });
+
+  const res = await handler(
+    new Request("https://app.test/api/rpc", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{not json",
+    }),
+  );
+  const json = await res.json();
+  expect(json.error.code).toBe(-32700);
 });
