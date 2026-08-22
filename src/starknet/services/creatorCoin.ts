@@ -109,14 +109,19 @@ function u256(parts: string[], offset = 0): bigint {
 export async function getCreatorCoinGuarantees(
   coinAddress: string,
   provider: ProviderInterface,
-): Promise<CreatorCoinGuarantees> {
+): Promise<CreatorCoinGuarantees | null> {
   const call = (entrypoint: string) =>
     provider.callContract({ contractAddress: coinAddress, entrypoint, calldata: [] });
 
-  const [launchedRes, supplyRes, allocRes, blockRes, liquidityRes] = await Promise.all([
-    call("is_launched"),
+  const [launchedRes, allocRes] = await Promise.all([
+    call("is_launched").catch(() => null),
+    call("get_team_allocation").catch(() => null),
+  ]);
+
+  if (!launchedRes || !allocRes) return null;
+
+  const [supplyRes, blockRes, liquidityRes] = await Promise.all([
     call("total_supply"),
-    call("get_team_allocation"),
     call("launched_at_block_number").catch(() => null),
     call("liquidity_type").catch(() => null),
   ]);
