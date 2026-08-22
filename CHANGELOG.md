@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.90.0] — 2026-08-22
+
+### Added
+
+- `isPrivateHost`, `validateUrl`, `ALLOWED_IMAGE_CONTENT_TYPES`,
+  `MAX_IMAGE_REDIRECTS`, `MAX_IMAGE_PROXY_BYTES` — the SSRF guard both apps'
+  `/api/img` routes carried a byte-identical copy of. It blocks loopback,
+  RFC1918, link-local, carrier-grade NAT, IPv6 unique-local, IPv4-mapped IPv6
+  and cloud metadata endpoints, and requires https with no embedded
+  credentials. Security-critical logic that previously had to be fixed twice
+  and had no tests; it now has one copy with twelve.
+
 ## [0.89.0] — 2026-08-22
 
 ### Added

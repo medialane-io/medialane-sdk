@@ -82,6 +82,13 @@ export type { FailoverFetchOptions } from "./utils/rpc.js";
 export { createRpcProxyHandler } from "./server/rpc-proxy.js";
 export { createBackendProxyHandler } from "./server/backend-proxy.js";
 export {
+  isPrivateHost,
+  validateUrl,
+  ALLOWED_IMAGE_CONTENT_TYPES,
+  MAX_IMAGE_REDIRECTS,
+  MAX_IMAGE_PROXY_BYTES,
+} from "./server/ssrf-guard.js";
+export {
   uploadJsonToBackend,
   uploadFileToBackend,
   uploadDirectoryToBackend,
