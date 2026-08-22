@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.89.0] — 2026-08-22
+
+### Added
+
+- `uploadJsonToBackend`, `uploadFileToBackend`, `uploadDirectoryToBackend` and
+  `getBackendSignedUrl` — the metadata upload helpers both apps carried a
+  byte-identical copy of. They now take a `BackendMetadataConfig` (`backendUrl`,
+  `apiKey`, optional `fetchImpl`) instead of reading app constants.
+
 ## [0.88.0] — 2026-08-22
 
 ### Added

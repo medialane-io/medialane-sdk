@@ -81,6 +81,13 @@ export { PUBLIC_RPC_FALLBACKS, isTransientRpcError, createFailoverFetch } from "
 export type { FailoverFetchOptions } from "./utils/rpc.js";
 export { createRpcProxyHandler } from "./server/rpc-proxy.js";
 export { createBackendProxyHandler } from "./server/backend-proxy.js";
+export {
+  uploadJsonToBackend,
+  uploadFileToBackend,
+  uploadDirectoryToBackend,
+  getBackendSignedUrl,
+} from "./server/backend-metadata.js";
+export type { BackendMetadataConfig, BackendUploadResult } from "./server/backend-metadata.js";
 export { createRateLimiter, requestIp } from "./server/rate-limit.js";
 export { isSameOrigin } from "./server/origin.js";
 export type { RpcProxyConfig } from "./server/rpc-proxy.js";
