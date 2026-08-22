@@ -80,19 +80,85 @@ export interface CreatorCoinPrice {
   quoteDecimals: number;
 }
 
-const COIN_DECIMALS = 18;
+export type CreatorCoinMarket =
+  | { status: "live"; price: CreatorCoinPrice }
+  | { status: "pre-launch" };
 
-export async function getCreatorCoinPrice(
+export const MAX_TEAM_ALLOCATION_PERCENT = 10;
+
+export const MAX_HOLDERS_AT_LAUNCH = 10;
+
+export interface CreatorCoinGuarantees {
+  isLaunched: boolean;
+
+  launchedAtBlock: number | null;
+
+  totalSupplyRaw: string;
+
+  teamAllocationRaw: string;
+
+  teamAllocationPercent: number | null;
+
+  liquidityPositionId: string | null;
+}
+
+function u256(parts: string[], offset = 0): bigint {
+  return BigInt(parts[offset] ?? "0x0") + (BigInt(parts[offset + 1] ?? "0x0") << 128n);
+}
+
+export async function getCreatorCoinGuarantees(
   coinAddress: string,
   provider: ProviderInterface,
-): Promise<CreatorCoinPrice | null> {
+): Promise<CreatorCoinGuarantees> {
+  const call = (entrypoint: string) =>
+    provider.callContract({ contractAddress: coinAddress, entrypoint, calldata: [] });
+
+  const [launchedRes, supplyRes, allocRes, blockRes, liquidityRes] = await Promise.all([
+    call("is_launched"),
+    call("total_supply"),
+    call("get_team_allocation"),
+    call("launched_at_block_number").catch(() => null),
+    call("liquidity_type").catch(() => null),
+  ]);
+
+  const isLaunched = BigInt(launchedRes[0] ?? "0x0") !== 0n;
+  const totalSupply = u256(supplyRes);
+  const teamAllocation = u256(allocRes);
+
+  const teamAllocationPercent =
+    totalSupply > 0n ? Number((teamAllocation * 10_000n) / totalSupply) / 100 : null;
+
+  const launchedAtBlock =
+    isLaunched && blockRes?.[0] != null ? Number(BigInt(blockRes[0])) : null;
+
+  const liquidityPositionId =
+    liquidityRes && BigInt(liquidityRes[0] ?? "0x1") === 0n && liquidityRes[2] != null
+      ? BigInt(liquidityRes[2]).toString()
+      : null;
+
+  return {
+    isLaunched,
+    launchedAtBlock,
+    totalSupplyRaw: totalSupply.toString(),
+    teamAllocationRaw: teamAllocation.toString(),
+    teamAllocationPercent,
+    liquidityPositionId,
+  };
+}
+
+const COIN_DECIMALS = 18;
+
+export async function getCreatorCoinMarket(
+  coinAddress: string,
+  provider: ProviderInterface,
+): Promise<CreatorCoinMarket> {
 
   const r = await provider.callContract({
     contractAddress: coinAddress,
     entrypoint: "launched_with_liquidity_parameters",
     calldata: [],
   });
-  if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return null;
+  if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return { status: "pre-launch" };
   const fee = r[2];
   const tickSpacing = r[3];
 
@@ -116,7 +182,10 @@ export async function getCreatorCoinPrice(
   const decAdj = 10 ** (COIN_DECIMALS - quoteDecimals);
   const quotePerCoin = (quoteIsToken0 ? 1 / priceT1perT0 : priceT1perT0) * decAdj;
 
-  return { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals };
+  return {
+    status: "live",
+    price: { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals },
+  };
 }
 
 let _factoryContract: Contract | null = null;
@@ -228,7 +297,7 @@ export class CreatorCoinService {
     return BigInt(r as any) === 1n;
   }
 
-  async getPrice(coinAddress: string): Promise<CreatorCoinPrice | null> {
-    return getCreatorCoinPrice(coinAddress, new RpcProvider({ nodeUrl: this.config.rpcUrl }));
+  async getMarket(coinAddress: string): Promise<CreatorCoinMarket> {
+    return getCreatorCoinMarket(coinAddress, new RpcProvider({ nodeUrl: this.config.rpcUrl }));
   }
 }

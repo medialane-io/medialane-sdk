@@ -31,7 +31,10 @@ export { ERC1155CollectionService } from "./services/erc1155collection.js";
 export {
   CreatorCoinService,
   VALIDATED_EKUBO_PARAMS,
-  getCreatorCoinPrice,
+  getCreatorCoinMarket,
+  getCreatorCoinGuarantees,
+  MAX_TEAM_ALLOCATION_PERCENT,
+  MAX_HOLDERS_AT_LAUNCH,
   buildCreateCreatorCoinCall,
   buildLaunchOnEkuboCalls,
   parseCreatorCoinCreated,
@@ -55,6 +58,8 @@ export type {
   EkuboLaunchParams,
   EkuboPoolParams,
   CreatorCoinPrice,
+  CreatorCoinMarket,
+  CreatorCoinGuarantees,
 } from "./services/creatorCoin.js";
 export type {
   DeployCollectionParams,
