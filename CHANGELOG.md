@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.87.0] — 2026-08-22
+
+### Added
+
+- `createBackendProxyHandler({ path, backendUrl, apiKey, checkRateLimit })` — the
+  same-origin check, rate limit, key attachment and forwarding that `/api/rpc`
+  already did, for any backend path. The swap routes now use it, and the paymaster
+  routes will. `createRpcProxyHandler` becomes a preset over it with `path: "/v1/rpc"`.
+
 ## [0.86.0] — 2026-08-22
 
 ### Changed
