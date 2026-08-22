@@ -80,19 +80,23 @@ export interface CreatorCoinPrice {
   quoteDecimals: number;
 }
 
+export type CreatorCoinMarket =
+  | { status: "live"; price: CreatorCoinPrice }
+  | { status: "pre-launch" };
+
 const COIN_DECIMALS = 18;
 
-export async function getCreatorCoinPrice(
+export async function getCreatorCoinMarket(
   coinAddress: string,
   provider: ProviderInterface,
-): Promise<CreatorCoinPrice | null> {
+): Promise<CreatorCoinMarket> {
 
   const r = await provider.callContract({
     contractAddress: coinAddress,
     entrypoint: "launched_with_liquidity_parameters",
     calldata: [],
   });
-  if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return null;
+  if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return { status: "pre-launch" };
   const fee = r[2];
   const tickSpacing = r[3];
 
@@ -116,7 +120,10 @@ export async function getCreatorCoinPrice(
   const decAdj = 10 ** (COIN_DECIMALS - quoteDecimals);
   const quotePerCoin = (quoteIsToken0 ? 1 / priceT1perT0 : priceT1perT0) * decAdj;
 
-  return { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals };
+  return {
+    status: "live",
+    price: { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals },
+  };
 }
 
 let _factoryContract: Contract | null = null;
@@ -228,7 +235,7 @@ export class CreatorCoinService {
     return BigInt(r as any) === 1n;
   }
 
-  async getPrice(coinAddress: string): Promise<CreatorCoinPrice | null> {
-    return getCreatorCoinPrice(coinAddress, new RpcProvider({ nodeUrl: this.config.rpcUrl }));
+  async getMarket(coinAddress: string): Promise<CreatorCoinMarket> {
+    return getCreatorCoinMarket(coinAddress, new RpcProvider({ nodeUrl: this.config.rpcUrl }));
   }
 }
