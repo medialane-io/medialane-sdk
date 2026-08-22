@@ -222,11 +222,21 @@ const SERVICES = {
       { name: "OrderCancelled", emittedBy: "factory" },
     ],
   },
+  "unruggable-erc20": {
+    id: "unruggable-erc20",
+    displayName: "Unruggable",
+    description:
+      "An ERC-20 launched through the unruggable.meme protocol, the same contract Medialane's Creator Coin is forked from. Not deployed via a Medialane service, but exposes the same on-chain guarantees: capped team allocation, permanently locked liquidity, fixed supply. Brought in by owner claim or admin/partnership — never bulk-indexed.",
+    standard: "ERC20",
+    provenance: "EXTERNAL",
+    uiVariant: "coin",
+    capabilities: ["swap", "transfer"],
+  },
   "external-erc20": {
     id: "external-erc20",
-    displayName: "External ERC-20",
+    displayName: "Memecoin",
     description:
-      "An ERC-20 token (e.g. an unrug memecoin or a partner coin) not deployed via a Medialane service. Brought in by owner claim or admin/partnership — never bulk-indexed. Generalizes to future chains.",
+      "A plain ERC-20 not deployed via a Medialane service and carrying no protocol-level guarantees. Brought in by owner claim or admin/partnership — never bulk-indexed. Generalizes to future chains.",
     standard: "ERC20",
     provenance: "EXTERNAL",
     uiVariant: "coin",

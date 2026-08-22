@@ -83,3 +83,31 @@ describe("getCreatorCoinGuarantees", () => {
     expect(g.totalSupplyRaw).toBe((1n << 128n).toString());
   });
 });
+
+describe("getCreatorCoinGuarantees interface detection", () => {
+  it("returns null for a plain ERC-20 that does not expose the interface", async () => {
+    const g = await getCreatorCoinGuarantees(
+      "0x1",
+      providerWith({
+        is_launched: new Error("entrypoint not found"),
+        get_team_allocation: new Error("entrypoint not found"),
+        total_supply: ["0x64", "0x0"],
+      })
+    );
+    expect(g).toBeNull();
+  });
+
+  it("returns null when only part of the interface answers", async () => {
+    const g = await getCreatorCoinGuarantees(
+      "0x1",
+      providerWith({ ...launched, get_team_allocation: new Error("entrypoint not found") })
+    );
+    expect(g).toBeNull();
+  });
+
+  it("still resolves for an unruggable coin Medialane did not deploy", async () => {
+    const g = await getCreatorCoinGuarantees("0x1", providerWith(launched));
+    expect(g).not.toBeNull();
+    expect(g!.teamAllocationPercent).toBe(10);
+  });
+});
