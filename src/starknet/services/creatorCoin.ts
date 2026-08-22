@@ -3,7 +3,6 @@ import { RpcProvider, hash, uint256, type AccountInterface, type Call, type Cont
 import type { ResolvedConfig } from "../../config.js";
 import { CreatorCoinFactoryABI } from "../abis/index.js";
 import { getStarknetCoordinates } from "../../chains.js";
-import { getTokenByAddress } from "../../utils/token.js";
 import { normalizeAddress } from "../../utils/address.js";
 import type { TxResult } from "../../types/marketplace.js";
 import { LAUNCH_PRICE_QUOTE_PER_COIN } from "./coinLaunchMath.js";
@@ -70,19 +69,6 @@ export function priceToEkuboParams(
     bound: VALIDATED_EKUBO_PARAMS.bound,
   };
 }
-
-export interface CreatorCoinPrice {
-
-  quotePerCoin: number;
-
-  quoteToken: string;
-  quoteSymbol: string | null;
-  quoteDecimals: number;
-}
-
-export type CreatorCoinMarket =
-  | { status: "live"; price: CreatorCoinPrice }
-  | { status: "pre-launch" };
 
 export const MAX_TEAM_ALLOCATION_PERCENT = 10;
 
@@ -152,46 +138,6 @@ export async function getCreatorCoinGuarantees(
 }
 
 const COIN_DECIMALS = 18;
-
-export async function getCreatorCoinMarket(
-  coinAddress: string,
-  provider: ProviderInterface,
-): Promise<CreatorCoinMarket> {
-
-  const r = await provider.callContract({
-    contractAddress: coinAddress,
-    entrypoint: "launched_with_liquidity_parameters",
-    calldata: [],
-  });
-  if (BigInt(r[0]) !== 0n || BigInt(r[1]) !== 0n) return { status: "pre-launch" };
-  const fee = r[2];
-  const tickSpacing = r[3];
-
-  const quoteToken = normalizeAddress("STARKNET","0x" + BigInt(r[7]).toString(16));
-  const token = getTokenByAddress(quoteToken);
-  const quoteDecimals = token?.decimals ?? 18;
-
-  const ci = BigInt(coinAddress);
-  const qi = BigInt(quoteToken);
-  const [t0, t1] = ci < qi ? [coinAddress, quoteToken] : [quoteToken, coinAddress];
-  const quoteIsToken0 = qi === BigInt(t0);
-
-  const pp = await provider.callContract({
-    contractAddress: getStarknetCoordinates("STARKNET").ekuboCore!,
-    entrypoint: "get_pool_price",
-    calldata: [t0, t1, fee, tickSpacing, "0x0"],
-  });
-  const sqrt = BigInt(pp[0]) + (BigInt(pp[1] ?? "0x0") << 128n);
-
-  const priceT1perT0 = (Number(sqrt) / 2 ** 128) ** 2;
-  const decAdj = 10 ** (COIN_DECIMALS - quoteDecimals);
-  const quotePerCoin = (quoteIsToken0 ? 1 / priceT1perT0 : priceT1perT0) * decAdj;
-
-  return {
-    status: "live",
-    price: { quotePerCoin, quoteToken, quoteSymbol: token?.symbol ?? null, quoteDecimals },
-  };
-}
 
 let _factoryContract: Contract | null = null;
 function factoryContract(): Contract {
@@ -302,7 +248,7 @@ export class CreatorCoinService {
     return BigInt(r as any) === 1n;
   }
 
-  async getMarket(coinAddress: string): Promise<CreatorCoinMarket> {
-    return getCreatorCoinMarket(coinAddress, new RpcProvider({ nodeUrl: this.config.rpcUrl }));
+  async getGuarantees(coinAddress: string): Promise<CreatorCoinGuarantees | null> {
+    return getCreatorCoinGuarantees(coinAddress, new RpcProvider({ nodeUrl: this.config.rpcUrl }));
   }
 }

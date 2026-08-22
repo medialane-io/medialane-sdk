@@ -289,11 +289,20 @@ export interface ApiCoin {
   description: string | null;
   image: string | null;
   creator: string | null;
+
+  isLaunched?: boolean | null;
   startBlock: string;
   isHidden: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ApiCoinPrice {
+
+  usdc: number;
+}
+
+export type ApiCoinPrices = Record<string, ApiCoinPrice | null>;
 
 export interface ApiCoinsQuery {
   chain?: ChainFilter;

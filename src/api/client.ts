@@ -10,6 +10,7 @@ import type {
   ApiToken,
   ApiCollection,
   ApiCoin,
+  ApiCoinPrices,
   ApiUserRewards,
   ApiRewardsLeaderboardEntry,
   ApiRewardsConfig,
@@ -841,6 +842,10 @@ export class ApiClient {
 
   getCoin(contract: string): Promise<{ data: ApiCoin }> {
     return this.get<{ data: ApiCoin }>(`/v1/coins/${this.addr(contract)}`);
+  }
+
+  getCoinPrices(): Promise<ApiResponse<ApiCoinPrices>> {
+    return this.get<ApiResponse<ApiCoinPrices>>("/v1/coins/prices");
   }
 
   updateCoinProfile(
