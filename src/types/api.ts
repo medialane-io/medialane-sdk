@@ -304,6 +304,10 @@ export interface ApiCoinPrice {
 
 export type ApiCoinPrices = Record<string, ApiCoinPrice | null>;
 
+export type ApiCoinClaimResult =
+  | { verified: true; coin: ApiCoin | null }
+  | { verified: false; reason: "owner_mismatch" | "owner_check_failed" | "not_erc20" | "no_total_supply" };
+
 export interface ApiCoinsQuery {
   chain?: ChainFilter;
   page?: number;
