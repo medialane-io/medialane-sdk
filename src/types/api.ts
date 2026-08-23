@@ -90,6 +90,8 @@ export interface ApiMeta {
   page: number;
   limit: number;
   total?: number;
+
+  counts?: Record<string, number>;
 }
 
 export interface ApiResponse<T> {
