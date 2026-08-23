@@ -11,6 +11,7 @@ import type {
   ApiCollection,
   ApiCoin,
   ApiCoinPrices,
+  ApiCoinClaimResult,
   ApiUserRewards,
   ApiRewardsLeaderboardEntry,
   ApiRewardsConfig,
@@ -846,6 +847,20 @@ export class ApiClient {
 
   getCoinPrices(): Promise<ApiResponse<ApiCoinPrices>> {
     return this.get<ApiResponse<ApiCoinPrices>>("/v1/coins/prices");
+  }
+
+  claimCoin(coinAddress: string, siwsToken: string): Promise<ApiCoinClaimResult> {
+    return this.request<ApiCoinClaimResult>("/v1/coins/claim", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${siwsToken}` },
+      body: JSON.stringify({ coinAddress }),
+    });
+  }
+
+  getCoinClaims(status = "PENDING"): Promise<ApiResponse<ApiCollectionClaim[]>> {
+    return this.get<ApiResponse<ApiCollectionClaim[]>>(
+      `/v1/coins/claims?status=${encodeURIComponent(status)}`,
+    );
   }
 
   updateCoinProfile(
