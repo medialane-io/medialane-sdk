@@ -5,7 +5,7 @@ import { CreatorCoinFactoryABI } from "../abis/index.js";
 import { getStarknetCoordinates } from "../../chains.js";
 import { normalizeAddress } from "../../utils/address.js";
 import type { TxResult } from "../../types/marketplace.js";
-import { LAUNCH_PRICE_QUOTE_PER_COIN } from "./coinLaunchMath.js";
+import { SUGGESTED_DEFAULT_PRICE, COIN_DECIMALS } from "./coinLaunchMath.js";
 
 export interface CreateCreatorCoinParams {
 
@@ -37,7 +37,7 @@ export interface EkuboLaunchParams {
 
   maxPercentageBuyLaunch?: number;
 
-  ekubo?: EkuboPoolParams;
+  ekubo: EkuboPoolParams;
 
   quoteFundAmount?: bigint | string;
 }
@@ -53,7 +53,7 @@ const TICK_BASE = 1.000001;
 
 export function priceToEkuboParams(
   quoteDecimals: number,
-  price: number = LAUNCH_PRICE_QUOTE_PER_COIN,
+  price: number = SUGGESTED_DEFAULT_PRICE,
 ): EkuboPoolParams {
   const decAdj = 10 ** (COIN_DECIMALS - quoteDecimals);
   const rawRatio = price / decAdj;
@@ -68,6 +68,18 @@ export function priceToEkuboParams(
     startingPrice: { mag: BigInt(Math.abs(roundedTick)), sign: roundedTick < 0 },
     bound: VALIDATED_EKUBO_PARAMS.bound,
   };
+}
+
+export function validatePrice(quoteDecimals: number, price: number): string | null {
+  if (!isFinite(price) || price <= 0) return "Price must be a positive number";
+  const decAdj = 10 ** (COIN_DECIMALS - quoteDecimals);
+  const rawRatio = price / decAdj;
+  if (!isFinite(rawRatio) || rawRatio <= 0) return "Price must be a positive number";
+  const rawTick = Math.log(rawRatio) / Math.log(TICK_BASE);
+  if (!isFinite(rawTick)) return "Price is outside the supported range";
+  const bound = Number(VALIDATED_EKUBO_PARAMS.bound);
+  if (Math.abs(rawTick) >= bound) return "Price is outside the supported range";
+  return null;
 }
 
 export const MAX_TEAM_ALLOCATION_PERCENT = 10;
@@ -137,8 +149,6 @@ export async function getCreatorCoinGuarantees(
   };
 }
 
-const COIN_DECIMALS = 18;
-
 let _factoryContract: Contract | null = null;
 function factoryContract(): Contract {
   if (!_factoryContract) {
@@ -162,7 +172,7 @@ export function buildCreateCreatorCoinCall(params: CreateCreatorCoinParams): Cal
 }
 
 export function buildLaunchOnEkuboCalls(params: EkuboLaunchParams): Call[] {
-  const ek = params.ekubo ?? VALIDATED_EKUBO_PARAMS;
+  const ek = params.ekubo;
 
   const launchParameters = {
     creator_coin_address: params.creatorCoin,

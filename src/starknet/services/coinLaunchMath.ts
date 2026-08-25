@@ -1,7 +1,8 @@
 
 
 export const COIN_DECIMALS = 18;
-export const LAUNCH_PRICE_QUOTE_PER_COIN = 0.01;
+
+export const SUGGESTED_DEFAULT_PRICE = 0.01;
 export const MIN_SUPPLY = 1_000n;
 export const MAX_SUPPLY = 1_000_000_000_000n;
 export const MAX_FELT_BYTES = 31;
@@ -39,10 +40,13 @@ export function teamCoinsRaw(supplyRaw: bigint, pct: number): bigint {
   return (supplyRaw * bps) / 10_000n;
 }
 
-export function buybackQuoteRaw(teamCoinsRawValue: bigint, quoteDecimals: number): bigint {
-  return (teamCoinsRawValue * 10n ** BigInt(quoteDecimals)) / (100n * 10n ** BigInt(COIN_DECIMALS));
+const PRICE_SCALE = 1_000_000_000_000n;
+
+export function buybackQuoteRaw(teamCoinsRawValue: bigint, price: number, quoteDecimals: number): bigint {
+  const priceScaled = BigInt(Math.round(price * Number(PRICE_SCALE)));
+  return (teamCoinsRawValue * priceScaled * 10n ** BigInt(quoteDecimals)) / (PRICE_SCALE * 10n ** BigInt(COIN_DECIMALS));
 }
 
-export function fdvHuman(supplyHuman: number): number {
-  return supplyHuman * LAUNCH_PRICE_QUOTE_PER_COIN;
+export function fdvHuman(supplyHuman: number, price: number): number {
+  return supplyHuman * price;
 }

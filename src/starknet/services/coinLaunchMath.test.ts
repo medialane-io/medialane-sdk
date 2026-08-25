@@ -44,11 +44,24 @@ describe("raw conversions + buyback", () => {
   it("teamCoinsRaw is 0 at 0%", () => {
     expect(teamCoinsRaw(1_000_000n * 10n ** 18n, 0)).toBe(0n);
   });
-  it("buybackQuoteRaw = teamCoins * 0.01 (18-dec quote)", () => {
+  it("buybackQuoteRaw = teamCoins * price (18-dec quote)", () => {
     const teamRaw = 50_000n * 10n ** 18n;
-    expect(buybackQuoteRaw(teamRaw, 18)).toBe(500n * 10n ** 18n);
+    expect(buybackQuoteRaw(teamRaw, 0.01, 18)).toBe(500n * 10n ** 18n);
   });
-  it("fdvHuman = supply * 0.01", () => {
-    expect(fdvHuman(1_000_000)).toBeCloseTo(10_000, 6);
+  it("buybackQuoteRaw scales with an arbitrary price", () => {
+    const teamRaw = 50_000n * 10n ** 18n;
+    expect(buybackQuoteRaw(teamRaw, 0.0001, 18)).toBe(5n * 10n ** 18n);
+  });
+  it("buybackQuoteRaw handles a 6-decimal quote (USDC/USDT)", () => {
+    const teamRaw = 50_000n * 10n ** 18n;
+    expect(buybackQuoteRaw(teamRaw, 0.01, 6)).toBe(500n * 10n ** 6n);
+  });
+  it("buybackQuoteRaw handles an 8-decimal quote (WBTC)", () => {
+    const teamRaw = 50_000n * 10n ** 18n;
+    expect(buybackQuoteRaw(teamRaw, 0.01, 8)).toBe(500n * 10n ** 8n);
+  });
+  it("fdvHuman = supply * price", () => {
+    expect(fdvHuman(1_000_000, 0.01)).toBeCloseTo(10_000, 6);
+    expect(fdvHuman(1_000_000, 0.5)).toBeCloseTo(500_000, 6);
   });
 });
