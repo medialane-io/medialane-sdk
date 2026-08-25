@@ -13,8 +13,8 @@ export function formatAmount(raw: string, decimals: number): string {
   const factor = 10n ** BigInt(decimals);
   const whole = value / factor;
   const remainder = value % factor;
-  const fractional = remainder.toString().padStart(decimals, "0");
-  return `${whole}.${fractional}`;
+  const fractional = remainder.toString().padStart(decimals, "0").replace(/0+$/, "");
+  return fractional ? `${whole}.${fractional}` : whole.toString();
 }
 
 export function getTokenByAddress(address: string): SupportedToken | undefined {

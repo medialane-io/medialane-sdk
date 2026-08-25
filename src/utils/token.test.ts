@@ -6,12 +6,13 @@ describe("parseAmount / formatAmount", () => {
 
     const raw = parseAmount("123.456789012345678", 18);
     expect(raw).toBe("123456789012345678000");
-    expect(formatAmount(raw, 18)).toBe("123.456789012345678000");
+    expect(formatAmount(raw, 18)).toBe("123.456789012345678");
   });
 
-  test("formatAmount uses exact BigInt factor at 18 decimals", () => {
-
-    expect(formatAmount("1000000000000000000", 18)).toBe("1.000000000000000000");
+  test("formatAmount trims trailing zeros and drops the decimal point for whole numbers", () => {
+    expect(formatAmount("1000000000000000000", 18)).toBe("1");
+    expect(formatAmount("1500000000000000000", 18)).toBe("1.5");
+    expect(formatAmount("0", 18)).toBe("0");
   });
 
   test("parseAmount pads and truncates the fractional part to decimals", () => {

@@ -38,6 +38,7 @@ export {
   buildLaunchOnEkuboCalls,
   parseCreatorCoinCreated,
   priceToEkuboParams,
+  validatePrice,
 } from "./services/creatorCoin.js";
 export {
   validateName as validateCoinName,
@@ -47,7 +48,7 @@ export {
   teamCoinsRaw,
   buybackQuoteRaw,
   fdvHuman,
-  LAUNCH_PRICE_QUOTE_PER_COIN,
+  SUGGESTED_DEFAULT_PRICE,
   MIN_SUPPLY as COIN_MIN_SUPPLY,
   MAX_SUPPLY as COIN_MAX_SUPPLY,
 } from "./services/coinLaunchMath.js";
