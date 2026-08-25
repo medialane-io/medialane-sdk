@@ -59,6 +59,13 @@ export type {
   EkuboPoolParams,
   CreatorCoinGuarantees,
 } from "./services/creatorCoin.js";
+export {
+  executeSponsored,
+  SponsoredCallRejectedError,
+  type TypedDataSigner,
+  type SponsoredExecuteConfig,
+  type SponsoredExecuteResult,
+} from "./services/sponsoredExecutor.js";
 export type {
   DeployCollectionParams,
   MintEditionParams,
