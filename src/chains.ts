@@ -42,6 +42,9 @@ export interface StarknetCoordinates {
   ipSponsorshipClassHash?: `0x${string}`;
   ipSponsorshipStartBlock?: number;
   mediaWalletClassHash?: `0x${string}`;
+  genesisMintLaunch?: `0x${string}`;
+  genesisMintBR?: `0x${string}`;
+  genesisMintGlobal?: `0x${string}`;
 }
 
 export interface EvmCoordinates {
@@ -123,6 +126,9 @@ const COORDINATES: CoordinatesByChain = {
     ipSponsorshipClassHash: "0x0626daac2ed7e2bf630ef5b10104b3202db1559216c0c1a504c0e99be2fbfec3",
     ipSponsorshipStartBlock: 11896456,
     mediaWalletClassHash: "0x014b210c7d47392691144bafecdca3c6c7791cc295ea305988da0a724c05ac31",
+    genesisMintLaunch: "0x06ed61abba98a44d45bed2c4b1a456df15053c3321cfd6e007afb33b7226c9f0",
+    genesisMintBR: "0x01f8b92e3b9e963b8eacb075207e2cc89d4614ff2ac6c2702c7ae10ad19a9db8",
+    genesisMintGlobal: "0x06ad4d55ed2d12ad5d6d55587d800874ef807b051bfefe13497e60ec5b019369",
   },
 };
 
