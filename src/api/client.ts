@@ -19,6 +19,7 @@ import type {
   ApiPointEvent,
   ApiCoinsQuery,
   ApiCollectionProfile,
+  UpdateCollectionProfileInput,
   ApiCreatorProfile,
   ApiCreatorListResult,
   ApiCollectionClaim,
@@ -545,7 +546,7 @@ export class ApiClient {
 
   updateCollectionProfile(
     contractAddress: string,
-    data: Partial<Omit<ApiCollectionProfile, "contractAddress" | "chain" | "updatedBy" | "updatedAt">>,
+    data: UpdateCollectionProfileInput,
     siwsToken: string
   ): Promise<ApiCollectionProfile> {
     return this.request<ApiCollectionProfile>(

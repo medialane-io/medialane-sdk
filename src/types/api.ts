@@ -872,6 +872,20 @@ export interface ApiCollectionProfile {
   updatedAt: string;
 }
 
+export interface UpdateCollectionProfileInput {
+  displayName?: string | null;
+  description?: string | null;
+  image?: string | null;
+  bannerImage?: string | null;
+  websiteUrl?: string | null;
+  twitterUrl?: string | null;
+  discordUrl?: string | null;
+  telegramUrl?: string | null;
+  gatedContentTitle?: string | null;
+  gatedContentUrl?: string | null;
+  gatedContentType?: "VIDEO" | "STREAM" | "AUDIO" | "DOCUMENT" | "LINK" | null;
+}
+
 export interface ApiCollectionSlugClaim {
   id: string;
   slug: string;
