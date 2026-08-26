@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.103.0] — 2026-08-26
+
+### Added
+
+- `UpdateCollectionProfileInput` — a dedicated write-side type for
+  `updateCollectionProfile`, covering `gatedContentUrl`/`gatedContentType`
+  which the read-side `ApiCollectionProfile` deliberately omits (the backend
+  only reveals those to verified holders via `/gated-content`, never on the
+  public profile response). Callers no longer need an `as any` cast to save
+  exclusive-content fields.
+
 ## [0.91.0] — 2026-08-22
 
 ### Changed
