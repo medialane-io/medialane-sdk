@@ -38,6 +38,10 @@ export const STARKNET_CREATOR_COIN_EKUBO_LAUNCHER = SN.creatorCoinEkuboLauncher!
 export const STARKNET_CREATOR_COIN_CLASS_HASH = SN.creatorCoinClassHash!;
 export const STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH = SN.creatorCoinFactoryClassHash!;
 export const STARKNET_CREATOR_COIN_START_BLOCK = SN.creatorCoinStartBlock!;
+
+export const STARKNET_GENESIS_MINT_LAUNCH_CONTRACT = SN.genesisMintLaunch!;
+export const STARKNET_GENESIS_MINT_BR_CONTRACT = SN.genesisMintBR!;
+export const STARKNET_GENESIS_MINT_GLOBAL_CONTRACT = SN.genesisMintGlobal!;
 export const STARKNET_EKUBO_CORE = SN.ekuboCore!;
 
 export const SUPPORTED_TOKENS = [
