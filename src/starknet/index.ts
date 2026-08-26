@@ -22,6 +22,14 @@ export * from "./siws/index.js";
 
 export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, IPClubFactoryABI, IPClubCollectionABI, IPSponsorshipABI, IPGenesisABI } from "./abis/index.js";
 
+export {
+  executeIntent,
+  executeIntents,
+  assertTransactionSucceeded,
+  confirmIntentBestEffort,
+  type ExecuteIntentOpts,
+  type ReceiptProvider,
+} from "./services/executeIntent.js";
 export { PopService } from "./services/pop.js";
 export { DropService, toContractConditions as toDropContractConditions } from "./services/drop.js";
 export { TicketService } from "./services/ticket.js";
