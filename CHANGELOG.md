@@ -2,6 +2,26 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.105.0] — 2026-08-27
+
+### Added
+
+- `issueSiwsToken`, `verifySiwsToken`, `issueAccountSessionToken`,
+  `verifyAccountSessionToken` — one implementation of the bearer tokens the
+  platform signs with its own secret.
+
+  Verification had drifted into three independent copies: the backend that
+  issues these tokens, and each app that checks them on its own routes, all
+  sharing one secret with no shared implementation. Changing how the signature
+  was computed in one place silently invalidated every token for the others —
+  which would have returned 401 on every SIWS-gated route in both apps,
+  including all upload routes.
+
+  Isomorphic: HMAC and base64url come from packages this SDK already ships, so
+  no consumer needs Node builtins. Output is byte-identical to the previous
+  `node:crypto` implementations, and tokens already in circulation — including
+  ones signed before domain separation — still verify.
+
 ## [0.104.0] — 2026-08-27
 
 ### Added

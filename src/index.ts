@@ -101,6 +101,15 @@ export {
 export type { BackendMetadataConfig, BackendUploadResult } from "./server/backend-metadata.js";
 export { createRateLimiter, requestIp } from "./server/rate-limit.js";
 export { isSameOrigin } from "./server/origin.js";
+export {
+  issueSiwsToken,
+  verifySiwsToken,
+  issueAccountSessionToken,
+  verifyAccountSessionToken,
+  IDENTITY_TTL_SECONDS,
+  ACCOUNT_SESSION_TTL_SECONDS,
+} from "./server/siws-token.js";
+export type { SiwsIdentity } from "./server/siws-token.js";
 export type { RpcProxyConfig } from "./server/rpc-proxy.js";
 export type { BackendProxyConfig } from "./server/backend-proxy.js";
 
