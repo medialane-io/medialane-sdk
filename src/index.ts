@@ -76,11 +76,12 @@ export {
 export type { ServiceId } from "./services/registry.js";
 
 export { normalizeAddress, normalizeHash, shortenAddress } from "./utils/address.js";
+export type { CanonicalHash } from "./utils/address.js";
 export { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol, getListableTokens } from "./utils/token.js";
 export type { SupportedToken } from "./utils/token.js";
 export { stringifyBigInts, u256ToBigInt, encodeU256 } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
-export { PUBLIC_RPC_FALLBACKS, isTransientRpcError, createFailoverFetch } from "./utils/rpc.js";
+export { PUBLIC_RPC_FALLBACKS, PAID_UPSTREAM_MARKERS, isTransientRpcError, isPolicyRefusal, POLICY_REFUSAL_CODES, createFailoverFetch } from "./utils/rpc.js";
 export type { FailoverFetchOptions } from "./utils/rpc.js";
 export { createRpcProxyHandler } from "./server/rpc-proxy.js";
 export { createBackendProxyHandler } from "./server/backend-proxy.js";
