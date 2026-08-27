@@ -86,10 +86,26 @@ function crc16xmodem(bytes: Uint8Array): number {
   return crc;
 }
 
-export function normalizeHash(hash: string): string {
+declare const canonicalHashBrand: unique symbol;
+
+/**
+ * A felt hash in exactly one spelling: lowercase, zero-padded to 64 hex digits.
+ *
+ * Felts have many equal spellings — `0x0ab`, `0xAB` and `0xab` are the same
+ * value on chain but three different strings. Anything that uses a hash as an
+ * identity or uniqueness key must therefore compare canonical form, or the
+ * same on-chain fact can be presented as several distinct records.
+ *
+ * Only `normalizeHash` can produce this type, so a function that demands a
+ * `CanonicalHash` cannot be handed a raw caller-supplied string. It remains
+ * assignable to `string`, so existing readers are unaffected.
+ */
+export type CanonicalHash = string & { readonly [canonicalHashBrand]: true };
+
+export function normalizeHash(hash: string): CanonicalHash {
   try {
     const hex = BigInt(hash).toString(16);
-    return "0x" + hex.padStart(64, "0").toLowerCase();
+    return ("0x" + hex.padStart(64, "0").toLowerCase()) as CanonicalHash;
   } catch {
     throw new Error(`Invalid hash: "${hash}"`);
   }

@@ -2,6 +2,32 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.104.0] — 2026-08-27
+
+### Added
+
+- `POLICY_REFUSAL_CODES` and `isPolicyRefusal(...)` — the codes our own proxies
+  emit to refuse a call on policy grounds (no API key, insufficient credits,
+  rate limited, wrong origin).
+- `PAID_UPSTREAM_MARKERS` — the hostnames and env-var names that reach a paid
+  upstream directly. Apps scan their own source against this list so that
+  adding an upstream protects every consumer at once, instead of each repo
+  keeping a copy that drifts.
+- `CanonicalHash` — the branded return type of `normalizeHash`. Only
+  `normalizeHash` can produce it, so a function that requires a canonical hash
+  cannot be handed a raw caller-supplied string. It stays assignable to
+  `string`, so existing readers are unaffected.
+
+### Changed
+
+- `isTransientRpcError` no longer reports our own policy refusals as transient.
+  Those codes sit inside the JSON-RPC reserved server-error range and carry
+  messages like "Too many requests", so every generic transient heuristic
+  matched them — and a caller with a fallback list would quietly retry the
+  same call against a different upstream. That turned a refusal into a
+  redirect: the harder the meter said no, the faster traffic routed around it.
+  A policy refusal is an answer, not a failure.
+
 ## [0.103.0] — 2026-08-26
 
 ### Added
