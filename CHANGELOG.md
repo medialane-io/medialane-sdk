@@ -2,6 +2,33 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.106.0] — 2026-08-28
+
+### Added
+
+- `createImageProxyHandler` — the SSRF-guarded remote image proxy both apps
+  carried as a byte-identical copy, so a fix to one never reached the other.
+  Four guards: URL validation, re-checking the hostname's resolved addresses,
+  manual redirect following that revalidates each hop, and a content-type
+  allowlist with a byte cap. DNS resolution is injected, keeping this package
+  isomorphic.
+- `readBodyWithCap` — refuses an oversized body rather than buffering it.
+- `isPrivateOrInsecureUrl` — the yes/no form the backend had locally.
+
+### Changed
+
+- `isPrivateHost` now parses addresses into bytes instead of pattern-matching
+  strings, merging the two implementations that had drifted apart — one in this
+  package, one in the backend, each catching cases the other missed. It now
+  understands every spelling inet_aton accepts, so `127.1`, `0177.0.0.1`,
+  `2130706433` and `0x7f000001` are all recognised as loopback. Cloud metadata
+  hostnames and `.local`/`.internal` suffixes are covered too.
+- `validateUrl` takes an optional `requireHttps`, defaulting to true. Callers
+  that legitimately accept http opt out explicitly rather than the guard being
+  lenient for everyone.
+- `isSameOrigin` documents what it does not do: a non-browser client omits
+  `Origin` and passes, so it is not a substitute for authentication.
+
 ## [0.105.0] — 2026-08-27
 
 ### Added

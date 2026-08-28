@@ -88,10 +88,13 @@ export { createBackendProxyHandler } from "./server/backend-proxy.js";
 export {
   isPrivateHost,
   validateUrl,
+  isPrivateOrInsecureUrl,
   ALLOWED_IMAGE_CONTENT_TYPES,
   MAX_IMAGE_REDIRECTS,
   MAX_IMAGE_PROXY_BYTES,
 } from "./server/ssrf-guard.js";
+export { createImageProxyHandler, readBodyWithCap } from "./server/image-proxy.js";
+export type { ImageProxyConfig, CappedBody } from "./server/image-proxy.js";
 export {
   uploadJsonToBackend,
   uploadFileToBackend,

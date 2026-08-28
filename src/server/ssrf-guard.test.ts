@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import {
   isPrivateHost,
   validateUrl,
@@ -72,4 +72,39 @@ test("the content-type allowlist covers the common image types and excludes othe
 
 test("the byte cap is 15MB", () => {
   expect(MAX_IMAGE_PROXY_BYTES).toBe(15 * 1024 * 1024);
+});
+
+// This guard was merged from two implementations that had each drifted to
+// cover cases the other missed. These pin the union: every entry here was
+// caught by at least one of them, so none can be lost again silently.
+describe("every spelling both prior implementations caught", () => {
+  const mustBlock = [
+    // loopback, in the forms inet_aton accepts
+    "127.0.0.1", "2130706433", "0x7f000001", "017700000001", "0177.0.0.1",
+    "127.1", "0x7f.0.0.1",
+    // unspecified / broadcast
+    "0.0.0.0", "0",
+    // RFC1918
+    "10.0.0.1", "172.16.0.1", "172.31.255.255", "192.168.1.1",
+    // link-local, CGNAT, benchmarking, multicast
+    "169.254.169.254", "100.64.0.1", "198.18.0.1", "224.0.0.1",
+    // IPv6 loopback, ULA, link-local, v4-mapped
+    "::1", "::ffff:127.0.0.1", "fc00::1", "fd12::1", "fe80::1",
+    // names
+    "localhost", "foo.local", "metadata.google.internal", "metadata.azure.internal",
+  ];
+
+  test("all are private", () => {
+    const missed = mustBlock.filter((h) => !isPrivateHost(h));
+    expect(missed).toEqual([]);
+  });
+
+  test("ordinary public hosts are still allowed", () => {
+    const publicHosts = [
+      "gateway.pinata.cloud", "example.com", "8.8.8.8", "1.1.1.1",
+      "172.32.0.1", "192.169.0.1", "2606:4700::1111",
+    ];
+    const blocked = publicHosts.filter((h) => isPrivateHost(h));
+    expect(blocked).toEqual([]);
+  });
 });
