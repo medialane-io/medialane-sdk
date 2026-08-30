@@ -1,1 +1,1 @@
-export { deriveAesKey, generateStarkKeyPair, sealPrivateKey, unsealPrivateKey, signWithPrivateKey } from "./crypto.js";
+export { deriveAesKey, generateStarkKeyPair, starkKeyPairFromPrivateKey, InvalidStarkPrivateKeyError, sealPrivateKey, unsealPrivateKey, signWithPrivateKey } from "./crypto.js";

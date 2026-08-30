@@ -30,6 +30,29 @@ export function generateStarkKeyPair(): { privateKeyHex: string; publicKeyHex: s
   return { privateKeyHex, publicKeyHex: ec.starkCurve.getStarkKey(privateKeyHex) };
 }
 
+export class InvalidStarkPrivateKeyError extends Error {
+  constructor(reason: string) {
+    super(`Not a valid Starknet private key: ${reason}`);
+    this.name = "InvalidStarkPrivateKeyError";
+  }
+}
+
+export function starkKeyPairFromPrivateKey(input: string): { privateKeyHex: string; publicKeyHex: string } {
+  const trimmed = input.trim().replace(/\s+/g, "");
+  const body = trimmed.startsWith("0x") || trimmed.startsWith("0X") ? trimmed.slice(2) : trimmed;
+
+  if (body.length === 0) throw new InvalidStarkPrivateKeyError("it is empty");
+  if (!/^[0-9a-fA-F]+$/.test(body)) throw new InvalidStarkPrivateKeyError("it is not hexadecimal");
+  if (body.length > 64) throw new InvalidStarkPrivateKeyError("it is too long");
+
+  const value = BigInt("0x" + body);
+  if (value === 0n) throw new InvalidStarkPrivateKeyError("it is zero");
+  if (value >= ec.starkCurve.CURVE.n) throw new InvalidStarkPrivateKeyError("it is outside the curve order");
+
+  const privateKeyHex = "0x" + value.toString(16).padStart(64, "0");
+  return { privateKeyHex, publicKeyHex: ec.starkCurve.getStarkKey(privateKeyHex) };
+}
+
 export async function sealPrivateKey(
   aesKey: CryptoKey,
   iv: Uint8Array,

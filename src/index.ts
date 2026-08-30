@@ -88,10 +88,13 @@ export { createBackendProxyHandler } from "./server/backend-proxy.js";
 export {
   isPrivateHost,
   validateUrl,
+  isPrivateOrInsecureUrl,
   ALLOWED_IMAGE_CONTENT_TYPES,
   MAX_IMAGE_REDIRECTS,
   MAX_IMAGE_PROXY_BYTES,
 } from "./server/ssrf-guard.js";
+export { createImageProxyHandler, readBodyWithCap } from "./server/image-proxy.js";
+export type { ImageProxyConfig, CappedBody } from "./server/image-proxy.js";
 export {
   uploadJsonToBackend,
   uploadFileToBackend,
@@ -99,7 +102,7 @@ export {
   getBackendSignedUrl,
 } from "./server/backend-metadata.js";
 export type { BackendMetadataConfig, BackendUploadResult } from "./server/backend-metadata.js";
-export { createRateLimiter, requestIp } from "./server/rate-limit.js";
+export { createRateLimiter, requestIp, TRUSTED_APP_IP_HEADER } from "./server/rate-limit.js";
 export { isSameOrigin } from "./server/origin.js";
 export {
   issueSiwsToken,

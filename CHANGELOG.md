@@ -2,6 +2,64 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.107.0] — 2026-08-30
+
+### Added
+
+- `starkKeyPairFromPrivateKey` — derives the public key, and therefore the
+  account address, from a private key a user pasted back in. Refuses anything
+  that is not a key rather than deriving from it: non-hex, empty, zero, longer
+  than the field, or at or above the curve order. Without that check a mistyped
+  or truncated value still produces a well-formed address, so the user is shown
+  a wallet that is simply not theirs and no error is ever raised. Accepted input
+  is normalised (optional `0x`, surrounding whitespace, short forms, mixed case)
+  so one key always yields one address.
+- `InvalidStarkPrivateKeyError` — thrown by the above, so callers can tell a bad
+  paste apart from a genuine failure.
+- `TRUSTED_APP_IP_HEADER` — the header name (`x-medialane-client-ip`) an app
+  proxy sets from its edge for the change below.
+
+### Changed
+
+- **`requestIp` no longer returns the leftmost `x-forwarded-for` entry.** That
+  value is supplied by the caller, so every limiter built on it — the backend
+  proxy, the RPC proxy, the image proxy, and any per-IP cap an app layers on
+  top — could be reset by rotating one header. It now prefers
+  `x-medialane-client-ip`, then the edge's own value, and only then the
+  *nearest* hop rather than the furthest.
+
+  **This changes the rate-limit key for every consumer.** An app behind a proxy
+  that does not set `x-medialane-client-ip` will now key on that proxy's own
+  address, collapsing its users into one bucket. Set the header from the edge
+  before upgrading.
+
+## [0.106.0] — 2026-08-28
+
+### Added
+
+- `createImageProxyHandler` — the SSRF-guarded remote image proxy both apps
+  carried as a byte-identical copy, so a fix to one never reached the other.
+  Four guards: URL validation, re-checking the hostname's resolved addresses,
+  manual redirect following that revalidates each hop, and a content-type
+  allowlist with a byte cap. DNS resolution is injected, keeping this package
+  isomorphic.
+- `readBodyWithCap` — refuses an oversized body rather than buffering it.
+- `isPrivateOrInsecureUrl` — the yes/no form the backend had locally.
+
+### Changed
+
+- `isPrivateHost` now parses addresses into bytes instead of pattern-matching
+  strings, merging the two implementations that had drifted apart — one in this
+  package, one in the backend, each catching cases the other missed. It now
+  understands every spelling inet_aton accepts, so `127.1`, `0177.0.0.1`,
+  `2130706433` and `0x7f000001` are all recognised as loopback. Cloud metadata
+  hostnames and `.local`/`.internal` suffixes are covered too.
+- `validateUrl` takes an optional `requireHttps`, defaulting to true. Callers
+  that legitimately accept http opt out explicitly rather than the guard being
+  lenient for everyone.
+- `isSameOrigin` documents what it does not do: a non-browser client omits
+  `Origin` and passes, so it is not a substitute for authentication.
+
 ## [0.105.0] — 2026-08-27
 
 ### Added
