@@ -111,6 +111,8 @@ export {
 export {
   deriveAesKey,
   generateStarkKeyPair,
+  starkKeyPairFromPrivateKey,
+  InvalidStarkPrivateKeyError,
   sealPrivateKey,
   unsealPrivateKey,
   signWithPrivateKey,
