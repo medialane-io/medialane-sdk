@@ -23,6 +23,21 @@ export function createRateLimiter(windowMs: number, max: number) {
   };
 }
 
+export const TRUSTED_APP_IP_HEADER = "x-medialane-client-ip";
+
 export function requestIp(req: Request): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  const fromApp = req.headers.get(TRUSTED_APP_IP_HEADER)?.trim();
+  if (fromApp) return fromApp;
+
+  const fromEdge = req.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim();
+  if (fromEdge) return fromEdge;
+
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const hops = forwarded.split(",").map((hop) => hop.trim()).filter(Boolean);
+    const nearest = hops[hops.length - 1];
+    if (nearest) return nearest;
+  }
+
+  return "unknown";
 }

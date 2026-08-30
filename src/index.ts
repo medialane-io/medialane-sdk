@@ -102,7 +102,7 @@ export {
   getBackendSignedUrl,
 } from "./server/backend-metadata.js";
 export type { BackendMetadataConfig, BackendUploadResult } from "./server/backend-metadata.js";
-export { createRateLimiter, requestIp } from "./server/rate-limit.js";
+export { createRateLimiter, requestIp, TRUSTED_APP_IP_HEADER } from "./server/rate-limit.js";
 export { isSameOrigin } from "./server/origin.js";
 export {
   issueSiwsToken,
