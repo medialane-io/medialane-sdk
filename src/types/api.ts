@@ -392,7 +392,7 @@ export interface ApiSearchCollectionResult {
 export interface ApiSearchCreatorResult {
   walletAddress: string;
   username: string | null;
-  displayName: string | null;
+  name: string | null;
   bio: string | null;
   avatarImage: string | null;
 }
@@ -904,7 +904,7 @@ export interface ApiCreatorProfile {
   walletAddress: string;
   chain: string;
   username: string | null;
-  displayName: string | null;
+  name: string | null;
   bio: string | null;
   avatarImage: string | null;
 
