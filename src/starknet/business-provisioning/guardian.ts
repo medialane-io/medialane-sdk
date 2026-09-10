@@ -95,6 +95,15 @@ export async function getGuardians(provider: ProviderInterface, address: string)
   return decodeGuardiansInfo(res as unknown as string[]);
 }
 
+export async function getOwners(provider: ProviderInterface, address: string): Promise<GuardianInfo[]> {
+  const res = await provider.callContract({
+    contractAddress: norm(address),
+    entrypoint: "get_owners_info",
+    calldata: [],
+  });
+  return decodeGuardiansInfo(res as unknown as string[]);
+}
+
 export async function getEscape(provider: ProviderInterface, address: string): Promise<EscapeInfo> {
   const res = await provider.callContract({
     contractAddress: norm(address),

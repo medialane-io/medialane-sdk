@@ -107,6 +107,7 @@ export {
   decodeGuardiansInfo,
   decodeEscapeAndStatus,
   getGuardians,
+  getOwners,
   getEscape,
   getEscapeSecurityPeriod,
 } from "./business-provisioning/index.js";

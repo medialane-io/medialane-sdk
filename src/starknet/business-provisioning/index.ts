@@ -10,6 +10,7 @@ export {
   decodeGuardiansInfo,
   decodeEscapeAndStatus,
   getGuardians,
+  getOwners,
   getEscape,
   getEscapeSecurityPeriod,
   type GuardianInfo,
