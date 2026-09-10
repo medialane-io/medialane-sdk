@@ -1,7 +1,8 @@
-import { hash, num, type BigNumberish, type Call } from "starknet";
+import { hash, num, type BigNumberish, type Call, type TypedData } from "starknet";
 
 const STARKNET_SIGNER_TYPE = "0x537461726b6e6574205369676e6572";
 const OPTION_NONE = "0x1";
+const OPTION_SOME = "0x0";
 const SIGNER_STARKNET = "0x0";
 
 export function computeOwnerGuid(ownerPubkey: BigNumberish): string {
@@ -12,6 +13,7 @@ function changeOwners(
   accountAddress: string,
   guidsToRemove: string[],
   pubkeysToAdd: BigNumberish[],
+  ownerAlive?: OwnerAliveProof,
 ): Call {
   return {
     contractAddress: accountAddress,
@@ -21,17 +23,72 @@ function changeOwners(
       ...guidsToRemove,
       num.toHex(pubkeysToAdd.length),
       ...pubkeysToAdd.flatMap((p) => [SIGNER_STARKNET, num.toHex(p)]),
-      OPTION_NONE,
+      ...(ownerAlive ? ownerAliveCalldata(ownerAlive) : [OPTION_NONE]),
     ],
   };
+}
+
+export interface OwnerAliveProof {
+  newOwnerPubkey: BigNumberish;
+  signature: string[];
+  expiration: number;
+}
+
+export function ownerAliveTypedData(
+  newOwnerGuid: string,
+  expiration: number,
+  chainId: string,
+): TypedData {
+  return {
+    types: {
+      StarknetDomain: [
+        { name: "name", type: "shortstring" },
+        { name: "version", type: "shortstring" },
+        { name: "chainId", type: "shortstring" },
+        { name: "revision", type: "shortstring" },
+      ],
+      "Owner Alive": [
+        { name: "Owner GUID", type: "felt" },
+        { name: "Signature expiration", type: "timestamp" },
+      ],
+    },
+    primaryType: "Owner Alive",
+    domain: { name: "Owner Alive", version: "1", chainId, revision: "1" },
+    message: { "Owner GUID": newOwnerGuid, "Signature expiration": expiration },
+  };
+}
+
+function ownerAliveCalldata(proof: OwnerAliveProof): string[] {
+  if (proof.signature.length !== 2) {
+    throw new Error("owner-alive proof needs an r and s from the incoming owner");
+  }
+  return [
+    OPTION_SOME,
+    SIGNER_STARKNET,
+    num.toHex(proof.newOwnerPubkey),
+    num.toHex(proof.signature[0]),
+    num.toHex(proof.signature[1]),
+    num.toHex(proof.expiration),
+  ];
 }
 
 export function buildChangeOwnersCall(
   accountAddress: string,
   removeOwnerPubkey: BigNumberish,
   addOwnerPubkey: BigNumberish,
+  ownerAlive?: OwnerAliveProof,
 ): Call {
-  return changeOwners(accountAddress, [computeOwnerGuid(removeOwnerPubkey)], [addOwnerPubkey]);
+  if (!ownerAlive) {
+    throw new Error(
+      "Handing an account over removes the signing owner, so the account requires an owner-alive proof from the incoming owner. Sign ownerAliveTypedData with the new owner key and pass it here.",
+    );
+  }
+  return changeOwners(
+    accountAddress,
+    [computeOwnerGuid(removeOwnerPubkey)],
+    [addOwnerPubkey],
+    ownerAlive,
+  );
 }
 
 export function buildAddOwnerCall(accountAddress: string, addOwnerPubkey: BigNumberish): Call {

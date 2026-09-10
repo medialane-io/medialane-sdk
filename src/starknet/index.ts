@@ -100,6 +100,7 @@ export {
   buildAddOwnerCall,
   buildRemoveOwnerCall,
   buildRemoveOwnerByGuidCall,
+  ownerAliveTypedData,
   buildDeployAccountParams,
   buildSetFirstGuardianCall,
   buildTriggerEscapeOwnerCall,

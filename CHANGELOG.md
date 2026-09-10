@@ -2,6 +2,24 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.110.0] — 2026-09-10
+
+### Changed
+
+- `buildChangeOwnersCall` now requires an owner-alive proof and refuses to build
+  without one. Handing an account over removes the owner that signs the
+  transaction, and the account rejects that with `wallet/missing-owner-alive`
+  unless the incoming owner has proven it can sign. The builder previously
+  produced calldata that always reverted, so failing early replaces a
+  transaction that could never land.
+
+### Added
+
+- `ownerAliveTypedData` — the SNIP-12 message the incoming owner signs, naming
+  its own guid and an expiry. The account requires the expiry to be in the
+  future and within a day.
+- `OwnerAliveProof` — the shape passed back to `buildChangeOwnersCall`.
+
 ## [0.109.0] — 2026-09-09
 
 ### Fixed
