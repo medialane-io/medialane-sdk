@@ -2,6 +2,28 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.109.0] — 2026-09-09
+
+### Fixed
+
+- `buildChangeOwnersCall` omitted the third argument the account's
+  `change_owners` takes, `owner_alive_signature`. Every call it produced was
+  therefore undeserializable and would have reverted. The trailing
+  `Option::None` is now emitted, encoded as `0x1` — the same encoding
+  `ownerConstructorCalldata` already uses for the guardian argument. The builder
+  appears to have never been executed on-chain, which is why this survived.
+
+### Added
+
+- `buildAddOwnerCall` / `buildRemoveOwnerCall` / `buildRemoveOwnerByGuidCall` —
+  add or remove a single owner without replacing the existing one, which is what
+  registering a second device needs. Adding alone requires no owner-alive proof:
+  the account only demands one when the call removes the guid of the signer that
+  signed the transaction. Removal comes in both forms because owners read back
+  from the chain expose a guid, not a public key.
+- `getOwners` — reads an account's owners via `get_owners_info`, mirroring
+  `getGuardians`.
+
 ## [0.107.0] — 2026-08-30
 
 ### Added
