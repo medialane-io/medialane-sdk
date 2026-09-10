@@ -1,6 +1,6 @@
 export { deriveOwnerKeyPair } from "./derive.js";
 export { ownerConstructorCalldata, computeAccountAddress } from "./account.js";
-export { computeOwnerGuid, buildChangeOwnersCall, buildAddOwnerCall, buildRemoveOwnerCall } from "./handoff.js";
+export { computeOwnerGuid, buildChangeOwnersCall, buildAddOwnerCall, buildRemoveOwnerCall, buildRemoveOwnerByGuidCall } from "./handoff.js";
 export { buildDeployAccountParams } from "./deploy.js";
 export {
   buildSetFirstGuardianCall,

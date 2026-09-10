@@ -41,3 +41,7 @@ export function buildAddOwnerCall(accountAddress: string, addOwnerPubkey: BigNum
 export function buildRemoveOwnerCall(accountAddress: string, removeOwnerPubkey: BigNumberish): Call {
   return changeOwners(accountAddress, [computeOwnerGuid(removeOwnerPubkey)], []);
 }
+
+export function buildRemoveOwnerByGuidCall(accountAddress: string, ownerGuid: BigNumberish): Call {
+  return changeOwners(accountAddress, [num.toHex(ownerGuid)], []);
+}

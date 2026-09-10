@@ -99,6 +99,7 @@ export {
   buildChangeOwnersCall,
   buildAddOwnerCall,
   buildRemoveOwnerCall,
+  buildRemoveOwnerByGuidCall,
   buildDeployAccountParams,
   buildSetFirstGuardianCall,
   buildTriggerEscapeOwnerCall,
