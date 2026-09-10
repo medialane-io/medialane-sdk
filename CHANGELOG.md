@@ -2,6 +2,24 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.111.0] — 2026-09-10
+
+### Added
+
+- `data-tokenization-erc721`, a service for businesses to establish verifiable
+  ownership of their data with licensing terms that travel with it. It runs on
+  its own factory (`0x07421b44…7af6d2`, block 14670294) so each business owns
+  the collection it creates and is the only one who can issue into it, and so
+  the indexer can tell its collections apart from IP Collection's.
+- `STARKNET_DATA_TOKENIZATION_721_CONTRACT`, and `dataTokenization721` /
+  `dataTokenization721StartBlock` on the Starknet chain config.
+
+### Changed
+
+- `ip-erc721` is now named "Programmable IP". It was "Programmable IP (genesis)",
+  which named the whole service after one campaign running on it and read as if
+  it were the Genesis Mint contract.
+
 ## [0.110.0] — 2026-09-10
 
 ### Changed

@@ -13,6 +13,8 @@ export interface StarknetCoordinates {
   marketplace1155StartBlock?: number;
   collection721?: `0x${string}`;
   collection721StartBlock?: number;
+  dataTokenization721?: `0x${string}`;
+  dataTokenization721StartBlock?: number;
   ipNftClassHash?: `0x${string}`;
   ipCollectionClassHash?: `0x${string}`;
   collection1155?: `0x${string}`;
@@ -96,6 +98,8 @@ const COORDINATES: CoordinatesByChain = {
     marketplace1155StartBlock: 11198267,
     collection721: "0x0225c3ae09506b8d97adc39649ca740dad5aac195b7f5f0441cc1852947acaea",
     collection721StartBlock: 11198496,
+    dataTokenization721: "0x07421b4442f7f2052c65408fb3561484154cf8175a0bbb41e3cd38d9087af6d2",
+    dataTokenization721StartBlock: 14670294,
     ipNftClassHash: "0x012d3ae40ba35c7e2be0946532dac60e48932447912fdf96b674da67c029b9cc",
     ipCollectionClassHash: "0x022155a1a130a40e57aac4b89c07fab3f616bc351b1270fc40f756b963afe8b4",
     collection1155: "0x015368976d46fae5bfa1c58600f641d5aa5dbbf53ebc6b78aa3922194aad3551",

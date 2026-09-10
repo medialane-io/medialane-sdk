@@ -30,3 +30,26 @@ test("hasCapability returns false for an unregistered or missing service id", ()
   expect(hasCapability(null, "transfer")).toBe(false);
   expect(hasCapability(undefined, "transfer")).toBe(false);
 });
+
+test("data-tokenization-erc721 points at its own factory", () => {
+  const service = getService("data-tokenization-erc721")!;
+  expect(service.onchain?.STARKNET?.factoryAddress).toBe(
+    "0x07421b4442f7f2052c65408fb3561484154cf8175a0bbb41e3cd38d9087af6d2",
+  );
+  expect(service.onchain?.STARKNET?.startBlock).toBe(14670294);
+});
+
+test("data tokenization is a separate factory from IP Collection", () => {
+  const data = getService("data-tokenization-erc721")!;
+  const collection = getService("mip-erc721")!;
+  expect(data.onchain?.STARKNET?.factoryAddress).not.toBe(
+    collection.onchain?.STARKNET?.factoryAddress,
+  );
+});
+
+test("data tokenization assets are tradeable", () => {
+  const service = getService("data-tokenization-erc721")!;
+  for (const capability of ["list", "buy", "make_offer", "cancel", "transfer"]) {
+    expect(service.capabilities).toContain(capability);
+  }
+});

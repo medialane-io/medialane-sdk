@@ -26,13 +26,32 @@ const SERVICES = {
   },
   "ip-erc721": {
     id: "ip-erc721",
-    displayName: "Programmable IP (genesis)",
-    description: "One shared ERC-721 contract; many wallets mint genesis pieces.",
+    displayName: "Programmable IP",
+    description: "One shared ERC-721 contract any wallet can mint into.",
     standard: "ERC721",
     provenance: "MEDIALANE",
     uiVariant: "standard",
     capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
 
+    metadataSchema: { licenseDefault: "CC BY-SA" },
+  },
+  "data-tokenization-erc721": {
+    id: "data-tokenization-erc721",
+    displayName: "Data Tokenization",
+    description: "Establish verifiable ownership of your data, with licensing terms that hold up wherever it travels.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    onchain: {
+      STARKNET: {
+        factoryAddress: SN.dataTokenization721!,
+        startBlock: SN.dataTokenization721StartBlock!,
+      },
+    },
+    uiVariant: "standard",
+    capabilities: ["list", "buy", "make_offer", "cancel", "transfer", "mint", "remix", "license"],
+    events: [
+      { name: "CollectionCreated", emittedBy: "factory" },
+    ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },
   "mip-erc1155": {

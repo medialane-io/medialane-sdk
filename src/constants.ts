@@ -10,6 +10,7 @@ export const STARKNET_MARKETPLACE_1155_CLASS_HASH = SN.marketplace1155ClassHash!
 export const STARKNET_MARKETPLACE_1155_START_BLOCK = SN.marketplace1155StartBlock!;
 
 export const STARKNET_COLLECTION_721_CONTRACT = SN.collection721!;
+export const STARKNET_DATA_TOKENIZATION_721_CONTRACT = SN.dataTokenization721!;
 export const STARKNET_COLLECTION_721_START_BLOCK = SN.collection721StartBlock!;
 export const STARKNET_IPNFT_CLASS_HASH = SN.ipNftClassHash!;
 export const STARKNET_IPCOLLECTION_CLASS_HASH = SN.ipCollectionClassHash!;
