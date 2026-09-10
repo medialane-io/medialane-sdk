@@ -1,15 +1,5 @@
 import { ec, num } from "starknet";
 
-/**
- * Pure crypto primitives behind a passkey-sealed Starknet wallet — HKDF key
- * derivation, AES-GCM seal/unseal, Stark keypair generation, Stark-curve
- * signing. Deliberately excludes the WebAuthn calls (`navigator.credentials`)
- * that produce the PRF secret these functions consume — that stays app-local
- * because it's untestable in this SDK's Node-based test environment and
- * because RP_NAME/PRF_SALT are legitimately per-app identity, not protocol
- * facts. `hkdfInfo` is always an explicit caller-supplied parameter, never
- * defaulted — see the design doc's "load-bearing constraint" for why.
- */
 export async function deriveAesKey(prfSecret: Uint8Array, hkdfInfo: Uint8Array): Promise<CryptoKey> {
   const hkdf = await crypto.subtle.importKey("raw", prfSecret as BufferSource, "HKDF", false, ["deriveKey"]);
   return crypto.subtle.deriveKey(

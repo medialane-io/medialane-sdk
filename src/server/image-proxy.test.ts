@@ -53,8 +53,6 @@ describe("image proxy", () => {
     expect(fetched).toBe(false);
   });
 
-  // The guard that a URL-only check cannot provide: the name is public, the
-  // address it resolves to is not.
   test("rejects a public name that resolves to a private address", async () => {
     const res = await handler({ resolveHostname: async () => ["127.0.0.1"] })(
       request("https://evil.example/a.png"),
@@ -78,7 +76,6 @@ describe("image proxy", () => {
     expect(res.status).toBe(502);
   });
 
-  // A permitted host can redirect into the private range; each hop is revalidated.
   test("blocks a redirect into a private address", async () => {
     const res = await handler({
       fetchImpl: async () =>

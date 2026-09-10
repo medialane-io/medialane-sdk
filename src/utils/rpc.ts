@@ -1,5 +1,3 @@
-
-
 export const PUBLIC_RPC_FALLBACKS: readonly string[] = [
   "https://rpc.starknet.lava.build",
 ];
@@ -7,24 +5,11 @@ export const PUBLIC_RPC_FALLBACKS: readonly string[] = [
 const TRANSIENT_BODY_RE =
   /"code"\s*:\s*-32001|"code"\s*:\s*-32603|unable to complete|rate.?limit|too many|throttl|exceed.*quota|temporarily unavailable|service unavailable|overload|gateway.*time|upstream.*time|backend.*error/i;
 
-/**
- * Codes our own proxies emit to *refuse* a call on policy grounds: no API key,
- * insufficient credits, rate limited, wrong origin.
- *
- * These must never be treated as transient. They sit inside the JSON-RPC
- * reserved server-error range and carry messages like "Too many requests", so
- * every generic transient heuristic below would otherwise match them — and a
- * caller with a fallback list would quietly retry the same call against a
- * different upstream. That turns a refusal into a redirect: the harder the
- * meter says no, the faster traffic routes around it. A policy refusal is an
- * answer, not a failure; retrying it elsewhere is always wrong.
- */
 export const POLICY_REFUSAL_CODES: readonly number[] = [-32003, -32005, -32600];
 
 export function isPolicyRefusal(input: { body?: unknown }): boolean {
   let body = input.body;
-  // Callers hand this an unparsed response body as often as a parsed one
-  // (createFailoverFetch reads text before deciding whether to retry).
+
   if (typeof body === "string") {
     try {
       body = JSON.parse(body);
@@ -107,18 +92,6 @@ export function createFailoverFetch(
   return failover as unknown as typeof fetch;
 }
 
-/**
- * Hostnames and env-var names that reach a paid upstream directly.
- *
- * An app must never name one of these. Everything paid goes through the
- * backend, the only place a call can be authenticated, scoped, rate limited
- * and billed. An app that knows a node's address has a route around all four —
- * and since the address ships in the client bundle, so does every visitor.
- *
- * The list lives here, not in each app, because it is the part that drifts:
- * adding an upstream must protect every consumer at once. Each app keeps its
- * own small test that scans its source for these with its own file APIs.
- */
 export const PAID_UPSTREAM_MARKERS: readonly string[] = [
   "rpc.starknet.lava.build",
   "g.alchemy.com",

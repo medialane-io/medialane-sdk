@@ -10,8 +10,6 @@ import {
 
 const SECRET = "test-secret-not-used-anywhere-real";
 
-// Reproduces exactly how the backend signed tokens before this module existed,
-// so the tests can prove tokens already in circulation still verify.
 function legacyToken(prefix: string, payload: Record<string, unknown>): string {
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const sig = createHmac("sha256", SECRET).update(encoded).digest("hex");
@@ -61,8 +59,6 @@ describe("account session tokens", () => {
   });
 });
 
-// The two families share a secret. Before domain separation the signature
-// covered only the payload, so the kind of token was not authenticated.
 describe("token kinds cannot be interchanged", () => {
   test("an account session token is not a valid identity token", () => {
     const session = issueAccountSessionToken(SECRET, "acc_1");
@@ -77,9 +73,6 @@ describe("token kinds cannot be interchanged", () => {
   });
 });
 
-// This module replaces three separate node:crypto implementations. If its
-// output diverged from theirs, every token in circulation would stop verifying
-// the moment any one consumer adopted it.
 describe("compatibility with the tokens already in circulation", () => {
   test("verifies an untagged identity token issued by the previous code", () => {
     const iat = nowSeconds();

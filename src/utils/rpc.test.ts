@@ -8,9 +8,6 @@ describe("policy refusals are terminal", () => {
     { code: -32600, message: "Cross-origin requests are not allowed" },
   ];
 
-  // A refusal is an answer, not a failure. If these read as transient, a
-  // caller with a fallback list retries the same call against a free upstream
-  // and the meter is silently bypassed.
   test("our own refusal codes are never transient, as objects", () => {
     for (const error of refusals) {
       expect(`${error.code}:${isTransientRpcError({ status: 402, body: { error } })}`).toBe(`${error.code}:false`);

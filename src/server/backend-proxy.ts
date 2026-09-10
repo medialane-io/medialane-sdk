@@ -11,12 +11,7 @@ export interface BackendProxyConfig {
   apiKey: string | undefined;
   checkRateLimit: (ip: string) => boolean;
   fetchImpl?: typeof fetch;
-  /**
-   * Forwards a cookie the app already sets (e.g. its own account-session
-   * cookie) as a header, so the backend can attribute cost to the calling
-   * end-user instead of only the app's shared API key. Purely additive —
-   * omitted when the cookie isn't present, never blocks the request.
-   */
+
   forwardCookie?: { name: string; header: string };
 }
 

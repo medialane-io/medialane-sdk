@@ -14,22 +14,6 @@ export const MAX_IMAGE_REDIRECTS = 5;
 
 export const MAX_IMAGE_PROXY_BYTES = 15 * 1024 * 1024;
 
-/**
- * Whether a hostname or IP literal points somewhere a server must not be
- * tricked into fetching: loopback, private ranges, link-local, cloud metadata.
- *
- * Addresses are parsed into bytes rather than pattern-matched, because one
- * address has many textual forms — 127.0.0.1, 2130706433, 0x7f000001,
- * 017700000001 and ::ffff:127.0.0.1 are all loopback. A check that reasons
- * about the string has to enumerate encodings and will eventually miss one;
- * this reasons about the value.
- *
- * DNS resolution deliberately stays in the caller: it needs a resolver, which
- * differs per runtime, and this module is isomorphic. Anything accepting a
- * user-supplied URL must resolve the hostname and re-check every address that
- * comes back, since a public-looking name can resolve to a private address.
- */
-
 function parseIpv4(ip: string): number[] | null {
   const parts = ip.split(".");
   if (parts.length !== 4) return null;
@@ -117,7 +101,6 @@ function isPrivateIpv6(bytes: number[]): boolean {
   return false;
 }
 
-/** Reads a whole number in inet_aton's radix rules, without the 0-255 octet cap. */
 function parseNumber(part: string): number | null {
   if (/^0x[0-9a-f]+$/i.test(part)) return parseInt(part.slice(2), 16);
   if (/^0[0-7]+$/.test(part)) return parseInt(part, 8);
@@ -125,14 +108,6 @@ function parseNumber(part: string): number | null {
   return null;
 }
 
-/**
- * Rewrites any inet_aton-accepted spelling of an IPv4 address into dotted
- * decimal. That covers more than four dotted decimal octets: each part may be
- * decimal, octal or hex, and a short form packs the remaining bytes into the
- * last part — so `127.1`, `0177.0.0.1`, `2130706433` and `0x7f000001` are all
- * loopback, and a resolver will treat them as such even though none of them
- * look like `127.0.0.1`.
- */
 function normalizeNumericHostname(host: string): string | null {
   const parts = host.trim().split(".");
   if (parts.length < 1 || parts.length > 4) return null;
@@ -144,7 +119,6 @@ function normalizeNumericHostname(host: string): string | null {
     values.push(value);
   }
 
-  // Every part but the last is a single byte; the last absorbs what remains.
   const leading = values.slice(0, -1);
   if (leading.some((v) => v > 255)) return null;
 
@@ -181,12 +155,6 @@ export function isPrivateHost(hostname: string): boolean {
   return false;
 }
 
-/**
- * Validates a URL before it is fetched server-side. `requireHttps` is on by
- * default; callers that legitimately accept plain http (a metadata URI already
- * committed on chain, say) opt out explicitly rather than the guard being
- * lenient for everyone.
- */
 export function validateUrl(
   raw: string,
   options: { requireHttps?: boolean } = {},
@@ -219,7 +187,6 @@ export function validateUrl(
   return { url: parsed };
 }
 
-/** Convenience for callers that only need a yes/no, mirroring the backend's prior helper. */
 export function isPrivateOrInsecureUrl(raw: string, requireHttps = true): boolean {
   return "error" in validateUrl(raw, { requireHttps });
 }

@@ -4,10 +4,6 @@ import { deriveAesKey, generateStarkKeyPair, sealPrivateKey, unsealPrivateKey, s
 const hex = (buf: ArrayBuffer): string => Buffer.from(buf).toString("hex");
 const fromHex = (h: string): Uint8Array => new Uint8Array(Buffer.from(h, "hex"));
 
-// Golden vectors captured from the pre-extraction implementation in
-// medialane-io/src/lib/wallet/passkey.ts — see Plan Task 1 for how they
-// were generated. Any change to these functions' output for these exact
-// inputs is a behavioral regression, not a refactor.
 const SECRET_HEX = "1111111111111111111111111111111111111111111111111111111111111111".slice(0, 64);
 const HKDF_INFO_HEX = "676f6c64656e2d766563746f722d696e666f";
 const IV_HEX = "222222222222222222222222";
@@ -46,10 +42,10 @@ test("golden vector: signWithPrivateKey reproduces the pre-extraction signature 
 });
 
 test("golden vector: the fixed private key derives the expected public key", () => {
-  // Exercises the same ec.starkCurve.getStarkKey call generateStarkKeyPair uses internally.
+
   const { publicKeyHex } = generateStarkKeyPair();
   expect(publicKeyHex.startsWith("0x")).toBe(true);
-  expect(EXPECTED_PUBLIC_KEY.length).toBeGreaterThan(2); // sanity: golden constant is present and non-trivial
+  expect(EXPECTED_PUBLIC_KEY.length).toBeGreaterThan(2);
 });
 
 test("generateStarkKeyPair produces a keypair whose pubkey matches its privkey", () => {

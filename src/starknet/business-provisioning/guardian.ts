@@ -74,10 +74,7 @@ export interface EscapeInfo {
 }
 
 export function decodeEscapeAndStatus(res: string[]): EscapeInfo {
-  // Contract return shape: `(Escape { ready_at, escape_type, new_signer: Option<Signer> }, EscapeStatus)`.
-  // res[0]=ready_at, res[1]=escape_type, res[2]=Option tag (0=Some,1=None).
-  // When Some, the Signer payload (type + value = 2 felts) sits at res[3..4], so
-  // the trailing EscapeStatus is at res[5]; when None it's at res[3].
+
   const readyAt = Number(res[0]);
   const escapeType = ESCAPE_TYPE_NAMES[Number(res[1])] ?? "None";
   const optionTag = Number(res[2]);

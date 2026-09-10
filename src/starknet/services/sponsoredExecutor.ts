@@ -14,12 +14,6 @@ export type SponsoredExecuteResult =
   | { status: "sponsored"; transactionHash: string }
   | { status: "unavailable"; reason: string };
 
-// AVNU processed the request and rejected it (422 — simulation failure,
-// account not deployed) or the failure is otherwise genuinely ambiguous
-// about broadcast state (502). Neither is safe to silently retry
-// self-funded: a 422 will fail identically regardless of payer, and a 502
-// might already have broadcast — thrown so the caller treats it as a hard
-// error, not an "ask the user to self-fund" moment.
 export class SponsoredCallRejectedError extends Error {}
 
 const PRE_BROADCAST_EXECUTE_STATUSES = new Set([400, 429, 503]);

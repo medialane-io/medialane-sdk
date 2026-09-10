@@ -3,39 +3,15 @@ import { sha256 } from "@noble/hashes/sha2.js";
 import { base64urlnopad } from "@scure/base";
 import type { Chain } from "../chains.js";
 
-/**
- * Issues and verifies the two bearer tokens the platform signs with its own
- * secret: wallet identity tokens and account session tokens.
- *
- * This lives here because the verification had drifted into three independent
- * copies — the backend that issues them, and each app that checks them on its
- * own routes — all sharing one secret with no shared implementation. Changing
- * how the signature was computed in one place silently invalidated every token
- * for the others, which would have returned 401 on every SIWS-gated route in
- * both apps.
- *
- * Deliberately dependency-free: HMAC and base64url come from packages this SDK
- * already ships, so the module stays isomorphic and no consumer needs Node
- * builtins. Output is byte-identical to the previous `node:crypto` version.
- */
-
 const IDENTITY_PREFIX = "siws_";
 const ACCOUNT_SESSION_PREFIX = "account_session_";
 
-/**
- * Domain tags bind a signature to the *kind* of token. Without one the
- * signature covers only the payload, so the two families are distinguishable
- * only by which fields each happens to carry — which stops being true the
- * moment either gains a field the other verifier reads, letting a short-lived
- * wallet token stand in for a long-lived account session.
- */
 const IDENTITY_DOMAIN = "siws-identity-v1";
 const ACCOUNT_SESSION_DOMAIN = "account-session-v1";
 
 export const IDENTITY_TTL_SECONDS = 86_400;
 export const ACCOUNT_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 
-/** Tolerance for a token minted by a host whose clock runs slightly ahead. */
 const CLOCK_SKEW_SECONDS = 60;
 
 export interface SiwsIdentity {
@@ -70,7 +46,6 @@ function sign(secret: string, domain: string | null, payload: string): string {
   return toHex(hmac(sha256, encoder.encode(secret), encoder.encode(message)));
 }
 
-/** Compares in time independent of how many leading characters match. */
 function constantTimeEquals(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -78,11 +53,6 @@ function constantTimeEquals(a: string, b: string): boolean {
   return diff === 0;
 }
 
-/**
- * Accepts the domain-tagged signature and, during rollout, the untagged one
- * that predates it. Drop the untagged branch once the longest TTL above has
- * elapsed since every issuer and verifier was updated.
- */
 function signatureMatches(secret: string, domain: string, payload: string, provided: string): boolean {
   return (
     constantTimeEquals(provided, sign(secret, domain, payload)) ||

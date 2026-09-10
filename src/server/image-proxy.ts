@@ -7,30 +7,9 @@ import {
   validateUrl,
 } from "./ssrf-guard.js";
 
-/**
- * Proxies a remote image, which means fetching a URL an untrusted caller chose
- * — the classic SSRF shape. Guarded in four places, each of which has to hold:
- *
- *   1. the URL is https, credential-free and not a private host
- *   2. the hostname's *resolved* addresses are re-checked, since a public name
- *      can resolve to a private address
- *   3. redirects are followed manually, re-validating each hop, because a
- *      permitted host can redirect into the private range
- *   4. the response must be an allowed image type and is read under a byte cap
- *
- * This existed as a byte-identical copy in each app, so a fix to one would not
- * have reached the other. DNS resolution is injected rather than imported: it
- * is runtime-specific, and this package stays isomorphic.
- *
- * Note the remaining exposure: between resolving a hostname and fetching it,
- * the name could resolve differently (DNS rebinding). Closing that needs the
- * fetch pinned to the address already checked, which the platform fetch does
- * not expose. The content-type allowlist and byte cap bound what an attacker
- * gets if they win that race.
- */
 export interface ImageProxyConfig {
   checkRateLimit: (ip: string) => boolean;
-  /** Returns every address a hostname resolves to. Injected; see above. */
+
   resolveHostname: (hostname: string) => Promise<string[]>;
   fetchImpl?: typeof fetch;
   userAgent?: string;
@@ -50,7 +29,6 @@ export interface CappedBody {
   status?: number;
 }
 
-/** Reads a response body, refusing anything past `maxBytes` rather than buffering it. */
 export async function readBodyWithCap(res: Response, maxBytes: number): Promise<CappedBody> {
   const declared = Number(res.headers.get("content-length") ?? 0);
   if (declared > maxBytes) {
@@ -92,7 +70,7 @@ export function createImageProxyHandler(
   async function resolvesToPrivateHost(hostname: string): Promise<boolean> {
     try {
       const addresses = await config.resolveHostname(hostname);
-      // No addresses is not "safe by default" — refuse rather than proceed.
+
       if (addresses.length === 0) return true;
       return addresses.some((address) => isPrivateHost(address));
     } catch {
