@@ -97,6 +97,8 @@ export {
   computeAccountAddress,
   computeOwnerGuid,
   buildChangeOwnersCall,
+  buildAddOwnerCall,
+  buildRemoveOwnerCall,
   buildDeployAccountParams,
   buildSetFirstGuardianCall,
   buildTriggerEscapeOwnerCall,
