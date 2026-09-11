@@ -2,18 +2,6 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
-## [0.112.0] — 2026-09-11
-
-### Changed
-
-- `PUBLIC_RPC_FALLBACKS` is empty. `rpc.starknet.lava.build` is retired and
-  answers 410, so every failover that reached it spent a request confirming a
-  host was gone. There is no keyless Starknet endpoint to put in its place;
-  supply one through configuration instead.
-- `PAID_UPSTREAM_MARKERS` carries `g.w.lavanet.xyz`, the keyed gateway that
-  replaces it. The key makes it a paid upstream, so it belongs behind the same
-  metering as Alchemy and must never be exposed to a browser.
-
 ## [0.111.1] — 2026-09-11
 
 ### Fixed
