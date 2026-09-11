@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.112.0] — 2026-09-11
+
+### Removed
+
+- `PAID_UPSTREAM_MARKERS`. A published package is the wrong place to name which
+  providers a platform depends on, and a guard that works by matching those
+  names in source both misses a call assembled at runtime and trips on a string
+  that never reaches anything.
+
 ## [0.111.1] — 2026-09-11
 
 ### Fixed
@@ -153,10 +162,6 @@ All notable changes to `@medialane/sdk` are documented here.
 - `POLICY_REFUSAL_CODES` and `isPolicyRefusal(...)` — the codes our own proxies
   emit to refuse a call on policy grounds (no API key, insufficient credits,
   rate limited, wrong origin).
-- `PAID_UPSTREAM_MARKERS` — the hostnames and env-var names that reach a paid
-  upstream directly. Apps scan their own source against this list so that
-  adding an upstream protects every consumer at once, instead of each repo
-  keeping a copy that drifts.
 - `CanonicalHash` — the branded return type of `normalizeHash`. Only
   `normalizeHash` can produce it, so a function that requires a canonical hash
   cannot be handed a raw caller-supplied string. It stays assignable to

@@ -91,14 +91,3 @@ export function createFailoverFetch(
 
   return failover as unknown as typeof fetch;
 }
-
-export const PAID_UPSTREAM_MARKERS: readonly string[] = [
-  "rpc.starknet.lava.build",
-  "g.alchemy.com",
-  "ALCHEMY_RPC_URL",
-  "STARKNET_RPC_URL",
-  "AVNU_PAYMASTER_API_KEY",
-  "@avnu/avnu-sdk",
-  "api.pinata.cloud",
-  "PINATA_JWT",
-];
