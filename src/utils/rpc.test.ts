@@ -1,5 +1,11 @@
 import { describe, test, expect } from "bun:test";
-import { isTransientRpcError, isPolicyRefusal, POLICY_REFUSAL_CODES } from "./rpc.js";
+import {
+  isTransientRpcError,
+  isPolicyRefusal,
+  POLICY_REFUSAL_CODES,
+  PUBLIC_RPC_FALLBACKS,
+  PAID_UPSTREAM_MARKERS,
+} from "./rpc.js";
 
 describe("policy refusals are terminal", () => {
   const refusals = [
@@ -26,4 +32,17 @@ describe("policy refusals are terminal", () => {
     expect(isTransientRpcError({ status: 200, body: { error: { code: -32603, message: "internal" } } })).toBe(true);
     expect(isTransientRpcError({ status: 429, body: { error: { code: -32001, message: "rate limit" } } })).toBe(true);
   });
+});
+
+test("no keyless endpoint is offered as a fallback", () => {
+  expect(PUBLIC_RPC_FALLBACKS).toEqual([]);
+});
+
+test("the lava gateway is treated as a paid upstream", () => {
+  expect(PAID_UPSTREAM_MARKERS).toContain("g.w.lavanet.xyz");
+});
+
+test("the retired public endpoint is gone from every list", () => {
+  expect(PUBLIC_RPC_FALLBACKS).not.toContain("https://rpc.starknet.lava.build");
+  expect(PAID_UPSTREAM_MARKERS).not.toContain("rpc.starknet.lava.build");
 });

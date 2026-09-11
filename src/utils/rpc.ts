@@ -1,6 +1,4 @@
-export const PUBLIC_RPC_FALLBACKS: readonly string[] = [
-  "https://rpc.starknet.lava.build",
-];
+export const PUBLIC_RPC_FALLBACKS: readonly string[] = [];
 
 const TRANSIENT_BODY_RE =
   /"code"\s*:\s*-32001|"code"\s*:\s*-32603|unable to complete|rate.?limit|too many|throttl|exceed.*quota|temporarily unavailable|service unavailable|overload|gateway.*time|upstream.*time|backend.*error/i;
@@ -93,7 +91,7 @@ export function createFailoverFetch(
 }
 
 export const PAID_UPSTREAM_MARKERS: readonly string[] = [
-  "rpc.starknet.lava.build",
+  "g.w.lavanet.xyz",
   "g.alchemy.com",
   "ALCHEMY_RPC_URL",
   "STARKNET_RPC_URL",
