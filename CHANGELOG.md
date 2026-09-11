@@ -6,10 +6,10 @@ All notable changes to `@medialane/sdk` are documented here.
 
 ### Removed
 
-- `PAID_UPSTREAM_MARKERS`. A published package is the wrong place to name which
-  providers a platform depends on, and a guard that works by matching those
-  names in source both misses a call assembled at runtime and trips on a string
-  that never reaches anything.
+- The exported marker list used by app guard tests. A published package is the
+  wrong place to name which providers a platform depends on, and a guard that
+  works by matching those names in source both misses a call assembled at
+  runtime and trips on a string that never reaches anything.
 
 ## [0.111.1] — 2026-09-11
 
