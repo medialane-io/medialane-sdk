@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.111.1] — 2026-09-11
+
+### Fixed
+
+- `getTokenByAddress` and `getTokenBySymbol` return nothing for a missing or
+  empty value instead of throwing on it. A caller passing a field that turned
+  out to be absent took down whatever was rendering it.
+
 ## [0.111.0] — 2026-09-10
 
 ### Added

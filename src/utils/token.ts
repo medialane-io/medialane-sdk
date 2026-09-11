@@ -17,7 +17,9 @@ export function formatAmount(raw: string, decimals: number): string {
   return fractional ? `${whole}.${fractional}` : whole.toString();
 }
 
-export function getTokenByAddress(address: string): SupportedToken | undefined {
+export function getTokenByAddress(address: string | null | undefined): SupportedToken | undefined {
+  if (typeof address !== "string" || address.trim() === "") return undefined;
+
   let target: bigint | null = null;
   try {
     target = BigInt(address);
@@ -36,7 +38,8 @@ export function getTokenByAddress(address: string): SupportedToken | undefined {
   });
 }
 
-export function getTokenBySymbol(symbol: string): SupportedToken | undefined {
+export function getTokenBySymbol(symbol: string | null | undefined): SupportedToken | undefined {
+  if (typeof symbol !== "string") return undefined;
   const upper = symbol.toUpperCase();
   return SUPPORTED_TOKENS.find((t) => t.symbol === upper);
 }

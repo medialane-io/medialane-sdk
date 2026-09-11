@@ -1,5 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol } from "./token.js";
+import { SUPPORTED_TOKENS } from "../constants.js";
 
 describe("parseAmount / formatAmount", () => {
   test("round-trips 18-decimal amounts without float precision loss", () => {
@@ -37,5 +38,29 @@ describe("getTokenByAddress", () => {
 
   test("returns undefined for an unknown address", () => {
     expect(getTokenByAddress("0xdead")).toBeUndefined();
+  });
+});
+
+describe("looking a token up with nothing", () => {
+  test("a missing address finds nothing instead of throwing", () => {
+    expect(getTokenByAddress(undefined)).toBeUndefined();
+    expect(getTokenByAddress(null)).toBeUndefined();
+    expect(getTokenByAddress("")).toBeUndefined();
+    expect(getTokenByAddress("   ")).toBeUndefined();
+  });
+
+  test("a missing symbol finds nothing instead of throwing", () => {
+    expect(getTokenBySymbol(undefined)).toBeUndefined();
+    expect(getTokenBySymbol(null)).toBeUndefined();
+  });
+
+  test("an address that is not one finds nothing", () => {
+    expect(getTokenByAddress("not-an-address")).toBeUndefined();
+  });
+
+  test("a real address still resolves", () => {
+    const usdc = SUPPORTED_TOKENS.find((t) => t.symbol === "USDC")!;
+    expect(getTokenByAddress(usdc.address)?.symbol).toBe("USDC");
+    expect(getTokenBySymbol("usdc")?.symbol).toBe("USDC");
   });
 });
