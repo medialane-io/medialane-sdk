@@ -11,6 +11,31 @@ export async function deriveAesKey(prfSecret: Uint8Array, hkdfInfo: Uint8Array):
   );
 }
 
+const STARK_KEY_INFO = new TextEncoder().encode("medialane/passkey/stark-key/v1");
+const DERIVE_BITS = 384;
+
+function bytesToBigInt(bytes: Uint8Array): bigint {
+  let value = 0n;
+  for (const byte of bytes) value = (value << 8n) | BigInt(byte);
+  return value;
+}
+
+export async function deriveStarkKeyPair(
+  prfSecret: Uint8Array,
+): Promise<{ privateKeyHex: string; publicKeyHex: string }> {
+  const hkdf = await crypto.subtle.importKey("raw", prfSecret as BufferSource, "HKDF", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: STARK_KEY_INFO as BufferSource },
+    hkdf,
+    DERIVE_BITS,
+  );
+
+  const order = ec.starkCurve.CURVE.n;
+  const value = (bytesToBigInt(new Uint8Array(bits)) % (order - 1n)) + 1n;
+  const privateKeyHex = "0x" + value.toString(16).padStart(64, "0");
+  return { privateKeyHex, publicKeyHex: ec.starkCurve.getStarkKey(privateKeyHex) };
+}
+
 export function generateStarkKeyPair(): { privateKeyHex: string; publicKeyHex: string } {
   const privateKeyHex =
     "0x" +
