@@ -115,7 +115,6 @@ export {
 } from "./business-provisioning/index.js";
 export {
   deriveAesKey,
-  deriveStarkKeyPair,
   generateStarkKeyPair,
   starkKeyPairFromPrivateKey,
   InvalidStarkPrivateKeyError,

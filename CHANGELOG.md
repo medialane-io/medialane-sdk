@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.116.0] — 2026-09-12
+
+### Removed
+
+- `deriveStarkKeyPair`. Deriving a wallet's signing key from a passkey secret was
+  added so a wallet could be rebuilt wherever the passkey goes. It reaches only
+  wallets created after it shipped, and the apps have gone back to sealing a
+  random key, so nothing calls it.
+
+  Key export and import, and guardian recovery, cover what it was for.
+
 ## [0.115.0] — 2026-09-12
 
 ### Added
