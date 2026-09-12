@@ -2,6 +2,23 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.115.0] — 2026-09-12
+
+### Added
+
+- Cross-app wallet approval. A Medialane app that holds no key for an account can
+  ask an app that does to approve one, without the person copying anything
+  between tabs and without a private key ever moving.
+
+  `buildApprovalUrl` names the key being asked for, the app asking, and where to
+  return. `parseApprovalRequest` reads it back. `buildReturnUrl` carries the
+  outcome home.
+
+  Both the app being asked and the app to return to must be Medialane origins, so
+  neither the link nor its reply can be pointed elsewhere. A key outside the curve
+  order and a request with no app name are both refused, since nobody should be
+  asked to approve something unnamed.
+
 ## [0.114.0] — 2026-09-12
 
 ### Added

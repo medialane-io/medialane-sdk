@@ -123,6 +123,15 @@ export {
   unsealPrivateKey,
   signWithPrivateKey,
 } from "./passkey-wallet/index.js";
+export {
+  APPROVAL_PATH,
+  buildApprovalUrl,
+  parseApprovalRequest,
+  buildReturnUrl,
+  isMedialaneOrigin,
+  InvalidApprovalRequestError,
+} from "./app-approval/index.js";
+export type { ApprovalRequest } from "./app-approval/index.js";
 export type {
   GuardianInfo,
   EscapeInfo,
