@@ -2,6 +2,20 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.114.0] — 2026-09-12
+
+### Added
+
+- `deriveStarkKeyPair(prfSecret)`, which produces a signing key from a passkey's
+  PRF secret rather than sealing a random one. The same passkey yields the same
+  key on any origin and on any device the passkey reaches, so a wallet does not
+  have to be carried from the browser that made it.
+
+  Derived with HKDF-SHA-256 over 384 bits, reduced into the curve order, under a
+  label distinct from the one that derives the sealing key. Importing a key you
+  already hold still seals it, since a key chosen elsewhere cannot be recomputed
+  from anything.
+
 ## [0.113.0] — 2026-09-12
 
 ### Fixed
