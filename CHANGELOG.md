@@ -2,6 +2,28 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.113.0] — 2026-09-12
+
+### Fixed
+
+- `getUsage()` asked for `/v1/portal/usage`, which the backend does not serve.
+  Spending is read with `getSpend()` from `/v1/portal/credits/spend`, where it
+  lives.
+- `ApiPortalMe` described a name and an email. The route returns an account id
+  and a credit balance, and the type now says so.
+- `ApiPortalKey` was missing the app a key was issued for.
+
+### Added
+
+- Every portal account method takes an optional SIWS token. The backend resolves
+  whose account a request concerns from that token when one is sent, so an app
+  holding its own key can read the account of the person signed into it. Without
+  a token the key decides, as before, which is how a key-holder reaches its own
+  account.
+- `getCreditHistory()`, `getSpend()` and `checkDeposit()`, so buying credits and
+  reading what they went on no longer needs a second client.
+- `createApiKey()` accepts the app a key is for alongside its label.
+
 ## [0.112.0] — 2026-09-11
 
 ### Removed

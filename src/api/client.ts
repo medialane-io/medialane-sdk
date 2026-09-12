@@ -43,7 +43,8 @@ import type {
   ApiPortalMe,
   ApiPortalKey,
   ApiPortalKeyCreated,
-  ApiUsageDay,
+  ApiCreditPayment,
+  ApiPortalSpend,
   ApiWebhookEndpoint,
   ApiWebhookCreated,
   CreateWebhookParams,
@@ -184,6 +185,10 @@ export class ApiClient {
 
   private bearer(siwsToken: string): Record<string, string> {
     return { Authorization: `Bearer ${siwsToken}` };
+  }
+
+  private asSubject(siwsToken?: string): Record<string, string> | undefined {
+    return siwsToken ? this.bearer(siwsToken) : undefined;
   }
 
   getOrders(query: ApiOrdersQuery = {}): Promise<ApiResponse<ApiOrder[]>> {
@@ -464,24 +469,58 @@ export class ApiClient {
     });
   }
 
-  getMe(): Promise<ApiResponse<ApiPortalMe>> {
-    return this.get<ApiResponse<ApiPortalMe>>("/v1/portal/me");
+  getMe(siwsToken?: string): Promise<ApiResponse<ApiPortalMe>> {
+    return this.request<ApiResponse<ApiPortalMe>>("/v1/portal/me", {
+      method: "GET",
+      headers: this.asSubject(siwsToken),
+    });
   }
 
-  getApiKeys(): Promise<ApiResponse<ApiPortalKey[]>> {
-    return this.get<ApiResponse<ApiPortalKey[]>>("/v1/portal/keys");
+  getApiKeys(siwsToken?: string): Promise<ApiResponse<ApiPortalKey[]>> {
+    return this.request<ApiResponse<ApiPortalKey[]>>("/v1/portal/keys", {
+      method: "GET",
+      headers: this.asSubject(siwsToken),
+    });
   }
 
-  createApiKey(label?: string): Promise<ApiResponse<ApiPortalKeyCreated>> {
-    return this.post<ApiResponse<ApiPortalKeyCreated>>("/v1/portal/keys", label ? { label } : {});
+  createApiKey(
+    input?: { label?: string; appSource?: string },
+    siwsToken?: string,
+  ): Promise<ApiResponse<ApiPortalKeyCreated>> {
+    return this.request<ApiResponse<ApiPortalKeyCreated>>("/v1/portal/keys", {
+      method: "POST",
+      body: JSON.stringify(input ?? {}),
+      headers: this.asSubject(siwsToken),
+    });
   }
 
-  deleteApiKey(id: string): Promise<ApiResponse<{ id: string; status: string }>> {
-    return this.del<ApiResponse<{ id: string; status: string }>>(`/v1/portal/keys/${id}`);
+  deleteApiKey(id: string, siwsToken?: string): Promise<ApiResponse<{ id: string; status: string }>> {
+    return this.request<ApiResponse<{ id: string; status: string }>>(`/v1/portal/keys/${id}`, {
+      method: "DELETE",
+      headers: this.asSubject(siwsToken),
+    });
   }
 
-  getUsage(): Promise<ApiResponse<ApiUsageDay[]>> {
-    return this.get<ApiResponse<ApiUsageDay[]>>("/v1/portal/usage");
+  getCreditHistory(siwsToken?: string): Promise<ApiResponse<ApiCreditPayment[]>> {
+    return this.request<ApiResponse<ApiCreditPayment[]>>("/v1/portal/credits/history", {
+      method: "GET",
+      headers: this.asSubject(siwsToken),
+    });
+  }
+
+  getSpend(siwsToken?: string): Promise<ApiResponse<ApiPortalSpend>> {
+    return this.request<ApiResponse<ApiPortalSpend>>("/v1/portal/credits/spend", {
+      method: "GET",
+      headers: this.asSubject(siwsToken),
+    });
+  }
+
+  checkDeposit(txHash: string, siwsToken?: string): Promise<ApiResponse<{ deposits: number }>> {
+    return this.request<ApiResponse<{ deposits: number }>>("/v1/portal/credits/check", {
+      method: "POST",
+      body: JSON.stringify({ txHash }),
+      headers: this.asSubject(siwsToken),
+    });
   }
 
   getWebhooks(): Promise<ApiResponse<ApiWebhookEndpoint[]>> {

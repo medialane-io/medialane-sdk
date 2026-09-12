@@ -807,16 +807,17 @@ export interface ApiMetadataUpload {
 
 export interface ApiPortalMe {
   id: string;
-  name: string;
-  email: string;
+  accountId: string;
   plan: TenantPlan;
   status: string;
+  creditBalance: number;
 }
 
 export interface ApiPortalKey {
   id: string;
   prefix: string;
-  label: string;
+  label: string | null;
+  appSource: string | null;
   status: ApiKeyStatus;
   lastUsedAt: string | null;
   createdAt: string;
@@ -830,9 +831,29 @@ export interface ApiPortalKeyCreated {
   plaintext: string;
 }
 
-export interface ApiUsageDay {
-  day: string;
-  requests: number;
+export interface ApiCreditPayment {
+  id: string;
+  asset: string;
+  amountAtomic: string;
+  creditedAmount: number;
+  mdlnMultiplier: number;
+  txHash: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface ApiSpendByAction {
+  actionKey: string;
+  credits: number;
+  units: number;
+}
+
+export interface ApiPortalSpend {
+  recent: Array<{ actionKey: string; credits: number; createdAt: string }>;
+  byAction: ApiSpendByAction[];
+  spent: number;
+  credited: number;
+  drift: number;
 }
 
 export interface ApiWebhookEndpoint {
