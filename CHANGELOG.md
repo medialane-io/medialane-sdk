@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.117.0] — 2026-09-13
+
+### Added
+
+- `ip-ticketing` service: distributes tickets to a list of recipients in one
+  run, each getting a wallet and their ticket. Shares `ip-tickets`' factory
+  and class hash — same contract, same tradeable ticket — and adds `airdrop`
+  to its capabilities on top of everything `ip-tickets` already declares.
+
 ## [0.116.0] — 2026-09-13
 
 ### Removed

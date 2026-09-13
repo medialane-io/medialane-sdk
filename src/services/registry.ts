@@ -134,6 +134,26 @@ const SERVICES = {
     ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },
+  "ip-ticketing": {
+    id: "ip-ticketing",
+    displayName: "IP Ticketing",
+    description: "Distribute verifiable on-chain tickets to a list of recipients in one run — everyone gets a wallet and their ticket.",
+    standard: "ERC1155",
+    provenance: "MEDIALANE",
+    onchain: {
+      STARKNET: {
+        factoryAddress: SN.ipTicketsFactory!,
+        classHash: SN.ipTicketCollectionClassHash!,
+      },
+    },
+    uiVariant: "ticket",
+    capabilities: ["mint", "airdrop", "redeem", "list", "buy", "make_offer", "cancel", "transfer"],
+    events: [
+      { name: "CollectionDeployed", emittedBy: "factory" },
+      { name: "TicketCreated", emittedBy: "instance" },
+    ],
+    metadataSchema: { licenseDefault: "CC BY-SA" },
+  },
   "ip-club": {
     id: "ip-club",
     displayName: "IP Club",
