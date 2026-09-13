@@ -577,12 +577,16 @@ export class ApiClient {
 
   registerBusinessProvisioning(params: {
     chain: "STARKNET";
-    walletAddress: string;
     recipientScheme: string;
     recipientValue: string;
     interimOwnerPubkey: string;
-  }): Promise<ApiResponse<ApiBusinessProvisioning & { claimUrl: string }>> {
-    return this.post<ApiResponse<ApiBusinessProvisioning & { claimUrl: string }>>("/v1/business/provisioning", params);
+    derivationSalt: string;
+    deployment: { typedData: unknown; signature: string[]; deployment: unknown };
+  }): Promise<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }> {
+    return this.post<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }>(
+      "/v1/business/provisioning",
+      params,
+    );
   }
 
   completeBusinessProvisioning(id: string): Promise<ApiResponse<ApiBusinessProvisioning>> {

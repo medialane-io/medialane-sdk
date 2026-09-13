@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.118.1] — 2026-09-13
+
+### Fixed
+
+- `registerBusinessProvisioning`'s params didn't match what `/v1/business/provisioning`
+  actually requires — missing `derivationSalt` and `deployment`, and a stale
+  `walletAddress` field the route doesn't take. Fixed to match the real route.
+
 ## [0.118.0] — 2026-09-13
 
 ### Added
