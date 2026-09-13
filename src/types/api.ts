@@ -571,7 +571,7 @@ export interface CreateTierIntentParams {
   metadataUri: string;
 }
 
-export interface MintCallsParams {
+export interface EmissionParams {
   chain?: "STARKNET";
   service: string;
   owner: string;
@@ -585,17 +585,17 @@ export interface MintCallsParams {
   batchSize?: number;
 }
 
-export interface ApiMintCallsCall {
+export interface ApiEmissionCall {
   contractAddress: string;
   entrypoint: string;
   calldata: string[];
 }
 
-export interface ApiMintCallsResult {
+export interface ApiEmissionResult {
   service: string;
   recipientCount: number;
   callCount: number;
-  batches: ApiMintCallsCall[][];
+  batches: ApiEmissionCall[][];
 }
 
 export interface CreateCoinIntentParams {

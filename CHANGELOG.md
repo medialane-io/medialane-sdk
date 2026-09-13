@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.118.2] — 2026-09-13
+
+### Changed
+
+- Renamed the batch-mint-to-a-list-of-recipients API: `ApiClient.mintCalls()` →
+  `emitToRecipients()`, hitting `POST /v1/business/issuance/emission` (was
+  `/mint-calls`). `MintCallsParams`/`ApiMintCallsResult`/`ApiMintCallsCall` →
+  `EmissionParams`/`ApiEmissionResult`/`ApiEmissionCall`. The old names read as
+  blockchain-mechanics jargon ("mint calls") rather than the product action
+  (distributing an asset to a list of recipients).
+
 ## [0.118.1] — 2026-09-13
 
 ### Fixed

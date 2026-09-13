@@ -55,8 +55,8 @@ import type {
   CreateMintIntentParams,
   CreateCollectionIntentParams,
   CreateTierIntentParams,
-  MintCallsParams,
-  ApiMintCallsResult,
+  EmissionParams,
+  ApiEmissionResult,
   CreateCoinIntentParams,
   LaunchCoinIntentParams,
   CreateSponsorshipOfferIntentParams,
@@ -390,8 +390,8 @@ export class ApiClient {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-tier", params);
   }
 
-  mintCalls(params: MintCallsParams): Promise<ApiResponse<ApiMintCallsResult>> {
-    return this.post<ApiResponse<ApiMintCallsResult>>("/v1/business/issuance/mint-calls", params);
+  emitToRecipients(params: EmissionParams): Promise<ApiResponse<ApiEmissionResult>> {
+    return this.post<ApiResponse<ApiEmissionResult>>("/v1/business/issuance/emission", params);
   }
 
   createCoinIntent(params: CreateCoinIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
