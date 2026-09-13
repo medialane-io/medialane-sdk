@@ -55,6 +55,8 @@ import type {
   CreateMintIntentParams,
   CreateCollectionIntentParams,
   CreateTierIntentParams,
+  MintCallsParams,
+  ApiMintCallsResult,
   CreateCoinIntentParams,
   LaunchCoinIntentParams,
   CreateSponsorshipOfferIntentParams,
@@ -97,6 +99,7 @@ export class MedialaneApiError extends Error {
     message: string,
 
     public readonly retryAfterMs?: number,
+    public readonly details?: unknown,
   ) {
     super(message);
     this.name = "MedialaneApiError";
@@ -152,13 +155,20 @@ export class ApiClient {
       if (!response.ok && !allowed(response.status)) {
         const text = await response.text().catch(() => response.statusText);
         let message = text;
+        let details: unknown;
         try {
           const body = JSON.parse(text) as { error?: string };
           if (body.error) message = body.error;
+          details = body;
         } catch {
 
         }
-        throw new MedialaneApiError(response.status, message, parseRetryAfter(response.headers.get("retry-after")));
+        throw new MedialaneApiError(
+          response.status,
+          message,
+          parseRetryAfter(response.headers.get("retry-after")),
+          details,
+        );
       }
       return response;
     }, this.retryOptions);
@@ -378,6 +388,10 @@ export class ApiClient {
 
   createTierIntent(params: CreateTierIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/create-tier", params);
+  }
+
+  mintCalls(params: MintCallsParams): Promise<ApiResponse<ApiMintCallsResult>> {
+    return this.post<ApiResponse<ApiMintCallsResult>>("/v1/business/issuance/mint-calls", params);
   }
 
   createCoinIntent(params: CreateCoinIntentParams): Promise<ApiResponse<ApiIntentCreated>> {

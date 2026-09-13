@@ -475,11 +475,15 @@ export interface CancelOrderIntentParams {
   tokenStandard?: string;
 }
 
-export type FactoryFamilyServiceId = "mip-erc1155" | "ip-tickets" | "ip-club";
+export type FactoryFamilyServiceId = "mip-erc1155" | "ip-tickets" | "ip-ticketing" | "ip-club";
 
-export type TierServiceId = "ip-tickets" | "ip-club";
+export type TierServiceId = "ip-tickets" | "ip-ticketing" | "ip-club";
 
-export type CollectionServiceId = FactoryFamilyServiceId | "pop-protocol" | "drop-collection";
+export type CollectionServiceId =
+  | FactoryFamilyServiceId
+  | "pop-protocol"
+  | "drop-collection"
+  | "data-tokenization-erc721";
 
 export interface CreateMintIntentParams {
 
@@ -565,6 +569,33 @@ export interface CreateTierIntentParams {
   endTime?: number;
   royaltyBps: number;
   metadataUri: string;
+}
+
+export interface MintCallsParams {
+  chain?: "STARKNET";
+  service: string;
+  owner: string;
+  recipientScheme?: string;
+  recipients: string[];
+  tokenUri?: string;
+  collectionId?: string;
+  collectionContract?: string;
+  tokenId?: string;
+  amount?: string;
+  batchSize?: number;
+}
+
+export interface ApiMintCallsCall {
+  contractAddress: string;
+  entrypoint: string;
+  calldata: string[];
+}
+
+export interface ApiMintCallsResult {
+  service: string;
+  recipientCount: number;
+  callCount: number;
+  batches: ApiMintCallsCall[][];
 }
 
 export interface CreateCoinIntentParams {

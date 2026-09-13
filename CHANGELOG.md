@@ -2,6 +2,24 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.118.0] — 2026-09-13
+
+### Added
+
+- `ApiClient.mintCalls()` for `POST /v1/business/issuance/mint-calls` — resolves
+  each recipient to a wallet and returns batched mint calls to execute.
+  `MintCallsParams`/`ApiMintCallsResult`/`ApiMintCallsCall` types added.
+- `MedialaneApiError.details` carries the parsed error response body, so a
+  caller can read structured fields a plain error message loses — e.g.
+  `mint-calls`'s 409 `recipients_not_provisioned` includes which recipients.
+
+### Fixed
+
+- `TierServiceId`/`FactoryFamilyServiceId`/`CollectionServiceId` were missing
+  `ip-ticketing`, and `CollectionServiceId` was missing
+  `data-tokenization-erc721` — both real, registered services, so intent
+  params typed against these unions rejected them.
+
 ## [0.117.0] — 2026-09-13
 
 ### Added
