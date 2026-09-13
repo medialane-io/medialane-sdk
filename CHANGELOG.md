@@ -2,9 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
-## [0.116.0] — 2026-09-12
+## [0.116.0] — 2026-09-13
 
 ### Removed
+
+- Cross-app wallet approval: `buildApprovalUrl`, `parseApprovalRequest`,
+  `buildReturnUrl`, `isMedialaneOrigin`, `APPROVAL_PATH` and
+  `InvalidApprovalRequestError`. An app holding no key asked another app to
+  approve one so a wallet could be reached from both. Apps keep their own
+  wallets now, so nothing calls it.
 
 - `deriveStarkKeyPair`. Deriving a wallet's signing key from a passkey secret was
   added so a wallet could be rebuilt wherever the passkey goes. It reaches only
