@@ -53,3 +53,17 @@ test("data tokenization assets are tradeable", () => {
     expect(service.capabilities).toContain(capability);
   }
 });
+
+test("ip-ticketing shares the ip-tickets factory, not a separate contract", () => {
+  const ticketing = getService("ip-ticketing")!;
+  const tickets = getService("ip-tickets")!;
+  expect(ticketing.onchain?.STARKNET?.factoryAddress).toBe(
+    tickets.onchain?.STARKNET?.factoryAddress,
+  );
+  expect(ticketing.onchain?.STARKNET?.classHash).toBe(tickets.onchain?.STARKNET?.classHash);
+});
+
+test("ip-ticketing adds airdrop on top of ip-tickets' capabilities", () => {
+  expect(hasCapability("ip-ticketing", "airdrop")).toBe(true);
+  expect(hasCapability("ip-tickets", "airdrop")).toBe(false);
+});
