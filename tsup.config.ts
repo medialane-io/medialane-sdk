@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: { index: "src/index.ts", "starknet/index": "src/starknet/index.ts", "evm/index": "src/evm/index.ts", "solana/index": "src/solana/index.ts", "stellar/index": "src/stellar/index.ts", "wallet/index": "src/wallet/index.ts" },
+  entry: { index: "src/index.ts", "starknet/index": "src/starknet/index.ts", "evm/index": "src/evm/index.ts", "solana/index": "src/solana/index.ts", "stellar/index": "src/stellar/index.ts" },
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,
