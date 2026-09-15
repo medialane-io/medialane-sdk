@@ -38,6 +38,7 @@ import type {
   ApiSearchResult,
   ApiIntent,
   ApiIntentCreated,
+  ApiTxSyncResult,
   ApiMetadataSignedUrl,
   ApiMetadataUpload,
   ApiPortalMe,
@@ -376,6 +377,10 @@ export class ApiClient {
 
   confirmIntent(id: string, txHash: string): Promise<ApiResponse<ApiIntent>> {
     return this.patch<ApiResponse<ApiIntent>>(`/v1/intents/${id}/confirm`, { txHash });
+  }
+
+  syncTransaction(txHash: string): Promise<ApiResponse<ApiTxSyncResult>> {
+    return this.post<ApiResponse<ApiTxSyncResult>>("/v1/tx/sync", { txHash });
   }
 
   createMintIntent(params: CreateMintIntentParams): Promise<ApiResponse<ApiIntentCreated>> {

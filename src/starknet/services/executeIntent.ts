@@ -15,6 +15,25 @@ export async function confirmIntentBestEffort(
   await client.api.confirmIntent(intentId, txHash).catch(() => {});
 }
 
+const SYNC_TIMEOUT_MS = 6000;
+
+export async function syncTransactionBestEffort(
+  client: MedialaneClient,
+  txHash: string,
+  timeoutMs = SYNC_TIMEOUT_MS,
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(() => resolve(), timeoutMs);
+  });
+  const sync = client.api.syncTransaction(txHash).then(() => {}, () => {});
+  try {
+    await Promise.race([sync, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 const RECEIPT_RETRY_DELAYS_MS = [0, 3000, 5000, 7000, 10000];
 
 interface ReceiptStatusShape {
@@ -67,9 +86,10 @@ export async function executeIntent(
 
   const { txHash } = await signer.execute(calls);
   await assertTransactionSucceeded(provider, txHash);
-  if (opts.confirm !== false) {
-    await confirmIntentBestEffort(client, intent.id, txHash);
-  }
+  await Promise.all([
+    syncTransactionBestEffort(client, txHash),
+    opts.confirm !== false ? confirmIntentBestEffort(client, intent.id, txHash) : undefined,
+  ]);
   return { txHash };
 }
 
@@ -86,8 +106,9 @@ export async function executeIntents(
   const calls = intents.flatMap((i) => (i as Extract<ApiIntentCreated, { requiresSignature: false }>).calls) as Call[];
   const { txHash } = await signer.execute(calls);
   await assertTransactionSucceeded(provider, txHash);
-  if (opts.confirm !== false) {
-    await Promise.all(intents.map((i) => confirmIntentBestEffort(client, i.id, txHash)));
-  }
+  await Promise.all([
+    syncTransactionBestEffort(client, txHash),
+    ...(opts.confirm !== false ? intents.map((i) => confirmIntentBestEffort(client, i.id, txHash)) : []),
+  ]);
   return { txHash };
 }

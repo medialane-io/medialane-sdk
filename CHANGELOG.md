@@ -2,6 +2,20 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.119.0] — 2026-09-15
+
+### Added
+
+- `ApiClient.syncTransaction(txHash)` for `POST /v1/tx/sync`, returning `ApiTxSyncResult`.
+- `syncTransactionBestEffort(client, txHash, timeoutMs = 6000)`: asks the backend to
+  index a transaction now, waits at most `timeoutMs`, and never throws.
+
+### Changed
+
+- `executeIntent` and `executeIntents` sync the transaction after it succeeds,
+  alongside intent confirmation, so the assets and collections it created are
+  indexed before they return.
+
 ## [0.118.2] — 2026-09-13
 
 ### Changed

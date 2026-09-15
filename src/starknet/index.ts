@@ -27,6 +27,7 @@ export {
   executeIntents,
   assertTransactionSucceeded,
   confirmIntentBestEffort,
+  syncTransactionBestEffort,
   type ExecuteIntentOpts,
   type ReceiptProvider,
 } from "./services/executeIntent.js";
