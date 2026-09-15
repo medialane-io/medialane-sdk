@@ -16,11 +16,27 @@ export type SponsoredExecuteResult =
 
 export class SponsoredCallRejectedError extends Error {}
 
-const SPONSOR_UNAVAILABLE_STATUS = 503;
+export type SponsorshipFailureCode =
+  | "sponsor_unavailable"
+  | "credits_exhausted"
+  | "account_not_deployed"
+  | "not_executable"
+  | "invalid_request"
+  | "not_eligible"
+  | "not_authorized"
+  | "rate_limited"
+  | "may_have_broadcast";
 
-async function errorReason(res: Response, fallback: string): Promise<string> {
-  const body = (await res.json().catch(() => null)) as { error?: string } | null;
-  return body?.error || fallback;
+const USER_MAY_PAY: ReadonlySet<string> = new Set(["sponsor_unavailable", "credits_exhausted"]);
+
+export function userMayPayInstead(code: string | undefined, status: number, stage: "build" | "execute"): boolean {
+  if (code) return USER_MAY_PAY.has(code);
+  return stage === "build" ? status >= 500 : status === 503;
+}
+
+async function failureOf(res: Response, fallback: string): Promise<{ reason: string; code?: string }> {
+  const body = (await res.json().catch(() => null)) as { error?: string; code?: string } | null;
+  return { reason: body?.error || fallback, code: typeof body?.code === "string" ? body.code : undefined };
 }
 
 export async function executeSponsored(
@@ -37,8 +53,8 @@ export async function executeSponsored(
     body: JSON.stringify({ userAddress: signer.address, calls }),
   });
   if (!buildRes.ok) {
-    const reason = await errorReason(buildRes, "We couldn't prepare this transaction.");
-    if (buildRes.status >= 500) return { status: "unavailable", reason };
+    const { reason, code } = await failureOf(buildRes, "We couldn't prepare this transaction.");
+    if (userMayPayInstead(code, buildRes.status, "build")) return { status: "unavailable", reason };
     throw new SponsoredCallRejectedError(reason);
   }
   const { typedData } = (await buildRes.json()) as { typedData: TypedData };
@@ -51,8 +67,8 @@ export async function executeSponsored(
     body: JSON.stringify({ userAddress: signer.address, typedData, signature, calls }),
   });
   if (!executeRes.ok) {
-    const reason = await errorReason(executeRes, "We couldn't submit this transaction.");
-    if (executeRes.status === SPONSOR_UNAVAILABLE_STATUS) {
+    const { reason, code } = await failureOf(executeRes, "We couldn't submit this transaction.");
+    if (userMayPayInstead(code, executeRes.status, "execute")) {
       return { status: "unavailable", reason };
     }
     throw new SponsoredCallRejectedError(reason);
