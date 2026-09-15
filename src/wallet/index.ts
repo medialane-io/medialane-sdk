@@ -27,3 +27,18 @@ export {
   type SelfFundConsentHandler,
   type SelfFundFeeEstimate,
 } from "./self-fund-consent.js";
+export {
+  createPasskeyOwner,
+  PasskeyCancelledError,
+  type PasskeyConfig,
+  type PasskeyOwner,
+  type CreatedOwner,
+} from "./passkey.js";
+export {
+  selfFundedExecutor,
+  sponsoredExecutor,
+  estimateSelfFundedFee,
+  accountFor,
+  type SelfFundedDeps,
+  type SponsoredDeps,
+} from "./executors.js";
