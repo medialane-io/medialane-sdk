@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.121.0] — 2026-09-15
+
+### Changed
+
+- The Media Wallet client moves from `@medialane/sdk/wallet` into `@medialane/sdk/starknet`. A second
+  entry compiled its own copy of the passkey crypto, so an `InvalidStarkPrivateKeyError` thrown inside
+  the wallet client never matched the class imported from `@medialane/sdk/starknet` and error handling
+  around a malformed recovery key fell through. One entry means one class.
+- `@medialane/sdk/wallet` is removed. Import the same names from `@medialane/sdk/starknet`.
+
 ## [0.120.0] — 2026-09-15
 
 ### Added

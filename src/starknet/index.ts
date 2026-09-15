@@ -134,3 +134,5 @@ export type {
   EscapeTypeName,
   EscapeStatusName,
 } from "./business-provisioning/index.js";
+
+export * from "../wallet/index.js";
