@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.119.1] — 2026-09-15
+
+### Fixed
+
+- `executeSponsored` reports `unavailable` only when the sponsor itself is down (a 5xx from build,
+  a 503 from execute). A refused call (400, 401, 403, 429) throws `SponsoredCallRejectedError`, so an
+  app never offers to self-fund a transaction the sponsor refused.
+
 ## [0.119.0] — 2026-09-15
 
 ### Added
