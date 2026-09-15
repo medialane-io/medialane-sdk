@@ -2,6 +2,23 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.120.0] — 2026-09-15
+
+### Added
+
+- `@medialane/sdk/wallet`: the Media Wallet client every app configures for itself, so io, portal and
+  media-wallet stop keeping their own copies. `createMediaWallet({ store, passkey, executor, provider })`
+  covers guardians, devices and signing, and one passkey prompt covers a signature and the transaction
+  after it.
+- `createPasskeyOwner(config)` takes each app's name, relying party, PRF salt and key-derivation info as
+  required values, so the same device passkey still yields a different wallet per app.
+- `createOwnerStore({ storeKey, changeEvent })`, `createSelfFundConsent(estimateFee)`,
+  `selfFundedExecutor` and `sponsoredExecutor` (sponsored, falling back to the user paying only when the
+  sponsor is unavailable and the user agrees).
+- Device pairing, the recovery-key check, guardian status and address helpers move across unchanged.
+- Golden vectors pin sealing, addresses and signatures against the live implementation, including that
+  one app cannot unseal another app's wallet.
+
 ## [0.119.2] — 2026-09-15
 
 ### Changed
