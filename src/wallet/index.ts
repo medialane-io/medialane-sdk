@@ -42,3 +42,11 @@ export {
   type SelfFundedDeps,
   type SponsoredDeps,
 } from "./executors.js";
+export {
+  createMediaWallet,
+  describeDevices,
+  canRemoveDevice,
+  type MediaWallet,
+  type MediaWalletConfig,
+  type DeviceEntry,
+} from "./client.js";
