@@ -1,6 +1,6 @@
 import { test, expect, mock } from "bun:test";
 import type { TypedData } from "starknet";
-import { executeSponsored, SponsoredCallRejectedError, type TypedDataSigner } from "./sponsoredExecutor.js";
+import { executeSponsored, SponsoredCallRejectedError, userMayPayInstead, type TypedDataSigner } from "./sponsoredExecutor.js";
 
 const FAKE_TYPED_DATA = {
   types: {
@@ -125,4 +125,51 @@ test("executeSponsored falls back to a generic reason when the response has no e
 
   expect(result.status).toBe("unavailable");
   if (result.status === "unavailable") expect(result.reason.length).toBeGreaterThan(0);
+});
+
+test("the failure code decides whether the user may pay instead", () => {
+  expect(userMayPayInstead("sponsor_unavailable", 502, "build")).toBe(true);
+  expect(userMayPayInstead("credits_exhausted", 402, "build")).toBe(true);
+  expect(userMayPayInstead("credits_exhausted", 402, "execute")).toBe(true);
+  for (const code of ["not_eligible", "not_authorized", "rate_limited", "invalid_request", "account_not_deployed", "not_executable", "may_have_broadcast"]) {
+    expect(userMayPayInstead(code, 502, "build")).toBe(false);
+    expect(userMayPayInstead(code, 503, "execute")).toBe(false);
+  }
+});
+
+test("a response without a code keeps the status rules", () => {
+  expect(userMayPayInstead(undefined, 502, "build")).toBe(true);
+  expect(userMayPayInstead(undefined, 403, "build")).toBe(false);
+  expect(userMayPayInstead(undefined, 503, "execute")).toBe(true);
+  expect(userMayPayInstead(undefined, 502, "execute")).toBe(false);
+});
+
+test("exhausted credits at build offer the user to pay", async () => {
+  const fetchImpl = mock(async () =>
+    new Response(JSON.stringify({ x402Version: 1, accepts: [], code: "credits_exhausted" }), { status: 402 })) as unknown as typeof fetch;
+
+  const result = await executeSponsored(
+    { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
+    fakeSigner(),
+    [{ contractAddress: "0x1", entrypoint: "foo", calldata: [] }],
+  );
+
+  expect(result.status).toBe("unavailable");
+});
+
+test("an execute that may have broadcast is never offered for self-funding", async () => {
+  const fetchImpl = mock(async (url: string) => {
+    if (url === "/api/wallet/sponsored-invoke/build") {
+      return new Response(JSON.stringify({ typedData: FAKE_TYPED_DATA }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ error: "maybe sent", code: "may_have_broadcast" }), { status: 502 });
+  }) as unknown as typeof fetch;
+
+  await expect(
+    executeSponsored(
+      { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
+      fakeSigner(),
+      [{ contractAddress: "0x1", entrypoint: "foo", calldata: [] }],
+    ),
+  ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
 });

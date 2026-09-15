@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.119.2] — 2026-09-15
+
+### Changed
+
+- `executeSponsored` decides from the backend's failure `code`: `sponsor_unavailable` and
+  `credits_exhausted` return `unavailable`, so the user may pay instead; every other code throws
+  `SponsoredCallRejectedError`, including `may_have_broadcast`. Responses without a code keep the
+  0.119.1 status rules. `userMayPayInstead(code, status, stage)` and `SponsorshipFailureCode` are exported.
+
 ## [0.119.1] — 2026-09-15
 
 ### Fixed

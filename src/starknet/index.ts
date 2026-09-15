@@ -79,8 +79,7 @@ export {
   SponsoredCallRejectedError,
   type TypedDataSigner,
   type SponsoredExecuteConfig,
-  type SponsoredExecuteResult,
-} from "./services/sponsoredExecutor.js";
+  type SponsoredExecuteResult, userMayPayInstead, type SponsorshipFailureCode } from "./services/sponsoredExecutor.js";
 export type {
   DeployCollectionParams,
   MintEditionParams,
