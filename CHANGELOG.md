@@ -2,6 +2,28 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.119.0] — 2026-09-15
+
+### Added
+
+- `ApiClient.syncTransaction(txHash)` for `POST /v1/tx/sync`, returning `ApiTxSyncResult`.
+- `syncTransactionBestEffort(client, txHash, timeoutMs = 6000)`: asks the backend to
+  index a transaction now, waits at most `timeoutMs`, and never throws.
+- `deployedCollectionFromReceipt(receipt, service)` reads the collection a factory
+  deployed (`mip-erc1155`, `ip-tickets`, `ip-ticketing`, `ip-club`,
+  `drop-collection`), accepting the event only from that service's factory.
+- `mintedTokenIdFromReceipt(receipt, contract)` reads the token a collection minted:
+  `IPMinted` for NFT Editions, the ERC-721 `Transfer` from zero for IP Collection.
+- `ReceiptLike` type.
+
+### Changed
+
+- `assertTransactionSucceeded` returns the receipt it verified, and
+  `executeIntent` / `executeIntents` return it as `receipt` next to `txHash`.
+- `executeIntent` and `executeIntents` sync the transaction after it succeeds,
+  alongside intent confirmation, so the assets and collections it created are
+  indexed before they return.
+
 ## [0.118.2] — 2026-09-13
 
 ### Changed

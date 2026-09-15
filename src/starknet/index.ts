@@ -27,9 +27,16 @@ export {
   executeIntents,
   assertTransactionSucceeded,
   confirmIntentBestEffort,
+  syncTransactionBestEffort,
   type ExecuteIntentOpts,
   type ReceiptProvider,
 } from "./services/executeIntent.js";
+export {
+  deployedCollectionFromReceipt,
+  mintedTokenIdFromReceipt,
+  type ReceiptLike,
+  type DeployingServiceId,
+} from "./services/receipts.js";
 export { PopService } from "./services/pop.js";
 export { DropService, toContractConditions as toDropContractConditions } from "./services/drop.js";
 export { TicketService } from "./services/ticket.js";

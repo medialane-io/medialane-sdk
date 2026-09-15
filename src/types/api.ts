@@ -433,6 +433,12 @@ export type ApiIntentCreated =
   | { id: string; expiresAt: string; requiresSignature: true; typedData: unknown }
   | { id: string; expiresAt: string; requiresSignature: false; calls: IntentCall[] };
 
+export interface ApiTxSyncResult {
+  applied: number;
+  contracts?: string[];
+  pending: boolean;
+}
+
 export interface CreateListingIntentParams {
   offerer: string;
   nftContract: string;

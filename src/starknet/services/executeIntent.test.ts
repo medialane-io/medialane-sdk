@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import type { StarknetVenueSigner } from "../index.js";
 import type { ApiIntentCreated } from "../../types/api.js";
-import { executeIntent, executeIntents, confirmIntentBestEffort, assertTransactionSucceeded, type ReceiptProvider } from "./executeIntent.js";
+import { executeIntent, executeIntents, confirmIntentBestEffort, assertTransactionSucceeded, syncTransactionBestEffort, type ReceiptProvider } from "./executeIntent.js";
 
 function fakeProvider(receiptImpl: (txHash: string) => Promise<unknown> = async () => ({ execution_status: "SUCCEEDED" })): ReceiptProvider {
   return { getTransactionReceipt: receiptImpl };
@@ -20,6 +20,7 @@ function fakeClient(overrides: Record<string, unknown> = {}) {
   return {
     api: {
       confirmIntent: async () => ({}),
+      syncTransaction: async () => ({ data: { applied: 1, pending: false } }),
       submitIntentSignature: async () => ({ data: { calls: [{ contractAddress: "0xc", entrypoint: "e", calldata: [] }] } }),
       ...overrides,
     },
@@ -112,11 +113,62 @@ test("assertTransactionSucceeded retries past a not-yet-indexed receipt and then
     if (calls < 3) throw new Error("Transaction hash not found");
     return { execution_status: "SUCCEEDED" };
   });
-  await expect(assertTransactionSucceeded(provider, "0xtx", [0, 0, 0, 0])).resolves.toBeUndefined();
+  await expect(assertTransactionSucceeded(provider, "0xtx", [0, 0, 0, 0])).resolves.toEqual({ execution_status: "SUCCEEDED" });
   expect(calls).toBe(3);
 });
 
 test("assertTransactionSucceeded times out with a distinguishable error if the receipt never resolves", async () => {
   const provider = fakeProvider(async () => { throw new Error("Transaction hash not found"); });
   await expect(assertTransactionSucceeded(provider, "0xtx", [0, 0])).rejects.toThrow("Verification timed out");
+});
+
+test("executeIntent syncs the transaction before it returns", async () => {
+  const order: string[] = [];
+  const client = fakeClient({
+    syncTransaction: async (txHash: string) => { order.push(`sync ${txHash}`); return { data: { applied: 1, pending: false } }; },
+  });
+  const signer = fakeSigner({ execute: async () => { order.push("execute"); return { txHash: "0xtx" }; } });
+  await executeIntent(fakeProvider(), signer, client, PREBUILT, { confirm: false });
+  order.push("returned");
+  expect(order).toEqual(["execute", "sync 0xtx", "returned"]);
+});
+
+test("executeIntents syncs the bundled transaction once", async () => {
+  const synced: string[] = [];
+  const client = fakeClient({ syncTransaction: async (txHash: string) => { synced.push(txHash); return { data: { applied: 2, pending: false } }; } });
+  const second: ApiIntentCreated = { ...PREBUILT, id: "intent-3" };
+  await executeIntents(fakeProvider(), fakeSigner(), client, [PREBUILT, second]);
+  expect(synced).toEqual(["0xtx"]);
+});
+
+test("a failing sync never fails the transaction", async () => {
+  const client = fakeClient({ syncTransaction: async () => { throw new Error("Transaction not found yet"); } });
+  const result = await executeIntent(fakeProvider(), fakeSigner(), client, PREBUILT);
+  expect(result.txHash).toBe("0xtx");
+});
+
+test("a reverted transaction is never synced", async () => {
+  let synced = false;
+  const client = fakeClient({ syncTransaction: async () => { synced = true; } });
+  const provider = fakeProvider(async () => ({ execution_status: "REVERTED" }));
+  await expect(executeIntent(provider, fakeSigner(), client, PREBUILT)).rejects.toThrow("reverted onchain");
+  expect(synced).toBe(false);
+});
+
+test("syncTransactionBestEffort stops waiting at its timeout", async () => {
+  const client = fakeClient({ syncTransaction: () => new Promise(() => {}) });
+  const started = Date.now();
+  await expect(syncTransactionBestEffort(client, "0xtx", 20)).resolves.toBeUndefined();
+  expect(Date.now() - started).toBeLessThan(1000);
+});
+
+test("executeIntent returns the receipt it verified", async () => {
+  const receipt = { execution_status: "SUCCEEDED", events: [{ from_address: "0xc", keys: ["0x1"], data: [] }] };
+  const result = await executeIntent(fakeProvider(async () => receipt), fakeSigner(), fakeClient(), PREBUILT);
+  expect(result.receipt).toBe(receipt);
+});
+
+test("assertTransactionSucceeded returns the receipt once it has a status", async () => {
+  const receipt = { execution_status: "SUCCEEDED", events: [] };
+  await expect(assertTransactionSucceeded(fakeProvider(async () => receipt), "0xtx", [0])).resolves.toBe(receipt);
 });
