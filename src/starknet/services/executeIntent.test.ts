@@ -113,7 +113,7 @@ test("assertTransactionSucceeded retries past a not-yet-indexed receipt and then
     if (calls < 3) throw new Error("Transaction hash not found");
     return { execution_status: "SUCCEEDED" };
   });
-  await expect(assertTransactionSucceeded(provider, "0xtx", [0, 0, 0, 0])).resolves.toBeUndefined();
+  await expect(assertTransactionSucceeded(provider, "0xtx", [0, 0, 0, 0])).resolves.toEqual({ execution_status: "SUCCEEDED" });
   expect(calls).toBe(3);
 });
 
@@ -160,4 +160,15 @@ test("syncTransactionBestEffort stops waiting at its timeout", async () => {
   const started = Date.now();
   await expect(syncTransactionBestEffort(client, "0xtx", 20)).resolves.toBeUndefined();
   expect(Date.now() - started).toBeLessThan(1000);
+});
+
+test("executeIntent returns the receipt it verified", async () => {
+  const receipt = { execution_status: "SUCCEEDED", events: [{ from_address: "0xc", keys: ["0x1"], data: [] }] };
+  const result = await executeIntent(fakeProvider(async () => receipt), fakeSigner(), fakeClient(), PREBUILT);
+  expect(result.receipt).toBe(receipt);
+});
+
+test("assertTransactionSucceeded returns the receipt once it has a status", async () => {
+  const receipt = { execution_status: "SUCCEEDED", events: [] };
+  await expect(assertTransactionSucceeded(fakeProvider(async () => receipt), "0xtx", [0])).resolves.toBe(receipt);
 });

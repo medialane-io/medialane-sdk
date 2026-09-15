@@ -2,6 +2,7 @@ import type { Call, TypedData } from "starknet";
 import type { StarknetVenueSigner } from "../index.js";
 import type { MedialaneClient } from "../client.js";
 import type { ApiIntentCreated } from "../../types/api.js";
+import type { ReceiptLike } from "./receipts.js";
 
 export interface ReceiptProvider {
   getTransactionReceipt(txHash: string): Promise<unknown>;
@@ -36,7 +37,7 @@ export async function syncTransactionBestEffort(
 
 const RECEIPT_RETRY_DELAYS_MS = [0, 3000, 5000, 7000, 10000];
 
-interface ReceiptStatusShape {
+interface ReceiptStatusShape extends ReceiptLike {
   execution_status?: string;
   finality_status?: string;
   status?: string;
@@ -46,7 +47,7 @@ export async function assertTransactionSucceeded(
   provider: ReceiptProvider,
   txHash: string,
   retryDelaysMs: readonly number[] = RECEIPT_RETRY_DELAYS_MS,
-): Promise<void> {
+): Promise<ReceiptLike> {
   for (let attempt = 0; attempt < retryDelaysMs.length; attempt++) {
     const delay = retryDelaysMs[attempt];
     if (delay) await new Promise<void>((r) => setTimeout(r, delay));
@@ -56,7 +57,7 @@ export async function assertTransactionSucceeded(
       if (status === "REVERTED" || status === "REJECTED") {
         throw new Error("Transaction was submitted but reverted onchain. Please check your balance and try again.");
       }
-      if (status) return;
+      if (status) return receipt;
     } catch (err) {
       if (err instanceof Error && err.message.includes("reverted onchain")) throw err;
     }
@@ -74,7 +75,7 @@ export async function executeIntent(
   client: MedialaneClient,
   intent: ApiIntentCreated,
   opts: ExecuteIntentOpts = {},
-): Promise<{ txHash: string }> {
+): Promise<{ txHash: string; receipt: ReceiptLike }> {
   let calls: Call[];
   if (intent.requiresSignature) {
     const signature = await signer.signTypedData(intent.typedData as TypedData);
@@ -85,12 +86,12 @@ export async function executeIntent(
   }
 
   const { txHash } = await signer.execute(calls);
-  await assertTransactionSucceeded(provider, txHash);
+  const receipt = await assertTransactionSucceeded(provider, txHash);
   await Promise.all([
     syncTransactionBestEffort(client, txHash),
     opts.confirm !== false ? confirmIntentBestEffort(client, intent.id, txHash) : undefined,
   ]);
-  return { txHash };
+  return { txHash, receipt };
 }
 
 export async function executeIntents(
@@ -99,16 +100,16 @@ export async function executeIntents(
   client: MedialaneClient,
   intents: ApiIntentCreated[],
   opts: ExecuteIntentOpts = {},
-): Promise<{ txHash: string }> {
+): Promise<{ txHash: string; receipt: ReceiptLike }> {
   if (intents.some((i) => i.requiresSignature)) {
     throw new Error("Expected prebuilt intents (requiresSignature=false)");
   }
   const calls = intents.flatMap((i) => (i as Extract<ApiIntentCreated, { requiresSignature: false }>).calls) as Call[];
   const { txHash } = await signer.execute(calls);
-  await assertTransactionSucceeded(provider, txHash);
+  const receipt = await assertTransactionSucceeded(provider, txHash);
   await Promise.all([
     syncTransactionBestEffort(client, txHash),
     ...(opts.confirm !== false ? intents.map((i) => confirmIntentBestEffort(client, i.id, txHash)) : []),
   ]);
-  return { txHash };
+  return { txHash, receipt };
 }
