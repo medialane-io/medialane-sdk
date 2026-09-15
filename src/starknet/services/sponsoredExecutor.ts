@@ -16,7 +16,7 @@ export type SponsoredExecuteResult =
 
 export class SponsoredCallRejectedError extends Error {}
 
-const PRE_BROADCAST_EXECUTE_STATUSES = new Set([400, 429, 503]);
+const SPONSOR_UNAVAILABLE_STATUS = 503;
 
 async function errorReason(res: Response, fallback: string): Promise<string> {
   const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -37,7 +37,9 @@ export async function executeSponsored(
     body: JSON.stringify({ userAddress: signer.address, calls }),
   });
   if (!buildRes.ok) {
-    return { status: "unavailable", reason: await errorReason(buildRes, "We couldn't prepare this transaction.") };
+    const reason = await errorReason(buildRes, "We couldn't prepare this transaction.");
+    if (buildRes.status >= 500) return { status: "unavailable", reason };
+    throw new SponsoredCallRejectedError(reason);
   }
   const { typedData } = (await buildRes.json()) as { typedData: TypedData };
 
@@ -50,7 +52,7 @@ export async function executeSponsored(
   });
   if (!executeRes.ok) {
     const reason = await errorReason(executeRes, "We couldn't submit this transaction.");
-    if (PRE_BROADCAST_EXECUTE_STATUSES.has(executeRes.status)) {
+    if (executeRes.status === SPONSOR_UNAVAILABLE_STATUS) {
       return { status: "unavailable", reason };
     }
     throw new SponsoredCallRejectedError(reason);

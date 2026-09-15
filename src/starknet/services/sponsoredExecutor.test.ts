@@ -48,27 +48,10 @@ test("executeSponsored calls build then execute and returns sponsored + tx hash"
   expect(calls[1].body.signature).toEqual(["0xr", "0xs"]);
 });
 
-test("executeSponsored returns unavailable on ANY build failure", async () => {
-  const fetchImpl = mock(async () =>
-    new Response(JSON.stringify({ error: "boom" }), { status: 502 })) as unknown as typeof fetch;
-
-  const result = await executeSponsored(
-    { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
-    fakeSigner(),
-    [{ contractAddress: "0x1", entrypoint: "foo", calldata: [] }],
-  );
-
-  expect(result).toEqual({ status: "unavailable", reason: "boom" });
-});
-
-for (const status of [400, 429, 503]) {
-  test(`executeSponsored returns unavailable on a ${status} from execute — nothing could have broadcast`, async () => {
-    const fetchImpl = mock(async (url: string) => {
-      if (url === "/api/wallet/sponsored-invoke/build") {
-        return new Response(JSON.stringify({ typedData: FAKE_TYPED_DATA }), { status: 200 });
-      }
-      return new Response(JSON.stringify({ error: "boom" }), { status });
-    }) as unknown as typeof fetch;
+for (const status of [500, 502, 503]) {
+  test(`executeSponsored returns unavailable when the sponsor cannot build (${status})`, async () => {
+    const fetchImpl = mock(async () =>
+      new Response(JSON.stringify({ error: "boom" }), { status })) as unknown as typeof fetch;
 
     const result = await executeSponsored(
       { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
@@ -80,8 +63,40 @@ for (const status of [400, 429, 503]) {
   });
 }
 
-for (const status of [422, 502]) {
-  test(`executeSponsored throws SponsoredCallRejectedError on a ${status} from execute — may have already broadcast, or the call itself is broken`, async () => {
+for (const status of [400, 401, 403, 429]) {
+  test(`executeSponsored throws SponsoredCallRejectedError when build refuses the call (${status}), so nobody is asked to pay`, async () => {
+    const fetchImpl = mock(async () =>
+      new Response(JSON.stringify({ error: "refused" }), { status })) as unknown as typeof fetch;
+
+    await expect(
+      executeSponsored(
+        { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
+        fakeSigner(),
+        [{ contractAddress: "0x1", entrypoint: "foo", calldata: [] }],
+      ),
+    ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
+  });
+}
+
+test("executeSponsored returns unavailable on a 503 from execute — the sponsor is down and nothing broadcast", async () => {
+  const fetchImpl = mock(async (url: string) => {
+    if (url === "/api/wallet/sponsored-invoke/build") {
+      return new Response(JSON.stringify({ typedData: FAKE_TYPED_DATA }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ error: "boom" }), { status: 503 });
+  }) as unknown as typeof fetch;
+
+  const result = await executeSponsored(
+    { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
+    fakeSigner(),
+    [{ contractAddress: "0x1", entrypoint: "foo", calldata: [] }],
+  );
+
+  expect(result).toEqual({ status: "unavailable", reason: "boom" });
+});
+
+for (const status of [400, 403, 422, 429, 502]) {
+  test(`executeSponsored throws SponsoredCallRejectedError on a ${status} from execute`, async () => {
     const fetchImpl = mock(async (url: string) => {
       if (url === "/api/wallet/sponsored-invoke/build") {
         return new Response(JSON.stringify({ typedData: FAKE_TYPED_DATA }), { status: 200 });
