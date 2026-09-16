@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.122.0] — 2026-09-16
+
+### Added
+
+- Wallet deployment joins the client: `mediaWallet.completeDeployment(onStep, { forceNew })` creates or
+  unlocks the owner key, deploys it, signs the user in and announces the change. `deploySponsored` and
+  `deploySelfFunded` are exported for apps that need them directly.
+- `createMediaWallet` takes `backendUrl` for sign-in and an optional `deployProxyUrl`. With a proxy the
+  deploy is sponsored and falls back to the user paying if the sponsor fails, reporting both failures if
+  that fails too. Without one it is self-funded, which is what MediaWallet does.
+- The deploy and sign-in steps are injectable, so the orchestration is tested without faking a chain.
+
 ## [0.121.0] — 2026-09-15
 
 ### Changed

@@ -50,3 +50,11 @@ export {
   type MediaWalletConfig,
   type DeviceEntry,
 } from "./client.js";
+export {
+  deploySponsored,
+  deploySelfFunded,
+  completeDeployment,
+  type DeploymentStep,
+  type DeploymentResult,
+  type DeploymentDeps,
+} from "./deployment.js";
