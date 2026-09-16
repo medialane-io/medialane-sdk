@@ -18,6 +18,7 @@ import {
   computeOwnerGuid,
 } from "../starknet/business-provisioning/handoff.js";
 import { normalizeWalletAddress } from "./addresses.js";
+import { completeDeployment, type DeploymentDeps, type DeploymentResult, type DeploymentStep } from "./deployment.js";
 import type { OwnerStore } from "./store.js";
 import type { PasskeyOwner } from "./passkey.js";
 import type { ExecutedTransaction, SealedOwner, WalletExecutor } from "./types.js";
@@ -48,6 +49,9 @@ export interface MediaWalletConfig {
   executor: WalletExecutor;
   provider: () => ProviderInterface;
   unlockTtlMs?: number;
+  backendUrl?: string;
+  deployProxyUrl?: string;
+  fetchImpl?: typeof fetch;
 }
 
 export interface MediaWallet {
@@ -71,6 +75,10 @@ export interface MediaWallet {
   isOwnerOf(accountAddress: string, devicePubkey: string): Promise<boolean>;
   addDevice(sealed: SealedOwner, devicePubkey: string): Promise<string>;
   removeDevice(sealed: SealedOwner, ownerGuid: string): Promise<string>;
+  completeDeployment(
+    onStep: (step: DeploymentStep) => void,
+    options?: { forceNew?: boolean },
+  ): Promise<DeploymentResult>;
 }
 
 export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
@@ -173,6 +181,19 @@ export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
     async removeDevice(sealed, ownerGuid) {
       const { transactionHash } = await run(sealed, [buildRemoveOwnerByGuidCall(sealed.address, ownerGuid)]);
       return transactionHash;
+    },
+
+    completeDeployment(onStep, options = {}) {
+      if (!config.backendUrl) throw new Error("This wallet has no backend url configured for sign-in");
+      const deps: DeploymentDeps = {
+        store: config.store,
+        passkey: config.passkey,
+        provider: config.provider,
+        backendUrl: config.backendUrl,
+        deployProxyUrl: config.deployProxyUrl,
+        fetchImpl: config.fetchImpl,
+      };
+      return completeDeployment(deps, onStep, options);
     },
   };
 }
