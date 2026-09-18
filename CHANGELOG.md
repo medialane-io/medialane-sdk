@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.122.1] — 2026-09-18
+
+### Fixed
+
+- `completeDeployment` waits until the account exists on Starknet before signing in. Submitting a deploy
+  is not the same as the account being on chain, so sign-in could reach the backend first and be refused
+  with `account_not_deployed`, leaving a new wallet with no session. `waitUntilDeployed` is exported and
+  injectable, and gives up with a message worth showing rather than a bare 400.
+
 ## [0.122.0] — 2026-09-16
 
 ### Added

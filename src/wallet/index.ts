@@ -54,6 +54,7 @@ export {
   deploySponsored,
   deploySelfFunded,
   completeDeployment,
+  waitUntilDeployed,
   type DeploymentStep,
   type DeploymentResult,
   type DeploymentDeps,
