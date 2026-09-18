@@ -41,6 +41,9 @@ function setup(
     provider: () => ({}) as ProviderInterface,
     backendUrl: "/api/proxy",
     requestSiwsTokenImpl: async () => "siws-token",
+    waitUntilDeployedImpl: async () => {
+      log.push("waited");
+    },
     deploySponsoredImpl: async () => {
       log.push("sponsored");
       return (behaviour.sponsored ? behaviour.sponsored() : Promise.resolve({ transactionHash: "0xsponsored" }));
@@ -62,7 +65,7 @@ test("an existing wallet unlocks once, and that key covers deploy and sign-in", 
 
   expect(result.siwsToken).toBe("siws-token");
   expect(steps).toEqual(["deploying", "signing-in"]);
-  expect(log).toEqual(["sponsored"]);
+  expect(log).toEqual(["sponsored", "waited"]);
   expect(counts()).toEqual({ unlocks: 1, creates: 0, saved: 0, announced: 1 });
 });
 
@@ -89,7 +92,7 @@ test("forcing a new wallet ignores the one already stored", async () => {
 test("an app with no deploy proxy pays for its own deployment", async () => {
   const { deps, log } = setup();
   await completeDeployment(deps, () => {});
-  expect(log).toEqual(["self-funded"]);
+  expect(log).toEqual(["self-funded", "waited"]);
 });
 
 test("a sponsor that cannot deploy falls back to the user paying, once", async () => {
@@ -98,7 +101,7 @@ test("a sponsor that cannot deploy falls back to the user paying, once", async (
     { sponsored: async () => { throw new Error("sponsor down"); } },
   );
   const result = await completeDeployment(deps, () => {});
-  expect(log).toEqual(["sponsored", "self-funded"]);
+  expect(log).toEqual(["sponsored", "self-funded", "waited"]);
   expect(result.siwsToken).toBe("siws-token");
 });
 
@@ -111,4 +114,26 @@ test("when both deploys fail, neither failure is hidden", async () => {
     },
   );
   await expect(completeDeployment(deps, () => {})).rejects.toThrow(/sponsor down.*no funds/);
+});
+
+test("sign-in waits until the account is really on chain", async () => {
+  const seen: string[] = [];
+  const { deps } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    waitUntilDeployedImpl: async (_provider, address) => {
+      seen.push(address);
+    },
+  });
+  await completeDeployment(deps, () => {});
+  expect(seen).toEqual([SEALED.address]);
+});
+
+test("a wallet that never appears fails with a message worth showing", async () => {
+  const { deps } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    waitUntilDeployedImpl: async () => {
+      throw new Error("Your wallet was submitted but has not appeared on Starknet yet. Please try again in a moment.");
+    },
+  });
+  await expect(completeDeployment(deps, () => {})).rejects.toThrow(/has not appeared on Starknet/);
 });

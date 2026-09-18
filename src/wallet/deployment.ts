@@ -3,6 +3,7 @@ import { getCoordinates } from "../chains.js";
 import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 import { ownerConstructorCalldata } from "../starknet/business-provisioning/account.js";
 import { requestSiwsToken } from "../starknet/siws/client.js";
+import { isDeployed } from "./addresses.js";
 import type { ExecutedTransaction, SealedOwner } from "./types.js";
 
 export type DeploymentStep = "creating-passkey" | "deploying" | "signing-in";
@@ -90,6 +91,26 @@ export async function deploySelfFunded(input: {
   return { transactionHash: transaction_hash };
 }
 
+export async function waitUntilDeployed(
+  provider: ProviderInterface,
+  address: string,
+  timeoutMs = 90_000,
+  sleep: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  let wait = 1_000;
+  for (;;) {
+    if (await isDeployed(provider, address)) return;
+    if (Date.now() >= deadline) {
+      throw new Error(
+        "Your wallet was submitted but has not appeared on Starknet yet. Please try again in a moment.",
+      );
+    }
+    await sleep(wait);
+    wait = Math.min(Math.round(wait * 1.5), 5_000);
+  }
+}
+
 export interface DeploymentDeps {
   store: { load(): SealedOwner | null; save(sealed: SealedOwner): void; notifyChange(): void };
   passkey: {
@@ -103,6 +124,7 @@ export interface DeploymentDeps {
   deploySponsoredImpl?: typeof deploySponsored;
   deploySelfFundedImpl?: typeof deploySelfFunded;
   requestSiwsTokenImpl?: typeof requestSiwsToken;
+  waitUntilDeployedImpl?: typeof waitUntilDeployed;
 }
 
 export async function completeDeployment(
@@ -149,6 +171,8 @@ export async function completeDeployment(
   } else {
     await selfFunded({ provider: deps.provider(), ...wallet });
   }
+
+  await (deps.waitUntilDeployedImpl ?? waitUntilDeployed)(deps.provider(), sealed.address);
 
   onStep("signing-in");
   const address = sealed.address;
