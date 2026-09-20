@@ -82,7 +82,7 @@ export { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol, getList
 export type { SupportedToken } from "./utils/token.js";
 export { stringifyBigInts, u256ToBigInt, encodeU256 } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
-export { PUBLIC_RPC_FALLBACKS, isTransientRpcError, isPolicyRefusal, POLICY_REFUSAL_CODES, createFailoverFetch } from "./utils/rpc.js";
+export { isTransientRpcError, isPolicyRefusal, POLICY_REFUSAL_CODES, createFailoverFetch } from "./utils/rpc.js";
 export type { FailoverFetchOptions } from "./utils/rpc.js";
 export { createRpcProxyHandler } from "./server/rpc-proxy.js";
 export { createBackendProxyHandler } from "./server/backend-proxy.js";

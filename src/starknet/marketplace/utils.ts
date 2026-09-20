@@ -2,7 +2,7 @@ import { Contract, RpcProvider, cairo, constants, num, type Abi } from "starknet
 import type { ResolvedConfig } from "../../config.js";
 import { SUPPORTED_TOKENS } from "../../constants.js";
 import { MedialaneError } from "./errors.js";
-import { createFailoverFetch, PUBLIC_RPC_FALLBACKS } from "../../utils/rpc.js";
+import { createFailoverFetch } from "../../utils/rpc.js";
 
 export const START_TIME_BUFFER_SECS = 30;
 
@@ -73,7 +73,7 @@ export function getProvider(config: ResolvedConfig): RpcProvider {
   let p = _providerCache.get(config);
   if (!p) {
 
-    const urls = Array.from(new Set([config.rpcUrl, ...PUBLIC_RPC_FALLBACKS]));
+    const urls = [config.rpcUrl];
     p = new RpcProvider({ nodeUrl: urls[0], baseFetch: createFailoverFetch(urls) });
     _providerCache.set(config, p);
   }

@@ -1,7 +1,3 @@
-export const PUBLIC_RPC_FALLBACKS: readonly string[] = [
-  "https://rpc.starknet.lava.build",
-];
-
 const TRANSIENT_BODY_RE =
   /"code"\s*:\s*-32001|"code"\s*:\s*-32603|unable to complete|rate.?limit|too many|throttl|exceed.*quota|temporarily unavailable|service unavailable|overload|gateway.*time|upstream.*time|backend.*error/i;
 
