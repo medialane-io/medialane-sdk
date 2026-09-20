@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.123.0] — 2026-09-20
+
+### Removed
+
+- `PUBLIC_RPC_FALLBACKS`. The endpoint it held was retired and answers `410 Gone`, so every consumer
+  that walked its failover chain to the end spent a round trip on a host that cannot answer. Starknet
+  access is a keyed primary with a keyed fallback, both server side, and callers configure their own
+  urls. `getProvider` builds its failover list from the configured `rpcUrl` alone.
+
 ## [0.122.1] — 2026-09-18
 
 ### Fixed
