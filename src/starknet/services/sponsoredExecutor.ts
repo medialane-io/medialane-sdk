@@ -8,8 +8,6 @@ export interface TypedDataSigner {
 export interface SponsoredExecuteConfig {
   proxyUrl: string;
   fetchImpl?: typeof fetch;
-
-  identityToken?: string;
 }
 
 export type SponsoredExecuteResult =
@@ -48,8 +46,7 @@ export async function executeSponsored(
 ): Promise<SponsoredExecuteResult> {
   const doFetch = config.fetchImpl ?? fetch;
   const base = config.proxyUrl.replace(/\/$/, "");
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (config.identityToken) headers.Authorization = `Bearer ${config.identityToken}`;
+  const headers = { "Content-Type": "application/json" };
 
   const buildRes = await doFetch(`${base}/build`, {
     method: "POST",

@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.126.0] — 2026-09-20
+
+### Removed
+
+- `identityToken` on the sponsored executor and `forwardHeaders` on the backend proxy. They carried a
+  second proof of wallet ownership to the backend, which no longer asks for one: a sponsored
+  transaction cannot execute without the owner's signature, so sponsorship rests on that.
+
 ## [0.125.0] — 2026-09-20
 
 ### Added

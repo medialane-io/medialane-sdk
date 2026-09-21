@@ -41,8 +41,6 @@ export interface SponsoredDeps extends SelfFundedDeps {
   consent: SelfFundConsent;
   fetchImpl?: typeof fetch;
   fallback?: WalletExecutor;
-
-  identityToken?: () => string | null;
 }
 
 export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
@@ -51,11 +49,7 @@ export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
     async execute(input): Promise<ExecutedTransaction> {
       const { userAddress, privateKeyHex, calls } = input;
       const result = await executeSponsored(
-        {
-          proxyUrl: deps.proxyUrl,
-          fetchImpl: deps.fetchImpl,
-          identityToken: deps.identityToken?.() ?? undefined,
-        },
+        { proxyUrl: deps.proxyUrl, fetchImpl: deps.fetchImpl },
         {
           address: userAddress,
           signTypedData: async (data) =>
