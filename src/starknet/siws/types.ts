@@ -9,4 +9,6 @@ export interface RequestSiwsTokenArgs {
   backendUrl: string;
   walletAddress: string;
   signer: SiwsSigner;
+
+  appSource?: string;
 }
