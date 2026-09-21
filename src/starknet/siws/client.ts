@@ -65,6 +65,7 @@ export async function requestSiwsToken({
   backendUrl,
   walletAddress,
   signer,
+  appSource,
 }: RequestSiwsTokenArgs): Promise<string> {
   const base = backendUrl.replace(/\/$/, "");
 
@@ -87,7 +88,7 @@ export async function requestSiwsToken({
   const verifyRes = await fetch(`${base}/v1/auth/siws/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ walletAddress, nonce, signature }),
+    body: JSON.stringify({ walletAddress, nonce, signature, ...(appSource ? { appSource } : {}) }),
   });
 
   if (!verifyRes.ok) {

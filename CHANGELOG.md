@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.124.0] — 2026-09-20
+
+### Added
+
+- `requestSiwsToken` accepts `appSource` and sends it with the verification. The backend answers a
+  verification that names an app with an account session token, so signing in with a wallet
+  establishes a session the same way an email code does. Without it a wallet sign-in proved
+  ownership and left no session behind, and anything requiring one fell back to the app's own
+  account.
+
 ## [0.123.0] — 2026-09-20
 
 ### Removed
