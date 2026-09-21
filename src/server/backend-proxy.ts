@@ -13,6 +13,8 @@ export interface BackendProxyConfig {
   fetchImpl?: typeof fetch;
 
   forwardCookie?: { name: string; header: string };
+
+  forwardHeaders?: readonly string[];
 }
 
 function readCookie(req: Request, name: string): string | null {
@@ -56,6 +58,10 @@ export function createBackendProxyHandler(
     if (config.forwardCookie) {
       const value = readCookie(req, config.forwardCookie.name);
       if (value) headers[config.forwardCookie.header] = value;
+    }
+    for (const name of config.forwardHeaders ?? []) {
+      const value = req.headers.get(name);
+      if (value) headers[name] = value;
     }
 
     try {

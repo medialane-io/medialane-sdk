@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.125.0] — 2026-09-20
+
+### Added
+
+- `executeSponsored` and `sponsoredExecutor` accept `identityToken` and send it as a bearer token.
+  A wallet sign-in token proves control of the address being sponsored, which is what the backend
+  is deciding, so sponsorship no longer depends on an account session the caller may not hold.
+- `createBackendProxyHandler` accepts `forwardHeaders`, so an app proxy can pass a caller's
+  authorization through to the backend alongside its own api key.
+
 ## [0.124.0] — 2026-09-20
 
 ### Added
