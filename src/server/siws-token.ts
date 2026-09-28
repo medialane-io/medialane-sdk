@@ -41,9 +41,8 @@ function toHex(bytes: Uint8Array): string {
   return out;
 }
 
-function sign(secret: string, domain: string | null, payload: string): string {
-  const message = domain === null ? payload : `${domain}.${payload}`;
-  return toHex(hmac(sha256, encoder.encode(secret), encoder.encode(message)));
+function sign(secret: string, domain: string, payload: string): string {
+  return toHex(hmac(sha256, encoder.encode(secret), encoder.encode(`${domain}.${payload}`)));
 }
 
 function constantTimeEquals(a: string, b: string): boolean {
@@ -54,10 +53,7 @@ function constantTimeEquals(a: string, b: string): boolean {
 }
 
 function signatureMatches(secret: string, domain: string, payload: string, provided: string): boolean {
-  return (
-    constantTimeEquals(provided, sign(secret, domain, payload)) ||
-    constantTimeEquals(provided, sign(secret, null, payload))
-  );
+  return constantTimeEquals(provided, sign(secret, domain, payload));
 }
 
 function encodePayload(value: unknown): string {

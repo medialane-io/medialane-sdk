@@ -73,19 +73,26 @@ describe("token kinds cannot be interchanged", () => {
   });
 });
 
-describe("compatibility with the tokens already in circulation", () => {
-  test("verifies an untagged identity token issued by the previous code", () => {
+describe("untagged signatures are no longer accepted", () => {
+  // The domain tag's backward-compat window (medialane-backend commit a9ad9aa,
+  // 2026-08-27) closed once the longest-lived token type (the 30-day account
+  // session) could no longer be in circulation from before the tag existed.
+  // Accepting an untagged signature indefinitely would have kept alive the
+  // exact cross-token-type confusion that tag was added to close.
+  test("rejects an untagged identity token", () => {
     const iat = nowSeconds();
     const token = legacyToken("siws_", { sub: "0xdef", chain: "STARKNET", iat, exp: iat + IDENTITY_TTL_SECONDS });
-    expect(verifySiwsToken(SECRET, token)).toEqual({ address: "0xdef", chain: "STARKNET" });
+    expect(verifySiwsToken(SECRET, token)).toBeNull();
   });
 
-  test("verifies an untagged account session token issued by the previous code", () => {
+  test("rejects an untagged account session token", () => {
     const iat = nowSeconds();
     const token = legacyToken("account_session_", { accountId: "acc_legacy", iat, exp: iat + 3600 });
-    expect(verifyAccountSessionToken(SECRET, token)).toBe("acc_legacy");
+    expect(verifyAccountSessionToken(SECRET, token)).toBeNull();
   });
+});
 
+describe("compatibility with the tokens already in circulation", () => {
   test("its own signatures match what node:crypto produces for the same input", () => {
     const token = issueSiwsToken(SECRET, "STARKNET", "0xabc");
     const [payload, signature] = token.slice("siws_".length).split(".");
