@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.129.0] — 2026-09-28
+
+### Removed
+
+- `MedialaneApiError.isAuthored`. `message` is now either the reason the API gave or a plain
+  statement of the status, so there is nothing left for a flag to distinguish. A response body that
+  is not our shape stays in `details`, where it is still there to read while debugging.
+
 ## [0.128.0] — 2026-09-28
 
 ### Added
