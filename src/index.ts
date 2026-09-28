@@ -6,6 +6,7 @@ export { resolveFeeConfig, FeeConfigSchema, resolveAppFeeConfig } from "./fee/in
 export type { FeeConfig, ResolvedFeeConfig, FeeEnv } from "./fee/index.js";
 
 export { ApiClient, MedialaneApiError } from "./api/client.js";
+export { PasskeyCancelledError } from "./wallet/passkey.js";
 
 export * from "./types/index.js";
 export type { MedialaneErrorCode } from "./types/errors.js";

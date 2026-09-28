@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.127.0] — 2026-09-28
+
+### Added
+
+- `MedialaneApiError.isAuthored`, true only when the response body carried an `error` string written
+  by the API. A gateway HTML page or a JSON body without that field leaves it false, so a caller can
+  show the message to a user on the strength of where it came from rather than guessing from its shape.
+- `PasskeyCancelledError` is exported, so apps can tell a cancelled prompt from a failure by type.
+
 ## [0.126.0] — 2026-09-20
 
 ### Removed
