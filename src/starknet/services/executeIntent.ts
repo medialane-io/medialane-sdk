@@ -1,3 +1,4 @@
+import { UserFacingError } from "../../errors.js";
 import type { Call, TypedData } from "starknet";
 import type { StarknetVenueSigner } from "../index.js";
 import type { MedialaneClient } from "../client.js";
@@ -55,14 +56,14 @@ export async function assertTransactionSucceeded(
       const receipt = (await provider.getTransactionReceipt(txHash)) as ReceiptStatusShape;
       const status = receipt.execution_status ?? receipt.status;
       if (status === "REVERTED" || status === "REJECTED") {
-        throw new Error("Transaction was submitted but reverted onchain. Please check your balance and try again.");
+        throw new UserFacingError("Transaction was submitted but reverted onchain. Please check your balance and try again.");
       }
       if (status) return receipt;
     } catch (err) {
       if (err instanceof Error && err.message.includes("reverted onchain")) throw err;
     }
   }
-  throw new Error("Verification timed out. Check your account for the transaction status.");
+  throw new UserFacingError("Verification timed out. Check your account for the transaction status.");
 }
 
 export interface ExecuteIntentOpts {

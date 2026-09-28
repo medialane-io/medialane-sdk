@@ -131,4 +131,4 @@ export {
 } from "./utils/ipfs-gateway.js";
 
 export * from "./adapters/index.js";
-
+export { UserFacingError } from "./errors.js";

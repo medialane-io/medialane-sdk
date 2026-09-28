@@ -136,3 +136,4 @@ export type {
 } from "./business-provisioning/index.js";
 
 export * from "../wallet/index.js";
+export { UserFacingError } from "../errors.js";
