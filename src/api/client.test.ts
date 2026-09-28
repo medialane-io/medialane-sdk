@@ -107,3 +107,30 @@ test("5xx reads are retried (unified retry parity for profile reads)", async () 
   expect(out).toEqual({ ok: true } as never);
   expect(n).toBe(3);
 });
+
+test("an API error authored by the backend is marked as user-presentable", async () => {
+  scriptFetch(() => ({ status: 409, body: { error: "Active offer already exists" } }));
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  const err = (await c.getCollectionProfile("0x1").catch((e) => e)) as MedialaneApiError;
+  expect(err.isAuthored).toBe(true);
+  expect(err.message).toBe("Active offer already exists");
+});
+
+test("a gateway body that is not our JSON shape is not marked user-presentable", async () => {
+  const realFetchLocal = globalThis.fetch;
+  globalThis.fetch = mock(async () =>
+    new Response("<html><body>502 Bad Gateway</body></html>", { status: 502 }),
+  ) as unknown as typeof fetch;
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  const err = (await c.getCollectionProfile("0x1").catch((e) => e)) as MedialaneApiError;
+  globalThis.fetch = realFetchLocal;
+  expect(err).toBeInstanceOf(MedialaneApiError);
+  expect(err.isAuthored).toBe(false);
+});
+
+test("a JSON body with no error field is not marked user-presentable", async () => {
+  scriptFetch(() => ({ status: 500, body: { somethingElse: true } }));
+  const c = new ApiClient("https://api.test", "ml_live_x");
+  const err = (await c.getCollectionProfile("0x1").catch((e) => e)) as MedialaneApiError;
+  expect(err.isAuthored).toBe(false);
+});
