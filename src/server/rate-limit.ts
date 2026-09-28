@@ -25,10 +25,12 @@ export function createRateLimiter(windowMs: number, max: number) {
 
 export const TRUSTED_APP_IP_HEADER = "x-medialane-client-ip";
 
+// Callers pass the raw, unstripped incoming request (createBackendProxyHandler,
+// createImageProxyHandler), so TRUSTED_APP_IP_HEADER must NOT be trusted here —
+// a browser client can set it to whatever it wants on its own request and pick
+// its own rate-limit bucket. Trusted forwarding of this header between our own
+// services happens via each app's local client-ip helper, not this function.
 export function requestIp(req: Request): string {
-  const fromApp = req.headers.get(TRUSTED_APP_IP_HEADER)?.trim();
-  if (fromApp) return fromApp;
-
   const fromEdge = req.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim();
   if (fromEdge) return fromEdge;
 

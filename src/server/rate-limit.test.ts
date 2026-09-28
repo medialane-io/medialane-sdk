@@ -82,11 +82,11 @@ test("requestIp cannot be varied by rotating the spoofed prefix", () => {
   expect(key("1.1.1.1")).toBe(key("2.2.2.2"));
 });
 
-test("requestIp prefers the trusted first-party app header", () => {
+test("requestIp ignores the caller-supplied x-medialane-client-ip header (not trusted on raw requests)", () => {
   const req = new Request("https://app.test/x", {
     headers: { "x-medialane-client-ip": "203.0.113.9", "x-forwarded-for": "6.6.6.6" },
   });
-  expect(requestIp(req)).toBe("203.0.113.9");
+  expect(requestIp(req)).toBe("6.6.6.6");
 });
 
 test("requestIp falls back to unknown with no forwarding headers", () => {
