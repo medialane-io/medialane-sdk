@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.128.0] — 2026-09-28
+
+### Added
+
+- `UserFacingError`, marking a message as written for a user. The two places the SDK authors copy a
+  user should read — a reverted transaction and a verification timeout — now throw it, so an app can
+  show them on the strength of their type instead of matching on their wording.
+
 ## [0.127.0] — 2026-09-28
 
 ### Added
