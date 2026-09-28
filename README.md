@@ -465,6 +465,40 @@ try {
 }
 ```
 
+### Showing an error to a user
+
+Three types carry text written for someone to read. Everything else is machinery, and the
+message belongs to whatever your screen was trying to do.
+
+| Type | What it means | Show |
+|---|---|---|
+| `MedialaneApiError` | The API refused the request | `err.message`, which is the reason the API gave or a plain statement of the status |
+| `UserFacingError` | The SDK got partway and stopped, for example a transaction that reverted | `err.message` |
+| `PasskeyCancelledError` | The prompt was dismissed | Nothing was submitted, so avoid wording it as a failure |
+
+```typescript
+import { MedialaneApiError, PasskeyCancelledError, UserFacingError } from "@medialane/sdk";
+
+function describe(err: unknown, fallback: string): string {
+  if (err instanceof PasskeyCancelledError) return "Request not completed. Nothing was submitted.";
+  if (err instanceof UserFacingError) return err.message;
+  if (err instanceof MedialaneApiError) return err.message;
+  return fallback;
+}
+
+catch (err) {
+  console.error(err);
+  setError(describe(err, "We couldn't create that listing. Please try again."));
+}
+```
+
+The fallback matters. An error carrying none of those types says nothing a reader can act on,
+and its text is as likely to be a gateway response as a sentence. Your call site knows which
+action was attempted, so that is the message worth showing.
+
+A response body that is not ours stays in `err.details`, where it is available while debugging
+without reaching a reader.
+
 ---
 
 ## Configuration Reference
