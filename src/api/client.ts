@@ -101,8 +101,6 @@ export class MedialaneApiError extends Error {
 
     public readonly retryAfterMs?: number,
     public readonly details?: unknown,
-
-    public readonly isAuthored: boolean = false,
   ) {
     super(message);
     this.name = "MedialaneApiError";
@@ -157,14 +155,12 @@ export class ApiClient {
       });
       if (!response.ok && !allowed(response.status)) {
         const text = await response.text().catch(() => response.statusText);
-        let message = text;
-        let details: unknown;
-        let isAuthored = false;
+        let message = `Request failed with status ${response.status}`;
+        let details: unknown = text;
         try {
           const body = JSON.parse(text) as { error?: string };
           if (typeof body.error === "string" && body.error.trim() !== "") {
             message = body.error;
-            isAuthored = true;
           }
           details = body;
         } catch {
@@ -175,7 +171,6 @@ export class ApiClient {
           message,
           parseRetryAfter(response.headers.get("retry-after")),
           details,
-          isAuthored,
         );
       }
       return response;
