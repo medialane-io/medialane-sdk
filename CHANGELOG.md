@@ -2,6 +2,21 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.130.0] — 2026-09-29
+
+### Added
+
+- Funding intents. `ApiClient` gains `getFundingMethods`, `createFunding`, `getFunding`,
+  `getFundingChallenge`, `authorizeFunding`, `submitFunding` and `cancelFunding`, and
+  `@medialane/sdk/starknet` gains `fundWithChainTransfer`: one call that adds credits from any Starknet
+  wallet (create, sign, authorize, pay, confirm), with `FundingWallet`, `FundingTransferNotSentError`,
+  `buildFundingTransferCall` and `fundingApiFor` for apps that bring their own wallet.
+
+### Deprecated
+
+- `ApiClient.checkDeposit`. It only nudges a legacy scanner and never credits anything itself; use the
+  funding methods. It is removed in a later release.
+
 ## [0.129.0] — 2026-09-28
 
 ### Removed
