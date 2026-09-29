@@ -45,6 +45,10 @@ import type {
   ApiPortalKey,
   ApiPortalKeyCreated,
   ApiCreditPayment,
+  ApiFundingInstructions,
+  ApiFundingIntent,
+  ApiFundingMethod,
+  ApiFundingSubmit,
   ApiPortalSpend,
   ApiWebhookEndpoint,
   ApiWebhookCreated,
@@ -536,10 +540,71 @@ export class ApiClient {
     });
   }
 
+  /** @deprecated Use the funding methods (`createFunding`, or `fundWithChainTransfer` from `@medialane/sdk/starknet`). This call only nudges a legacy scanner and never credits anything itself. */
   checkDeposit(txHash: string, siwsToken?: string): Promise<ApiResponse<{ deposits: number }>> {
     return this.request<ApiResponse<{ deposits: number }>>("/v1/portal/credits/check", {
       method: "POST",
       body: JSON.stringify({ txHash }),
+      headers: this.asSubject(siwsToken),
+    });
+  }
+
+  getFundingMethods(siwsToken?: string): Promise<ApiResponse<ApiFundingMethod[]>> {
+    return this.request<ApiResponse<ApiFundingMethod[]>>("/v1/portal/funding/methods", {
+      method: "GET",
+      headers: this.asSubject(siwsToken),
+    });
+  }
+
+  createFunding(
+    input: { method: string; params: Record<string, unknown> },
+    siwsToken?: string,
+  ): Promise<ApiResponse<ApiFundingIntent>> {
+    return this.request<ApiResponse<ApiFundingIntent>>("/v1/portal/funding", {
+      method: "POST",
+      body: JSON.stringify({ method: input.method, params: input.params }),
+      headers: this.asSubject(siwsToken),
+    });
+  }
+
+  getFunding(id: string, siwsToken?: string): Promise<ApiResponse<ApiFundingIntent>> {
+    return this.request<ApiResponse<ApiFundingIntent>>(`/v1/portal/funding/${encodeURIComponent(id)}`, {
+      method: "GET",
+      headers: this.asSubject(siwsToken),
+    });
+  }
+
+  getFundingChallenge(id: string, payer: string, siwsToken?: string): Promise<ApiResponse<{ typedData: unknown }>> {
+    return this.request<ApiResponse<{ typedData: unknown }>>(`/v1/portal/funding/${encodeURIComponent(id)}/challenge`, {
+      method: "POST",
+      body: JSON.stringify({ payer }),
+      headers: this.asSubject(siwsToken),
+    });
+  }
+
+  authorizeFunding(
+    id: string,
+    input: { payer: string; signature: string[] },
+    siwsToken?: string,
+  ): Promise<ApiResponse<{ instructions: ApiFundingInstructions }>> {
+    return this.request<ApiResponse<{ instructions: ApiFundingInstructions }>>(
+      `/v1/portal/funding/${encodeURIComponent(id)}/authorize`,
+      { method: "POST", body: JSON.stringify({ payer: input.payer, signature: input.signature }), headers: this.asSubject(siwsToken) },
+    );
+  }
+
+  submitFunding(id: string, txHash: string, siwsToken?: string): Promise<ApiResponse<ApiFundingSubmit>> {
+    return this.request<ApiResponse<ApiFundingSubmit>>(`/v1/portal/funding/${encodeURIComponent(id)}/submit`, {
+      method: "POST",
+      body: JSON.stringify({ txHash }),
+      headers: this.asSubject(siwsToken),
+    });
+  }
+
+  cancelFunding(id: string, siwsToken?: string): Promise<ApiResponse<{ status: string }>> {
+    return this.request<ApiResponse<{ status: string }>>(`/v1/portal/funding/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({}),
       headers: this.asSubject(siwsToken),
     });
   }
