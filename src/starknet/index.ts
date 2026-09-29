@@ -19,6 +19,7 @@ export type { FeeSurface, BuildFeeCallParams } from "./fee/build-fee-call.js";
 
 export * from "./admin-auth/index.js";
 export * from "./siws/index.js";
+export * from "./funding/index.js";
 
 export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, IPClubFactoryABI, IPClubCollectionABI, IPSponsorshipABI, IPGenesisABI } from "./abis/index.js";
 

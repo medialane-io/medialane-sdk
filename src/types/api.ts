@@ -879,6 +879,32 @@ export interface ApiCreditPayment {
   createdAt: string;
 }
 
+export interface ApiFundingMethod {
+  id: string;
+  [detail: string]: unknown;
+}
+
+export type ApiFundingStatus = "PENDING" | "SETTLED" | "FAILED" | "EXPIRED";
+
+export interface ApiFundingIntent {
+  id: string;
+  method: string;
+  status: ApiFundingStatus;
+  expiresAt: string;
+  payer?: string | null;
+}
+
+export interface ApiFundingInstructions {
+  chain: string;
+  payTo: string;
+  asset: string;
+  amountAtomic: string;
+}
+
+export type ApiFundingSubmit =
+  | { status: "SETTLED"; credited?: number }
+  | { status: "PENDING"; reason: string };
+
 export interface ApiSpendByAction {
   actionKey: string;
   credits: number;
