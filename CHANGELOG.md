@@ -2,6 +2,28 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.135.0] — 2026-10-01
+
+### Added
+
+Methods for every backend route the apps and `@medialane/ui` still called directly, so they can reach the
+backend only through the SDK:
+
+- Drops and on-chain reads: `getDropInfo`, `getDropState`, `getTicket`, `getTicketCount`,
+  `getClubMembership`, `isClubMember`, `getIpNftTokenData`.
+- Lists: `getTokens` (page, sort, `ipType`, `derivatives`), `getReceivedOffers`, `getPlatformStats`,
+  `getSponsorshipOffers`, `getSponsorshipBids`, `getSponsorshipProposals`, `getSponsorshipLicenses`.
+- Accounts and creators: `isCreatorHidden`, `getMyUsernameClaim`, `checkUsernameAvailability`,
+  `submitUsernameClaim`, `generateWallet`, `submitReport`.
+- Writes: `syncCoin`, `registerCollection`, `uploadMetadataDirectory`.
+- `createLaunchpadRunsClient`: paid launchpad runs (create, pay, execute, confirm), moved from the portal.
+- `getCoins` takes `sort`.
+
+### Fixed
+
+- `getDropCollections` and `getPopCollections` asked for `COLLECTION_DROP` and `POP_PROTOCOL`, which match
+  no collection. They use the canonical `drop-collection` and `pop-protocol`.
+
 ## [0.134.0] — 2026-10-01
 
 ### Removed

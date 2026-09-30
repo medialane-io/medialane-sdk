@@ -85,6 +85,21 @@ import type {
   PopClaimStatus,
   PopBatchEligibilityItem,
   DropMintStatus,
+  ApiPlatformStats,
+  ApiDropInfo,
+  ApiDropState,
+  ApiTierOnchain,
+  ApiIpNftTokenData,
+  ApiTokensQuery,
+  ApiUsernameClaim,
+  ApiSubmitReport,
+  ApiSponsorshipOffer,
+  ApiSponsorshipBid,
+  ApiSponsorshipProposal,
+  ApiSponsorshipLicense,
+  ApiSponsorshipOffersQuery,
+  ApiSponsorshipProposalsQuery,
+  ApiSponsorshipLicensesQuery,
 } from "../types/api.js";
 
 function deriveErrorCode(status: number): MedialaneErrorCode {
@@ -229,6 +244,12 @@ export class ApiClient {
 
   getActiveOrdersForToken(contract: string, tokenId: string): Promise<ApiResponse<ApiOrder[]>> {
     return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/token/${this.addr(contract)}/${tokenId}`);
+  }
+
+  /** Offers others made on the address's assets. */
+  getReceivedOffers(address: string, opts: { page?: number; limit?: number } = {}): Promise<ApiResponse<ApiOrder[]>> {
+    const params = new URLSearchParams({ page: String(opts.page ?? 1), limit: String(opts.limit ?? 50) });
+    return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/received/${this.addr(address)}?${params}`);
   }
 
   getOrdersByUser(address: string, page = 1, limit = 20): Promise<ApiResponse<ApiOrder[]>> {
@@ -476,6 +497,12 @@ export class ApiClient {
 
   uploadMetadata(metadata: Record<string, unknown>): Promise<ApiResponse<ApiMetadataUpload>> {
     return this.post<ApiResponse<ApiMetadataUpload>>("/v1/metadata/upload", metadata);
+  }
+
+  /** Pins several JSON files as one IPFS directory, e.g. a drop's token metadata. */
+  async uploadMetadataDirectory(files: { name: string; content: unknown }[]): Promise<{ cid: string; baseUri: string }> {
+    const res = await this.post<{ data: { cid: string; baseUri: string } }>("/v1/metadata/upload-directory", { files });
+    return res.data;
   }
 
   resolveMetadata(uri: string): Promise<ApiResponse<unknown>> {
@@ -954,7 +981,7 @@ export class ApiClient {
   }
 
   getPopCollections(opts: { page?: number; limit?: number; sort?: CollectionSort } = {}): Promise<ApiResponse<ApiCollection[]>> {
-    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "POP_PROTOCOL");
+    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "pop-protocol");
   }
 
   async getPopEligibility(collection: string, wallet: string): Promise<PopClaimStatus> {
@@ -977,6 +1004,7 @@ export class ApiClient {
     if (opts.page) params.set("page", String(opts.page));
     if (opts.limit) params.set("limit", String(opts.limit));
     if (opts.service) params.set("service", opts.service);
+    if (opts.sort) params.set("sort", opts.sort);
     if (opts.chain) params.set("chain", opts.chain);
     const qs = params.toString();
     return this.get<ApiResponse<ApiCoin[]>>(`/v1/coins${qs ? `?${qs}` : ""}`);
@@ -1017,7 +1045,7 @@ export class ApiClient {
   }
 
   getDropCollections(opts: { page?: number; limit?: number; sort?: CollectionSort } = {}): Promise<ApiResponse<ApiCollection[]>> {
-    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "COLLECTION_DROP");
+    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "drop-collection");
   }
 
   async getDropMintStatus(collection: string, wallet: string): Promise<DropMintStatus> {
@@ -1025,6 +1053,144 @@ export class ApiClient {
       `/v1/drop/mint-status/${this.addr(collection)}/${this.addr(wallet)}`
     );
     return res.data;
+  }
+
+  async getDropInfo(contract: string): Promise<ApiDropInfo | null> {
+    const res = await this.request<{ data: ApiDropInfo } | null>(
+      `/v1/drop/${this.addr(contract)}/info`,
+      { method: "GET" },
+      { allow404: true },
+    );
+    return res?.data ?? null;
+  }
+
+  async getDropState(contract: string): Promise<ApiDropState> {
+    const res = await this.get<{ data: ApiDropState }>(`/v1/drop/${this.addr(contract)}/state`);
+    return res.data;
+  }
+
+  async getTicket(contract: string, tokenId: string): Promise<ApiTierOnchain> {
+    const res = await this.get<{ data: ApiTierOnchain }>(`/v1/tickets/${this.addr(contract)}/${tokenId}`);
+    return res.data;
+  }
+
+  async getTicketCount(contract: string): Promise<number> {
+    const res = await this.get<{ data: { count: number } }>(`/v1/tickets/${this.addr(contract)}/count`);
+    return res.data.count;
+  }
+
+  async getClubMembership(contract: string, tokenId: string): Promise<ApiTierOnchain> {
+    const res = await this.get<{ data: ApiTierOnchain }>(`/v1/club/${this.addr(contract)}/${tokenId}`);
+    return res.data;
+  }
+
+  async isClubMember(contract: string, tokenId: string, wallet: string): Promise<boolean> {
+    const res = await this.get<{ data: { isMember: boolean } }>(
+      `/v1/club/${this.addr(contract)}/${tokenId}/member/${this.addr(wallet)}`
+    );
+    return res.data.isMember;
+  }
+
+  async getIpNftTokenData(contract: string, tokenId: string): Promise<ApiIpNftTokenData | null> {
+    const res = await this.get<{ data: ApiIpNftTokenData | null }>(`/v1/ipnft/${this.addr(contract)}/${tokenId}`);
+    return res.data;
+  }
+
+  async getPlatformStats(): Promise<ApiPlatformStats> {
+    const res = await this.get<{ data: ApiPlatformStats }>("/v1/stats");
+    return res.data;
+  }
+
+  getTokens(query: ApiTokensQuery = {}): Promise<ApiResponse<ApiToken[]>> {
+    const params = new URLSearchParams();
+    if (query.page !== undefined) params.set("page", String(query.page));
+    if (query.limit !== undefined) params.set("limit", String(query.limit));
+    if (query.sort) params.set("sort", query.sort);
+    if (query.ipType) params.set("ipType", query.ipType);
+    if (query.derivatives) params.set("derivatives", query.derivatives);
+    const qs = params.toString();
+    return this.get<ApiResponse<ApiToken[]>>(`/v1/tokens${qs ? `?${qs}` : ""}`);
+  }
+
+  async isCreatorHidden(wallet: string): Promise<boolean> {
+    const res = await this.get<{ isHidden: boolean }>(`/v1/creators/${this.addr(wallet)}/hidden`);
+    return res.isHidden;
+  }
+
+  getMyUsernameClaim(siwsToken: string): Promise<{ username: string | null; claim: ApiUsernameClaim | null }> {
+    return this.request<{ username: string | null; claim: ApiUsernameClaim | null }>("/v1/username-claims/me", {
+      method: "GET",
+      headers: this.bearer(siwsToken),
+    });
+  }
+
+  checkUsernameAvailability(username: string): Promise<{ available: boolean; reason?: string }> {
+    return this.get<{ available: boolean; reason?: string }>(
+      `/v1/username-claims/check/${encodeURIComponent(username)}`
+    );
+  }
+
+  async submitUsernameClaim(username: string, siwsToken: string, notifyEmail?: string): Promise<ApiUsernameClaim> {
+    const res = await this.request<{ claim: ApiUsernameClaim }>("/v1/username-claims", {
+      method: "POST",
+      headers: this.bearer(siwsToken),
+      body: JSON.stringify({ username, ...(notifyEmail ? { notifyEmail } : {}) }),
+    });
+    return res.claim;
+  }
+
+  async submitReport(report: ApiSubmitReport, siwsToken: string): Promise<void> {
+    await this.request<unknown>("/v1/reports", {
+      method: "POST",
+      headers: this.bearer(siwsToken),
+      body: JSON.stringify(report),
+    });
+  }
+
+  generateWallet(newWalletSiwsToken: string, siwsToken: string): Promise<{ walletAddress: string }> {
+    return this.request<{ walletAddress: string }>("/v1/users/me/generate-wallet", {
+      method: "POST",
+      headers: this.bearer(siwsToken),
+      body: JSON.stringify({ newWalletSiwsToken }),
+    });
+  }
+
+  syncCoin(coinAddress: string, owner?: string): Promise<{ data: ApiCoin }> {
+    return this.post<{ data: ApiCoin }>("/v1/coins/sync", { coinAddress, ...(owner ? { owner } : {}) });
+  }
+
+  registerCollection(contractAddress: string): Promise<{ data: ApiCollection }> {
+    return this.post<{ data: ApiCollection }>("/v1/collections/register", { contractAddress });
+  }
+
+  getSponsorshipOffers(query: ApiSponsorshipOffersQuery = {}): Promise<ApiResponse<ApiSponsorshipOffer[]>> {
+    const params = new URLSearchParams({ limit: String(query.limit ?? 50) });
+    if (query.nftContract) params.set("nftContract", query.nftContract);
+    if (query.author) params.set("author", query.author);
+    if (query.owner) params.set("owner", query.owner);
+    if (query.open !== undefined) params.set("open", String(query.open));
+    return this.get<ApiResponse<ApiSponsorshipOffer[]>>(`/v1/sponsorship/offers?${params}`);
+  }
+
+  async getSponsorshipBids(offerId: string): Promise<ApiSponsorshipBid[]> {
+    const res = await this.get<{ data: ApiSponsorshipBid[] }>(`/v1/sponsorship/offers/${encodeURIComponent(offerId)}/bids`);
+    return res.data;
+  }
+
+  getSponsorshipProposals(query: ApiSponsorshipProposalsQuery = {}): Promise<ApiResponse<ApiSponsorshipProposal[]>> {
+    const params = new URLSearchParams({ limit: String(query.limit ?? 50) });
+    if (query.nftContract) params.set("nftContract", query.nftContract);
+    if (query.proposer) params.set("proposer", query.proposer);
+    if (query.owner) params.set("owner", query.owner);
+    if (query.open !== undefined) params.set("open", String(query.open));
+    return this.get<ApiResponse<ApiSponsorshipProposal[]>>(`/v1/sponsorship/proposals?${params}`);
+  }
+
+  getSponsorshipLicenses(query: ApiSponsorshipLicensesQuery = {}): Promise<ApiResponse<ApiSponsorshipLicense[]>> {
+    const params = new URLSearchParams({ limit: String(query.limit ?? 50) });
+    if (query.holder) params.set("holder", query.holder);
+    if (query.author) params.set("author", query.author);
+    return this.get<ApiResponse<ApiSponsorshipLicense[]>>(`/v1/sponsorship/licenses?${params}`);
   }
 
   async getRewards(address: string): Promise<ApiUserRewards> {

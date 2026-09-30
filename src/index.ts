@@ -6,6 +6,27 @@ export { resolveFeeConfig, FeeConfigSchema, resolveAppFeeConfig } from "./fee/in
 export type { FeeConfig, ResolvedFeeConfig, FeeEnv } from "./fee/index.js";
 
 export { ApiClient, MedialaneApiError } from "./api/client.js";
+export {
+  createLaunchpadRunsClient,
+  isDataTokenizationRun,
+  isTicketingRun,
+  RunRequestError,
+} from "./api/launchpad-runs.js";
+export type {
+  LaunchpadRunsClient,
+  LaunchpadRunsClientOptions,
+  LaunchpadRun,
+  DataTokenizationRun,
+  TicketingRun,
+  RunStatus,
+  RunQuote,
+  RunQuoteLine,
+  NextStep,
+  TicketingNextStep,
+  WalletRequest,
+  ConfirmResult,
+  TokenSource,
+} from "./api/launchpad-runs.js";
 export { PasskeyCancelledError } from "./wallet/passkey.js";
 
 export * from "./types/index.js";

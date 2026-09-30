@@ -314,8 +314,8 @@ export interface ApiCoinsQuery {
   chain?: ChainFilter;
   page?: number;
   limit?: number;
-
   service?: string;
+  sort?: string;
 }
 
 export interface ApiActivityPrice {
@@ -1150,4 +1150,178 @@ export interface ApiPointEvent {
   finalXp: number;
   txHash: string | null;
   createdAt: string;
+}
+
+export interface ApiPlatformStats {
+  collections: number;
+  tokens: number;
+  sales: number;
+}
+
+export interface ApiDropInfo {
+  contractAddress: string;
+  name: string | null;
+  symbol: string | null;
+  description: string | null;
+  image: string | null;
+  owner: string | null;
+  totalMinted: number;
+}
+
+export interface ApiDropConditions {
+  maxSupply: string;
+  price: string;
+  paymentToken: string;
+  startTime: number;
+  endTime: number;
+  maxPerWallet: string;
+}
+
+export interface ApiDropState {
+  conditions: ApiDropConditions;
+  totalMinted: number;
+  maxSupply: number;
+  allowlistEnabled: boolean;
+  paused: boolean;
+}
+
+/** An IP Ticket or IP Club membership tier, as read from its contract. Amounts are decimal strings. */
+export interface ApiTierOnchain {
+  maxSupply: string;
+  minted: string;
+  startTime: number | null;
+  endTime: number | null;
+  royaltyBps: number;
+}
+
+export interface ApiIpNftTokenData {
+  owner: string;
+  metadataUri: string;
+  originalCreator: string;
+  registeredAt: number;
+}
+
+export interface ApiTokensQuery {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  ipType?: string;
+  derivatives?: "allowed";
+}
+
+export interface ApiUsernameClaim {
+  id: string;
+  username: string;
+  walletAddress: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  adminNotes: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+}
+
+export type ApiReportTargetType = "COLLECTION" | "TOKEN" | "CREATOR" | "COMMENT";
+
+export interface ApiSubmitReport {
+  targetType: ApiReportTargetType;
+  targetKey: string;
+  targetContract?: string;
+  targetTokenId?: string;
+  targetAddress?: string;
+  targetId?: string;
+  categories: string[];
+  description?: string;
+}
+
+export interface ApiSponsorshipOffer {
+  id: string;
+  chain: string;
+  contractAddress: string;
+  offerId: string;
+  author: string;
+  nftContract: string;
+  tokenId: string;
+  minAmount: string;
+  duration: number;
+  paymentToken: string;
+  licenseTermsUri: string;
+  transferable: boolean;
+  royaltyBps: number;
+  specificSponsor: string | null;
+  open: boolean;
+  createdAtChain: string;
+  updatedAt: string;
+}
+
+export interface ApiSponsorshipBid {
+  id: string;
+  chain: string;
+  contractAddress: string;
+  offerId: string;
+  sponsor: string;
+  amount: string;
+  placedAtChain: string;
+  updatedAt: string;
+}
+
+export interface ApiSponsorshipProposal {
+  id: string;
+  chain: string;
+  contractAddress: string;
+  proposalId: string;
+  proposer: string;
+  nftContract: string;
+  tokenId: string;
+  amount: string;
+  duration: number;
+  validUntil: string | null;
+  paymentToken: string;
+  licenseTermsUri: string;
+  transferable: boolean;
+  royaltyBps: number;
+  open: boolean;
+  accepted: boolean | null;
+  createdAtChain: string;
+  closedAtChain: string | null;
+  updatedAt: string;
+}
+
+export interface ApiSponsorshipLicense {
+  id: string;
+  chain: string;
+  contractAddress: string;
+  tokenId: string;
+  author: string;
+  recipient: string;
+  assetContract: string;
+  assetTokenId: string;
+  expiresAt: string;
+  transferable: boolean;
+  royaltyBps: number;
+  licenseTermsUri: string;
+  offerId: string | null;
+  proposalId: string | null;
+  mintedAtChain: string;
+  currentHolder?: string | null;
+}
+
+export interface ApiSponsorshipOffersQuery {
+  limit?: number;
+  nftContract?: string;
+  author?: string;
+  owner?: string;
+  open?: boolean;
+}
+
+export interface ApiSponsorshipProposalsQuery {
+  limit?: number;
+  nftContract?: string;
+  proposer?: string;
+  owner?: string;
+  open?: boolean;
+}
+
+export interface ApiSponsorshipLicensesQuery {
+  limit?: number;
+  holder?: string;
+  author?: string;
 }
