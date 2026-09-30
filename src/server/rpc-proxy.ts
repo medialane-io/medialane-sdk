@@ -3,7 +3,6 @@ import { createBackendProxyHandler } from "./backend-proxy.js";
 export interface RpcProxyConfig {
   backendUrl: string;
   apiKey: string | undefined;
-  checkRateLimit: (ip: string) => boolean;
   fetchImpl?: typeof fetch;
 }
 

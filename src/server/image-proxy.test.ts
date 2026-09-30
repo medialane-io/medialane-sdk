@@ -13,10 +13,8 @@ function imageResponse(body: Uint8Array = PNG, contentType = "image/png"): Respo
 function handler(overrides: {
   resolveHostname?: (h: string) => Promise<string[]>;
   fetchImpl?: typeof fetch;
-  checkRateLimit?: (ip: string) => boolean;
 } = {}) {
   return createImageProxyHandler({
-    checkRateLimit: overrides.checkRateLimit ?? (() => true),
     resolveHostname: overrides.resolveHostname ?? (async () => ["93.184.216.34"]),
     fetchImpl: overrides.fetchImpl ?? (async () => imageResponse()),
   });
@@ -106,9 +104,10 @@ describe("image proxy", () => {
     expect(res.status).toBe(404);
   });
 
-  test("honours the rate limit", async () => {
-    const res = await handler({ checkRateLimit: () => false })(request("https://cdn.example/a.png"));
-    expect(res.status).toBe(429);
+  test("serves every request, with no volume limit", async () => {
+    for (let i = 0; i < 5; i++) {
+      expect((await handler()(request("https://cdn.example/a.png"))).status).toBe(200);
+    }
   });
 });
 

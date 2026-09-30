@@ -1,4 +1,3 @@
-import { requestIp } from "./rate-limit.js";
 import { isSameOrigin } from "./origin.js";
 
 function proxyError(code: number, message: string, status: number): Response {
@@ -9,7 +8,6 @@ export interface BackendProxyConfig {
   path: string;
   backendUrl: string;
   apiKey: string | undefined;
-  checkRateLimit: (ip: string) => boolean;
   fetchImpl?: typeof fetch;
 
   forwardCookie?: { name: string; header: string };
@@ -35,10 +33,6 @@ export function createBackendProxyHandler(
   return async function handleBackendProxy(req: Request): Promise<Response> {
     if (!isSameOrigin(req)) {
       return proxyError(-32600, "Cross-origin requests are not allowed", 403);
-    }
-
-    if (!config.checkRateLimit(requestIp(req))) {
-      return proxyError(-32005, "Too many requests", 429);
     }
 
     if (!config.apiKey) {

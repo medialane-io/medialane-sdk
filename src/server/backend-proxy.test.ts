@@ -15,7 +15,6 @@ test("forwards the named cookie's value under the configured header when present
     path: "/v1/paymaster/invoke/build",
     backendUrl: "https://backend.test",
     apiKey: "k",
-    checkRateLimit: () => true,
     forwardCookie: { name: "ml_account_session", header: "x-account-session" },
     fetchImpl: (async (_url: string, init?: RequestInit) => {
       seenHeader = new Headers(init?.headers).get("x-account-session");
@@ -34,7 +33,6 @@ test("omits the attribution header when the named cookie is absent", async () =>
     path: "/v1/paymaster/invoke/build",
     backendUrl: "https://backend.test",
     apiKey: "k",
-    checkRateLimit: () => true,
     forwardCookie: { name: "ml_account_session", header: "x-account-session" },
     fetchImpl: (async (_url: string, init?: RequestInit) => {
       seenHeader = new Headers(init?.headers).get("x-account-session");
@@ -53,7 +51,6 @@ test("behaves exactly as before when forwardCookie isn't configured", async () =
     path: "/v1/rpc",
     backendUrl: "https://backend.test",
     apiKey: "k",
-    checkRateLimit: () => true,
     fetchImpl: (async (_url: string, init?: RequestInit) => {
       seenHeader = new Headers(init?.headers).get("x-account-session");
       return new Response("{}", { status: 200 });
@@ -63,4 +60,19 @@ test("behaves exactly as before when forwardCookie isn't configured", async () =
   await handler(request({ userAddress: "0x1" }, { cookie: "ml_account_session=abc123" }));
 
   expect(seenHeader).toBeNull();
+});
+
+test("forwards every request, with no volume limit", async () => {
+  let forwarded = 0;
+  const handler = createBackendProxyHandler({
+    path: "/v1/paymaster/invoke/build",
+    backendUrl: "https://backend.test",
+    apiKey: "k",
+    fetchImpl: (async () => {
+      forwarded += 1;
+      return new Response("{}", { status: 200 });
+    }) as unknown as typeof fetch,
+  });
+  for (let i = 0; i < 5; i++) expect((await handler(request({ userAddress: "0x1" }))).status).toBe(200);
+  expect(forwarded).toBe(5);
 });

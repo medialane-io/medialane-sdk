@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.132.0] — 2026-09-30
+
+### Removed
+
+- The `checkRateLimit` option of `createBackendProxyHandler`, `createImageProxyHandler` and
+  `createRpcProxyHandler`. The proxies forward every request; cost is covered by credits per API key.
+- `createRateLimiter`, `requestIp`, `TRUSTED_APP_IP_HEADER`, `trustedClientIp` and
+  `isSpoofableForwardingHeader`. The backend no longer reads a client IP, so nothing forwards one.
+
 ## [0.131.0] — 2026-09-30
 
 ### Added

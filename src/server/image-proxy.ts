@@ -1,4 +1,3 @@
-import { requestIp } from "./rate-limit.js";
 import {
   ALLOWED_IMAGE_CONTENT_TYPES,
   MAX_IMAGE_PROXY_BYTES,
@@ -8,7 +7,6 @@ import {
 } from "./ssrf-guard.js";
 
 export interface ImageProxyConfig {
-  checkRateLimit: (ip: string) => boolean;
 
   resolveHostname: (hostname: string) => Promise<string[]>;
   fetchImpl?: typeof fetch;
@@ -105,10 +103,6 @@ export function createImageProxyHandler(
   }
 
   return async function handleImageProxy(req: Request): Promise<Response> {
-    if (!config.checkRateLimit(requestIp(req))) {
-      return jsonError("Too many requests", 429);
-    }
-
     const raw = new URL(req.url).searchParams.get("url");
     if (!raw) return jsonError("Missing url", 400);
 

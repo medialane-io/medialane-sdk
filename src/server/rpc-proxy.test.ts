@@ -1,9 +1,6 @@
 import { test, expect } from "bun:test";
 import { createRpcProxyHandler } from "./rpc-proxy.js";
 
-const allow = () => true;
-const deny = () => false;
-
 function request(body: unknown, headers: Record<string, string> = {}): Request {
   return new Request("https://app.test/api/rpc", {
     method: "POST",
@@ -20,7 +17,6 @@ test("forwards the body to the backend RPC endpoint with the api key attached", 
   const handler = createRpcProxyHandler({
     backendUrl: "https://backend.test",
     apiKey: "secret-key",
-    checkRateLimit: allow,
     fetchImpl: (async (url: string, init?: RequestInit) => {
       seenUrl = String(url);
       seenKey = new Headers(init?.headers).get("x-api-key");
@@ -42,7 +38,6 @@ test("trims a trailing slash from the backend url", async () => {
   const handler = createRpcProxyHandler({
     backendUrl: "https://backend.test/",
     apiKey: "k",
-    checkRateLimit: allow,
     fetchImpl: (async (url: string) => {
       seenUrl = String(url);
       return new Response("{}", { status: 200 });
@@ -57,7 +52,6 @@ test("refuses cross-origin requests without calling the backend", async () => {
   const handler = createRpcProxyHandler({
     backendUrl: "https://backend.test",
     apiKey: "k",
-    checkRateLimit: allow,
     fetchImpl: (async () => {
       called = true;
       return new Response("{}");
@@ -72,21 +66,19 @@ test("refuses cross-origin requests without calling the backend", async () => {
   expect(res.status).toBe(403);
 });
 
-test("refuses when the rate limiter says no, without calling the backend", async () => {
-  let called = false;
+test("forwards every call, with no volume limit", async () => {
+  let called = 0;
   const handler = createRpcProxyHandler({
     backendUrl: "https://backend.test",
     apiKey: "k",
-    checkRateLimit: deny,
     fetchImpl: (async () => {
-      called = true;
+      called += 1;
       return new Response("{}");
     }) as unknown as typeof fetch,
   });
 
-  const res = await handler(request({ method: "starknet_call" }));
-  expect(called).toBe(false);
-  expect(res.status).toBe(429);
+  for (let i = 0; i < 5; i++) expect((await handler(request({ method: "starknet_call" }))).status).toBe(200);
+  expect(called).toBe(5);
 });
 
 test("refuses when no api key is configured, so an unbilled call is impossible", async () => {
@@ -94,7 +86,6 @@ test("refuses when no api key is configured, so an unbilled call is impossible",
   const handler = createRpcProxyHandler({
     backendUrl: "https://backend.test",
     apiKey: undefined,
-    checkRateLimit: allow,
     fetchImpl: (async () => {
       called = true;
       return new Response("{}");
@@ -111,7 +102,6 @@ test("surfaces a 402 from the backend to the caller", async () => {
   const handler = createRpcProxyHandler({
     backendUrl: "https://backend.test",
     apiKey: "k",
-    checkRateLimit: allow,
     fetchImpl: (async () =>
       new Response(JSON.stringify({ error: "Payment required" }), { status: 402 })) as unknown as typeof fetch,
   });
@@ -124,7 +114,6 @@ test("reports an unreachable backend as a JSON-RPC error rather than throwing", 
   const handler = createRpcProxyHandler({
     backendUrl: "https://backend.test",
     apiKey: "k",
-    checkRateLimit: allow,
     fetchImpl: (async () => {
       throw new Error("backend unreachable");
     }) as unknown as typeof fetch,
@@ -139,7 +128,6 @@ test("rejects an unparseable body", async () => {
   const handler = createRpcProxyHandler({
     backendUrl: "https://backend.test",
     apiKey: "k",
-    checkRateLimit: allow,
     fetchImpl: (async () => new Response("{}")) as unknown as typeof fetch,
   });
 
