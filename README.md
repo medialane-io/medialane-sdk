@@ -319,7 +319,7 @@ const metaResult = await client.api.uploadMetadata({
   name: "My Work",
   description: "...",
   image: "ipfs://...",
-  external_url: "https://example.com",
+  external_url: "https://medialane.io",
   attributes: [
     { trait_type: "License", value: "CC BY-NC" },
     { trait_type: "Commercial Use", value: "No" },
@@ -378,7 +378,7 @@ const metadata: IpNftMetadata = {
   name: "My Track",
   description: "Original music",
   image: "ipfs://...",
-  external_url: "https://example.com",
+  external_url: "https://medialane.io",
   attributes: [
     { trait_type: "IP Type",        value: "Audio" },
     { trait_type: "License",        value: "CC BY-NC-SA" },
