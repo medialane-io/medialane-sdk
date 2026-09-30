@@ -1051,9 +1051,9 @@ export interface ApiBusinessProvisioning {
 
   recipientScheme: string;
   recipientValue: string;
-  interimOwnerPubkey: string;
+  interimOwnerPubkey: string | null;
   newOwnerPubkey: string | null;
-  status: "DEPLOYED" | "HANDOFF" | "TRANSFERRED";
+  status: "DEPLOYED" | "REUSED" | "TRANSFERRED";
 }
 
 export interface ApiWalletActivity {

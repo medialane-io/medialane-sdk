@@ -2,6 +2,27 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.131.0] — 2026-09-30
+
+### Added
+
+- Email sign-in and wallet claiming. `ApiClient` gains `checkEmail` (whether the email exists and whether
+  a wallet a business issued is waiting for it), `requestEmailCode`, `registerEmailAccount`,
+  `verifyEmailCode` (returns the waiting wallets once the email is proven), `claimWallet` and
+  `getSessionWallet`, so apps reach these routes only through the SDK.
+
+### Changed
+
+- `registerBusinessProvisioning` takes only the recipient (`chain`, `recipientScheme`, `recipientValue`).
+  The backend now computes the wallet's temporary key and deploys it; the business signs nothing.
+- `ApiBusinessProvisioning.status` is `DEPLOYED`, `REUSED` or `TRANSFERRED`, and `interimOwnerPubkey`
+  is null for a reused wallet.
+
+### Removed
+
+- `ApiClient.checkEmailExists`. Use `checkEmail`.
+- `ApiClient.completeBusinessProvisioning`. The user takes the wallet on medialane-io with `claimWallet`.
+
 ## [0.130.0] — 2026-09-29
 
 ### Added

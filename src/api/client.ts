@@ -648,21 +648,14 @@ export class ApiClient {
   }
 
   registerBusinessProvisioning(params: {
-    chain: "STARKNET";
+    chain?: "STARKNET";
     recipientScheme: string;
     recipientValue: string;
-    interimOwnerPubkey: string;
-    derivationSalt: string;
-    deployment: { typedData: unknown; signature: string[]; deployment: unknown };
   }): Promise<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }> {
     return this.post<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }>(
       "/v1/business/provisioning",
-      params,
+      { chain: params.chain ?? "STARKNET", recipientScheme: params.recipientScheme, recipientValue: params.recipientValue },
     );
-  }
-
-  completeBusinessProvisioning(id: string): Promise<ApiResponse<ApiBusinessProvisioning>> {
-    return this.post<ApiResponse<ApiBusinessProvisioning>>(`/v1/business/provisioning/${id}/complete`, {});
   }
 
   getCollectionProfile(contractAddress: string): Promise<ApiCollectionProfile | null> {
@@ -824,11 +817,36 @@ export class ApiClient {
     });
   }
 
-  async checkEmailExists(email: string): Promise<boolean> {
-    const { exists } = await this.get<{ exists: boolean }>(
+  async checkEmail(email: string): Promise<{ exists: boolean; walletWaiting: boolean }> {
+    const body = await this.get<{ exists: boolean; walletWaiting?: boolean }>(
       `/v1/auth/email/exists?email=${encodeURIComponent(email)}`,
     );
-    return exists;
+    return { exists: body.exists, walletWaiting: body.walletWaiting === true };
+  }
+
+  async requestEmailCode(email: string): Promise<void> {
+    await this.post<unknown>("/v1/auth/email/request-code", { email });
+  }
+
+  async registerEmailAccount(email: string): Promise<void> {
+    await this.post<unknown>("/v1/auth/email/register-account", { email });
+  }
+
+  async verifyEmailCode(email: string, code: string): Promise<{ token: string; waitingWallets: string[] }> {
+    const body = await this.post<{ token: string; waitingWallets?: string[] }>("/v1/auth/email/verify-code", { email, code });
+    return { token: body.token, waitingWallets: body.waitingWallets ?? [] };
+  }
+
+  claimWallet(params: {
+    newOwnerPubkey: string;
+    proofs: { walletAddress: string; signature: string[]; expiration: number }[];
+  }): Promise<{ claimed: string[] }> {
+    return this.post<{ claimed: string[] }>("/v1/users/me/claim-wallet", params);
+  }
+
+  async getSessionWallet(): Promise<string | null> {
+    const body = await this.post<{ walletAddress?: string | null }>("/v1/users/me/wallet", {});
+    return body.walletAddress ?? null;
   }
 
   getMyWallet(siwsToken: string): Promise<ApiUserWallet | null> {

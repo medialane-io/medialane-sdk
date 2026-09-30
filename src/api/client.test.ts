@@ -77,23 +77,72 @@ test("upsertMyWallet forwards accountToken in the request body when provided", a
   expect(body.accountToken).toBe("account_session_abc.def");
 });
 
-test("checkEmailExists returns true when the backend reports exists:true", async () => {
-  scriptFetch(() => ({ status: 200, body: { exists: true } }));
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  expect(await c.checkEmailExists("alice@example.com")).toBe(true);
-});
+const client = () => new ApiClient("https://api.test", "ml_live_x");
 
-test("checkEmailExists returns false when the backend reports exists:false", async () => {
-  scriptFetch(() => ({ status: 200, body: { exists: false } }));
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  expect(await c.checkEmailExists("alice@example.com")).toBe(false);
-});
-
-test("checkEmailExists sends the email as a query param", async () => {
-  const calls = scriptFetch(() => ({ status: 200, body: { exists: false } }));
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.checkEmailExists("alice@example.com");
+test("checkEmail returns whether the email exists and whether a wallet waits for it", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { exists: false, walletWaiting: true } }));
+  expect(await client().checkEmail("alice@example.com")).toEqual({ exists: false, walletWaiting: true });
   expect(calls[0].url).toContain("/v1/auth/email/exists?email=alice%40example.com");
+});
+
+test("checkEmail treats a missing walletWaiting as false", async () => {
+  scriptFetch(() => ({ status: 200, body: { exists: true } }));
+  expect(await client().checkEmail("alice@example.com")).toEqual({ exists: true, walletWaiting: false });
+});
+
+test("checkEmailExists is gone", () => {
+  expect("checkEmailExists" in client()).toBe(false);
+});
+
+test("requestEmailCode posts the email", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { ok: true } }));
+  await client().requestEmailCode("alice@example.com");
+  expect(calls[0].url).toContain("/v1/auth/email/request-code");
+  expect(JSON.parse(calls[0].init.body as string)).toEqual({ email: "alice@example.com" });
+});
+
+test("registerEmailAccount posts the email", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: {} }));
+  await client().registerEmailAccount("alice@example.com");
+  expect(calls[0].url).toContain("/v1/auth/email/register-account");
+  expect(JSON.parse(calls[0].init.body as string)).toEqual({ email: "alice@example.com" });
+});
+
+test("registerEmailAccount throws with the status when the account exists", async () => {
+  scriptFetch(() => ({ status: 409, body: { error: "ACCOUNT_EXISTS" } }));
+  await expect(client().registerEmailAccount("alice@example.com")).rejects.toMatchObject({ status: 409 });
+});
+
+test("verifyEmailCode returns the token and the waiting wallets", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { token: "email_verified_x", waitingWallets: ["0xabc"] } }));
+  expect(await client().verifyEmailCode("alice@example.com", "482913")).toEqual({ token: "email_verified_x", waitingWallets: ["0xabc"] });
+  expect(calls[0].url).toContain("/v1/auth/email/verify-code");
+  expect(JSON.parse(calls[0].init.body as string)).toEqual({ email: "alice@example.com", code: "482913" });
+});
+
+test("verifyEmailCode treats a missing list as no waiting wallets", async () => {
+  scriptFetch(() => ({ status: 200, body: { token: "email_verified_x" } }));
+  expect((await client().verifyEmailCode("alice@example.com", "482913")).waitingWallets).toEqual([]);
+});
+
+test("claimWallet posts the new key and the proofs", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { claimed: ["0xabc"] } }));
+  const params = { newOwnerPubkey: "0x1", proofs: [{ walletAddress: "0xabc", signature: ["0x2", "0x3"], expiration: 5 }] };
+  expect(await client().claimWallet(params)).toEqual({ claimed: ["0xabc"] });
+  expect(calls[0].url).toContain("/v1/users/me/claim-wallet");
+  expect(JSON.parse(calls[0].init.body as string)).toEqual(params);
+});
+
+test("getSessionWallet returns the session's wallet address", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0xabc" } }));
+  expect(await client().getSessionWallet()).toBe("0xabc");
+  expect(calls[0].url).toContain("/v1/users/me/wallet");
+  expect(calls[0].init.method).toBe("POST");
+});
+
+test("getSessionWallet returns null when the session has no wallet", async () => {
+  scriptFetch(() => ({ status: 200, body: { walletAddress: null } }));
+  expect(await client().getSessionWallet()).toBeNull();
 });
 
 test("5xx reads are retried (unified retry parity for profile reads)", async () => {
