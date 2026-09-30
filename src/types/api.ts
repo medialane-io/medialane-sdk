@@ -316,6 +316,7 @@ export interface ApiCoinsQuery {
   limit?: number;
   service?: string;
   sort?: string;
+  creator?: string;
 }
 
 export interface ApiActivityPrice {
@@ -829,6 +830,7 @@ export interface ConfirmRemixOfferParams {
 export interface ApiRemixOffersQuery {
 
   role: "creator" | "requester";
+  status?: string;
   page?: number;
   limit?: number;
 }
@@ -1221,9 +1223,9 @@ export interface ApiUsernameClaim {
 
 export type ApiReportTargetType = "COLLECTION" | "TOKEN" | "CREATOR" | "COMMENT";
 
+/** `targetKey` is built from the target fields. */
 export interface ApiSubmitReport {
   targetType: ApiReportTargetType;
-  targetKey: string;
   targetContract?: string;
   targetTokenId?: string;
   targetAddress?: string;
@@ -1324,4 +1326,28 @@ export interface ApiSponsorshipLicensesQuery {
   limit?: number;
   holder?: string;
   author?: string;
+}
+
+export interface ApiCollectionsListQuery {
+  page?: number;
+  limit?: number;
+  owner?: string;
+  service?: string;
+  sort?: CollectionSort;
+  isFeatured?: boolean;
+  hideEmpty?: boolean;
+  chain?: ChainFilter;
+}
+
+export interface ApiPricingRule {
+  actionKey: string;
+  chain: string;
+  service: string;
+  credits: number;
+}
+
+export interface ApiPricing {
+  creditsPerUsdc: number;
+  mdln?: { contract: string | null; tiers: { minWholeTokens: number; multiplier: number }[] };
+  pricing: { default: number; rules: ApiPricingRule[] };
 }

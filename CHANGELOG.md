@@ -2,6 +2,20 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.136.0] — 2026-10-01
+
+### Added
+
+- `listCollections(query)`: page, limit, owner, service, sort, isFeatured, hideEmpty and chain together.
+- `getPricing()`: the public credit pricing table.
+- `getCoins` takes `creator`; `getRemixOffers` takes `status`.
+
+### Changed
+
+- `submitReport` builds the report's `targetKey` from its target fields and normalizes the addresses;
+  callers no longer pass `targetKey`. A report without a usable target is refused before any request.
+- `updateCoinProfile` accepts `null` to clear the image or description.
+
 ## [0.135.0] — 2026-10-01
 
 ### Added

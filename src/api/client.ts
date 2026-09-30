@@ -100,6 +100,8 @@ import type {
   ApiSponsorshipOffersQuery,
   ApiSponsorshipProposalsQuery,
   ApiSponsorshipLicensesQuery,
+  ApiCollectionsListQuery,
+  ApiPricing,
 } from "../types/api.js";
 
 function deriveErrorCode(status: number): MedialaneErrorCode {
@@ -937,6 +939,7 @@ export class ApiClient {
     siwsToken: string
   ): Promise<ApiResponse<ApiRemixOffer[]>> {
     const params = new URLSearchParams({ role: query.role });
+    if (query.status) params.set("status", query.status);
     if (query.page !== undefined) params.set("page", String(query.page));
     if (query.limit !== undefined) params.set("limit", String(query.limit));
     return this.request<ApiResponse<ApiRemixOffer[]>>(`/v1/remix-offers?${params}`, {
@@ -1005,6 +1008,7 @@ export class ApiClient {
     if (opts.limit) params.set("limit", String(opts.limit));
     if (opts.service) params.set("service", opts.service);
     if (opts.sort) params.set("sort", opts.sort);
+    if (opts.creator) params.set("creator", this.addr(opts.creator));
     if (opts.chain) params.set("chain", opts.chain);
     const qs = params.toString();
     return this.get<ApiResponse<ApiCoin[]>>(`/v1/coins${qs ? `?${qs}` : ""}`);
@@ -1034,7 +1038,7 @@ export class ApiClient {
 
   updateCoinProfile(
     contract: string,
-    data: { image?: string; description?: string },
+    data: { image?: string | null; description?: string | null },
     siwsToken: string
   ): Promise<ApiResponse<ApiCoin>> {
     return this.request<ApiResponse<ApiCoin>>(`/v1/coins/${this.addr(contract)}`, {
@@ -1140,11 +1144,43 @@ export class ApiClient {
   }
 
   async submitReport(report: ApiSubmitReport, siwsToken: string): Promise<void> {
+    const targetContract = report.targetContract ? this.addr(report.targetContract) : undefined;
+    const targetAddress = report.targetAddress ? this.addr(report.targetAddress) : undefined;
+    let targetKey: string | null = null;
+    if (report.targetType === "TOKEN" && targetContract && report.targetTokenId) {
+      targetKey = `TOKEN:${targetContract}:${report.targetTokenId}`;
+    } else if (report.targetType === "COLLECTION" && targetContract) {
+      targetKey = `COLLECTION:${targetContract}`;
+    } else if (report.targetType === "CREATOR" && targetAddress) {
+      targetKey = `CREATOR:${targetAddress}`;
+    } else if (report.targetType === "COMMENT" && report.targetId) {
+      targetKey = `COMMENT::${report.targetId}`;
+    }
+    if (!targetKey) throw new Error(`A ${report.targetType} report needs its target`);
+
     await this.request<unknown>("/v1/reports", {
       method: "POST",
       headers: this.bearer(siwsToken),
-      body: JSON.stringify(report),
+      body: JSON.stringify({ ...report, targetKey, targetContract, targetAddress }),
     });
+  }
+
+  getPricing(): Promise<ApiPricing> {
+    return this.get<ApiPricing>("/v1/pricing");
+  }
+
+  listCollections(query: ApiCollectionsListQuery = {}): Promise<ApiResponse<ApiCollection[]>> {
+    const params = new URLSearchParams();
+    if (query.page !== undefined) params.set("page", String(query.page));
+    if (query.limit !== undefined) params.set("limit", String(query.limit));
+    if (query.owner) params.set("owner", this.addr(query.owner));
+    if (query.service) params.set("service", query.service);
+    if (query.sort) params.set("sort", query.sort);
+    if (query.isFeatured !== undefined) params.set("isFeatured", String(query.isFeatured));
+    if (query.hideEmpty !== undefined) params.set("hideEmpty", String(query.hideEmpty));
+    if (query.chain) params.set("chain", query.chain);
+    const qs = params.toString();
+    return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections${qs ? `?${qs}` : ""}`);
   }
 
   generateWallet(newWalletSiwsToken: string, siwsToken: string): Promise<{ walletAddress: string }> {

@@ -92,7 +92,7 @@ test("username claims carry the caller's token", async () => {
 
 test("a report is posted with the caller's token", async () => {
   await withStub({ data: { id: "r1" } }, async (client, calls) => {
-    await client.submitReport({ targetType: "TOKEN", targetKey: `TOKEN:${A}:1`, categories: ["SCAM_FRAUD"] }, "t1");
+    await client.submitReport({ targetType: "TOKEN", targetContract: A, targetTokenId: "1", categories: ["SCAM_FRAUD"] }, "t1");
     expect(new URL(calls[0].url).pathname).toBe("/v1/reports");
     expect(calls[0].method).toBe("POST");
     expect(calls[0].auth).toBe("Bearer t1");
@@ -143,5 +143,63 @@ test("received offers and directory uploads use their routes", async () => {
     expect(new URL(calls[0].url).pathname).toBe(`/v1/orders/received/${W}`);
     expect(new URL(calls[0].url).searchParams.get("limit")).toBe("50");
     expect(calls[1].body).toEqual({ files: [{ name: "1.json", content: {} }] });
+  });
+});
+
+test("coins can be listed by creator", async () => {
+  await withStub({ data: [] }, async (client, calls) => {
+    await client.getCoins({ creator: W, limit: 100 });
+    expect(new URL(calls[0].url).searchParams.get("creator")).toBe(W);
+  });
+});
+
+test("collections can be listed by owner and service together", async () => {
+  await withStub({ data: [] }, async (client, calls) => {
+    await client.listCollections({ owner: W, service: "drop-collection", limit: 50 });
+    await client.listCollections({ isFeatured: true, hideEmpty: true, sort: "recent", limit: 8 });
+    const [a, b] = calls.map((c) => new URL(c.url));
+    expect(a.pathname).toBe("/v1/collections");
+    expect(a.searchParams.get("owner")).toBe(W);
+    expect(a.searchParams.get("service")).toBe("drop-collection");
+    expect(b.searchParams.get("isFeatured")).toBe("true");
+    expect(b.searchParams.get("hideEmpty")).toBe("true");
+  });
+});
+
+test("remix offers can be filtered by status", async () => {
+  await withStub({ data: [] }, async (client, calls) => {
+    await client.getRemixOffers({ role: "creator", status: "PENDING" }, "t1");
+    expect(new URL(calls[0].url).searchParams.get("status")).toBe("PENDING");
+  });
+});
+
+test("a report's target key is built from its target", async () => {
+  await withStub({ data: {} }, async (client, calls) => {
+    await client.submitReport({ targetType: "TOKEN", targetContract: "0x1", targetTokenId: "7", categories: ["SCAM_FRAUD"] }, "t1");
+    await client.submitReport({ targetType: "COLLECTION", targetContract: "0x1", categories: ["SCAM_FRAUD"] }, "t1");
+    await client.submitReport({ targetType: "CREATOR", targetAddress: "0x2", categories: ["SCAM_FRAUD"] }, "t1");
+    await client.submitReport({ targetType: "COMMENT", targetId: "c9", categories: ["SCAM_FRAUD"] }, "t1");
+    const pad = (h: string) => "0x" + h.replace(/^0x/, "").padStart(64, "0");
+    expect(calls.map((c) => (c.body as { targetKey: string }).targetKey)).toEqual([
+      `TOKEN:${pad("0x1")}:7`,
+      `COLLECTION:${pad("0x1")}`,
+      `CREATOR:${pad("0x2")}`,
+      "COMMENT::c9",
+    ]);
+    expect((calls[0].body as { targetContract: string }).targetContract).toBe(pad("0x1"));
+  });
+});
+
+test("a report with no usable target is refused before any request", async () => {
+  await withStub({ data: {} }, async (client, calls) => {
+    await expect(client.submitReport({ targetType: "TOKEN", targetContract: "0x1", categories: ["X"] }, "t1")).rejects.toThrow();
+    expect(calls).toHaveLength(0);
+  });
+});
+
+test("pricing is read from the public pricing route", async () => {
+  await withStub({ creditsPerUsdc: 100, pricing: { default: 1, rules: [] } }, async (client, calls) => {
+    expect((await client.getPricing()).creditsPerUsdc).toBe(100);
+    expect(new URL(calls[0].url).pathname).toBe("/v1/pricing");
   });
 });
