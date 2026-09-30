@@ -45,22 +45,6 @@ test("SIWS-authed methods send both x-api-key and Authorization through the unif
   expect(calls[0].init.method).toBe("PATCH");
 });
 
-test("upsertMyWallet forwards emailVerificationToken in the request body when provided", async () => {
-  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.upsertMyWallet("siws_tok", { emailVerificationToken: "email_verified_abc.def" });
-  const body = JSON.parse(String(calls[0].init.body));
-  expect(body.emailVerificationToken).toBe("email_verified_abc.def");
-});
-
-test("upsertMyWallet omits emailVerificationToken from the body when not provided", async () => {
-  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.upsertMyWallet("siws_tok", {});
-  const body = JSON.parse(String(calls[0].init.body));
-  expect(body.emailVerificationToken).toBeUndefined();
-});
-
 test("upsertMyWallet forwards a plain email in the request body when provided", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
   const c = new ApiClient("https://api.test", "ml_live_x");
@@ -113,15 +97,15 @@ test("registerEmailAccount throws with the status when the account exists", asyn
   await expect(client().registerEmailAccount("alice@example.com")).rejects.toMatchObject({ status: 409 });
 });
 
-test("verifyEmailCode returns the token and the waiting wallets", async () => {
-  const calls = scriptFetch(() => ({ status: 200, body: { token: "email_verified_x", waitingWallets: ["0xabc"] } }));
-  expect(await client().verifyEmailCode("alice@example.com", "482913")).toEqual({ token: "email_verified_x", waitingWallets: ["0xabc"] });
+test("verifyEmailCode returns the waiting wallets, and no email token", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { waitingWallets: ["0xabc"] } }));
+  expect(await client().verifyEmailCode("alice@example.com", "482913")).toEqual({ waitingWallets: ["0xabc"] });
   expect(calls[0].url).toContain("/v1/auth/email/verify-code");
   expect(JSON.parse(calls[0].init.body as string)).toEqual({ email: "alice@example.com", code: "482913" });
 });
 
 test("verifyEmailCode treats a missing list as no waiting wallets", async () => {
-  scriptFetch(() => ({ status: 200, body: { token: "email_verified_x" } }));
+  scriptFetch(() => ({ status: 200, body: {} }));
   expect((await client().verifyEmailCode("alice@example.com", "482913")).waitingWallets).toEqual([]);
 });
 
@@ -181,4 +165,10 @@ test("a JSON body with no error field never becomes the message", async () => {
   const c = new ApiClient("https://api.test", "ml_live_x");
   const err = (await c.getCollectionProfile("0x1").catch((e) => e)) as MedialaneApiError;
   expect(err.message).not.toContain("somethingElse");
+});
+
+test("upsertMyWallet never sends an email token", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0x1" } }));
+  await new ApiClient("https://api.test", "ml_live_x").upsertMyWallet("siws_tok", { walletType: "MEDIAWALLET" });
+  expect("emailVerificationToken" in JSON.parse(calls[0].init.body as string)).toBe(false);
 });

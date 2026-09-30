@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.133.0] — 2026-09-30
+
+### Removed
+
+- The email-verified token. `verifyEmailCode` returns only `waitingWallets`; the backend marks the email
+  verified and activates the account in that one request, so `upsertMyWallet` no longer takes an
+  `emailVerificationToken`.
+- `ApiUserWallet.requiresEmailVerification`. An io signup that never verifies becomes inactive instead.
+- The `appSource` option of `upsertMyWallet`, `registerUser` and `createApiKey`. The API key names the
+  client; the backend ignores an app named in the request.
+
 ## [0.132.0] — 2026-09-30
 
 ### Removed

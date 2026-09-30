@@ -56,10 +56,10 @@ test("a deposit is checked by its transaction", async () => {
 test("keys are created and revoked as the signed-in wallet", async () => {
   const calls = capture({ data: {} });
   const api = client();
-  await api.createApiKey({ appSource: "MEDIALANE_PORTAL" }, "t");
+  await api.createApiKey({ label: "server" }, "t");
   await api.deleteApiKey("key-1", "t");
   expect(calls[0].url).toBe("https://api.test/v1/portal/keys");
-  expect(JSON.parse(String(calls[0].init.body))).toEqual({ appSource: "MEDIALANE_PORTAL" });
+  expect(JSON.parse(String(calls[0].init.body))).toEqual({ label: "server" });
   expect(calls[1].url).toBe("https://api.test/v1/portal/keys/key-1");
   expect(calls[1].init.method).toBe("DELETE");
 });

@@ -509,7 +509,7 @@ export class ApiClient {
   }
 
   createApiKey(
-    input?: { label?: string; appSource?: string },
+    input?: { label?: string },
     siwsToken?: string,
   ): Promise<ApiResponse<ApiPortalKeyCreated>> {
     return this.request<ApiResponse<ApiPortalKeyCreated>>("/v1/portal/keys", {
@@ -771,7 +771,6 @@ export class ApiClient {
     walletAddress: string;
 
     walletType?: string;
-    appSource?: ApiAppSource;
     chain?: ApiChain;
   }): Promise<{
     accountId: string;
@@ -791,11 +790,9 @@ export class ApiClient {
     options: {
 
       walletType?: string;
-      appSource?: ApiAppSource;
 
       chain?: ApiChain;
 
-      emailVerificationToken?: string;
 
       email?: string;
 
@@ -804,10 +801,8 @@ export class ApiClient {
   ): Promise<ApiUserWallet> {
     const body: Record<string, string> = {
       walletType: options.walletType ?? "UNKNOWN",
-      appSource: options.appSource ?? "MEDIALANE_SDK",
     };
     if (options.chain) body.chain = options.chain;
-    if (options.emailVerificationToken) body.emailVerificationToken = options.emailVerificationToken;
     if (options.email) body.email = options.email;
     if (options.accountToken) body.accountToken = options.accountToken;
     return this.request<ApiUserWallet>("/v1/users/me", {
@@ -832,9 +827,9 @@ export class ApiClient {
     await this.post<unknown>("/v1/auth/email/register-account", { email });
   }
 
-  async verifyEmailCode(email: string, code: string): Promise<{ token: string; waitingWallets: string[] }> {
-    const body = await this.post<{ token: string; waitingWallets?: string[] }>("/v1/auth/email/verify-code", { email, code });
-    return { token: body.token, waitingWallets: body.waitingWallets ?? [] };
+  async verifyEmailCode(email: string, code: string): Promise<{ waitingWallets: string[] }> {
+    const body = await this.post<{ waitingWallets?: string[] }>("/v1/auth/email/verify-code", { email, code });
+    return { waitingWallets: body.waitingWallets ?? [] };
   }
 
   claimWallet(params: {
