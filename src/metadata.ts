@@ -6,7 +6,7 @@ export interface AssetMetadata {
   name: string;
   description: string;
   image: string | null;
-  external_url: string;
+  external_url?: string;
   attributes: AssetAttribute[];
 }
 
@@ -77,7 +77,7 @@ export function buildAssetMetadata(input: BuildAssetMetadataInput): AssetMetadat
     name: input.name,
     description: input.description ?? "",
     image: input.imageUri ?? null,
-    external_url: input.externalUrl || "https://medialane.io",
+    ...(input.externalUrl ? { external_url: input.externalUrl } : {}),
     attributes,
   };
 }

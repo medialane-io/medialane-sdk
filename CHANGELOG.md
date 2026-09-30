@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.135.0] — 2026-10-01
+
+### Changed
+
+- `buildAssetMetadata` no longer writes `https://medialane.io` into `external_url` when none is given. The
+  field is set only when the creator provides one, and `AssetMetadata.external_url` is now optional.
+
 ## [0.134.0] — 2026-10-01
 
 ### Removed
