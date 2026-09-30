@@ -854,7 +854,6 @@ export interface ApiPortalKey {
   id: string;
   prefix: string;
   label: string | null;
-  appSource: string | null;
   status: ApiKeyStatus;
   lastUsedAt: string | null;
   createdAt: string;
@@ -1007,14 +1006,6 @@ export interface ApiCreatorListResult {
   limit: number;
 }
 
-export type ApiAppSource =
-  | "MEDIALANE_STARKNET"
-  | "MEDIALANE_IO"
-  | "MEDIALANE_PORTAL"
-  | "MEDIALANE_SDK"
-
-  | "MEDIALANE_DAPP";
-
 export type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BASE" | "BITCOIN";
 
 export interface ApiUserWallet {
@@ -1115,8 +1106,6 @@ export interface ApiRewardsLevel {
 
 export interface ApiUserRewards {
   address: string;
-  accountId: string | null;
-  publicId: string | null;
   totalXp: number;
   currentLevel: number;
   currentLevelName: string;

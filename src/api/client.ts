@@ -27,7 +27,6 @@ import type {
   ApiBusinessProvisioning,
   ApiWalletActivity,
   ApiUserWallet,
-  ApiAppSource,
   ApiChain,
   ApiActivity,
   ApiActivitiesQuery,
@@ -779,7 +778,6 @@ export class ApiClient {
     chain: string;
 
     provider: string;
-    appSource: ApiAppSource;
     createdAt: string;
   }> {
     return this.post("/v1/users/register", params);

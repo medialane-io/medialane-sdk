@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.134.0] — 2026-10-01
+
+### Removed
+
+- `ApiUserRewards.accountId` and `publicId`. Rewards belong to the wallet; a wallet can now belong to a
+  different account in each client.
+- `appSource` in `registerUser`'s response. Accounts belong to the client whose API key registered them.
+- `ApiAppSource` and `ApiPortalKey.appSource`.
+
 ## [0.133.0] — 2026-09-30
 
 ### Removed
