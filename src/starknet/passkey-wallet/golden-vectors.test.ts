@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { computeAccountAddress } from "../business-provisioning/account.js";
+import { computeAccountAddress } from "../media-wallet/account.js";
 import {
   deriveAesKey,
   sealPrivateKey,

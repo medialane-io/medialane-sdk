@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { computeAccountAddress } from "../starknet/business-provisioning/account.js";
+import { computeAccountAddress } from "../starknet/media-wallet/account.js";
 import { starkKeyPairFromPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 import { encodeRecoveryKey, parseRecoveryKey, InvalidRecoveryKeyError } from "./recovery-key.js";
 

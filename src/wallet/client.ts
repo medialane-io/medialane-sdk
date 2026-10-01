@@ -11,12 +11,12 @@ import {
   getOwners,
   type EscapeInfo,
   type GuardianInfo,
-} from "../starknet/business-provisioning/guardian.js";
+} from "../starknet/media-wallet/guardian.js";
 import {
   buildAddOwnerCall,
   buildRemoveOwnerByGuidCall,
   computeOwnerGuid,
-} from "../starknet/business-provisioning/handoff.js";
+} from "../starknet/media-wallet/owners.js";
 import { normalizeWalletAddress } from "./addresses.js";
 import { completeDeployment, type DeploymentDeps, type DeploymentResult, type DeploymentStep } from "./deployment.js";
 import type { OwnerStore } from "./store.js";

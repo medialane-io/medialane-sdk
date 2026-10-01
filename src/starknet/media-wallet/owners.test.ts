@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { computeOwnerGuid, buildChangeOwnersCall, buildAddOwnerCall, buildRemoveOwnerCall, buildRemoveOwnerByGuidCall, ownerAliveTypedData } from "./handoff.js";
+import { computeOwnerGuid, buildChangeOwnersCall, buildAddOwnerCall, buildRemoveOwnerCall, buildRemoveOwnerByGuidCall, ownerAliveTypedData } from "./owners.js";
 
 const PUBKEY = "0x151c1fe8a4c7edba2dab3e168c4ab4638c606b5f6a14bdfdbd68c7f3241ac5";
 const EXPECTED_GUID = "0x77e51695557ad11adcf5c962434b1c1feac94fa3f5cd6534759c5ae78518766";
@@ -43,7 +43,7 @@ test("removing by pubkey and by its guid produce identical calldata", () => {
   );
 });
 
-test("a handoff without owner-alive is refused rather than built", () => {
+test("replacing the signing owner without owner-alive is refused rather than built", () => {
   expect(() => buildChangeOwnersCall("0xaccount", PUBKEY, "0x999")).toThrow(
     /owner-alive/i,
   );

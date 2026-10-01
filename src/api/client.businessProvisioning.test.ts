@@ -17,16 +17,12 @@ function scriptFetch(script: (url: string) => { status: number; body?: unknown }
   return captured;
 }
 
-test("registerBusinessProvisioning sends only the recipient", async () => {
+test("registerBusinessProvisioning sends the email", async () => {
   const calls = scriptFetch(() => ({ status: 201, body: { data: { chain: "STARKNET", walletAddress: "0xabc" } } }));
   const client = new ApiClient("https://api.test.invalid", "test-key");
-  const res = await client.registerBusinessProvisioning({ recipientScheme: "email", recipientValue: "worker@example.com" });
+  const res = await client.registerBusinessProvisioning({ email: "worker@example.com" });
   expect(calls[0].url).toBe("https://api.test.invalid/v1/business/provisioning");
-  expect(JSON.parse(calls[0].init.body as string)).toEqual({
-    chain: "STARKNET",
-    recipientScheme: "email",
-    recipientValue: "worker@example.com",
-  });
+  expect(JSON.parse(calls[0].init.body as string)).toEqual({ chain: "STARKNET", email: "worker@example.com" });
   expect(res.data.walletAddress).toBe("0xabc");
 });
 

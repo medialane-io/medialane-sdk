@@ -1,4 +1,4 @@
-import type { GuardianInfo, EscapeInfo } from "../starknet/business-provisioning/guardian.js";
+import type { GuardianInfo, EscapeInfo } from "../starknet/media-wallet/guardian.js";
 
 export type GuardianStatus = { kind: "none" } | { kind: "active"; guardian: GuardianInfo };
 

@@ -119,7 +119,7 @@ export {
   getOwners,
   getEscape,
   getEscapeSecurityPeriod,
-} from "./business-provisioning/index.js";
+} from "./media-wallet/index.js";
 export {
   deriveAesKey,
   generateStarkKeyPair,
@@ -134,7 +134,7 @@ export type {
   EscapeInfo,
   EscapeTypeName,
   EscapeStatusName,
-} from "./business-provisioning/index.js";
+} from "./media-wallet/index.js";
 
 export * from "../wallet/index.js";
 export * from "../session/session-wallet.js";

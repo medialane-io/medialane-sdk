@@ -22,10 +22,19 @@ test("an account with code onchain is deployed", async () => {
 test("an account the chain does not know is not deployed", async () => {
   const provider = {
     getClassHashAt: async () => {
-      throw new Error("Contract not found");
+      throw Object.assign(new Error("Contract not found"), { code: 20 });
     },
   };
   expect(await isDeployed(provider, "0xabc")).toBe(false);
+});
+
+test("a failed read throws instead of reading as not deployed", async () => {
+  const provider = {
+    getClassHashAt: async () => {
+      throw new Error("fetch failed");
+    },
+  };
+  await expect(isDeployed(provider, "0xabc")).rejects.toThrow("fetch failed");
 });
 
 test("the address reaches the provider in its stored form", async () => {
