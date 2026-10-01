@@ -26,12 +26,26 @@ async function withStub(response: unknown, run: (client: ApiClient, calls: Call[
 const A = "0x" + "a".repeat(64);
 const W = "0x" + "b".repeat(64);
 
-test("drop collections are asked for by their canonical service id", async () => {
+test("collections are listed through one method, filtered by standard too", async () => {
   await withStub({ data: [] }, async (client, calls) => {
-    await client.getDropCollections();
-    await client.getPopCollections();
-    expect(calls[0].url).toContain("service=drop-collection");
-    expect(calls[1].url).toContain("service=pop-protocol");
+    await client.listCollections({ service: "drop-collection", standard: "ERC1155" });
+    const q = new URL(calls[0].url).searchParams;
+    expect(q.get("service")).toBe("drop-collection");
+    expect(q.get("standard")).toBe("ERC1155");
+  });
+});
+
+test("the older collection list methods are gone", () => {
+  const client = new ApiClient("https://api.test", "key") as unknown as Record<string, unknown>;
+  for (const name of ["getCollections", "getCollectionsByOwner", "getDropCollections", "getPopCollections"]) {
+    expect(client[name]).toBeUndefined();
+  }
+});
+
+test("a club's tier count is read from its count route", async () => {
+  await withStub({ data: { count: 4 } }, async (client, calls) => {
+    expect(await client.getClubMembershipCount(A)).toBe(4);
+    expect(new URL(calls[0].url).pathname).toBe(`/v1/club/${A}/count`);
   });
 });
 

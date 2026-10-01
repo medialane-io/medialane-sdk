@@ -80,7 +80,6 @@ import type {
   ConfirmSelfRemixParams,
   ConfirmRemixOfferParams,
   ApiResponse,
-  CollectionSort,
   CollectionTokensSort,
   PopClaimStatus,
   PopBatchEligibilityItem,
@@ -194,7 +193,7 @@ export class ApiClient {
         );
       }
       return response;
-    }, this.retryOptions);
+    }, this.retryOptions, (init?.method ?? "GET").toUpperCase());
 
     if (allowed(res.status)) return null as T;
     return res.json() as Promise<T>;
@@ -281,30 +280,6 @@ export class ApiClient {
     return this.get<ApiResponse<ApiActivity[]>>(
       `/v1/tokens/${contract}/${tokenId}/history?page=${page}&limit=${limit}`
     );
-  }
-
-  getCollections(
-    page = 1,
-    limit = 20,
-    isKnown?: boolean,
-    sort?: CollectionSort,
-    service?: string,
-    chain?: ChainFilter,
-
-    standard?: string
-  ): Promise<ApiResponse<ApiCollection[]>> {
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (isKnown !== undefined) params.set("isKnown", String(isKnown));
-    if (sort) params.set("sort", sort);
-    if (service) params.set("service", service);
-    if (chain) params.set("chain", chain);
-    if (standard) params.set("standard", standard);
-    return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
-  }
-
-  getCollectionsByOwner(owner: string, page = 1, limit = 50): Promise<ApiResponse<ApiCollection[]>> {
-    const params = new URLSearchParams({ owner: this.addr(owner), page: String(page), limit: String(limit) });
-    return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections?${params}`);
   }
 
   getCollection(contract: string): Promise<ApiResponse<ApiCollection>> {
@@ -984,10 +959,6 @@ export class ApiClient {
     });
   }
 
-  getPopCollections(opts: { page?: number; limit?: number; sort?: CollectionSort } = {}): Promise<ApiResponse<ApiCollection[]>> {
-    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "pop-protocol");
-  }
-
   async getPopEligibility(collection: string, wallet: string): Promise<PopClaimStatus> {
     const res = await this.get<{ data: PopClaimStatus }>(
       `/v1/pop/eligibility/${this.addr(collection)}/${this.addr(wallet)}`
@@ -1049,10 +1020,6 @@ export class ApiClient {
     });
   }
 
-  getDropCollections(opts: { page?: number; limit?: number; sort?: CollectionSort } = {}): Promise<ApiResponse<ApiCollection[]>> {
-    return this.getCollections(opts.page ?? 1, opts.limit ?? 20, undefined, opts.sort, "drop-collection");
-  }
-
   async getDropMintStatus(collection: string, wallet: string): Promise<DropMintStatus> {
     const res = await this.get<{ data: DropMintStatus }>(
       `/v1/drop/mint-status/${this.addr(collection)}/${this.addr(wallet)}`
@@ -1081,6 +1048,11 @@ export class ApiClient {
 
   async getTicketCount(contract: string): Promise<number> {
     const res = await this.get<{ data: { count: number } }>(`/v1/tickets/${this.addr(contract)}/count`);
+    return res.data.count;
+  }
+
+  async getClubMembershipCount(contract: string): Promise<number> {
+    const res = await this.get<{ data: { count: number } }>(`/v1/club/${this.addr(contract)}/count`);
     return res.data.count;
   }
 
@@ -1179,6 +1151,7 @@ export class ApiClient {
     if (query.sort) params.set("sort", query.sort);
     if (query.isFeatured !== undefined) params.set("isFeatured", String(query.isFeatured));
     if (query.hideEmpty !== undefined) params.set("hideEmpty", String(query.hideEmpty));
+    if (query.standard) params.set("standard", query.standard);
     if (query.chain) params.set("chain", query.chain);
     const qs = params.toString();
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections${qs ? `?${qs}` : ""}`);

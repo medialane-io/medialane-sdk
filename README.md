@@ -280,11 +280,12 @@ token.balances?.forEach((b: ApiTokenBalance) => {
 
 ```typescript
 // All collections: newest first by default
-const collections = await client.api.getCollections();
+const collections = await client.api.listCollections();
 
-// With sort and pagination
-const byVolume = await client.api.getCollections(1, 20, undefined, "volume");
-const verified = await client.api.getCollections(1, 18, true, "recent");
+// Filter, sort and paginate in one query
+const byVolume = await client.api.listCollections({ page: 1, limit: 20, sort: "volume" });
+const featured = await client.api.listCollections({ limit: 18, isFeatured: true, sort: "recent" });
+const myDrops = await client.api.listCollections({ owner: "0x...", service: "drop-collection" });
 
 // Sort options: "recent" | "supply" | "floor" | "volume" | "name"
 const collection = await client.api.getCollection(contract);

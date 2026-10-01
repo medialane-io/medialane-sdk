@@ -14,9 +14,18 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** A read can be repeated safely; a write only when the server turned it away without acting (429). */
+export function isRetryableFor(method: string, err: unknown): boolean {
+  if (err instanceof MedialaneApiError && err.status === 429) return true;
+  const isRead = method === "GET" || method === "HEAD";
+  if (!isRead) return false;
+  return (err instanceof MedialaneApiError && err.status >= 500) || err instanceof TypeError;
+}
+
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  opts?: RetryOptions
+  opts?: RetryOptions,
+  method = "GET",
 ): Promise<T> {
   const maxAttempts = opts?.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
   const baseDelayMs = opts?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
@@ -30,15 +39,7 @@ export async function withRetry<T>(
     } catch (err) {
       lastError = err;
 
-      if (err instanceof MedialaneApiError && err.status < 500 && err.status !== 429) {
-        throw err;
-      }
-
-      const isRetryable =
-        (err instanceof MedialaneApiError && (err.status >= 500 || err.status === 429)) ||
-        err instanceof TypeError;
-
-      if (!isRetryable || attempt === maxAttempts - 1) {
+      if (!isRetryableFor(method, err) || attempt === maxAttempts - 1) {
         throw err;
       }
 

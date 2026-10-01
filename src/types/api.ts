@@ -1336,6 +1336,7 @@ export interface ApiCollectionsListQuery {
   sort?: CollectionSort;
   isFeatured?: boolean;
   hideEmpty?: boolean;
+  standard?: string;
   chain?: ChainFilter;
 }
 

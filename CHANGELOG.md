@@ -2,6 +2,24 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.138.0] — 2026-10-01
+
+### Changed
+
+- Writes are no longer retried after a server error or a failed connection, since the first attempt may
+  already have taken effect (a duplicate mint intent, report or offer). A write turned away with 429 is
+  still retried; reads keep retrying as before.
+
+### Added
+
+- `getClubMembershipCount(contract)`: the number of membership tiers in an IP Club.
+- `listCollections` takes `standard`.
+
+### Removed
+
+- `getCollections`, `getCollectionsByOwner`, `getDropCollections` and `getPopCollections`. Use
+  `listCollections({ ... })`, e.g. `{ owner }`, `{ service: "drop-collection" }`.
+
 ## [0.137.0] — 2026-10-01
 
 ### Added
