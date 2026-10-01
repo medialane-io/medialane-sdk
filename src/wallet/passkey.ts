@@ -7,6 +7,7 @@ import {
 } from "../starknet/passkey-wallet/crypto.js";
 import { computeAccountAddress } from "../starknet/business-provisioning/account.js";
 import type { SealedOwner } from "./types.js";
+import type { RecoveryKey } from "./recovery-key.js";
 
 export class PasskeyCancelledError extends Error {
   constructor(message = "Passkey prompt was cancelled.") {
@@ -35,8 +36,8 @@ export interface CreatedOwner {
 export interface PasskeyOwner {
   createOwnerKey(): Promise<CreatedOwner>;
   unlockOwnerKey(sealed: SealedOwner): Promise<string>;
-  sealImportedOwnerKey(privateKeyInput: string): Promise<SealedOwner>;
-  walletAddressForPrivateKey(privateKeyInput: string): string;
+  /** Seals an owner key restored from a recovery key, for the wallet it owns. */
+  sealImportedOwnerKey(recovery: RecoveryKey): Promise<SealedOwner>;
 }
 
 interface Registration {
@@ -178,22 +179,18 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
       return unsealPrivateKey(aes, decodeBase64(sealed.iv), decodeBase64(sealed.ciphertext));
     },
 
-    async sealImportedOwnerKey(privateKeyInput) {
-      const { privateKeyHex, publicKeyHex } = starkKeyPairFromPrivateKey(privateKeyInput);
+    async sealImportedOwnerKey(recovery) {
+      const { privateKeyHex, publicKeyHex } = starkKeyPairFromPrivateKey(recovery.privateKey);
       const registration = await registerPasskey();
       const secret = await secretFromRegistration(registration);
       const { iv, ciphertext } = await seal(secret, privateKeyHex);
       return {
         credentialId: registration.credentialId,
         ownerPubKey: publicKeyHex,
-        address: computeAccountAddress(publicKeyHex, 0),
+        address: recovery.walletAddress,
         iv,
         ciphertext,
       };
-    },
-
-    walletAddressForPrivateKey(privateKeyInput) {
-      return computeAccountAddress(starkKeyPairFromPrivateKey(privateKeyInput).publicKeyHex, 0);
     },
   };
 }

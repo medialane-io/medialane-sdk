@@ -2,6 +2,22 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [Unreleased]
+
+### Added
+
+- `encodeRecoveryKey({ walletAddress, privateKey })` and `parseRecoveryKey(input)`: a recovery key carries the wallet
+  address with the key, so any owner key restores its wallet. `parseRecoveryKey` also reads a bare private key saved
+  before this format. Invalid input throws `InvalidRecoveryKeyError`.
+
+### Changed
+
+- `sealImportedOwnerKey` takes the parsed recovery key, `{ walletAddress, privateKey }`.
+
+### Removed
+
+- `isRecoveryKeyForWallet` and `walletAddressForPrivateKey`.
+
 ## [0.141.0] — 2026-10-01
 
 ### Added

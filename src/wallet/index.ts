@@ -13,7 +13,7 @@ export {
   InvalidPairingPayloadError,
   type PairingPayload,
 } from "./pairing.js";
-export { isRecoveryKeyForWallet } from "./recovery-key.js";
+export { encodeRecoveryKey, parseRecoveryKey, InvalidRecoveryKeyError, type RecoveryKey } from "./recovery-key.js";
 export {
   describeGuardianStatus,
   describeRecoveryAction,
