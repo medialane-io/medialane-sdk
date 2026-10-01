@@ -3,6 +3,7 @@ import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 import { executeSponsored, SponsoredCallRejectedError } from "../starknet/services/sponsoredExecutor.js";
 import type { SelfFundConsent, SelfFundFeeEstimate } from "./self-fund-consent.js";
 import type { ExecutedTransaction, WalletExecutor } from "./types.js";
+import { getTokenBySymbol } from "../utils/token.js";
 
 export interface SelfFundedDeps {
   provider: () => ProviderInterface;
@@ -23,7 +24,19 @@ export async function estimateSelfFundedFee(
 ): Promise<SelfFundFeeEstimate> {
   const account = new Account({ provider, address, signer: "0x1", cairoVersion: "1" });
   const estimate = await account.estimateInvokeFee(calls);
-  return { feeRaw: estimate.overall_fee, unit: estimate.unit };
+  const balanceRaw = await feeTokenBalance(provider, address, estimate.unit).catch(() => null);
+  return { feeRaw: estimate.overall_fee, unit: estimate.unit, balanceRaw };
+}
+
+async function feeTokenBalance(provider: ProviderInterface, address: string, unit: string): Promise<bigint> {
+  const token = getTokenBySymbol(unit === "FRI" ? "STRK" : "ETH");
+  if (!token) throw new Error(`No fee token for unit ${unit}`);
+  const [low = "0x0", high = "0x0"] = await provider.callContract({
+    contractAddress: token.address,
+    entrypoint: "balance_of",
+    calldata: [address],
+  });
+  return BigInt(low) + (BigInt(high) << 128n);
 }
 
 export function selfFundedExecutor(deps: SelfFundedDeps): WalletExecutor {

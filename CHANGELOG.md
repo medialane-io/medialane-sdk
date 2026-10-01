@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [Unreleased]
+
+### Added
+
+- `SelfFundFeeEstimate.balanceRaw`: the wallet's balance of the fee token, read by `estimateSelfFundedFee`; `null`
+  when it could not be read.
+
 ## [0.143.0] — 2026-10-01
 
 ### Changed
