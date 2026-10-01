@@ -1,6 +1,6 @@
 import { test, expect, mock } from "bun:test";
 import type { TypedData } from "starknet";
-import { executeSponsored, SponsoredCallRejectedError, userMayPayInstead, type TypedDataSigner } from "./sponsoredExecutor.js";
+import { executeSponsored, SponsoredCallRejectedError, allowsFallbackFunding, type TypedDataSigner } from "./sponsoredExecutor.js";
 
 const FAKE_TYPED_DATA = {
   types: {
@@ -127,24 +127,24 @@ test("executeSponsored falls back to a generic reason when the response has no e
   if (result.status === "unavailable") expect(result.reason.length).toBeGreaterThan(0);
 });
 
-test("the failure code decides whether the user may pay instead", () => {
-  expect(userMayPayInstead("sponsor_unavailable", 502, "build")).toBe(true);
-  expect(userMayPayInstead("credits_exhausted", 402, "build")).toBe(true);
-  expect(userMayPayInstead("credits_exhausted", 402, "execute")).toBe(true);
-  for (const code of ["not_eligible", "not_authorized", "rate_limited", "invalid_request", "account_not_deployed", "not_executable", "may_have_broadcast"]) {
-    expect(userMayPayInstead(code, 502, "build")).toBe(false);
-    expect(userMayPayInstead(code, 503, "execute")).toBe(false);
+test("the failure code decides whether the user can self-fund", () => {
+  expect(allowsFallbackFunding("sponsor_unavailable", 502, "build")).toBe(true);
+  expect(allowsFallbackFunding("credits_exhausted", 402, "build")).toBe(true);
+  expect(allowsFallbackFunding("credits_exhausted", 402, "execute")).toBe(true);
+  for (const code of ["not_authorized", "rate_limited", "invalid_request", "account_not_deployed", "not_executable", "may_have_broadcast"]) {
+    expect(allowsFallbackFunding(code, 502, "build")).toBe(false);
+    expect(allowsFallbackFunding(code, 503, "execute")).toBe(false);
   }
 });
 
 test("a response without a code keeps the status rules", () => {
-  expect(userMayPayInstead(undefined, 502, "build")).toBe(true);
-  expect(userMayPayInstead(undefined, 403, "build")).toBe(false);
-  expect(userMayPayInstead(undefined, 503, "execute")).toBe(true);
-  expect(userMayPayInstead(undefined, 502, "execute")).toBe(false);
+  expect(allowsFallbackFunding(undefined, 502, "build")).toBe(true);
+  expect(allowsFallbackFunding(undefined, 403, "build")).toBe(false);
+  expect(allowsFallbackFunding(undefined, 503, "execute")).toBe(true);
+  expect(allowsFallbackFunding(undefined, 502, "execute")).toBe(false);
 });
 
-test("exhausted credits at build offer the user to pay", async () => {
+test("exhausted credits at build offer self-funding", async () => {
   const fetchImpl = mock(async () =>
     new Response(JSON.stringify({ x402Version: 1, accepts: [], code: "credits_exhausted" }), { status: 402 })) as unknown as typeof fetch;
 

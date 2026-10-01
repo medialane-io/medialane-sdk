@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [Unreleased]
+
+### Changed
+
+- `userMayPayInstead` is renamed `allowsFallbackFunding`.
+
+### Removed
+
+- `not_eligible` from `SponsorshipFailureCode`.
+
 ## [0.139.0] — 2026-10-01
 
 ### Added
