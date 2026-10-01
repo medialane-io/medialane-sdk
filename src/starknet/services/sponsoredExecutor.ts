@@ -22,15 +22,14 @@ export type SponsorshipFailureCode =
   | "account_not_deployed"
   | "not_executable"
   | "invalid_request"
-  | "not_eligible"
   | "not_authorized"
   | "rate_limited"
   | "may_have_broadcast";
 
-const USER_MAY_PAY: ReadonlySet<string> = new Set(["sponsor_unavailable", "credits_exhausted"]);
+const FALLBACK_FUNDING_FAILURES: ReadonlySet<string> = new Set(["sponsor_unavailable", "credits_exhausted"]);
 
-export function userMayPayInstead(code: string | undefined, status: number, stage: "build" | "execute"): boolean {
-  if (code) return USER_MAY_PAY.has(code);
+export function allowsFallbackFunding(code: string | undefined, status: number, stage: "build" | "execute"): boolean {
+  if (code) return FALLBACK_FUNDING_FAILURES.has(code);
   return stage === "build" ? status >= 500 : status === 503;
 }
 
@@ -55,7 +54,7 @@ export async function executeSponsored(
   });
   if (!buildRes.ok) {
     const { reason, code } = await failureOf(buildRes, "We couldn't prepare this transaction.");
-    if (userMayPayInstead(code, buildRes.status, "build")) return { status: "unavailable", reason };
+    if (allowsFallbackFunding(code, buildRes.status, "build")) return { status: "unavailable", reason };
     throw new SponsoredCallRejectedError(reason);
   }
   const { typedData } = (await buildRes.json()) as { typedData: TypedData };
@@ -69,7 +68,7 @@ export async function executeSponsored(
   });
   if (!executeRes.ok) {
     const { reason, code } = await failureOf(executeRes, "We couldn't submit this transaction.");
-    if (userMayPayInstead(code, executeRes.status, "execute")) {
+    if (allowsFallbackFunding(code, executeRes.status, "execute")) {
       return { status: "unavailable", reason };
     }
     throw new SponsoredCallRejectedError(reason);
