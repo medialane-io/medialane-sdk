@@ -70,7 +70,7 @@ test("a base URL with a trailing slash does not double the slash", () => {
   expect(client.runBase("run1")).toBe(`${BASE}/v1/portal/runs/run1`);
 });
 
-test("certificate-emission steps are called under the run's bare path — there is no tier step", async () => {
+test("certificate-emission steps use their own paths — distinct from ticketing's, so the two never collide on the backend's shared run routes", async () => {
   const { impl, bodies, urls } = recordingFetch();
   const client = make(impl);
 
@@ -86,9 +86,9 @@ test("certificate-emission steps are called under the run's bare path — there 
   expect(urls).toEqual([
     `${base}/files/upload-url`,
     `${base}/files/uploaded`,
-    `${base}/metadata`,
-    `${base}/wallets/resolve`,
-    `${base}/wallets`,
+    `${base}/certificate-metadata`,
+    `${base}/recipients/resolve`,
+    `${base}/recipients`,
     `${base}/collection/confirm`,
     `${base}/batches/0/confirm`,
   ]);

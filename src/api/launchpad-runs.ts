@@ -165,13 +165,13 @@ export function createLaunchpadRunsClient({ baseUrl, getToken, fetchImpl = fetch
       (await post<{ name: string; uri: string }>(`${runBase(id)}/files/uploaded`, { name, cid })).data,
 
     metadata: async (id: string, userAddress: string) =>
-      (await post<{ tokenUri: string }>(`${runBase(id)}/metadata`, { userAddress })).data,
+      (await post<{ tokenUri: string }>(`${runBase(id)}/certificate-metadata`, { userAddress })).data,
 
     resolveWallets: async (id: string) =>
-      (await post<{ pending: string[] }>(`${runBase(id)}/wallets/resolve`)).data.pending,
+      (await post<{ pending: string[] }>(`${runBase(id)}/recipients/resolve`)).data.pending,
 
     registerWallet: async (id: string, request: WalletRequest) =>
-      (await post<{ recipient: string; walletAddress: string }>(`${runBase(id)}/wallets`, request)).data,
+      (await post<{ recipient: string; walletAddress: string }>(`${runBase(id)}/recipients`, request)).data,
 
     confirmCollection: (id: string) => confirm(`${runCollectionBase(id)}/confirm`),
     confirmBatch: (id: string, index: number) => confirm(`${runBatchBase(id, index)}/confirm`),
