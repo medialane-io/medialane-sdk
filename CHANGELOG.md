@@ -2,6 +2,24 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [Unreleased]
+
+### Added
+
+- `setupWalletKey({ newOwnerPubkey, signature, expiration })`: makes the passkey the only owner of the session
+  account's wallet. `409` when the wallet is already set up.
+
+### Changed
+
+- `registerBusinessProvisioning` takes only an email recipient and returns `{ chain, walletAddress }`.
+- `checkEmail` returns `{ exists }`; `verifyEmailCode` returns nothing.
+- `getSessionWallet` returns `{ walletAddress, needsKeySetup } | null`; when `needsKeySetup` is true, call
+  `setupWalletKey`.
+
+### Removed
+
+- `claimWallet`, `walletWaiting` and `waitingWallets`.
+
 ## [0.138.0] — 2026-10-01
 
 ### Changed

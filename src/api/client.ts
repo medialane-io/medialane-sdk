@@ -652,7 +652,7 @@ export class ApiClient {
 
   registerBusinessProvisioning(params: {
     chain?: "STARKNET";
-    recipientScheme: string;
+    recipientScheme: "email";
     recipientValue: string;
   }): Promise<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }> {
     return this.post<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }>(
@@ -815,11 +815,9 @@ export class ApiClient {
     });
   }
 
-  async checkEmail(email: string): Promise<{ exists: boolean; walletWaiting: boolean }> {
-    const body = await this.get<{ exists: boolean; walletWaiting?: boolean }>(
-      `/v1/auth/email/exists?email=${encodeURIComponent(email)}`,
-    );
-    return { exists: body.exists, walletWaiting: body.walletWaiting === true };
+  async checkEmail(email: string): Promise<{ exists: boolean }> {
+    const body = await this.get<{ exists: boolean }>(`/v1/auth/email/exists?email=${encodeURIComponent(email)}`);
+    return { exists: body.exists };
   }
 
   async requestEmailCode(email: string): Promise<void> {
@@ -830,21 +828,22 @@ export class ApiClient {
     await this.post<unknown>("/v1/auth/email/register-account", { email });
   }
 
-  async verifyEmailCode(email: string, code: string): Promise<{ waitingWallets: string[] }> {
-    const body = await this.post<{ waitingWallets?: string[] }>("/v1/auth/email/verify-code", { email, code });
-    return { waitingWallets: body.waitingWallets ?? [] };
+  async verifyEmailCode(email: string, code: string): Promise<void> {
+    await this.post<unknown>("/v1/auth/email/verify-code", { email, code });
   }
 
-  claimWallet(params: {
-    newOwnerPubkey: string;
-    proofs: { walletAddress: string; signature: string[]; expiration: number }[];
-  }): Promise<{ claimed: string[] }> {
-    return this.post<{ claimed: string[] }>("/v1/users/me/claim-wallet", params);
+  /**
+   * Makes the passkey the only owner of the session account's wallet. `signature` is the passkey's owner-alive
+   * proof for the wallet. Answers 409 when the wallet is already set up.
+   */
+  setupWalletKey(params: { newOwnerPubkey: string; signature: string[]; expiration: number }): Promise<{ walletAddress: string }> {
+    return this.post<{ walletAddress: string }>("/v1/users/me/wallet/key", params);
   }
 
-  async getSessionWallet(): Promise<string | null> {
-    const body = await this.post<{ walletAddress?: string | null }>("/v1/users/me/wallet", {});
-    return body.walletAddress ?? null;
+  /** The session account's wallet, and whether its passkey still has to be set up (`setupWalletKey`). */
+  async getSessionWallet(): Promise<{ walletAddress: string; needsKeySetup: boolean } | null> {
+    const body = await this.post<{ walletAddress?: string | null; needsKeySetup?: boolean }>("/v1/users/me/wallet", {});
+    return body.walletAddress ? { walletAddress: body.walletAddress, needsKeySetup: body.needsKeySetup === true } : null;
   }
 
   getMyWallet(siwsToken: string): Promise<ApiUserWallet | null> {

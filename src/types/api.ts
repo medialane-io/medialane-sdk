@@ -1036,16 +1036,8 @@ export interface ApiAdminCollectionClaim extends ApiCollectionClaim {
 }
 
 export interface ApiBusinessProvisioning {
-  id: string;
-  accountId: string;
   chain: string;
   walletAddress: string;
-
-  recipientScheme: string;
-  recipientValue: string;
-  interimOwnerPubkey: string | null;
-  newOwnerPubkey: string | null;
-  status: "DEPLOYED" | "REUSED" | "TRANSFERRED";
 }
 
 export interface ApiWalletActivity {
