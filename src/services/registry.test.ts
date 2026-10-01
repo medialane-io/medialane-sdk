@@ -67,3 +67,16 @@ test("ip-ticketing adds airdrop on top of ip-tickets' capabilities", () => {
   expect(hasCapability("ip-ticketing", "airdrop")).toBe(true);
   expect(hasCapability("ip-tickets", "airdrop")).toBe(false);
 });
+
+test("certificate-emission shares the pop-protocol factory, not a separate contract", () => {
+  const emission = getService("certificate-emission")!;
+  const pop = getService("pop-protocol")!;
+  expect(emission.onchain?.STARKNET?.factoryAddress).toBe(pop.onchain?.STARKNET?.factoryAddress);
+  expect(emission.onchain?.STARKNET?.classHash).toBe(pop.onchain?.STARKNET?.classHash);
+});
+
+test("certificate-emission adds airdrop on top of pop-protocol's capabilities, but never claim", () => {
+  expect(hasCapability("certificate-emission", "airdrop")).toBe(true);
+  expect(hasCapability("certificate-emission", "claim")).toBe(false);
+  expect(hasCapability("pop-protocol", "airdrop")).toBe(false);
+});
