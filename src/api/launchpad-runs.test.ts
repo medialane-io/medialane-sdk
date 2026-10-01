@@ -69,3 +69,31 @@ test("a base URL with a trailing slash does not double the slash", () => {
   const client = createLaunchpadRunsClient({ baseUrl: `${BASE}/`, getToken: () => null, fetchImpl: recordingFetch().impl });
   expect(client.runBase("run1")).toBe(`${BASE}/v1/portal/runs/run1`);
 });
+
+test("certificate-emission steps use their own paths — distinct from ticketing's, so the two never collide on the backend's shared run routes", async () => {
+  const { impl, bodies, urls } = recordingFetch();
+  const client = make(impl);
+
+  await client.certificateEmission.uploadUrl("run1", "a.png");
+  await client.certificateEmission.uploaded("run1", "a.png", "bafy-cid-123456");
+  await client.certificateEmission.metadata("run1", "0xowner");
+  await client.certificateEmission.resolveWallets("run1");
+  await client.certificateEmission.registerWallet("run1", { recipient: "ana@x.com" });
+  await client.certificateEmission.confirmCollection("run1");
+  await client.certificateEmission.confirmBatch("run1", 0);
+
+  const base = `${BASE}/v1/portal/runs/run1`;
+  expect(urls).toEqual([
+    `${base}/files/upload-url`,
+    `${base}/files/uploaded`,
+    `${base}/certificate-metadata`,
+    `${base}/recipients/resolve`,
+    `${base}/recipients`,
+    `${base}/collection/confirm`,
+    `${base}/batches/0/confirm`,
+  ]);
+  expect(bodies[0]).toEqual({ name: "a.png" });
+  expect(bodies[2]).toEqual({ userAddress: "0xowner" });
+  expect(bodies[4]).toEqual({ recipient: "ana@x.com" });
+  expect("confirmTier" in client.certificateEmission).toBe(false);
+});

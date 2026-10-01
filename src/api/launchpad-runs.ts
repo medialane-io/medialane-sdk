@@ -34,6 +34,17 @@ export type TicketingNextStep =
   | { kind: "wait"; index: number }
   | { kind: "done" };
 
+/** What a paid Certificate Emission run asks for next. No tier step — PoP collections are flat. */
+export type CertificateEmissionNextStep =
+  | { kind: "collection" }
+  | { kind: "wait-collection" }
+  | { kind: "upload"; files: string[] }
+  | { kind: "certificate-metadata" }
+  | { kind: "wallets" }
+  | { kind: "batch"; index: number }
+  | { kind: "wait"; index: number }
+  | { kind: "done" };
+
 export interface WalletRequest {
   recipient: string;
 }
@@ -52,12 +63,16 @@ interface LaunchpadRunBase {
 
 export type DataTokenizationRun = LaunchpadRunBase & { service: "data-tokenization-erc721"; next?: NextStep };
 export type TicketingRun = LaunchpadRunBase & { service: "ip-ticketing"; next?: TicketingNextStep };
-export type LaunchpadRun = DataTokenizationRun | TicketingRun;
+export type CertificateEmissionRun = LaunchpadRunBase & { service: "certificate-emission"; next?: CertificateEmissionNextStep };
+export type LaunchpadRun = DataTokenizationRun | TicketingRun | CertificateEmissionRun;
 
 export const isDataTokenizationRun = (run: LaunchpadRun): run is DataTokenizationRun =>
   run.service === "data-tokenization-erc721";
 
 export const isTicketingRun = (run: LaunchpadRun): run is TicketingRun => run.service === "ip-ticketing";
+
+export const isCertificateEmissionRun = (run: LaunchpadRun): run is CertificateEmissionRun =>
+  run.service === "certificate-emission";
 
 export interface ConfirmResult {
   pending: boolean;
@@ -142,6 +157,26 @@ export function createLaunchpadRunsClient({ baseUrl, getToken, fetchImpl = fetch
     confirmBatch: (id: string, index: number) => confirm(`${runBatchBase(id, index)}/confirm`),
   };
 
+  const certificateEmission = {
+    uploadUrl: async (id: string, name: string) =>
+      (await post<{ name: string; url: string }>(`${runBase(id)}/files/upload-url`, { name })).data.url,
+
+    uploaded: async (id: string, name: string, cid: string) =>
+      (await post<{ name: string; uri: string }>(`${runBase(id)}/files/uploaded`, { name, cid })).data,
+
+    metadata: async (id: string, userAddress: string) =>
+      (await post<{ tokenUri: string }>(`${runBase(id)}/certificate-metadata`, { userAddress })).data,
+
+    resolveWallets: async (id: string) =>
+      (await post<{ pending: string[] }>(`${runBase(id)}/recipients/resolve`)).data.pending,
+
+    registerWallet: async (id: string, request: WalletRequest) =>
+      (await post<{ recipient: string; walletAddress: string }>(`${runBase(id)}/recipients`, request)).data,
+
+    confirmCollection: (id: string) => confirm(`${runCollectionBase(id)}/confirm`),
+    confirmBatch: (id: string, index: number) => confirm(`${runBatchBase(id, index)}/confirm`),
+  };
+
   return {
     authorizedFetch,
     runBase,
@@ -149,6 +184,7 @@ export function createLaunchpadRunsClient({ baseUrl, getToken, fetchImpl = fetch
     runCollectionBase,
     runTierBase,
     ticketing,
+    certificateEmission,
 
     list: async () => (await call<LaunchpadRun[]>(runsUrl)).data,
 

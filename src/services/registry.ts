@@ -94,6 +94,25 @@ const SERVICES = {
     ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },
+  "certificate-emission": {
+    id: "certificate-emission",
+    displayName: "Certificate Emission",
+    description: "Issue a soulbound credential to a list of recipients in one run — everyone gets a wallet and their certificate.",
+    standard: "ERC721",
+    provenance: "MEDIALANE",
+    onchain: {
+      STARKNET: {
+        factoryAddress: SN.popFactory!,
+        classHash: SN.popCollectionClassHash!,
+      },
+    },
+    uiVariant: "pop",
+    capabilities: ["mint", "airdrop"],
+    events: [
+      { name: "CollectionCreated", emittedBy: "factory" },
+    ],
+    metadataSchema: { licenseDefault: "CC BY-SA" },
+  },
   "drop-collection": {
     id: "drop-collection",
     displayName: "Collection Drop",

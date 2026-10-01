@@ -10,6 +10,7 @@ export {
   createLaunchpadRunsClient,
   isDataTokenizationRun,
   isTicketingRun,
+  isCertificateEmissionRun,
   RunRequestError,
 } from "./api/launchpad-runs.js";
 export type {
@@ -18,11 +19,13 @@ export type {
   LaunchpadRun,
   DataTokenizationRun,
   TicketingRun,
+  CertificateEmissionRun,
   RunStatus,
   RunQuote,
   RunQuoteLine,
   NextStep,
   TicketingNextStep,
+  CertificateEmissionNextStep,
   WalletRequest,
   ConfirmResult,
   TokenSource,
