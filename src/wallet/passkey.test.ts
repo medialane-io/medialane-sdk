@@ -1,4 +1,4 @@
-import { computeAccountAddress } from "../starknet/business-provisioning/account.js";
+import { computeAccountAddress } from "../starknet/media-wallet/account.js";
 import { test, expect } from "bun:test";
 import { createPasskeyOwner, PasskeyCancelledError } from "./passkey.js";
 

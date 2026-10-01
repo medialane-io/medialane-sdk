@@ -652,12 +652,11 @@ export class ApiClient {
 
   registerBusinessProvisioning(params: {
     chain?: "STARKNET";
-    recipientScheme: "email";
-    recipientValue: string;
+    email: string;
   }): Promise<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }> {
     return this.post<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }>(
       "/v1/business/provisioning",
-      { chain: params.chain ?? "STARKNET", recipientScheme: params.recipientScheme, recipientValue: params.recipientValue },
+      { chain: params.chain ?? "STARKNET", email: params.email },
     );
   }
 

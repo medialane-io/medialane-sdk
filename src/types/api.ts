@@ -582,7 +582,7 @@ export interface EmissionParams {
   chain?: "STARKNET";
   service: string;
   owner: string;
-  recipientScheme?: string;
+  /** Recipient emails. */
   recipients: string[];
   tokenUri?: string;
   collectionId?: string;

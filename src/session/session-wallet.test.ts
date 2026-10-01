@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 import { typedData as starknetTypedData } from "starknet";
-import { computeOwnerGuid, ownerAliveTypedData } from "../starknet/business-provisioning/handoff.js";
+import { computeOwnerGuid, ownerAliveTypedData } from "../starknet/media-wallet/owners.js";
 import { signWithPrivateKey, starkKeyPairFromPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 import { adoptSessionWallet, setupSessionWalletKey, type SessionWalletKeyDeps } from "./session-wallet.js";
 

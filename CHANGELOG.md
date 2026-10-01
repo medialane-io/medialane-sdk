@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [Unreleased]
+
+### Changed
+
+- `registerBusinessProvisioning` takes `{ email }`; `emitToRecipients` takes `recipients` as emails, without
+  `recipientScheme`.
+- `isDeployed` throws when the read fails instead of answering `false`; only "contract not found" is `false`.
+
 ## [0.142.0] — 2026-10-01
 
 ### Added

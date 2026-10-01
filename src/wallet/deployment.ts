@@ -1,7 +1,7 @@
 import { Account, stark, typedData as starknetTypedData, type ProviderInterface } from "starknet";
 import { getCoordinates } from "../chains.js";
 import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
-import { ownerConstructorCalldata } from "../starknet/business-provisioning/account.js";
+import { ownerConstructorCalldata } from "../starknet/media-wallet/account.js";
 import { requestSiwsToken } from "../starknet/siws/client.js";
 import { isDeployed } from "./addresses.js";
 import type { ExecutedTransaction, SealedOwner } from "./types.js";
@@ -100,7 +100,7 @@ export async function waitUntilDeployed(
   const deadline = Date.now() + timeoutMs;
   let wait = 1_000;
   for (;;) {
-    if (await isDeployed(provider, address)) return;
+    if (await isDeployed(provider, address).catch(() => false)) return;
     if (Date.now() >= deadline) {
       throw new Error(
         "Your wallet was submitted but has not appeared on Starknet yet. Please try again in a moment.",

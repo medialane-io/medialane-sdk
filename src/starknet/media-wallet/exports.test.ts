@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 
-test("business provisioning primitives are exported from the starknet subpath barrel", async () => {
+test("Media Wallet primitives are exported from the starknet subpath barrel", async () => {
   const mod = await import("../index.js");
   expect(typeof mod.deriveOwnerKeyPair).toBe("function");
   expect(typeof mod.computeAccountAddress).toBe("function");

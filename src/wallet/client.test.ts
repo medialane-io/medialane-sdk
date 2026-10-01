@@ -1,8 +1,8 @@
 import { test, expect } from "bun:test";
 import type { Call, ProviderInterface } from "starknet";
 import { createMediaWallet, canRemoveDevice, describeDevices } from "./client.js";
-import { computeOwnerGuid } from "../starknet/business-provisioning/handoff.js";
-import type { GuardianInfo } from "../starknet/business-provisioning/guardian.js";
+import { computeOwnerGuid } from "../starknet/media-wallet/owners.js";
+import type { GuardianInfo } from "../starknet/media-wallet/guardian.js";
 import type { PasskeyOwner, SealedOwner, WalletExecutor } from "./index.js";
 
 const PRIVATE_KEY = "0x012b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b";

@@ -1,4 +1,4 @@
-import { computeAccountAddress } from "../starknet/business-provisioning/account.js";
+import { computeAccountAddress } from "../starknet/media-wallet/account.js";
 import { starkKeyPairFromPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 
 const PREFIX = "medialane-recovery:v1:";

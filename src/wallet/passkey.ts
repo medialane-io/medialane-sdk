@@ -5,7 +5,7 @@ import {
   starkKeyPairFromPrivateKey,
   unsealPrivateKey,
 } from "../starknet/passkey-wallet/crypto.js";
-import { computeAccountAddress } from "../starknet/business-provisioning/account.js";
+import { computeAccountAddress } from "../starknet/media-wallet/account.js";
 import type { SealedOwner } from "./types.js";
 import type { RecoveryKey } from "./recovery-key.js";
 

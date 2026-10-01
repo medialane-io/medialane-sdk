@@ -80,7 +80,7 @@ export function buildChangeOwnersCall(
 ): Call {
   if (!ownerAlive) {
     throw new Error(
-      "Handing an account over removes the signing owner, so the account requires an owner-alive proof from the incoming owner. Sign ownerAliveTypedData with the new owner key and pass it here.",
+      "Replacing the signing owner requires an owner-alive proof from the new owner. Sign ownerAliveTypedData with the new owner key and pass it here.",
     );
   }
   return changeOwners(

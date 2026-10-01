@@ -2,7 +2,7 @@ import { typedData as starknetTypedData } from "starknet";
 import type { ApiClient } from "../api/client.js";
 import type { CreatedOwner } from "../wallet/passkey.js";
 import type { SealedOwner } from "../wallet/types.js";
-import { computeOwnerGuid, ownerAliveTypedData } from "../starknet/business-provisioning/handoff.js";
+import { computeOwnerGuid, ownerAliveTypedData } from "../starknet/media-wallet/owners.js";
 import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 
 export interface SessionWallet {

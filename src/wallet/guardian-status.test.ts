@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import type { GuardianInfo, EscapeInfo } from "../starknet/business-provisioning/guardian.js";
+import type { GuardianInfo, EscapeInfo } from "../starknet/media-wallet/guardian.js";
 import { describeGuardianStatus, describeRecoveryAction } from "./guardian-status.js";
 
 const GUARDIAN: GuardianInfo = { type: "Starknet", guid: "0xguid", storedValue: "0xabc123" };
