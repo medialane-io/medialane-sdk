@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import { createSelfFundConsent, type SelfFundFeeEstimate } from "./self-fund-consent.js";
 
-const FEE: SelfFundFeeEstimate = { feeRaw: 1000n, unit: "FRI" };
+const FEE: SelfFundFeeEstimate = { feeRaw: 1000n, unit: "FRI", balanceRaw: null };
 const CALLS = [{ contractAddress: "0x1", entrypoint: "transfer", calldata: [] }];
 
 test("denies by default, so real funds are never spent without a handler", async () => {

@@ -42,7 +42,7 @@ function fetchStub(handlers: { build?: Response; execute?: Response }): typeof f
 
 test("a sponsored transaction never asks the user to pay", async () => {
   let asked = 0;
-  const consent = createSelfFundConsent(async () => ({ feeRaw: 1n, unit: "FRI" }));
+  const consent = createSelfFundConsent(async () => ({ feeRaw: 1n, unit: "FRI", balanceRaw: null }));
   consent.registerHandler(async () => {
     asked += 1;
     return true;
@@ -61,7 +61,7 @@ test("a sponsored transaction never asks the user to pay", async () => {
 });
 
 test("an unavailable sponsor asks the user, then pays from their wallet", async () => {
-  const consent = createSelfFundConsent(async () => ({ feeRaw: 1n, unit: "FRI" }));
+  const consent = createSelfFundConsent(async () => ({ feeRaw: 1n, unit: "FRI", balanceRaw: null }));
   consent.registerHandler(async () => true);
   const executor = sponsoredExecutor({
     provider,
@@ -79,7 +79,7 @@ test("an unavailable sponsor asks the user, then pays from their wallet", async 
 });
 
 test("declining leaves the transaction unsent", async () => {
-  const consent = createSelfFundConsent(async () => ({ feeRaw: 1n, unit: "FRI" }));
+  const consent = createSelfFundConsent(async () => ({ feeRaw: 1n, unit: "FRI", balanceRaw: null }));
   consent.registerHandler(async () => false);
   const executor = sponsoredExecutor({
     provider,
@@ -98,7 +98,7 @@ test("declining leaves the transaction unsent", async () => {
 
 test("a refused transaction is never offered for self-funding", async () => {
   let asked = 0;
-  const consent = createSelfFundConsent(async () => ({ feeRaw: 1n, unit: "FRI" }));
+  const consent = createSelfFundConsent(async () => ({ feeRaw: 1n, unit: "FRI", balanceRaw: null }));
   consent.registerHandler(async () => {
     asked += 1;
     return true;
