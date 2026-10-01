@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [Unreleased]
+
+### Added
+
+- `adoptSessionWallet(api, saveAddress)`: the session account's wallet, saved as this device's account. `null` only
+  when the account has no wallet; a failed lookup throws.
+- `setupSessionWalletKey(api, walletAddress, { createOwnerKey, saveOwner })`: makes a new owner key the only owner
+  of the session account's wallet.
+
 ## [0.140.0] — 2026-10-01
 
 ### Changed
