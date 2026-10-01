@@ -787,12 +787,13 @@ export class ApiClient {
     });
   }
 
-  getCollectionBySlug(slug: string): Promise<ApiCollection | null> {
-    return this.request<ApiCollection | null>(
+  async getCollectionBySlug(slug: string): Promise<ApiCollection | null> {
+    const res = await this.request<{ data: ApiCollection } | null>(
       `/v1/collections/by-slug/${encodeURIComponent(slug.toLowerCase().trim())}`,
       { method: "GET" },
       { allow404: true },
     );
+    return res?.data ?? null;
   }
 
   async registerUser(params: {
@@ -1206,6 +1207,24 @@ export class ApiClient {
     if (query.owner) params.set("owner", query.owner);
     if (query.open !== undefined) params.set("open", String(query.open));
     return this.get<ApiResponse<ApiSponsorshipOffer[]>>(`/v1/sponsorship/offers?${params}`);
+  }
+
+  async getSponsorshipOffer(offerId: string): Promise<ApiSponsorshipOffer | null> {
+    const res = await this.request<{ data: ApiSponsorshipOffer } | null>(
+      `/v1/sponsorship/offers/${encodeURIComponent(offerId)}`,
+      { method: "GET" },
+      { allow404: true },
+    );
+    return res?.data ?? null;
+  }
+
+  async getSponsorshipProposal(proposalId: string): Promise<ApiSponsorshipProposal | null> {
+    const res = await this.request<{ data: ApiSponsorshipProposal } | null>(
+      `/v1/sponsorship/proposals/${encodeURIComponent(proposalId)}`,
+      { method: "GET" },
+      { allow404: true },
+    );
+    return res?.data ?? null;
   }
 
   async getSponsorshipBids(offerId: string): Promise<ApiSponsorshipBid[]> {

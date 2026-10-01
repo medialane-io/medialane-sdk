@@ -203,3 +203,26 @@ test("pricing is read from the public pricing route", async () => {
     expect(new URL(calls[0].url).pathname).toBe("/v1/pricing");
   });
 });
+
+test("a single sponsorship offer and proposal are read, and a missing one is null", async () => {
+  await withStub({ data: { offerId: "1" } }, async (client, calls) => {
+    expect((await client.getSponsorshipOffer("1"))?.offerId).toBe("1");
+    await client.getSponsorshipProposal("2");
+    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(["/v1/sponsorship/offers/1", "/v1/sponsorship/proposals/2"]);
+  });
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(JSON.stringify({ error: "Offer not found" }), { status: 404 })) as unknown as typeof fetch;
+  try {
+    const client = new ApiClient("https://api.test", "key");
+    expect(await client.getSponsorshipOffer("9")).toBeNull();
+    expect(await client.getSponsorshipProposal("9")).toBeNull();
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("a collection looked up by slug is the collection, not its response envelope", async () => {
+  await withStub({ data: { contractAddress: A, name: "C" } }, async (client) => {
+    expect((await client.getCollectionBySlug("c"))?.contractAddress).toBe(A);
+  });
+});

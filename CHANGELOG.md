@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.137.0] — 2026-10-01
+
+### Added
+
+- `getSponsorshipOffer(offerId)` and `getSponsorshipProposal(proposalId)`; `null` when not found.
+
+### Fixed
+
+- `getCollectionBySlug` returned the response envelope `{ data }` typed as the collection. It returns the
+  collection itself, or `null`.
+
 ## [0.136.0] — 2026-10-01
 
 ### Added
