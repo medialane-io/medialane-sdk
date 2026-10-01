@@ -3,6 +3,14 @@ import { getStarknetCoordinates } from "../chains.js";
 
 const SN = getStarknetCoordinates("STARKNET");
 
+/**
+ * A self-serve service and its business-run counterpart (e.g. `pop-protocol`/`certificate-emission`,
+ * `ip-tickets`/`ip-ticketing`) share one deployed factory/class hash but are two different id spaces.
+ * The backend mirror indexer tags every deployed collection by factory identity alone, so it always
+ * writes the self-serve id to a Collection's `service` field — never the business-run id, regardless
+ * of which flow actually created that instance. Filter a collection picker on the self-serve id.
+ * See `medialane-core/docs/architecture/05-service-model.md` §VI.
+ */
 const SERVICES = {
   "mip-erc721": {
     id: "mip-erc721",
