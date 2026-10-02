@@ -7,14 +7,9 @@ import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 
 export interface SessionWallet {
   walletAddress: string;
-  /** The wallet's key is not set up yet: call `setupSessionWalletKey`. */
   needsKeySetup: boolean;
 }
 
-/**
- * The wallet of the account behind the session, saved as this device's account. `null` only when the account has
- * no wallet; a failed lookup throws, so it is never mistaken for an account without one.
- */
 export async function adoptSessionWallet(
   api: Pick<ApiClient, "getSessionWallet">,
   saveAddress: (walletAddress: string) => void,
@@ -32,7 +27,6 @@ export interface SessionWalletKeyDeps {
 
 const PROOF_TTL_SECONDS = 600;
 
-/** Creates the owner key and makes it the only owner of the session account's wallet. */
 export async function setupSessionWalletKey(
   api: Pick<ApiClient, "setupWalletKey">,
   walletAddress: string,

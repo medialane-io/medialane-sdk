@@ -14,7 +14,6 @@ export interface FundingWallet {
   sendTransfer(call: FundingTransferCall): Promise<{ txHash: string }>;
 }
 
-/** A wallet adapter throws this only when it is certain nothing was broadcast: a rejected prompt, or no sponsor available. */
 export class FundingTransferNotSentError extends Error {
   constructor(message = "The transfer was not sent.") {
     super(message);
@@ -24,7 +23,6 @@ export class FundingTransferNotSentError extends Error {
 
 type Res<T> = Promise<{ data: T }>;
 
-/** The funding calls with the caller's sign-in already bound. */
 export interface FundingApi {
   createFunding(input: { method: string; params: Record<string, unknown> }): Res<ApiFundingIntent>;
   getFundingChallenge(id: string, payer: string): Res<{ typedData: unknown }>;
@@ -94,8 +92,6 @@ export async function fundWithChainTransfer(
     transferStarted = true;
     ({ txHash } = await wallet.sendTransfer(buildFundingTransferCall(authorized.data.instructions)));
   } catch (err) {
-    // Close the intent only when it is certain that no money moved. If the wallet failed in a way
-    // that leaves it unknown whether a transfer went out, the payment may still land: leave it open.
     if (!transferStarted || err instanceof FundingTransferNotSentError) {
       await api.cancelFunding(intent.id).catch(() => undefined);
     }

@@ -26,13 +26,11 @@ function keyPair(privateKey: string) {
   }
 }
 
-/** The recovery key a user saves: a wallet address and one of its owner keys, in one string. */
 export function encodeRecoveryKey(key: RecoveryKey): string {
   if (!ADDRESS.test(key.walletAddress) || BigInt(key.walletAddress) === 0n) throw new InvalidRecoveryKeyError();
   return `${PREFIX}${canonicalAddress(key.walletAddress)}:${keyPair(key.privateKey).privateKeyHex}`;
 }
 
-/** Reads a saved recovery key. A bare private key, saved before v1, restores the wallet that key first deployed. */
 export function parseRecoveryKey(input: string): RecoveryKey {
   const trimmed = input.trim();
   if (!trimmed.startsWith(PREFIX)) {

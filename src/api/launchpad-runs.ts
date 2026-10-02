@@ -21,7 +21,6 @@ export type NextStep =
   | { kind: "wait"; index: number }
   | { kind: "done" };
 
-/** What a paid IP Ticketing run asks for next. Kinds it shares with the shared union keep their shape. */
 export type TicketingNextStep =
   | { kind: "collection" }
   | { kind: "wait-collection" }
@@ -34,7 +33,6 @@ export type TicketingNextStep =
   | { kind: "wait"; index: number }
   | { kind: "done" };
 
-/** What a paid Certificate Emission run asks for next. No tier step — PoP collections are flat. */
 export type CertificateEmissionNextStep =
   | { kind: "collection" }
   | { kind: "wait-collection" }
@@ -94,13 +92,11 @@ export type TokenSource = () => Promise<string | null>;
 
 
 export interface LaunchpadRunsClientOptions {
-  /** The backend, or an app's proxy to it. `/v1/portal/runs` is appended. */
   baseUrl: string;
   getToken: TokenSource;
   fetchImpl?: typeof fetch;
 }
 
-/** Paid launchpad runs for the caller's account: create, pay, execute step by step, confirm. */
 export function createLaunchpadRunsClient({ baseUrl, getToken, fetchImpl = fetch }: LaunchpadRunsClientOptions) {
   const runsUrl = `${baseUrl.replace(/\/$/, "")}/v1/portal/runs`;
   const runBase = (id: string): string => `${runsUrl}/${id}`;
@@ -145,7 +141,6 @@ export function createLaunchpadRunsClient({ baseUrl, getToken, fetchImpl = fetch
     metadata: async (id: string, userAddress: string) =>
       (await post<{ tokenUri: string }>(`${runBase(id)}/metadata`, { userAddress })).data,
 
-    /** Guests who still need a wallet deployed; the ones who already have one are recorded on the run. */
     resolveWallets: async (id: string) =>
       (await post<{ pending: string[] }>(`${runBase(id)}/wallets/resolve`)).data.pending,
 

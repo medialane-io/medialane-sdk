@@ -3,7 +3,6 @@ import type { Call } from "starknet";
 export interface SelfFundFeeEstimate {
   feeRaw: bigint;
   unit: string;
-  /** The wallet's balance of the fee token; `null` when it could not be read. */
   balanceRaw: bigint | null;
 }
 

@@ -36,7 +36,6 @@ export interface CreatedOwner {
 export interface PasskeyOwner {
   createOwnerKey(): Promise<CreatedOwner>;
   unlockOwnerKey(sealed: SealedOwner): Promise<string>;
-  /** Seals an owner key restored from a recovery key, for the wallet it owns. */
   sealImportedOwnerKey(recovery: RecoveryKey): Promise<SealedOwner>;
 }
 

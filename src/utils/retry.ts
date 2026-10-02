@@ -14,7 +14,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** A read can be repeated safely; a write only when the server turned it away without acting (429). */
 export function isRetryableFor(method: string, err: unknown): boolean {
   if (err instanceof MedialaneApiError && err.status === 429) return true;
   const isRead = method === "GET" || method === "HEAD";

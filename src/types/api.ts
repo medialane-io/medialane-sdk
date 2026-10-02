@@ -582,7 +582,6 @@ export interface EmissionParams {
   chain?: "STARKNET";
   service: string;
   owner: string;
-  /** Recipient emails. */
   recipients: string[];
   tokenUri?: string;
   collectionId?: string;
@@ -1179,7 +1178,6 @@ export interface ApiDropState {
   paused: boolean;
 }
 
-/** An IP Ticket or IP Club membership tier, as read from its contract. Amounts are decimal strings. */
 export interface ApiTierOnchain {
   maxSupply: string;
   minted: string;
@@ -1215,7 +1213,6 @@ export interface ApiUsernameClaim {
 
 export type ApiReportTargetType = "COLLECTION" | "TOKEN" | "CREATOR" | "COMMENT";
 
-/** `targetKey` is built from the target fields. */
 export interface ApiSubmitReport {
   targetType: ApiReportTargetType;
   targetContract?: string;

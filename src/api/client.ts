@@ -247,7 +247,6 @@ export class ApiClient {
     return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/token/${this.addr(contract)}/${tokenId}`);
   }
 
-  /** Offers others made on the address's assets. */
   getReceivedOffers(address: string, opts: { page?: number; limit?: number } = {}): Promise<ApiResponse<ApiOrder[]>> {
     const params = new URLSearchParams({ page: String(opts.page ?? 1), limit: String(opts.limit ?? 50) });
     return this.get<ApiResponse<ApiOrder[]>>(`/v1/orders/received/${this.addr(address)}?${params}`);
@@ -476,7 +475,6 @@ export class ApiClient {
     return this.post<ApiResponse<ApiMetadataUpload>>("/v1/metadata/upload", metadata);
   }
 
-  /** Pins several JSON files as one IPFS directory, e.g. a drop's token metadata. */
   async uploadMetadataDirectory(files: { name: string; content: unknown }[]): Promise<{ cid: string; baseUri: string }> {
     const res = await this.post<{ data: { cid: string; baseUri: string } }>("/v1/metadata/upload-directory", { files });
     return res.data;
@@ -543,7 +541,6 @@ export class ApiClient {
     });
   }
 
-  /** @deprecated Use the funding methods (`createFunding`, or `fundWithChainTransfer` from `@medialane/sdk/starknet`). This call only nudges a legacy scanner and never credits anything itself. */
   checkDeposit(txHash: string, siwsToken?: string): Promise<ApiResponse<{ deposits: number }>> {
     return this.request<ApiResponse<{ deposits: number }>>("/v1/portal/credits/check", {
       method: "POST",
@@ -831,15 +828,10 @@ export class ApiClient {
     await this.post<unknown>("/v1/auth/email/verify-code", { email, code });
   }
 
-  /**
-   * Makes the passkey the only owner of the session account's wallet. `signature` is the passkey's owner-alive
-   * proof for the wallet. Answers 409 when the wallet is already set up.
-   */
   setupWalletKey(params: { newOwnerPubkey: string; signature: string[]; expiration: number }): Promise<{ walletAddress: string }> {
     return this.post<{ walletAddress: string }>("/v1/users/me/wallet/key", params);
   }
 
-  /** The session account's wallet, and whether its passkey still has to be set up (`setupWalletKey`). */
   async getSessionWallet(): Promise<{ walletAddress: string; needsKeySetup: boolean } | null> {
     const body = await this.post<{ walletAddress?: string | null; needsKeySetup?: boolean }>("/v1/users/me/wallet", {});
     return body.walletAddress ? { walletAddress: body.walletAddress, needsKeySetup: body.needsKeySetup === true } : null;
