@@ -6,7 +6,10 @@ test("Media Wallet primitives are exported from the starknet subpath barrel", as
   expect(typeof mod.computeAccountAddress).toBe("function");
   expect(typeof mod.ownerConstructorCalldata).toBe("function");
   expect(typeof mod.computeOwnerGuid).toBe("function");
-  expect(typeof mod.buildChangeOwnersCall).toBe("function");
+  expect(typeof mod.buildAddOwnerCall).toBe("function");
+  expect(typeof mod.buildRemoveOwnerByGuidCall).toBe("function");
+  expect("buildChangeOwnersCall" in mod).toBe(false);
+  expect("ownerAliveTypedData" in mod).toBe(false);
   expect(typeof mod.buildDeployAccountParams).toBe("function");
   expect(typeof mod.buildSetFirstGuardianCall).toBe("function");
   expect(typeof mod.buildTriggerEscapeOwnerCall).toBe("function");

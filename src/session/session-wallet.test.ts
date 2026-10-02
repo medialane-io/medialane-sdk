@@ -1,8 +1,6 @@
 import { test, expect } from "bun:test";
-import { typedData as starknetTypedData } from "starknet";
-import { computeOwnerGuid, ownerAliveTypedData } from "../starknet/media-wallet/owners.js";
-import { signWithPrivateKey, starkKeyPairFromPrivateKey } from "../starknet/passkey-wallet/crypto.js";
-import { adoptSessionWallet, setupSessionWalletKey, type SessionWalletKeyDeps } from "./session-wallet.js";
+import type { SealedOwner } from "../wallet/types.js";
+import { adoptSessionWallet, claimSessionWallet, type SessionWalletClaimDeps } from "./session-wallet.js";
 
 test("adoptSessionWallet saves the account's wallet and returns it", async () => {
   const saved: string[] = [];
@@ -22,48 +20,94 @@ test("adoptSessionWallet throws when the lookup fails, so it is never read as no
   await expect(adoptSessionWallet(lookup, () => {})).rejects.toThrow("network down");
 });
 
-const privateKeyHex = "0x1234567890abcdef";
-const ownerPubKey = starkKeyPairFromPrivateKey(privateKeyHex).publicKeyHex;
+const WALLET = "0xabc";
+const fresh: SealedOwner = { credentialId: "c", ownerPubKey: "0x1", address: "0x999", iv: "i", ciphertext: "x" };
 
-function keyDeps() {
-  const saved: unknown[] = [];
-  const deps: SessionWalletKeyDeps = {
-    createOwnerKey: async () => ({
-      privateKeyHex,
-      sealed: { credentialId: "c", ownerPubKey, address: "", iv: "i", ciphertext: "x" },
-    }),
-    saveOwner: (sealed) => {
-      saved.push(sealed);
+function claimDeps(initial: SealedOwner | null = null) {
+  const log: string[] = [];
+  let stored = initial;
+  let created = 0;
+  const deps: SessionWalletClaimDeps = {
+    createOwnerKey: async () => {
+      created++;
+      log.push("create");
+      return { privateKeyHex: "0x1", sealed: fresh };
     },
-    now: () => 1_000,
+    loadOwner: () => stored,
+    saveOwner: (sealed) => {
+      log.push("save");
+      stored = sealed;
+    },
+    removeOwner: async (_sealed, guid) => {
+      log.push(`remove:${guid}`);
+    },
   };
-  return { deps, saved };
+  return { deps, log, stored: () => stored, created: () => created };
 }
 
-test("setupSessionWalletKey signs the owner-alive proof for the wallet with the new key", async () => {
-  const sent: unknown[] = [];
-  const { deps } = keyDeps();
-  await setupSessionWalletKey(
-    { setupWalletKey: async (params) => (sent.push(params), { walletAddress: "0xabc" }) },
-    "0xabc",
-    deps,
-  );
-  const expected = signWithPrivateKey(
-    privateKeyHex,
-    starknetTypedData.getMessageHash(ownerAliveTypedData(computeOwnerGuid(ownerPubKey), 1_600, "SN_MAIN") as never, "0xabc"),
-  );
-  expect(sent).toEqual([{ newOwnerPubkey: ownerPubKey, signature: expected, expiration: 1_600 }]);
+test("claimSessionWallet saves the new key for the wallet before it asks the server", async () => {
+  const { deps, log, stored } = claimDeps();
+  const api = { setupWalletKey: async () => (log.push("api"), { walletAddress: WALLET, removeOwnerGuid: null }) };
+  await claimSessionWallet(api, WALLET, deps);
+  expect(log).toEqual(["create", "save", "api"]);
+  expect(stored()).toEqual({ ...fresh, address: WALLET });
 });
 
-test("setupSessionWalletKey saves the new key for the wallet's address", async () => {
-  const { deps, saved } = keyDeps();
-  await setupSessionWalletKey({ setupWalletKey: async () => ({ walletAddress: "0xabc" }) }, "0xabc", deps);
-  expect(saved).toEqual([{ credentialId: "c", ownerPubKey, address: "0xabc", iv: "i", ciphertext: "x" }]);
+test("claimSessionWallet removes Medialane's key with the saved key once the server has added it", async () => {
+  const { deps, log } = claimDeps();
+  const api = { setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: "0x77" }) };
+  await claimSessionWallet(api, WALLET, deps);
+  expect(log).toEqual(["create", "save", "remove:0x77"]);
 });
 
-test("setupSessionWalletKey saves nothing when the setup is refused", async () => {
-  const { deps, saved } = keyDeps();
-  const api = { setupWalletKey: async () => Promise.reject(new Error("Verify your email first")) };
-  await expect(setupSessionWalletKey(api, "0xabc", deps)).rejects.toThrow("Verify your email first");
-  expect(saved).toEqual([]);
+test("claimSessionWallet removes nothing when Medialane's key is already gone", async () => {
+  const { deps, log } = claimDeps();
+  await claimSessionWallet({ setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: null }) }, WALLET, deps);
+  expect(log.some((entry) => entry.startsWith("remove"))).toBe(false);
+});
+
+test("after a failed server call the retry reuses the saved key and makes no second one", async () => {
+  const { deps, created } = claimDeps();
+  await expect(
+    claimSessionWallet({ setupWalletKey: async () => Promise.reject(new Error("timeout")) }, WALLET, deps),
+  ).rejects.toThrow("timeout");
+  await claimSessionWallet({ setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: null }) }, WALLET, deps);
+  expect(created()).toBe(1);
+});
+
+test("a cancelled removal keeps the key, and the retry removes again without a new key", async () => {
+  const { deps, log, created } = claimDeps();
+  const api = { setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: "0x77" }) };
+  let attempts = 0;
+  const flaky: SessionWalletClaimDeps = {
+    ...deps,
+    removeOwner: async (sealed, guid) => {
+      if (attempts++ === 0) throw new Error("Passkey prompt was cancelled.");
+      return deps.removeOwner(sealed, guid);
+    },
+  };
+  await expect(claimSessionWallet(api, WALLET, flaky)).rejects.toThrow("cancelled");
+  await claimSessionWallet(api, WALLET, flaky);
+  expect(created()).toBe(1);
+  expect(log).toContain("remove:0x77");
+});
+
+test("a failed key creation (no PRF) saves nothing and never reaches the server", async () => {
+  const { deps, log } = claimDeps();
+  const failing: SessionWalletClaimDeps = {
+    ...deps,
+    createOwnerKey: async () => Promise.reject(new Error("This browser didn't return a passkey PRF secret.")),
+  };
+  let called = false;
+  const api = { setupWalletKey: async () => ((called = true), { walletAddress: WALLET, removeOwnerGuid: null }) };
+  await expect(claimSessionWallet(api, WALLET, failing)).rejects.toThrow("PRF");
+  expect(called).toBe(false);
+  expect(log).toEqual([]);
+});
+
+test("a key already saved for another wallet is not reused", async () => {
+  const other: SealedOwner = { ...fresh, ownerPubKey: "0x5", address: "0xdef" };
+  const { deps, created } = claimDeps(other);
+  await claimSessionWallet({ setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: null }) }, WALLET, deps);
+  expect(created()).toBe(1);
 });

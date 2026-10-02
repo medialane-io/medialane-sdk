@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.146.0] — 2026-10-02
+
+### Changed
+
+- `setupWalletKey({ newOwnerPubkey })` returns `{ walletAddress, removeOwnerGuid }`.
+- `setupSessionWalletKey` is replaced by `claimSessionWallet(api, walletAddress, deps)`: the device saves the new key
+  before asking the server, and the user's own key removes the provisioning key.
+
+### Removed
+
+- `buildChangeOwnersCall`, `ownerAliveTypedData`, `OwnerAliveProof`.
+
 ## [0.144.0] — 2026-10-01
 
 ### Added

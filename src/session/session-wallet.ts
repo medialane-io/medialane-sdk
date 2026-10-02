@@ -1,9 +1,7 @@
-import { typedData as starknetTypedData } from "starknet";
 import type { ApiClient } from "../api/client.js";
 import type { CreatedOwner } from "../wallet/passkey.js";
 import type { SealedOwner } from "../wallet/types.js";
-import { computeOwnerGuid, ownerAliveTypedData } from "../starknet/media-wallet/owners.js";
-import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
+import { normalizeWalletAddress } from "../wallet/addresses.js";
 
 export interface SessionWallet {
   walletAddress: string;
@@ -19,25 +17,23 @@ export async function adoptSessionWallet(
   return wallet;
 }
 
-export interface SessionWalletKeyDeps {
+export interface SessionWalletClaimDeps {
   createOwnerKey(): Promise<CreatedOwner>;
+  loadOwner(): SealedOwner | null;
   saveOwner(sealed: SealedOwner): void;
-  now?(): number;
+  removeOwner(sealed: SealedOwner, ownerGuid: string): Promise<unknown>;
 }
 
-const PROOF_TTL_SECONDS = 600;
-
-export async function setupSessionWalletKey(
+export async function claimSessionWallet(
   api: Pick<ApiClient, "setupWalletKey">,
   walletAddress: string,
-  deps: SessionWalletKeyDeps,
+  deps: SessionWalletClaimDeps,
 ): Promise<void> {
-  const { sealed, privateKeyHex } = await deps.createOwnerKey();
-  const now = deps.now?.() ?? Math.floor(Date.now() / 1000);
-  const expiration = now + PROOF_TTL_SECONDS;
-  const message = ownerAliveTypedData(computeOwnerGuid(sealed.ownerPubKey), expiration, "SN_MAIN");
-  const signature = signWithPrivateKey(privateKeyHex, starknetTypedData.getMessageHash(message as never, walletAddress));
+  const saved = deps.loadOwner();
+  const resuming = saved !== null && normalizeWalletAddress(saved.address) === normalizeWalletAddress(walletAddress);
+  const sealed = resuming ? saved : { ...(await deps.createOwnerKey()).sealed, address: walletAddress };
+  if (!resuming) deps.saveOwner(sealed);
 
-  const result = await api.setupWalletKey({ newOwnerPubkey: sealed.ownerPubKey, signature, expiration });
-  deps.saveOwner({ ...sealed, address: result.walletAddress });
+  const { removeOwnerGuid } = await api.setupWalletKey({ newOwnerPubkey: sealed.ownerPubKey });
+  if (removeOwnerGuid) await deps.removeOwner(sealed, removeOwnerGuid);
 }

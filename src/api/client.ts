@@ -828,8 +828,8 @@ export class ApiClient {
     await this.post<unknown>("/v1/auth/email/verify-code", { email, code });
   }
 
-  setupWalletKey(params: { newOwnerPubkey: string; signature: string[]; expiration: number }): Promise<{ walletAddress: string }> {
-    return this.post<{ walletAddress: string }>("/v1/users/me/wallet/key", params);
+  setupWalletKey(params: { newOwnerPubkey: string }): Promise<{ walletAddress: string; removeOwnerGuid: string | null }> {
+    return this.post<{ walletAddress: string; removeOwnerGuid: string | null }>("/v1/users/me/wallet/key", params);
   }
 
   async getSessionWallet(): Promise<{ walletAddress: string; needsKeySetup: boolean } | null> {

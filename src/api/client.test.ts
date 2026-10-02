@@ -99,12 +99,14 @@ test("verifyEmailCode posts the email and the code", async () => {
   expect(JSON.parse(calls[0].init.body as string)).toEqual({ email: "alice@example.com", code: "482913" });
 });
 
-test("setupWalletKey posts the passkey and its owner-alive proof", async () => {
-  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0xabc" } }));
-  const params = { newOwnerPubkey: "0x1", signature: ["0x2", "0x3"], expiration: 5 };
-  expect(await client().setupWalletKey(params)).toEqual({ walletAddress: "0xabc" });
+test("setupWalletKey posts the passkey and returns the guid left to remove", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0xabc", removeOwnerGuid: "0x77" } }));
+  expect(await client().setupWalletKey({ newOwnerPubkey: "0x1" })).toEqual({
+    walletAddress: "0xabc",
+    removeOwnerGuid: "0x77",
+  });
   expect(calls[0].url).toContain("/v1/users/me/wallet/key");
-  expect(JSON.parse(calls[0].init.body as string)).toEqual(params);
+  expect(JSON.parse(calls[0].init.body as string)).toEqual({ newOwnerPubkey: "0x1" });
 });
 
 test("claimWallet is gone", () => {
