@@ -188,3 +188,48 @@ export async function completeDeployment(
   deps.store.notifyChange();
   return { sealed, siwsToken };
 }
+
+export interface DeploymentCoordinator {
+  run(onStep: (step: DeploymentStep) => void, options?: { forceNew?: boolean }): Promise<DeploymentResult>;
+  isDeploying(): boolean;
+}
+
+export function createDeploymentCoordinator(
+  execute: (onStep: (step: DeploymentStep) => void, options: { forceNew?: boolean }) => Promise<DeploymentResult>,
+): DeploymentCoordinator {
+  let inFlight: Promise<DeploymentResult> | null = null;
+  let currentStep: DeploymentStep | null = null;
+  const listeners = new Set<(step: DeploymentStep) => void>();
+
+  return {
+    run(onStep, options = {}) {
+      if (inFlight) {
+        if (options.forceNew) {
+          return Promise.reject(new Error("A wallet setup is already in progress."));
+        }
+        if (currentStep) onStep(currentStep);
+        listeners.add(onStep);
+        return inFlight.finally(() => listeners.delete(onStep));
+      }
+      listeners.add(onStep);
+      let started: Promise<DeploymentResult>;
+      try {
+        started = execute((step) => {
+          currentStep = step;
+          for (const listener of listeners) listener(step);
+        }, options);
+      } catch (err) {
+        listeners.clear();
+        return Promise.reject(err);
+      }
+      const run = started.finally(() => {
+        inFlight = null;
+        currentStep = null;
+        listeners.clear();
+      });
+      inFlight = run;
+      return run;
+    },
+    isDeploying: () => inFlight !== null,
+  };
+}

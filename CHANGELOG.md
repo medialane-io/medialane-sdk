@@ -2,6 +2,15 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.147.0] — 2026-10-03
+
+### Added
+
+- `mediaWallet.completeDeployment` is single-flight: a call made while a setup is running joins it (and hears its
+  steps) instead of starting another, so the user is never asked for the passkey twice. `forceNew` during a running
+  setup is refused.
+- `mediaWallet.isDeploying()` and `createDeploymentCoordinator`.
+
 ## [0.146.0] — 2026-10-02
 
 ### Changed

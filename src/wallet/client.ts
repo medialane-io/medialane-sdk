@@ -18,7 +18,13 @@ import {
   computeOwnerGuid,
 } from "../starknet/media-wallet/owners.js";
 import { normalizeWalletAddress } from "./addresses.js";
-import { completeDeployment, type DeploymentDeps, type DeploymentResult, type DeploymentStep } from "./deployment.js";
+import {
+  completeDeployment,
+  createDeploymentCoordinator,
+  type DeploymentDeps,
+  type DeploymentResult,
+  type DeploymentStep,
+} from "./deployment.js";
 import type { OwnerStore } from "./store.js";
 import type { PasskeyOwner } from "./passkey.js";
 import type { ExecutedTransaction, SealedOwner, WalletExecutor } from "./types.js";
@@ -79,10 +85,23 @@ export interface MediaWallet {
     onStep: (step: DeploymentStep) => void,
     options?: { forceNew?: boolean },
   ): Promise<DeploymentResult>;
+  isDeploying(): boolean;
 }
 
 export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
   const ttl = config.unlockTtlMs ?? 20_000;
+  const deployments = createDeploymentCoordinator((onStep, options) => {
+    if (!config.backendUrl) throw new Error("This wallet has no backend url configured for sign-in");
+    const deps: DeploymentDeps = {
+      store: config.store,
+      passkey: config.passkey,
+      provider: config.provider,
+      backendUrl: config.backendUrl,
+      deployProxyUrl: config.deployProxyUrl,
+      fetchImpl: config.fetchImpl,
+    };
+    return completeDeployment(deps, onStep, options);
+  });
   const unlockCache = new Map<string, { promise: Promise<string>; timer: ReturnType<typeof setTimeout> }>();
 
   const lock = (address: string): void => {
@@ -183,17 +202,7 @@ export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
       return transactionHash;
     },
 
-    completeDeployment(onStep, options = {}) {
-      if (!config.backendUrl) throw new Error("This wallet has no backend url configured for sign-in");
-      const deps: DeploymentDeps = {
-        store: config.store,
-        passkey: config.passkey,
-        provider: config.provider,
-        backendUrl: config.backendUrl,
-        deployProxyUrl: config.deployProxyUrl,
-        fetchImpl: config.fetchImpl,
-      };
-      return completeDeployment(deps, onStep, options);
-    },
+    completeDeployment: (onStep, options) => deployments.run(onStep, options),
+    isDeploying: () => deployments.isDeploying(),
   };
 }

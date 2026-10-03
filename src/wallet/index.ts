@@ -54,8 +54,10 @@ export {
   deploySponsored,
   deploySelfFunded,
   completeDeployment,
+  createDeploymentCoordinator,
   waitUntilDeployed,
   type DeploymentStep,
   type DeploymentResult,
   type DeploymentDeps,
+  type DeploymentCoordinator,
 } from "./deployment.js";
