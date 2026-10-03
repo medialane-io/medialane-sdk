@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.148.0] — 2026-10-03
+
+### Added
+
+- `api.confirmEmail(token)` confirms an email from the link in the welcome email.
+
 ## [0.147.0] — 2026-10-03
 
 ### Added
