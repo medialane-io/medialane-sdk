@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.149.0] — 2026-10-03
+
+### Added
+
+- `ApiUserWallet.emailDeadline`: the date an unconfirmed io email must be confirmed by (an ISO string), or null.
+
 ## [0.148.0] — 2026-10-03
 
 ### Added

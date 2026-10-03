@@ -106,6 +106,15 @@ test("confirmEmail posts the token and returns the confirmed address", async () 
   expect(JSON.parse(calls[0].init.body as string)).toEqual({ token: "tok.en" });
 });
 
+test("getMyWallet returns the date an unconfirmed email must be confirmed by", async () => {
+  scriptFetch(() => ({
+    status: 200,
+    body: { walletAddress: "0xabc", email: "a@b.co", emailVerified: false, emailDeadline: "2026-10-10T12:00:00.000Z" },
+  }));
+  const wallet = await client().getMyWallet("siws-token");
+  expect(wallet?.emailDeadline).toBe("2026-10-10T12:00:00.000Z");
+});
+
 test("setupWalletKey posts the passkey and returns the guid left to remove", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { walletAddress: "0xabc", removeOwnerGuid: "0x77" } }));
   expect(await client().setupWalletKey({ newOwnerPubkey: "0x1" })).toEqual({

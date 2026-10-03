@@ -1013,6 +1013,7 @@ export interface ApiUserWallet {
   walletAddress: string;
   email?: string | null;
   emailVerified?: boolean;
+  emailDeadline?: string | null;
 }
 
 export interface ApiCollectionClaim {
