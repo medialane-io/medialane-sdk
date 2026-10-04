@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.150.0] — 2026-10-03
+
+### Added
+
+- `STARKNET_GENESIS_NFT_CID`: the Genesis NFT metadata CID, bare, for the global genesis contract.
+
 ## [0.149.0] — 2026-10-03
 
 ### Added
