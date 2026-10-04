@@ -34,6 +34,27 @@ test("blocks IPv4-mapped IPv6 loopback and private ranges", () => {
   expect(isPrivateHost("::ffff:10.0.0.1")).toBe(true);
 });
 
+test("blocks private IPv4 carried inside IPv6 forms", () => {
+  for (const h of ["::7f00:1", "::127.0.0.1", "64:ff9b::7f00:1", "64:ff9b::a9fe:a9fe", "64:ff9b::a00:1", "2002:7f00:1::", "2002:a9fe:a9fe::"]) {
+    expect(isPrivateHost(h)).toBe(true);
+  }
+});
+
+test("blocks IPv6 site-local and multicast", () => {
+  expect(isPrivateHost("fec0::1")).toBe(true);
+  expect(isPrivateHost("ff02::1")).toBe(true);
+});
+
+test("allows public IPv4 carried inside IPv6 forms", () => {
+  for (const h of ["::808:808", "64:ff9b::808:808", "2002:808:808::", "2606:4700:4700::1111"]) {
+    expect(isPrivateHost(h)).toBe(false);
+  }
+});
+
+test("blocks .localhost names", () => {
+  expect(isPrivateHost("app.localhost")).toBe(true);
+});
+
 test("blocks cloud metadata endpoints and .local", () => {
   expect(isPrivateHost("metadata.google.internal")).toBe(true);
   expect(isPrivateHost("metadata.azure.internal")).toBe(true);
