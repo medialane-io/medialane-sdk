@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.152.0] — 2026-10-04
+
+### Fixed
+
+- `isPrivateHost` now treats IPv4-compatible, NAT64 (`64:ff9b::/96`), 6to4 (`2002::/16`), site-local and multicast IPv6 addresses as private when the embedded IPv4 is private or the range is non-public, and treats `*.localhost` names as private.
+
 ## [0.151.0] — 2026-10-03
 
 ### Added
