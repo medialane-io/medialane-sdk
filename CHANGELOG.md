@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.151.0] — 2026-10-03
+
+### Added
+
+- `STARKNET_GENESIS_MINT_CONTRACT`: the one contract every Genesis mint uses.
+- `STARKNET_GENESIS_NFT_URI`: the Genesis NFT metadata URI to pass to `mint_item`.
+
+### Removed
+
+- `STARKNET_GENESIS_NFT_CID`, published in 0.150.0, replaced by `STARKNET_GENESIS_NFT_URI`.
+
 ## [0.150.0] — 2026-10-03
 
 ### Added

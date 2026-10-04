@@ -43,7 +43,8 @@ export const STARKNET_CREATOR_COIN_START_BLOCK = SN.creatorCoinStartBlock!;
 export const STARKNET_GENESIS_MINT_LAUNCH_CONTRACT = SN.genesisMintLaunch!;
 export const STARKNET_GENESIS_MINT_BR_CONTRACT = SN.genesisMintBR!;
 export const STARKNET_GENESIS_MINT_GLOBAL_CONTRACT = SN.genesisMintGlobal!;
-export const STARKNET_GENESIS_NFT_CID = "bafkreiag6wzov7migmxwx3wrtudvbx4ajrlbjopqw7uni7nn2nsxv4eykm";
+export const STARKNET_GENESIS_MINT_CONTRACT = SN.genesisMintLaunch!;
+export const STARKNET_GENESIS_NFT_URI = "ipfs://bafkreiag6wzov7migmxwx3wrtudvbx4ajrlbjopqw7uni7nn2nsxv4eykm";
 export const STARKNET_EKUBO_CORE = SN.ekuboCore!;
 
 export const SUPPORTED_TOKENS = [
