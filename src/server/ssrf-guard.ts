@@ -98,6 +98,13 @@ function isPrivateIpv6(bytes: number[]): boolean {
   if (bytes.slice(0, 10).every((b) => b === 0) && bytes[10] === 0xff && bytes[11] === 0xff) {
     return isPrivateIpv4(bytes.slice(12));
   }
+  if (bytes.slice(0, 12).every((b) => b === 0)) return isPrivateIpv4(bytes.slice(12));
+  if (bytes[0] === 0x00 && bytes[1] === 0x64 && bytes[2] === 0xff && bytes[3] === 0x9b && bytes.slice(4, 12).every((b) => b === 0)) {
+    return isPrivateIpv4(bytes.slice(12));
+  }
+  if (bytes[0] === 0x20 && bytes[1] === 0x02) return isPrivateIpv4(bytes.slice(2, 6));
+  if (bytes[0] === 0xfe && (bytes[1]! & 0xc0) === 0xc0) return true;
+  if (bytes[0] === 0xff) return true;
   return false;
 }
 
@@ -142,7 +149,7 @@ export function isPrivateHost(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
 
   if (BLOCKED_HOSTNAMES.has(host)) return true;
-  if (host.endsWith(".local") || host.endsWith(".internal")) return true;
+  if (host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".localhost")) return true;
 
   const candidate = normalizeNumericHostname(host) ?? host;
 
