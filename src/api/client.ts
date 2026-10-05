@@ -144,9 +144,13 @@ export class ApiClient {
     private readonly baseUrl: string,
     apiKey?: string,
     retryOptions?: RetryOptions,
-    private readonly chain: Chain = "STARKNET"
+    private readonly chain: Chain = "STARKNET",
+    appSource?: string,
   ) {
-    this.baseHeaders = apiKey ? { "x-api-key": apiKey } : {};
+    this.baseHeaders = {
+      ...(apiKey ? { "x-api-key": apiKey } : {}),
+      ...(appSource ? { "x-app-source": appSource } : {}),
+    };
     this.retryOptions = retryOptions;
   }
 

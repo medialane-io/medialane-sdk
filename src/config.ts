@@ -9,6 +9,7 @@ export const MedialaneConfigSchema = z.object({
   rpcUrl: z.string().url().optional(),
   backendUrl: z.string().url().optional(),
   apiKey: z.string().optional(),
+  appSource: z.string().regex(/^[A-Z][A-Z0-9_]*$/).optional(),
 
   marketplace721Contract: z.string().optional(),
   marketplaceContract: z.string().optional(),
@@ -31,6 +32,7 @@ export interface ResolvedConfig {
   rpcUrl: string;
   backendUrl: string | undefined;
   apiKey: string | undefined;
+  appSource: string | undefined;
   marketplace721Contract: string;
   marketplaceContract: string;
   marketplace1155Contract: string;
@@ -57,6 +59,7 @@ export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
     rpcUrl: parsed.rpcUrl ?? coords.rpcUrl,
     backendUrl: parsed.backendUrl,
     apiKey: parsed.apiKey,
+    appSource: parsed.appSource,
     marketplace721Contract,
     marketplaceContract: marketplace721Contract,
     marketplace1155Contract: parsed.marketplace1155Contract ?? sn.marketplace1155!,

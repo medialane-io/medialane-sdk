@@ -14,3 +14,15 @@ test("an explicit rpcUrl overrides the registry default", () => {
   const cfg = resolveConfig({ rpcUrl: "https://example.test/rpc" });
   expect(cfg.rpcUrl).toBe("https://example.test/rpc");
 });
+
+test("appSource is accepted when it is an upper-case name, and passed through", () => {
+  expect(resolveConfig({ appSource: "MEDIALANE_IO" }).appSource).toBe("MEDIALANE_IO");
+});
+
+test("appSource is optional", () => {
+  expect(resolveConfig({}).appSource).toBeUndefined();
+});
+
+test("an appSource that is not an upper-case name is rejected", () => {
+  expect(() => resolveConfig({ appSource: "medialane io" })).toThrow();
+});
