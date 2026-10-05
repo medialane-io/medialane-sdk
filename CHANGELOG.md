@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.153.0] — 2026-10-05
+
+### Added
+
+- `appSource` config option: the upper-case name of the app using the client. It is sent as the `x-app-source` header on every API request and on the wallet sign-in requests. Nothing is sent when it is not set.
+
 ## [0.152.0] — 2026-10-04
 
 ### Fixed
