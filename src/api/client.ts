@@ -524,8 +524,8 @@ export class ApiClient {
     });
   }
 
-  deleteApiKey(id: string, siwsToken?: string): Promise<ApiResponse<{ id: string; status: string }>> {
-    return this.request<ApiResponse<{ id: string; status: string }>>(`/v1/portal/keys/${id}`, {
+  deleteApiKey(id: string, siwsToken?: string): Promise<ApiResponse<{ id: string }>> {
+    return this.request<ApiResponse<{ id: string }>>(`/v1/portal/keys/${id}`, {
       method: "DELETE",
       headers: this.asSubject(siwsToken),
     });
