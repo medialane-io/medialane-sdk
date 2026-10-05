@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.154.0] — 2026-10-05
+
+### Removed
+
+- The `appSource` client option and the `x-app-source` header added in 0.153.0. Wallet sign-in still takes `appSource` for its own request, as before.
+- `ApiKeyStatus` and `ApiPortalKey.status`. The API no longer returns a key's status: a removed key is deleted, so every key that exists is active.
+
+### Changed
+
+- `deleteApiKey` returns `ApiResponse<{ id: string }>`.
+
 ## [0.153.0] — 2026-10-05
 
 ### Added
