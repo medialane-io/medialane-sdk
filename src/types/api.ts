@@ -83,7 +83,6 @@ export type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CA
 export type IntentStatus = "PENDING" | "SIGNED" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 export type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANCELLED" | "TRANSFER";
 export type WebhookStatus = "ACTIVE" | "DISABLED";
-export type ApiKeyStatus = "ACTIVE" | "REVOKED";
 export type TenantPlan = "FREE" | "PREMIUM";
 
 export interface ApiMeta {
@@ -855,7 +854,6 @@ export interface ApiPortalKey {
   id: string;
   prefix: string;
   label: string | null;
-  status: ApiKeyStatus;
   lastUsedAt: string | null;
   createdAt: string;
 }
