@@ -49,9 +49,6 @@ import type {
   ApiFundingMethod,
   ApiFundingSubmit,
   ApiPortalSpend,
-  ApiWebhookEndpoint,
-  ApiWebhookCreated,
-  CreateWebhookParams,
   CreateListingIntentParams,
   MakeOfferIntentParams,
   FulfillOrderIntentParams,
@@ -209,10 +206,6 @@ export class ApiClient {
 
   private patch<T>(path: string, body: unknown): Promise<T> {
     return this.request<T>(path, { method: "PATCH", body: JSON.stringify(body) });
-  }
-
-  private del<T>(path: string): Promise<T> {
-    return this.request<T>(path, { method: "DELETE" });
   }
 
   private bearer(siwsToken: string): Record<string, string> {
@@ -607,20 +600,6 @@ export class ApiClient {
       body: JSON.stringify({}),
       headers: this.asSubject(siwsToken),
     });
-  }
-
-  getWebhooks(): Promise<ApiResponse<ApiWebhookEndpoint[]>> {
-    return this.get<ApiResponse<ApiWebhookEndpoint[]>>("/v1/portal/webhooks");
-  }
-
-  createWebhook(params: CreateWebhookParams): Promise<ApiResponse<ApiWebhookCreated>> {
-    return this.post<ApiResponse<ApiWebhookCreated>>("/v1/portal/webhooks", params);
-  }
-
-  deleteWebhook(id: string): Promise<ApiResponse<{ id: string; status: string }>> {
-    return this.del<ApiResponse<{ id: string; status: string }>>(
-      `/v1/portal/webhooks/${id}`
-    );
   }
 
   async claimCollection(

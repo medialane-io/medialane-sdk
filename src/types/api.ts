@@ -81,9 +81,6 @@ export type SortOrder = "price_asc" | "price_desc" | "recent";
 export type ActivityType = "mint" | "transfer" | "sale" | "listing" | "offer" | "cancelled";
 export type IntentType = "CREATE_LISTING" | "MAKE_OFFER" | "FULFILL_ORDER" | "CANCEL_ORDER" | "MINT" | "CREATE_COLLECTION" | "COUNTER_OFFER";
 export type IntentStatus = "PENDING" | "SIGNED" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
-export type WebhookEventType = "ORDER_CREATED" | "ORDER_FULFILLED" | "ORDER_CANCELLED" | "TRANSFER";
-export type WebhookStatus = "ACTIVE" | "DISABLED";
-export type TenantPlan = "FREE" | "PREMIUM";
 
 export interface ApiMeta {
   page: number;
@@ -845,7 +842,6 @@ export interface ApiMetadataUpload {
 export interface ApiPortalMe {
   id: string;
   accountId: string;
-  plan: TenantPlan;
   status: string;
   creditBalance: number;
 }
@@ -915,25 +911,6 @@ export interface ApiPortalSpend {
   spent: number;
   credited: number;
   drift: number;
-}
-
-export interface ApiWebhookEndpoint {
-  id: string;
-  url: string;
-  events: WebhookEventType[];
-  status: WebhookStatus;
-  createdAt: string;
-}
-
-export interface ApiWebhookCreated extends ApiWebhookEndpoint {
-
-  secret: string;
-}
-
-export interface CreateWebhookParams {
-  url: string;
-  events: WebhookEventType[];
-  label?: string;
 }
 
 export interface ApiCollectionProfile {

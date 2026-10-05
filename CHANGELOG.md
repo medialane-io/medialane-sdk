@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.155.0] — 2026-10-05
+
+### Removed
+
+- `getWebhooks`, `createWebhook`, `deleteWebhook` and the `ApiWebhookEndpoint`, `ApiWebhookCreated`, `CreateWebhookParams`, `WebhookEventType` and `WebhookStatus` types. The API no longer has webhooks.
+- `TenantPlan` and `ApiPortalMe.plan`. The API no longer has a plan.
+
 ## [0.154.0] — 2026-10-05
 
 ### Removed
