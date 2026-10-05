@@ -26,7 +26,7 @@ The Medialane SDK provides a unified interface for interacting with the Medialan
 - Full-text search across the marketplace
 - Intent-based transaction orchestration
 - Upload metadata and files to IPFS (Pinata)
-- Tenant portal: API keys, webhooks, usage
+- Portal: API keys, credits, usage
 - ERC-1155 multi-holder ownership via `token.balances`
 
 **IP Metadata Types**

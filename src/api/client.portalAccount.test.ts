@@ -21,7 +21,7 @@ function client() {
 }
 
 test("an account's own records are read as the wallet that signed, not as the key", async () => {
-  const calls = capture({ data: { id: "c1", accountId: "a1", plan: "FREE", status: "ACTIVE", creditBalance: 12 } });
+  const calls = capture({ data: { id: "c1", accountId: "a1", status: "ACTIVE", creditBalance: 12 } });
   await client().getMe("siws-token");
   expect(calls[0].url).toBe("https://api.test/v1/portal/me");
   expect((calls[0].init.headers as Record<string, string>).Authorization).toBe("Bearer siws-token");
