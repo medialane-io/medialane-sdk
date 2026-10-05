@@ -68,14 +68,10 @@ export async function requestSiwsToken({
   appSource,
 }: RequestSiwsTokenArgs): Promise<string> {
   const base = backendUrl.replace(/\/$/, "");
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(appSource ? { "x-app-source": appSource } : {}),
-  };
 
   const nonceRes = await fetch(`${base}/v1/auth/siws/nonce`, {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ walletAddress }),
   });
 
@@ -91,7 +87,7 @@ export async function requestSiwsToken({
   const signature = normalizeSiwsSignature(await signer.signMessage(typedData));
   const verifyRes = await fetch(`${base}/v1/auth/siws/verify`, {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ walletAddress, nonce, signature, ...(appSource ? { appSource } : {}) }),
   });
 

@@ -510,7 +510,6 @@ without reaching a reader.
 | `rpcUrl` | `string` | the chain's registry `rpcUrl` | JSON-RPC URL override |
 | `backendUrl` | `string` | (none) | Medialane API base URL (required for `.api.*`) |
 | `apiKey` | `string` | (none) | API key from [Medialane Portal](https://portal.medialane.io) |
-| `appSource` | `string` | (none) | The registered name of your app (upper case, for example `MEDIALANE_IO`). Sent as `x-app-source` on every request, so sign-ups and sign-ins are recorded under your app |
 | `marketplace721Contract` | `string` | Mainnet default | ERC-721 marketplace protocol override |
 | `marketplaceContract` | `string` | Mainnet default | Legacy alias for `marketplace721Contract` |
 | `marketplace1155Contract` | `string` | Mainnet default | ERC-1155 marketplace protocol override |
