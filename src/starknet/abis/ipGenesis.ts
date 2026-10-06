@@ -1,8 +1,8 @@
 export const IPGenesisABI = [
   {
     "type": "impl",
-    "name": "MIPImpl",
-    "interface_name": "mip::interfaces::IMIP"
+    "name": "ERC721MetadataImpl",
+    "interface_name": "openzeppelin_token::erc721::interface::IERC721Metadata"
   },
   {
     "type": "struct",
@@ -18,7 +18,7 @@ export const IPGenesisABI = [
       },
       {
         "name": "pending_word_len",
-        "type": "core::internal::bounded_int::BoundedInt::<0, 30>"
+        "type": "core::integer::u32"
       }
     ]
   },
@@ -38,7 +38,109 @@ export const IPGenesisABI = [
   },
   {
     "type": "interface",
-    "name": "mip::interfaces::IMIP",
+    "name": "openzeppelin_token::erc721::interface::IERC721Metadata",
+    "items": [
+      {
+        "type": "function",
+        "name": "name",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "symbol",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "token_uri",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "ERC721MetadataCamelOnlyImpl",
+    "interface_name": "openzeppelin_token::erc721::interface::IERC721MetadataCamelOnly"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::erc721::interface::IERC721MetadataCamelOnly",
+    "items": [
+      {
+        "type": "function",
+        "name": "tokenURI",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::byte_array::ByteArray"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "IPCollectionImpl",
+    "interface_name": "ip_programmable_erc_721::interfaces::IIPCollection::IIPCollection"
+  },
+  {
+    "type": "struct",
+    "name": "ip_programmable_erc_721::types::TokenData",
+    "members": [
+      {
+        "name": "token_id",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "metadata_uri",
+        "type": "core::byte_array::ByteArray"
+      },
+      {
+        "name": "original_creator",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "registered_at",
+        "type": "core::integer::u64"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "ip_programmable_erc_721::interfaces::IIPCollection::IIPCollection",
     "items": [
       {
         "type": "function",
@@ -49,7 +151,7 @@ export const IPGenesisABI = [
             "type": "core::starknet::contract_address::ContractAddress"
           },
           {
-            "name": "uri",
+            "name": "token_uri",
             "type": "core::byte_array::ByteArray"
           }
         ],
@@ -59,49 +161,72 @@ export const IPGenesisABI = [
           }
         ],
         "state_mutability": "external"
-      }
-    ]
-  },
-  {
-    "type": "impl",
-    "name": "CounterImpl",
-    "interface_name": "mip::interfaces::ICounter"
-  },
-  {
-    "type": "interface",
-    "name": "mip::interfaces::ICounter",
-    "items": [
+      },
       {
         "type": "function",
-        "name": "current",
+        "name": "get_collection_creator",
         "inputs": [],
         "outputs": [
           {
-            "type": "core::integer::u256"
+            "type": "core::starknet::contract_address::ContractAddress"
           }
         ],
         "state_mutability": "view"
       },
       {
         "type": "function",
-        "name": "increment",
-        "inputs": [],
-        "outputs": [],
-        "state_mutability": "external"
+        "name": "get_token_creator",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
       },
       {
         "type": "function",
-        "name": "decrement",
-        "inputs": [],
-        "outputs": [],
-        "state_mutability": "external"
+        "name": "get_token_registered_at",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u64"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_token_data",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "ip_programmable_erc_721::types::TokenData"
+          }
+        ],
+        "state_mutability": "view"
       }
     ]
   },
   {
     "type": "impl",
-    "name": "ERC721MixinImpl",
-    "interface_name": "openzeppelin_token::erc721::interface::ERC721ABI"
+    "name": "ERC721Impl",
+    "interface_name": "openzeppelin_token::erc721::interface::IERC721"
   },
   {
     "type": "struct",
@@ -129,7 +254,7 @@ export const IPGenesisABI = [
   },
   {
     "type": "interface",
-    "name": "openzeppelin_token::erc721::interface::ERC721ABI",
+    "name": "openzeppelin_token::erc721::interface::IERC721",
     "items": [
       {
         "type": "function",
@@ -274,61 +399,18 @@ export const IPGenesisABI = [
           }
         ],
         "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "supports_interface",
-        "inputs": [
-          {
-            "name": "interface_id",
-            "type": "core::felt252"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::bool"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "name",
-        "inputs": [],
-        "outputs": [
-          {
-            "type": "core::byte_array::ByteArray"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "symbol",
-        "inputs": [],
-        "outputs": [
-          {
-            "type": "core::byte_array::ByteArray"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "token_uri",
-        "inputs": [
-          {
-            "name": "token_id",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::byte_array::ByteArray"
-          }
-        ],
-        "state_mutability": "view"
-      },
+      }
+    ]
+  },
+  {
+    "type": "impl",
+    "name": "ERC721CamelOnly",
+    "interface_name": "openzeppelin_token::erc721::interface::IERC721CamelOnly"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_token::erc721::interface::IERC721CamelOnly",
+    "items": [
       {
         "type": "function",
         "name": "balanceOf",
@@ -456,82 +538,6 @@ export const IPGenesisABI = [
           }
         ],
         "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "tokenURI",
-        "inputs": [
-          {
-            "name": "tokenId",
-            "type": "core::integer::u256"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::byte_array::ByteArray"
-          }
-        ],
-        "state_mutability": "view"
-      }
-    ]
-  },
-  {
-    "type": "impl",
-    "name": "OwnableMixinImpl",
-    "interface_name": "openzeppelin_access::ownable::interface::OwnableABI"
-  },
-  {
-    "type": "interface",
-    "name": "openzeppelin_access::ownable::interface::OwnableABI",
-    "items": [
-      {
-        "type": "function",
-        "name": "owner",
-        "inputs": [],
-        "outputs": [
-          {
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "transfer_ownership",
-        "inputs": [
-          {
-            "name": "new_owner",
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "renounce_ownership",
-        "inputs": [],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "transferOwnership",
-        "inputs": [
-          {
-            "name": "newOwner",
-            "type": "core::starknet::contract_address::ContractAddress"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "renounceOwnership",
-        "inputs": [],
-        "outputs": [],
-        "state_mutability": "external"
       }
     ]
   },
@@ -594,9 +600,44 @@ export const IPGenesisABI = [
     ]
   },
   {
+    "type": "impl",
+    "name": "SRC5Impl",
+    "interface_name": "openzeppelin_introspection::interface::ISRC5"
+  },
+  {
+    "type": "interface",
+    "name": "openzeppelin_introspection::interface::ISRC5",
+    "items": [
+      {
+        "type": "function",
+        "name": "supports_interface",
+        "inputs": [
+          {
+            "name": "interface_id",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
     "type": "constructor",
     "name": "constructor",
     "inputs": [
+      {
+        "name": "name",
+        "type": "core::byte_array::ByteArray"
+      },
+      {
+        "name": "symbol",
+        "type": "core::byte_array::ByteArray"
+      },
       {
         "name": "owner",
         "type": "core::starknet::contract_address::ContractAddress"
@@ -693,57 +734,6 @@ export const IPGenesisABI = [
   },
   {
     "type": "event",
-    "name": "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "previous_owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      },
-      {
-        "name": "new_owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "previous_owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      },
-      {
-        "name": "new_owner",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "openzeppelin_access::ownable::ownable::OwnableComponent::Event",
-    "kind": "enum",
-    "variants": [
-      {
-        "name": "OwnershipTransferred",
-        "type": "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred",
-        "kind": "nested"
-      },
-      {
-        "name": "OwnershipTransferStarted",
-        "type": "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted",
-        "kind": "nested"
-      }
-    ]
-  },
-  {
-    "type": "event",
     "name": "openzeppelin_introspection::src5::SRC5Component::Event",
     "kind": "enum",
     "variants": []
@@ -756,58 +746,44 @@ export const IPGenesisABI = [
   },
   {
     "type": "event",
-    "name": "mip::mip::MIP::CounterComponent::CounterIncremented",
+    "name": "ip_programmable_erc_721::IPCollection::IPCollection::IPMinted",
     "kind": "struct",
     "members": [
       {
-        "name": "value",
+        "name": "token_id",
         "type": "core::integer::u256",
-        "kind": "data"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "mip::mip::MIP::CounterComponent::CounterDecremented",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "value",
-        "type": "core::integer::u256",
-        "kind": "data"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "mip::mip::MIP::CounterComponent::Event",
-    "kind": "enum",
-    "variants": [
-      {
-        "name": "CounterIncremented",
-        "type": "mip::mip::MIP::CounterComponent::CounterIncremented",
-        "kind": "nested"
+        "kind": "key"
       },
       {
-        "name": "CounterDecremented",
-        "type": "mip::mip::MIP::CounterComponent::CounterDecremented",
-        "kind": "nested"
+        "name": "recipient",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "uri",
+        "type": "core::byte_array::ByteArray",
+        "kind": "data"
+      },
+      {
+        "name": "creator",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "registered_at",
+        "type": "core::integer::u64",
+        "kind": "data"
       }
     ]
   },
   {
     "type": "event",
-    "name": "mip::mip::MIP::Event",
+    "name": "ip_programmable_erc_721::IPCollection::IPCollection::Event",
     "kind": "enum",
     "variants": [
       {
         "name": "ERC721Event",
         "type": "openzeppelin_token::erc721::erc721::ERC721Component::Event",
-        "kind": "flat"
-      },
-      {
-        "name": "OwnableEvent",
-        "type": "openzeppelin_access::ownable::ownable::OwnableComponent::Event",
         "kind": "flat"
       },
       {
@@ -821,9 +797,9 @@ export const IPGenesisABI = [
         "kind": "flat"
       },
       {
-        "name": "CounterEvent",
-        "type": "mip::mip::MIP::CounterComponent::Event",
-        "kind": "flat"
+        "name": "IPMinted",
+        "type": "ip_programmable_erc_721::IPCollection::IPCollection::IPMinted",
+        "kind": "nested"
       }
     ]
   }
