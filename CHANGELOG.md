@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.156.0] — unreleased
+
+### Removed
+
+- The admin request signing helpers from `@medialane/sdk/starknet` (`adminRequestDigest`, `signAdminRequest`, `verifyAdminRequestSig`, `buildAdminSessionTypedData`, `sessionKeyHashOf`, `createAdminSessionGrant`, `ADMIN_HEADERS`, `randomNonce`, `encodeAdminHeaders`, `parseAdminHeaders` and their types). The API has no admin-signed routes.
+
 ## [0.155.0] — 2026-10-05
 
 ### Removed
