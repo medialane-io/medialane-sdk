@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.156.1] — 2026-10-06
+
+### Fixed
+
+- `IPGenesisABI` is the deployed genesis contract's ABI. It declared counter and ownership functions and events that the contract does not have.
+
 ## [0.156.0] — 2026-10-06
 
 ### Removed
