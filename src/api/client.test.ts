@@ -184,3 +184,27 @@ test("upsertMyWallet never sends an email token", async () => {
   await new ApiClient("https://api.test", "ml_live_x").upsertMyWallet("siws_tok", { walletType: "MEDIAWALLET" });
   expect("emailVerificationToken" in JSON.parse(calls[0].init.body as string)).toBe(false);
 });
+
+async function headersOf(run: (client: ApiClient) => Promise<unknown>): Promise<Headers> {
+  let seen = new Headers();
+  const original = globalThis.fetch;
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    seen = new Headers(init.headers);
+    return new Response(JSON.stringify({ data: [] }), { status: 200 });
+  }) as unknown as typeof fetch;
+  try {
+    await run(new ApiClient("https://api.test", "key"));
+  } finally {
+    globalThis.fetch = original;
+  }
+  return seen;
+}
+
+test("a GET sends no Content-Type", async () => {
+  expect((await headersOf((c) => c.getActivities())).has("content-type")).toBe(false);
+});
+
+test("a JSON POST still sends Content-Type", async () => {
+  const h = await headersOf((c) => c.createMintIntent({ owner: "0x1", recipient: "0x1" }));
+  expect(h.get("content-type")).toBe("application/json");
+});

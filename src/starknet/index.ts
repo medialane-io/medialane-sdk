@@ -17,7 +17,6 @@ export type StarknetVenueSigner = _VenueSigner<TypedData, Call>;
 export { buildFeeCall } from "./fee/build-fee-call.js";
 export type { FeeSurface, BuildFeeCallParams } from "./fee/build-fee-call.js";
 
-export * from "./admin-auth/index.js";
 export * from "./siws/index.js";
 export * from "./funding/index.js";
 
