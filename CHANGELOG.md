@@ -8,6 +8,10 @@ All notable changes to `@medialane/sdk` are documented here.
 
 - The admin request signing helpers from `@medialane/sdk/starknet` (`adminRequestDigest`, `signAdminRequest`, `verifyAdminRequestSig`, `buildAdminSessionTypedData`, `sessionKeyHashOf`, `createAdminSessionGrant`, `ADMIN_HEADERS`, `randomNonce`, `encodeAdminHeaders`, `parseAdminHeaders` and their types). The API has no admin-signed routes.
 
+### Fixed
+
+- Shared code is built once instead of into every entry point, so an error thrown from `@medialane/sdk/starknet` is `instanceof MedialaneApiError` imported from `@medialane/sdk`.
+
 ## [0.155.0] — 2026-10-05
 
 ### Removed

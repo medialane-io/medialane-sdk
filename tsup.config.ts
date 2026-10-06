@@ -6,7 +6,7 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  splitting: false,
+  splitting: true,
   treeshake: true,
   external: ["starknet", "viem", "@solana/web3.js", "@stellar/stellar-sdk"],
   outDir: "dist",
