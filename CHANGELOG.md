@@ -12,6 +12,10 @@ All notable changes to `@medialane/sdk` are documented here.
 
 - Shared code is built once instead of into every entry point, so an error thrown from `@medialane/sdk/starknet` is `instanceof MedialaneApiError` imported from `@medialane/sdk`.
 
+### Changed
+
+- Requests without a body no longer send `Content-Type: application/json`.
+
 ## [0.155.0] — 2026-10-05
 
 ### Removed

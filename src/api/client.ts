@@ -158,7 +158,7 @@ export class ApiClient {
   ): Promise<T> {
     const url = `${this.baseUrl.replace(/\/$/, "")}${path}`;
     const headers: Record<string, string> = { ...this.baseHeaders };
-    if (!(init?.body instanceof FormData)) {
+    if (init?.body != null && !(init.body instanceof FormData)) {
       headers["Content-Type"] = "application/json";
     }
     const allowed = (status: number): boolean =>
