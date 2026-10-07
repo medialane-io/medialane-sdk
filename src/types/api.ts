@@ -987,7 +987,6 @@ export type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BASE" | "BITCOIN";
 export interface ApiUserWallet {
   walletAddress: string;
   email?: string | null;
-  emailVerified?: boolean;
   emailDeadline?: string | null;
 }
 

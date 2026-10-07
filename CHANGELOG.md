@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.157.0] — 2026-10-08
+
+### Removed
+
+- `emailVerified` from `ApiUserWallet` and from the `changeMyEmail` result. The API no longer records or returns whether an email was verified; `emailDeadline` is set only for a pending sign-up.
+
 ## [0.156.1] — 2026-10-06
 
 ### Fixed
