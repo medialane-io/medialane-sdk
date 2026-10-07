@@ -109,7 +109,7 @@ test("confirmEmail posts the token and returns the confirmed address", async () 
 test("getMyWallet returns the date an unconfirmed email must be confirmed by", async () => {
   scriptFetch(() => ({
     status: 200,
-    body: { walletAddress: "0xabc", email: "a@b.co", emailVerified: false, emailDeadline: "2026-10-10T12:00:00.000Z" },
+    body: { walletAddress: "0xabc", email: "a@b.co", emailDeadline: "2026-10-10T12:00:00.000Z" },
   }));
   const wallet = await client().getMyWallet("siws-token");
   expect(wallet?.emailDeadline).toBe("2026-10-10T12:00:00.000Z");
