@@ -17,6 +17,7 @@ export type NextStep =
   | { kind: "wait-collection" }
   | { kind: "upload"; files: string[] }
   | { kind: "metadata"; items: number[] }
+  | { kind: "wallets" }
   | { kind: "batch"; index: number }
   | { kind: "wait"; index: number }
   | { kind: "done" };
@@ -207,6 +208,12 @@ export function createLaunchpadRunsClient({ baseUrl, getToken, fetchImpl = fetch
 
     itemMetadata: async (id: string, index: number, userAddress: string) =>
       (await post<{ index: number; tokenUri: string }>(`${runBase(id)}/items/${index}/metadata`, { userAddress })).data,
+
+    resolveGuests: async (id: string) =>
+      (await post<{ pending: string[] }>(`${runBase(id)}/guests/resolve`)).data.pending,
+
+    registerGuest: async (id: string, request: WalletRequest) =>
+      (await post<{ recipient: string; walletAddress: string }>(`${runBase(id)}/guests`, request)).data,
 
     confirmBatch: async (id: string, index: number): Promise<ConfirmResult> => {
       const { status, data } = await post<{ status: string; completed?: boolean }>(

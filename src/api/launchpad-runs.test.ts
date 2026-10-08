@@ -97,3 +97,13 @@ test("certificate-emission steps use their own paths — distinct from ticketing
   expect(bodies[4]).toEqual({ recipient: "ana@x.com" });
   expect("confirmTier" in client.certificateEmission).toBe(false);
 });
+
+test("data tokenization guests are prepared under the run's guests path", async () => {
+  const { impl, bodies, urls } = recordingFetch();
+  const client = make(impl);
+  await client.resolveGuests("run1");
+  await client.registerGuest("run1", { recipient: "ana@x.com" });
+  const base = `${BASE}/v1/portal/runs/run1`;
+  expect(urls).toEqual([`${base}/guests/resolve`, `${base}/guests`]);
+  expect(bodies[1]).toEqual({ recipient: "ana@x.com" });
+});

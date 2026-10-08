@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.158.0] — 2026-10-08
+
+### Added
+
+- Data tokenization runs can mint to an email list: `NextStep` has a `wallets` step, and the runs client has `resolveGuests(id)` and `registerGuest(id, { recipient })`. Executors of data tokenization runs need a `wallets` step handler.
+
 ## [0.157.0] — 2026-10-08
 
 ### Removed
