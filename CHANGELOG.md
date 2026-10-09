@@ -6,14 +6,13 @@ All notable changes to `@medialane/sdk` are documented here.
 
 ### Added
 
-- `PasskeyUnsupportedError` with `reason: "no-webauthn" | "no-prf"`, thrown when passkeys are unavailable or a passkey returns no PRF secret, and exported from both `@medialane/sdk` and `@medialane/sdk/starknet`. Apps choose the wording.
-- `PasskeyConfig.clientCapabilities` (optional) overrides how the browser's WebAuthn client capabilities are read.
+- `PasskeyUnsupportedError` (`reason`), exported from `@medialane/sdk` and `@medialane/sdk/starknet`.
+- `PasskeyConfig.clientCapabilities` (optional).
 
 ### Changed
 
-- Passkey owners check the browser's client capabilities before prompting. When the browser reports `extension:prf` as false, they throw `PasskeyUnsupportedError("no-prf")` without showing a prompt. When the browser is unsure or can't answer, the prompt goes ahead.
-- Passkey registration no longer requires a platform authenticator. A wallet passkey can be saved on the device, a phone, a password manager or a security key, as long as it supports PRF.
-- Passkey errors no longer carry user-facing text or name browsers. A cancelled prompt during the follow-up PRF read is now reported as `PasskeyCancelledError`.
+- Passkey errors no longer carry display text.
+- Registration options no longer set `authenticatorAttachment`.
 
 ## [0.159.0] — 2026-10-09
 
