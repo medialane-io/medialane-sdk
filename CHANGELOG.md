@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.162.0] — 2026-10-09
+
+### Added
+
+- `PasskeyConfig.signalUnknownCredential` (optional).
+
+### Changed
+
+- Registration: `prf.enabled === false` -> `PasskeyUnsupportedError("no-prf")` without a follow-up `get`.
+- On `no-prf` after registration: `PublicKeyCredential.signalUnknownCredential` for the new credential, when available.
+
 ## [0.161.0] — 2026-10-09
 
 ### Added
