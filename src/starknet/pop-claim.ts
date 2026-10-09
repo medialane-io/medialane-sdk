@@ -1,4 +1,4 @@
-import { type ProviderInterface } from "starknet";
+import { CallData, byteArray, cairo, type Call, type ProviderInterface } from "starknet";
 import { collectionHref } from "../routes.js";
 import { normalizeAddress } from "../utils/address.js";
 import { encodePopClaimFragment, verifyPopProof, type PopAllowlist } from "./pop-allowlist.js";
@@ -60,3 +60,25 @@ export function popClaimState(input: {
   if (!wallet || !verifyPopProof(info.root, wallet, proof)) return "wrong-wallet";
   return "ready";
 }
+
+const addr = (a: string) => normalizeAddress("STARKNET", a);
+const byteArrayFelts = (s: string) => CallData.compile([byteArray.byteArrayFromString(s)]);
+
+/** Calls on a POP collection, ready for `account.execute` or a sponsored transaction. */
+export const popCalls = {
+  claim(collection: string, proof: string[]): Call {
+    return { contractAddress: addr(collection), entrypoint: "claim", calldata: [String(proof.length), ...proof] };
+  },
+  /** An empty `tokenUri` uses the collection's URI. */
+  issue(collection: string, recipient: string, tokenUri = ""): Call {
+    return { contractAddress: addr(collection), entrypoint: "issue", calldata: [addr(recipient), ...byteArrayFelts(tokenUri)] };
+  },
+  /** Only the token's holder can burn it. */
+  burn(collection: string, tokenId: string | bigint): Call {
+    const id = cairo.uint256(BigInt(tokenId));
+    return { contractAddress: addr(collection), entrypoint: "burn", calldata: [String(id.low), String(id.high)] };
+  },
+  setAllowlistRoot(collection: string, root: string): Call {
+    return { contractAddress: addr(collection), entrypoint: "set_allowlist_root", calldata: [root] };
+  },
+};

@@ -8,6 +8,7 @@ All notable changes to `@medialane/sdk` are documented here.
 
 - `popClaimLinks`, `popClaimLinksCsv`: claim links (and their CSV) for an allowlist.
 - `popClaimInfo`: reads a POP collection's allowlist root and claim deadline.
+- `popCalls.claim`, `popCalls.issue`, `popCalls.burn`, `popCalls.setAllowlistRoot`: POP collection calls, ready to execute.
 - `popClaimState`: what a claim page should show — `claimed`, `closed`, `ended`, `no-link`, `wrong-wallet` or `ready` — before any transaction.
 
 ## [0.159.0] — 2026-10-09

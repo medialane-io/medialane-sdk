@@ -73,3 +73,46 @@ describe("popClaimInfo", () => {
     expect(await popClaimInfo(provider as never, COLLECTION)).toEqual({ root: "0xabc", claimEndTime: 100 });
   });
 });
+
+describe("popCalls", () => {
+  const { CallData, byteArray } = require("starknet") as typeof import("starknet");
+  const felts = (xs: readonly unknown[]) => xs.map((x) => BigInt(x as string));
+  const { popCalls } = require("./pop-claim.js") as typeof import("./pop-claim.js");
+
+  test("claim sends the proof as a span", () => {
+    const call = popCalls.claim("0xabc", ["0x1", "0x2"]);
+    expect(call.entrypoint).toBe("claim");
+    expect(BigInt(call.contractAddress)).toBe(0xabcn);
+    expect(felts(call.calldata)).toEqual([2n, 1n, 2n]);
+  });
+
+  test("claim with an empty proof sends an empty span", () => {
+    expect(felts(popCalls.claim("0xabc", []).calldata)).toEqual([0n]);
+  });
+
+  test("issue without a token URI sends an empty ByteArray", () => {
+    const call = popCalls.issue("0xabc", "0x5");
+    expect(call.entrypoint).toBe("issue");
+    expect(felts(call.calldata)).toEqual([5n, ...felts(CallData.compile([byteArray.byteArrayFromString("")]))]);
+  });
+
+  test("issue with a token URI encodes it as a ByteArray", () => {
+    const call = popCalls.issue("0xabc", "0x5", "ipfs://distinction.json");
+    expect(felts(call.calldata)).toEqual([
+      5n,
+      ...felts(CallData.compile([byteArray.byteArrayFromString("ipfs://distinction.json")])),
+    ]);
+  });
+
+  test("burn sends the token id as a u256", () => {
+    const call = popCalls.burn("0xabc", (1n << 128n) + 7n);
+    expect(call.entrypoint).toBe("burn");
+    expect(felts(call.calldata)).toEqual([7n, 1n]);
+  });
+
+  test("setAllowlistRoot sends the root", () => {
+    const call = popCalls.setAllowlistRoot("0xabc", "0x123");
+    expect(call.entrypoint).toBe("set_allowlist_root");
+    expect(felts(call.calldata)).toEqual([0x123n]);
+  });
+});
