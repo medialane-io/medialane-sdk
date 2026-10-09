@@ -21,6 +21,7 @@ export const STARKNET_COLLECTION_1155_START_BLOCK = SN.collection1155StartBlock!
 
 export const STARKNET_POP_FACTORY_CONTRACT = SN.popFactory!;
 export const STARKNET_POP_COLLECTION_CLASS_HASH = SN.popCollectionClassHash!;
+export const STARKNET_POP_FACTORY_START_BLOCK = SN.popFactoryStartBlock;
 export const STARKNET_DROP_FACTORY_CONTRACT = SN.dropFactory!;
 export const STARKNET_DROP_COLLECTION_CLASS_HASH = SN.dropCollectionClassHash!;
 export const STARKNET_NFTCOMMENTS_CONTRACT = SN.nftComments!;

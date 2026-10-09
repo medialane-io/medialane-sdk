@@ -90,7 +90,6 @@ const SERVICES = {
     capabilities: ["claim", "mint"],
     events: [
       { name: "CollectionCreated", emittedBy: "factory" },
-      { name: "AllowlistUpdated", emittedBy: "instance", poll: "slow" },
     ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },

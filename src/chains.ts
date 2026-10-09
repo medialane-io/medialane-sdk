@@ -23,6 +23,7 @@ export interface StarknetCoordinates {
   collection1155StartBlock?: number;
   popFactory?: `0x${string}`;
   popCollectionClassHash?: `0x${string}`;
+  popFactoryStartBlock?: number;
   dropFactory?: `0x${string}`;
   dropCollectionClassHash?: `0x${string}`;
   nftComments?: `0x${string}`;
@@ -104,8 +105,9 @@ const COORDINATES: CoordinatesByChain = {
     collection1155FactoryClassHash: "0x04eb6b419770f13bd191f120b9fc9ee624c0613ad4490062d293ca2016b3b1d2",
     collection1155ClassHash: "0x06cf3f5a2322dac35e07a6064a5b8802f19fda8aa3f4726f0cb7bc05dea1bd78",
     collection1155StartBlock: 11199527,
-    popFactory: "0x00b32c34b427d8f346b5843ada6a37bd3368d879fc752cd52b68a87287f60111",
-    popCollectionClassHash: "0x077c421686f10851872561953ea16898d933364b7f8937a5d7e2b1ba0a36263f",
+    popFactory: "0x06af6ffdde310991a40570716dc3681acc7effc610aeb548ea0baa02d4208d5f",
+    popCollectionClassHash: "0x076200229933dd10b8d6d41ecb1a53ba1972510a42f4d505dae4f6b54d1b317e",
+    popFactoryStartBlock: 16126169,
     dropFactory: "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800",
     dropCollectionClassHash: "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282",
     nftComments: "0x02cdac70c94447189af0389dfea63f4d5e4154ea8a563de288a5ab1c39e37843",

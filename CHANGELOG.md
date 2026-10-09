@@ -2,6 +2,24 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.159.0] — 2026-10-09
+
+### Changed
+
+- `pop-protocol` and `certificate-emission` point at a new POP factory (`0x06af6ffdde310991a40570716dc3681acc7effc610aeb548ea0baa02d4208d5f`, start block 16126169). Anyone can create a collection; the caller is its organizer. Collections are soulbound (ERC-5192) with a Merkle-root allowlist.
+- `PopService`: `createCollection({ name, symbol, baseUri, claimEndTime })`, `setAllowlistRoot`, `claim({ collection, proof })`, `issue`, `burn`.
+- POP ABIs are generated from the compiled contracts.
+- The `pop-protocol` registry entry lists only the factory's `CollectionCreated` event.
+
+### Added
+
+- `buildPopAllowlist`, `verifyPopProof`, `encodePopClaimFragment`, `decodePopClaimFragment`, `popHasClaimed`, `STARKNET_POP_FACTORY_START_BLOCK`.
+
+### Removed
+
+- `PopService.adminMint`, `addToAllowlist`, `batchAddToAllowlist`, `removeFromAllowlist`, `setTokenUri`, `setPaused`.
+- `getPopEligibility`, `getPopEligibilityBatch`, `PopClaimStatus`, `PopBatchEligibilityItem`, `PopEventType`, and `eventType` on collection intents.
+
 ## [0.158.0] — 2026-10-08
 
 ### Added

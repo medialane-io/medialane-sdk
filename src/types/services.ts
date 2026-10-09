@@ -1,11 +1,9 @@
-import type { PopEventType } from "./api.js";
-
 export interface CreatePopCollectionParams {
   name: string;
   symbol: string;
   baseUri: string;
+  /** Unix seconds; 0 = no deadline. */
   claimEndTime: number;
-  eventType: PopEventType;
 }
 
 export interface ClaimConditions {

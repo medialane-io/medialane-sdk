@@ -37,7 +37,14 @@ export {
   type ReceiptLike,
   type DeployingServiceId,
 } from "./services/receipts.js";
-export { PopService } from "./services/pop.js";
+export { PopService, popHasClaimed } from "./services/pop.js";
+export {
+  buildPopAllowlist,
+  verifyPopProof,
+  encodePopClaimFragment,
+  decodePopClaimFragment,
+  type PopAllowlist,
+} from "./pop-allowlist.js";
 export { DropService, toContractConditions as toDropContractConditions } from "./services/drop.js";
 export { TicketService } from "./services/ticket.js";
 export { ClubService } from "./services/club.js";
