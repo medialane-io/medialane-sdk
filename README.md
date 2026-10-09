@@ -332,16 +332,15 @@ try {
 
 ### Showing an error to a user
 
-Two types carry text written for someone to read, and two passkey types tell you what
-happened so you can word it. Everything else is machinery, and the message belongs to
-whatever your screen was trying to do.
+Three types carry text written for someone to read. Everything else is machinery, and the
+message belongs to whatever your screen was trying to do.
 
 | Type | What it means | Show |
 |---|---|---|
 | `MedialaneApiError` | The API refused the request | `err.message`, which is the reason the API gave or a plain statement of the status |
 | `UserFacingError` | The SDK got partway and stopped, for example a transaction that reverted | `err.message` |
 | `PasskeyCancelledError` | The prompt was dismissed | Nothing was submitted, so avoid wording it as a failure |
-| `PasskeyUnsupportedError` | `err.reason` is `"no-webauthn"` (no passkeys here) or `"no-prf"` (this passkey can't seal a wallet key) | Your own wording. For `no-prf`, suggest saving the passkey on a phone or in a password manager |
+| `PasskeyUnsupportedError` | `err.reason`: `"no-webauthn"` or `"no-prf"` | Your own wording |
 
 ```typescript
 import { MedialaneApiError, PasskeyCancelledError, UserFacingError } from "@medialane/sdk";
