@@ -6,7 +6,7 @@ All notable changes to `@medialane/sdk` are documented here.
 
 ### Added
 
-- `PasskeyUnsupportedError` with `reason: "no-webauthn" | "no-prf"`, thrown when passkeys are unavailable or a passkey returns no PRF secret. Apps choose the wording.
+- `PasskeyUnsupportedError` with `reason: "no-webauthn" | "no-prf"`, thrown when passkeys are unavailable or a passkey returns no PRF secret, and exported from both `@medialane/sdk` and `@medialane/sdk/starknet`. Apps choose the wording.
 - `PasskeyConfig.clientCapabilities` (optional) overrides how the browser's WebAuthn client capabilities are read.
 
 ### Changed
