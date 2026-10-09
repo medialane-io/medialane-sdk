@@ -14,20 +14,34 @@ const CREDENTIAL_ID_BYTES = Uint8Array.from([1, 2, 3, 4]);
 const CREDENTIAL_ID = "AQIDBA==";
 
 function credentialsStub(
-  options: { prfFirst?: ArrayBuffer | null; throws?: unknown; onCreate?: (options: CredentialCreationOptions) => void } = {},
+  options: {
+    prfFirst?: ArrayBuffer | null;
+    prfEnabled?: boolean;
+    throws?: unknown;
+    onCreate?: (options: CredentialCreationOptions) => void;
+    onGet?: () => void;
+  } = {},
 ): CredentialsContainer {
   const results = options.prfFirst === undefined ? PRF_SECRET.buffer : options.prfFirst;
+  const prf = results ? { results: { first: results } } : {};
   const credential = {
     rawId: CREDENTIAL_ID_BYTES.buffer,
-    getClientExtensionResults: () => (results ? { prf: { results: { first: results } } } : { prf: {} }),
+    getClientExtensionResults: () => ({ prf }),
+  };
+  const created = {
+    rawId: CREDENTIAL_ID_BYTES.buffer,
+    getClientExtensionResults: () => ({
+      prf: options.prfEnabled === undefined ? prf : { ...prf, enabled: options.prfEnabled },
+    }),
   };
   return {
     create: async (createOptions: CredentialCreationOptions) => {
       options.onCreate?.(createOptions);
       if (options.throws) throw options.throws;
-      return credential;
+      return created;
     },
     get: async () => {
+      options.onGet?.();
       if (options.throws) throw options.throws;
       return credential;
     },
@@ -38,6 +52,7 @@ function ownerFor(
   credentials: CredentialsContainer,
   hkdfInfo = "medialane-io-owner-key",
   clientCapabilities?: () => Promise<Record<string, boolean | undefined>>,
+  signalUnknownCredential?: (options: { rpId: string; credentialId: string }) => Promise<void>,
 ) {
   return createPasskeyOwner({
     appName: "Medialane",
@@ -49,6 +64,7 @@ function ownerFor(
     knownCredentials: () => [],
     credentials,
     clientCapabilities,
+    signalUnknownCredential,
     randomBytes: ((length: number) => (length === 12 ? IV : new Uint8Array(length).fill(9))) as never,
   });
 }
@@ -162,4 +178,58 @@ test("a browser that is unsure, or can't answer, still gets the passkey prompt",
     const created = await ownerFor(credentialsStub(), undefined, caps).createOwnerKey();
     expect(created.sealed.credentialId).toBe(CREDENTIAL_ID);
   }
+});
+
+test("a passkey created without PRF support fails after one prompt, with no follow-up read", async () => {
+  let reads = 0;
+  const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled: false, onGet: () => reads++ }));
+  const err = await owner.createOwnerKey().catch((e: unknown) => e);
+  expect(err).toBeInstanceOf(PasskeyUnsupportedError);
+  expect((err as PasskeyUnsupportedError).reason).toBe("no-prf");
+  expect(reads).toBe(0);
+});
+
+test("a passkey that reports PRF enabled but returns no value at creation is read once more", async () => {
+  let reads = 0;
+  const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled: true, onGet: () => reads++ }));
+  await owner.createOwnerKey().catch(() => undefined);
+  expect(reads).toBe(1);
+});
+
+test("a passkey rejected for missing PRF is reported to the browser as unknown, so it can be removed", async () => {
+  for (const prfEnabled of [false, undefined]) {
+    const signals: Array<{ rpId: string; credentialId: string }> = [];
+    const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled }), undefined, undefined, async (o) => {
+      signals.push(o);
+    });
+    await owner.createOwnerKey().catch(() => undefined);
+    expect(signals).toEqual([{ rpId: "www.medialane.io", credentialId: "AQIDBA" }]);
+  }
+});
+
+test("a failed removal signal does not hide the no-prf error", async () => {
+  const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled: false }), undefined, undefined, async () => {
+    throw new Error("not supported");
+  });
+  const err = await owner.createOwnerKey().catch((e: unknown) => e);
+  expect((err as PasskeyUnsupportedError).reason).toBe("no-prf");
+});
+
+test("a cancelled follow-up read does not remove the passkey", async () => {
+  let signalled = false;
+  let creates = 0;
+  const cancelled = Object.assign(new Error("user cancelled"), { name: "NotAllowedError" });
+  const base = credentialsStub({ prfFirst: null, prfEnabled: true });
+  const credentials = {
+    create: async (o: CredentialCreationOptions) => (creates++, base.create(o)),
+    get: async () => {
+      throw cancelled;
+    },
+  } as unknown as CredentialsContainer;
+  const owner = ownerFor(credentials, undefined, undefined, async () => {
+    signalled = true;
+  });
+  await expect(owner.createOwnerKey()).rejects.toBeInstanceOf(PasskeyCancelledError);
+  expect(signalled).toBe(false);
+  expect(creates).toBe(1);
 });

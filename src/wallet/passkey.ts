@@ -41,6 +41,7 @@ export interface PasskeyConfig {
   knownCredentials: () => PublicKeyCredentialDescriptor[];
   credentials?: CredentialsContainer;
   clientCapabilities?: () => Promise<Record<string, boolean | undefined>>;
+  signalUnknownCredential?: (options: { rpId: string; credentialId: string }) => Promise<void>;
   randomBytes?: (length: number) => Uint8Array<ArrayBuffer>;
 }
 
@@ -58,6 +59,7 @@ export interface PasskeyOwner {
 interface Registration {
   credentialId: string;
   prfFirst: ArrayBuffer | null;
+  prfEnabled: boolean | undefined;
 }
 
 const encodeBase64 = (buf: ArrayBuffer | Uint8Array): string => {
@@ -138,7 +140,11 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
         prf?: { enabled?: boolean; results?: { first?: ArrayBuffer } };
       }
     ).prf;
-    return { credentialId: encodeBase64(credential.rawId), prfFirst: prf?.results?.first ?? null };
+    return {
+      credentialId: encodeBase64(credential.rawId),
+      prfFirst: prf?.results?.first ?? null,
+      prfEnabled: prf?.enabled,
+    };
   }
 
   async function prfSecret(credentialId: string): Promise<Uint8Array<ArrayBuffer>> {
@@ -164,9 +170,34 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
     return new Uint8Array(result);
   }
 
+  const forgetCredential = async (credentialId: string): Promise<void> => {
+    const signal =
+      config.signalUnknownCredential ??
+      (typeof PublicKeyCredential !== "undefined" &&
+      typeof (PublicKeyCredential as { signalUnknownCredential?: unknown }).signalUnknownCredential === "function"
+        ? (options: { rpId: string; credentialId: string }) =>
+            (PublicKeyCredential as unknown as {
+              signalUnknownCredential(options: { rpId: string; credentialId: string }): Promise<void>;
+            }).signalUnknownCredential(options)
+        : undefined);
+    if (!signal) return;
+    const base64url = credentialId.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    try {
+      await signal({ rpId: config.relyingPartyId(), credentialId: base64url });
+    } catch {
+      return;
+    }
+  };
+
   async function secretFromRegistration(registration: Registration): Promise<Uint8Array<ArrayBuffer>> {
     if (registration.prfFirst) return new Uint8Array(registration.prfFirst);
-    return prfSecret(registration.credentialId);
+    try {
+      if (registration.prfEnabled === false) throw new PasskeyUnsupportedError("no-prf");
+      return await prfSecret(registration.credentialId);
+    } catch (err) {
+      if (err instanceof PasskeyUnsupportedError) await forgetCredential(registration.credentialId);
+      throw err;
+    }
   }
 
   async function seal(secret: Uint8Array<ArrayBuffer>, privateKeyHex: string): Promise<{ iv: string; ciphertext: string }> {
