@@ -86,3 +86,15 @@ test("pop-protocol credentials are soulbound and only their factory is indexed",
   expect(pop.capabilities).not.toContain("transfer");
   expect(pop.events?.map((e) => e.name)).toEqual(["CollectionCreated"]);
 });
+
+test("pop-protocol points at the ownerless factory and its start block", async () => {
+  const pop = getService("pop-protocol")!;
+  expect(pop.onchain?.STARKNET?.factoryAddress).toBe(
+    "0x06af6ffdde310991a40570716dc3681acc7effc610aeb548ea0baa02d4208d5f",
+  );
+  expect(pop.onchain?.STARKNET?.classHash).toBe(
+    "0x076200229933dd10b8d6d41ecb1a53ba1972510a42f4d505dae4f6b54d1b317e",
+  );
+  const { STARKNET_POP_FACTORY_START_BLOCK } = await import("../constants.js");
+  expect(STARKNET_POP_FACTORY_START_BLOCK).toBe(16126169);
+});
