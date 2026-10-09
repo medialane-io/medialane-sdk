@@ -525,8 +525,6 @@ export interface CreateCollectionIntentParams {
 
   claimEndTimestamp?: number;
 
-  eventType?: PopEventType;
-
   maxSupply?: string;
 
   conditions?: {
@@ -1030,25 +1028,6 @@ export interface ApiWalletActivity {
   tokenOutAddress: string | null;
   amountOut: string | null;
 }
-
-export interface PopClaimStatus {
-  isEligible: boolean;
-  hasClaimed: boolean;
-  tokenId: string | null;
-}
-
-export interface PopBatchEligibilityItem extends PopClaimStatus {
-  wallet: string;
-}
-
-export type PopEventType =
-  | "Conference"
-  | "Bootcamp"
-  | "Workshop"
-  | "Hackathon"
-  | "Meetup"
-  | "Course"
-  | "Other";
 
 export interface DropMintStatus {
   mintedByWallet: number;

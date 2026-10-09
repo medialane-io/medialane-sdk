@@ -37,7 +37,7 @@ export {
   type ReceiptLike,
   type DeployingServiceId,
 } from "./services/receipts.js";
-export { PopService } from "./services/pop.js";
+export { PopService, popHasClaimed } from "./services/pop.js";
 export {
   buildPopAllowlist,
   verifyPopProof,

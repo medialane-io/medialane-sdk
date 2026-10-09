@@ -78,8 +78,6 @@ import type {
   ConfirmRemixOfferParams,
   ApiResponse,
   CollectionTokensSort,
-  PopClaimStatus,
-  PopBatchEligibilityItem,
   DropMintStatus,
   ApiPlatformStats,
   ApiDropInfo,
@@ -931,21 +929,6 @@ export class ApiClient {
       body: JSON.stringify({ days }),
       headers: { "Authorization": `Bearer ${siwsToken}` },
     });
-  }
-
-  async getPopEligibility(collection: string, wallet: string): Promise<PopClaimStatus> {
-    const res = await this.get<{ data: PopClaimStatus }>(
-      `/v1/pop/eligibility/${this.addr(collection)}/${this.addr(wallet)}`
-    );
-    return res.data;
-  }
-
-  async getPopEligibilityBatch(collection: string, wallets: string[]): Promise<PopBatchEligibilityItem[]> {
-    const params = new URLSearchParams({ wallets: wallets.map((w) => this.addr(w)).join(",") });
-    const res = await this.get<{ data: PopBatchEligibilityItem[] }>(
-      `/v1/pop/eligibility/${this.addr(collection)}?${params}`
-    );
-    return res.data;
   }
 
   getCoins(opts: ApiCoinsQuery = {}): Promise<ApiResponse<ApiCoin[]>> {
