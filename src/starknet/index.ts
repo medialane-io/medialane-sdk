@@ -45,6 +45,16 @@ export {
   decodePopClaimFragment,
   type PopAllowlist,
 } from "./pop-allowlist.js";
+export {
+  popClaimLinks,
+  popClaimLinksCsv,
+  popClaimInfo,
+  popClaimState,
+  popCalls,
+  type PopClaimLink,
+  type PopClaimInfo,
+  type PopClaimState,
+} from "./pop-claim.js";
 export { DropService, toContractConditions as toDropContractConditions } from "./services/drop.js";
 export { TicketService } from "./services/ticket.js";
 export { ClubService } from "./services/club.js";
