@@ -30,6 +30,8 @@ export {
 export {
   createPasskeyOwner,
   PasskeyCancelledError,
+  PasskeyUnsupportedError,
+  type PasskeyUnsupportedReason,
   type PasskeyConfig,
   type PasskeyOwner,
   type CreatedOwner,

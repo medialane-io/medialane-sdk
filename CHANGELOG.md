@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.161.0] — 2026-10-09
+
+### Added
+
+- `PasskeyUnsupportedError` (`reason`), exported from `@medialane/sdk` and `@medialane/sdk/starknet`.
+- `PasskeyConfig.clientCapabilities` (optional).
+
+### Changed
+
+- Passkey errors no longer carry display text.
+- Registration options no longer set `authenticatorAttachment`.
+
 ## [0.160.0] — 2026-10-09
 
 ### Added
@@ -944,9 +956,6 @@ backend only through the SDK:
   builds `create_drop` calldata with the exact same conversion `DropService` always used client-side,
   rather than a second hand-rolled copy.
 
-See `medialane-core/docs/audits/2026-08-04-medialane-starknet-backend-bypass-audit.md` (the "Not a
-violation (backend gap)" row this closes) and
-`medialane-core/docs/superpowers/plans/2026-08-05-pop-drop-coin-backend-intents.md`.
 
 ## [0.84.0] — 2026-08-05
 
@@ -955,8 +964,7 @@ violation (backend gap)" row this closes) and
 `FeeSurface` extends to `"sponsorship"`; `ResolvedFeeConfig.sponsorshipBps` (default 100 = 1%) — closes
 the fee gap on `ACCEPT_SPONSORSHIP_BID`/`ACCEPT_SPONSORSHIP_PROPOSAL`, which previously charged 0%
 platform fee anywhere. The fee is bundled by the calling app (not the backend), matching the existing
-marketplace `fulfill_order` precedent — see
-`medialane-core/docs/superpowers/plans/2026-08-05-sponsorship-backend-intents.md`.
+marketplace `fulfill_order` precedent.
 
 ## [0.83.0] — 2026-08-05
 
@@ -966,9 +974,9 @@ marketplace `fulfill_order` precedent — see
 `placeSponsorshipBidIntent`, `retractSponsorshipBidIntent`, `acceptSponsorshipBidIntent`,
 `createSponsorshipProposalIntent`, `withdrawSponsorshipProposalIntent`, `acceptSponsorshipProposalIntent`,
 `rejectSponsorshipProposalIntent`) and their param types — closes the `ip-sponsorship` backend-bypass
-gap found in the 2026-08-05 medialane-io audit. None require SNIP-12 signing (the contract has no
+gap in medialane-io. None require SNIP-12 signing (the contract has no
 order-signing scheme); every one returns `{ requiresSignature: false, calls }`, same shape as
-`createMintIntent`. See `medialane-core/docs/superpowers/plans/2026-08-05-sponsorship-backend-intents.md`.
+`createMintIntent`.
 
 ## [0.82.0] — 2026-08-05
 
@@ -996,8 +1004,7 @@ there's nothing to render instead of a potentially near-blank cached static imag
 `CreateCollectionIntentParams.service` and `CreateMintIntentParams.{collectionId,tokenId,amount,value}` —
 factory-family (mip-erc1155/ip-tickets/ip-club) create-collection and mint intents were already live on
 the backend (2026-07-28) but had no typed client surface. Added `createTierIntent` and
-`createCheckoutIntent` client methods (routes already existed, no client method). Closes the SDK-side
-gap behind `medialane-core/docs/audits/2026-08-04-medialane-starknet-backend-bypass-audit.md` C2.
+`createCheckoutIntent` client methods (routes already existed, no client method).
 
 ## [0.79.0] — 2026-08-04
 
@@ -1129,7 +1136,7 @@ exported. Other 4xx still fail fast. Added `retry.test.ts`.
 
 ## [0.71.0] — 2026-07-20
 
-### Changed (breaking) — root no longer re-exports the Starknet adapter (audit C-3)
+### Changed (breaking) — root no longer re-exports the Starknet adapter
 
 The deprecated transition re-export (`export * from "./starknet"`) is removed
 from the root entry. Starknet-adapter symbols — `MedialaneClient`,
@@ -1336,7 +1343,7 @@ follows:
 
 ## [0.65.0] — 2026-07-11
 
-### Fixed — starknet-v8 `Contract` construction in every service class (closes audit S-1)
+### Fixed — starknet-v8 `Contract` construction in every service class
 
 All ~17 positional `new Contract(...)` sites in `starknet/services/*`
 (pop/drop/ticket/club/sponsorship/creatorCoin/erc1155collection) now route
@@ -1364,12 +1371,11 @@ structurally impossible.
 The SDK has no import-time side effects (a documented convention), so
 bundlers can now tree-shake unused exports — including the deprecated root
 re-export of the Starknet adapter. Root importers stop paying for the ABIs
-and modules they don't use, without waiting for the subpath-import migration
-(audit C-3).
+and modules they don't use, without waiting for the subpath-import migration.
 
 ## [0.64.0] — 2026-07-11
 
-### Removed — the self-executing marketplace path (BREAKING; audit C-2)
+### Removed — the self-executing marketplace path (BREAKING)
 
 Order construction now has exactly ONE source: `StarknetVenue` over the
 `VenueSigner` capability port + the pure builders. Removed:
@@ -1516,8 +1522,7 @@ and get the new recent-first default automatically.
 `medialane-starknet` and `medialane-io` each maintained their own copy of the
 SIWS (Sign-In With Starknet) client logic — nonce request, sign, verify,
 localStorage cache with expiry-awareness. Promoted into the SDK as the single
-source (medialane-core/docs/specs/2026-06-30-remove-clerk-from-backend-
-design.md §IX); both apps now re-export thin wrappers instead of duplicating
+source; both apps now re-export thin wrappers instead of duplicating
 the protocol.
 
 - **`requestSiwsToken({ backendUrl, walletAddress, signer })`** — request a
@@ -1536,7 +1541,7 @@ Additive — no existing exports changed.
 
 ### Added — Admin signed-request auth
 
-A wire format for authorizing privileged requests with an unforgeable Starknet signature instead of a shared secret (spec `medialane-core/docs/specs/2026-06-22-portal-admin-signed-request-auth-design.md`). Single source for both signer (portal/agent) and verifier (backend).
+A wire format for authorizing privileged requests with an unforgeable Starknet signature instead of a shared secret. Single source for both signer (portal/agent) and verifier (backend).
 
 - **`createAdminSessionGrant(signTypedData, opts)`** — one wallet SNIP-12 signature authorizes an ephemeral session keypair (scope `admin-api`, TTL). The private key never leaves the caller.
 - **`signAdminRequest(sessionPrivateKey, req)` / `verifyAdminRequestSig(sessionPublicKey, req, sig)`** — per-request signatures over the canonical `adminRequestDigest` (binds method+path+query+body+nonce+ts).
@@ -1550,7 +1555,7 @@ Additive — no existing exports changed.
 
 ### Changed — Coin / Collection split (BREAKING)
 
-Fungible coins get their own model, distinct from NFT collections (spec `medialane-core/docs/specs/2026-06-14-coin-collection-split-design.md`). A coin is not a collection of NFTs — it has a supply, decimals, and a market price (live from Ekubo), no tokens and no orders.
+Fungible coins get their own model, distinct from NFT collections. A coin is not a collection of NFTs — it has a supply, decimals, and a market price (live from Ekubo), no tokens and no orders.
 
 - **New `ApiCoin` type** + **`client.api.getCoins(opts?)` / `getCoin(contract)`** — coins are served from `/v1/coins`, never `/v1/collections`.
 - **`ApiCollection.standard` narrowed to `"ERC721" | "ERC1155"`** (BREAKING) — `Collection` is NFT-only now; the `"ERC20"`/`"UNKNOWN"` members are gone. Coins read `ApiCoin.standard` (`"ERC20"`).
@@ -1561,20 +1566,20 @@ Fungible coins get their own model, distinct from NFT collections (spec `mediala
 
 ### Changed — multichain-readiness foundations (BREAKING)
 
-Chain becomes a first-class axis in the SDK (spec `medialane-core/docs/specs/2026-06-13-multichain-readiness-design.md`, Phase 1). Starknet behavior is unchanged; the changes are structural so other chains slot in by registering coordinates (litmus test). **Not published** in this change set — it lives on `feat/multichain-readiness` until a deliberate publish + consumer migration.
+Chain becomes a first-class axis in the SDK. Starknet behavior is unchanged; the changes are structural so other chains slot in by registering coordinates (litmus test). **Not published** in this change set — it lives on `feat/multichain-readiness` until a deliberate publish + consumer migration.
 
 - **New `chains.ts` — `coordinates[chain]` registry** is the single source of per-chain service coordinates. Exports `CHAINS`, `getCoordinates(chain)`, `DEFAULT_CHAIN`, and types `Chain` / `ChainCoordinates`. The flat `*_MAINNET` constants keep their names/values but now derive from this registry.
 - **`MedialaneConfig.chain` replaces `network`** (BREAKING). The client is chain-scoped — one per chain — and resolves coordinates from the registry. The `client.network` getter is now `client.chain`.
 - **`ServiceDefinition.onchain` is per-chain** (BREAKING) — `Partial<Record<Chain, { factoryAddress?; classHash?; startBlock? }>>`. Read `service.onchain?.STARKNET?.factoryAddress` instead of `service.onchain?.factoryAddress`.
 - **Removed `SUPPORTED_NETWORKS`, `DEFAULT_RPC_URL`, and type `Network`** (BREAKING) — Medialane is mainnet-only, so coordinates key by chain alone (refines `decisions.md` D-9).
-- **`getChainId(config)` throws for non-Starknet** — SNIP-12 signing is Starknet-only; other-chain signing arrives behind the verify seam (spec §3.4).
+- **`getChainId(config)` throws for non-Starknet** — SNIP-12 signing is Starknet-only; other-chain signing arrives behind the verify seam.
 
 ## [0.33.0] — 2026-06-05
 
 ### Changed — finish the identity-model cutover (walletType is no longer an enum)
 
 Follow-up to 0.32.0. The backend long since dropped the `WalletType` enum — `Identity.provider`
-is free-form and lowercased server-side (permissionless, `07-identity §II`). 0.32.0 loosened the
+is free-form and lowercased server-side (permissionless). 0.32.0 loosened the
 register **output** to `string` but left the **input** typed as the now-defunct `ApiWalletType`.
 This finishes the cutover, symmetric on both sides:
 
@@ -1590,7 +1595,6 @@ This finishes the cutover, symmetric on both sides:
 
 App migration: the dapp can drop its `toBackendWalletType` uppercase mapping and pass the lowercase
 connector id straight through. io is unaffected (sends the literal `"CHIPIPAY"`, ignores the response).
-Spec: `medialane-core/docs/specs/2026-06-05-identity-cleanup-followups.md` (item B).
 
 ## [0.32.0] — 2026-06-05
 
@@ -1605,9 +1609,6 @@ The backend unified its identity model (medialane-backend#51): a wallet is now o
   backend normalizes, so existing apps keep working during cutover.
 - **`registerUser()` response `walletType` is now a free-form `string`** (was `ApiWalletType`) — the
   backend folds walletType into `Identity.provider`. (Renamed to `provider` in 0.33.0.)
-
-Identity model: `medialane-core/docs/architecture/07-identity-model.md`; app rollout:
-`medialane-core/docs/specs/2026-06-05-identity-app-rollout.md`.
 
 ## [0.31.0] — 2026-06-05
 
@@ -1707,7 +1708,7 @@ None — these fields are already returned by the backend; the SDK was simply no
 
 ### Verification
 
-Audit confirmed each new field is actually serialized by the backend:
+Each new field is serialized by the backend:
 - `Collection.isHidden` / `Collection.isFeatured`: see `serializeCollection()` in backend `src/api/routes/collections.ts:540-565`.
 - `ApiCreatorProfile.collectionImage`: see `medialane-backend/src/api/routes/profiles.ts:231-256`.
 
@@ -1716,29 +1717,29 @@ Audit confirmed each new field is actually serialized by the backend:
 ## [0.23.0] — 2026-05-25
 
 ### BREAKING (type-only)
-- **`OrderStatus` no longer includes `"COUNTER_OFFERED"`.** Canonical values are now `"ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED"` per `01-core-model §V`. Counter-offers are linked orders via `parentOrderHash`, not a third lifecycle state. Use `ApiOrder.hasActiveCounterOffer` (added in 0.22.0) for the "this bid has been countered" affordance. (audit P0-1 Phase D)
+- **`OrderStatus` no longer includes `"COUNTER_OFFERED"`.** Canonical values are now `"ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED"`. Counter-offers are linked orders via `parentOrderHash`, not a third lifecycle state. Use `ApiOrder.hasActiveCounterOffer` (added in 0.22.0) for the "this bid has been countered" affordance.
 
   Runtime impact: zero — the backend hasn't written `COUNTER_OFFERED` since 0.22.0 + matching backend release (2026-05-25). Any consumer with a `status === "COUNTER_OFFERED"` predicate left over will get a TypeScript narrowing error and a permanently-false branch at runtime; replace with the `hasActiveCounterOffer` flag.
 
 ## [0.22.0] — 2026-05-25
 
 ### Added
-- **`ApiOrder.hasActiveCounterOffer?: boolean`** — true when this order is a bid (ERC-20 offer) AND at least one ACTIVE counter exists with `parentOrderHash = this.orderHash`. Set by `GET /v1/orders/user/:address` and `GET /v1/orders/:orderHash`; undefined on other endpoints. Use this instead of `status === "COUNTER_OFFERED"` for "this bid has been countered" affordances — the status pattern is being phased out (`01-core-model §V`). (audit P0-1, Phase A.2)
+- **`ApiOrder.hasActiveCounterOffer?: boolean`** — true when this order is a bid (ERC-20 offer) AND at least one ACTIVE counter exists with `parentOrderHash = this.orderHash`. Set by `GET /v1/orders/user/:address` and `GET /v1/orders/:orderHash`; undefined on other endpoints. Use this instead of `status === "COUNTER_OFFERED"` for "this bid has been countered" affordances — the status pattern is being phased out.
 
 ### Changed
 - **`ApiOrder.parentOrderHash`** is now always emitted by the backend (was conditional). Type stays `string | null | undefined` for back-compat with older response shapes.
 
 ## [0.21.0] — 2026-05-24
 
-Audit-driven release. See `medialane-core/docs/audits/2026-05-24-backend-sdk-audit.md`.
+Hardening release.
 
 ### Changed
-- **`normalizeAddress` now validates input.** Routes through `BigInt(...)` — non-numeric input throws `Invalid Starknet address` instead of silently producing `0x000...0banana`. Existing valid Starknet addresses continue to normalize to the same 64-char lowercase hex. (audit P1-10 + R0)
+- **`normalizeAddress` now validates input.** Routes through `BigInt(...)` — non-numeric input throws `Invalid Starknet address` instead of silently producing `0x000...0banana`. Existing valid Starknet addresses continue to normalize to the same 64-char lowercase hex.
 - **SNIP-12 builder `chainId` parameter widened to `constants.StarknetChainId | string`** so callers using plain strings from `RpcProvider.getChainId()` (e.g. medialane-backend) can import directly without casts. No behavior change. (R1)
 
 ### Added
 - **`normalizeHash`** export — same shape as `normalizeAddress`, separate name to make intent explicit at call sites. medialane-backend re-exports both from its `utils/starknet.ts`. (R0)
-- **`ServiceEventDeclaration`** type + optional **`events`** field on `ServiceDefinition`. Populated for the 7 services that emit events (marketplace × 2, MIP factories × 2, POP, Drop). `emittedBy: "factory" | "instance"` + `poll: "fast" | "slow"` cadence hint. Foundation for the year-2 data-driven event-parser registry (see `02-protocol-app-split §V`). Backend indexer keeps hand-coded pollers until it consumes this metadata. (R3 prep)
+- **`ServiceEventDeclaration`** type + optional **`events`** field on `ServiceDefinition`. Populated for the 7 services that emit events (marketplace × 2, MIP factories × 2, POP, Drop). `emittedBy: "factory" | "instance"` + `poll: "fast" | "slow"` cadence hint. Foundation for the year-2 data-driven event-parser registry. Backend indexer keeps hand-coded pollers until it consumes this metadata.
 
 ### Fixed
 - **`MedialaneClient.api` proxy whitelists known method names only.** When `backendUrl` is not configured, the previous proxy returned a throwing function for ANY property access — including `Symbol.iterator`, `.then` (made the proxy thenable; `Promise.resolve(client.api)` silently hung), `.toString`, `.constructor`. Narrowed to `ApiClient.prototype` method names; symbol/unknown access passes through to a sentinel instance. (P2-8)

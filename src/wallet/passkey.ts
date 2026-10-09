@@ -16,6 +16,21 @@ export class PasskeyCancelledError extends Error {
   }
 }
 
+export type PasskeyUnsupportedReason = "no-webauthn" | "no-prf";
+
+export class PasskeyUnsupportedError extends Error {
+  readonly reason: PasskeyUnsupportedReason;
+  constructor(reason: PasskeyUnsupportedReason) {
+    super(
+      reason === "no-webauthn"
+        ? "Passkeys are not available in this environment."
+        : "This passkey did not return a PRF secret, so it cannot seal a wallet key.",
+    );
+    this.name = "PasskeyUnsupportedError";
+    this.reason = reason;
+  }
+}
+
 export interface PasskeyConfig {
   appName: string;
   relyingPartyName: string;
@@ -25,6 +40,7 @@ export interface PasskeyConfig {
   passkeyUser: () => Promise<PublicKeyCredentialUserEntity>;
   knownCredentials: () => PublicKeyCredentialDescriptor[];
   credentials?: CredentialsContainer;
+  clientCapabilities?: () => Promise<Record<string, boolean | undefined>>;
   randomBytes?: (length: number) => Uint8Array<ArrayBuffer>;
 }
 
@@ -68,22 +84,32 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
     config.randomBytes ?? ((length: number) => crypto.getRandomValues(new Uint8Array(length)));
   const credentialsApi = (): CredentialsContainer => {
     const api = config.credentials ?? (typeof navigator === "undefined" ? undefined : navigator.credentials);
-    if (!api) throw new Error("Passkeys are only available in a browser.");
+    if (!api) throw new PasskeyUnsupportedError("no-webauthn");
     return api;
   };
 
-  const prfUnsupportedMessage = (): string => {
-    const isBrave = typeof navigator !== "undefined" && "brave" in navigator;
-    const cause = isBrave
-      ? "Brave doesn't currently support the WebAuthn PRF extension."
-      : "This browser didn't return a passkey PRF secret.";
-    return (
-      `${cause} ${config.appName} needs it to seal your key. Your device passkey (Touch ID) is fine, ` +
-      "the limitation is the browser. Please open this in Safari or Chrome on an up-to-date OS."
-    );
+  const browserRefusesPrf = async (): Promise<boolean> => {
+    const read =
+      config.clientCapabilities ??
+      (typeof PublicKeyCredential !== "undefined" &&
+      typeof (PublicKeyCredential as { getClientCapabilities?: unknown }).getClientCapabilities === "function"
+        ? () => (PublicKeyCredential as unknown as { getClientCapabilities(): Promise<Record<string, boolean | undefined>> }).getClientCapabilities()
+        : undefined);
+    if (!read) return false;
+    try {
+      return (await read())["extension:prf"] === false;
+    } catch {
+      return false;
+    }
+  };
+
+  const ensurePrfPossible = async (): Promise<void> => {
+    credentialsApi();
+    if (await browserRefusesPrf()) throw new PasskeyUnsupportedError("no-prf");
   };
 
   async function registerPasskey(): Promise<Registration> {
+    await ensurePrfPossible();
     let credential: PublicKeyCredential;
     try {
       credential = (await credentialsApi().create({
@@ -99,7 +125,6 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
           authenticatorSelection: {
             residentKey: "required",
             userVerification: "required",
-            authenticatorAttachment: "platform",
           },
           extensions: { prf: { eval: { first: config.prfSalt } } } as AuthenticationExtensionsClientInputs,
         },
@@ -117,6 +142,7 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
   }
 
   async function prfSecret(credentialId: string): Promise<Uint8Array<ArrayBuffer>> {
+    await ensurePrfPossible();
     let assertion: PublicKeyCredential;
     try {
       assertion = (await credentialsApi().get({
@@ -134,17 +160,13 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
     }
     const result = (assertion.getClientExtensionResults() as { prf?: { results?: { first?: ArrayBuffer } } }).prf
       ?.results?.first;
-    if (!result) throw new Error("Passkey PRF unavailable on this device/browser.");
+    if (!result) throw new PasskeyUnsupportedError("no-prf");
     return new Uint8Array(result);
   }
 
   async function secretFromRegistration(registration: Registration): Promise<Uint8Array<ArrayBuffer>> {
     if (registration.prfFirst) return new Uint8Array(registration.prfFirst);
-    try {
-      return await prfSecret(registration.credentialId);
-    } catch {
-      throw new Error(prfUnsupportedMessage());
-    }
+    return prfSecret(registration.credentialId);
   }
 
   async function seal(secret: Uint8Array<ArrayBuffer>, privateKeyHex: string): Promise<{ iv: string; ciphertext: string }> {

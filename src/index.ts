@@ -30,7 +30,7 @@ export type {
   ConfirmResult,
   TokenSource,
 } from "./api/launchpad-runs.js";
-export { PasskeyCancelledError } from "./wallet/passkey.js";
+export { PasskeyCancelledError, PasskeyUnsupportedError, type PasskeyUnsupportedReason } from "./wallet/passkey.js";
 
 export * from "./types/index.js";
 export type { MedialaneErrorCode } from "./types/errors.js";
