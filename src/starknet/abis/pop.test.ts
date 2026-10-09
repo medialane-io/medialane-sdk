@@ -35,7 +35,7 @@ describe("POP factory ABI", () => {
 describe("POP collection ABI", () => {
   test("has the claim, issue and soulbound surface", () => {
     const n = names(POPCollectionABI);
-    for (const f of ["set_allowlist_root", "claim", "issue", "has_claimed", "organizer", "locked", "token_uri"]) {
+    for (const f of ["set_allowlist_root", "claim", "issue", "burn", "has_claimed", "organizer", "locked", "token_uri"]) {
       expect(n).toContain(f);
     }
   });
@@ -56,5 +56,21 @@ describe("popHasClaimed", () => {
       entrypoint: "has_claimed",
       calldata: ["0x" + "1".padStart(64, "0")],
     });
+  });
+});
+
+describe("PopService.burn", () => {
+  test("burns the given token on the collection", async () => {
+    const { PopService } = await import("../services/pop.js");
+    const { resolveConfig } = await import("../../config.js");
+    const executed: { contractAddress: string; entrypoint: string; calldata: unknown }[][] = [];
+    const account = { execute: async (calls: never) => (executed.push(calls), { transaction_hash: "0xt" }) };
+    const pop = new PopService(resolveConfig({}));
+    const result = await pop.burn(account as never, { collection: "0xabc", tokenId: 7n });
+    expect(result.txHash).toBe("0xt");
+    const [call] = executed[0]!;
+    expect(call!.entrypoint).toBe("burn");
+    expect(BigInt(call!.contractAddress)).toBe(0xabcn);
+    expect((call!.calldata as string[]).map((x) => BigInt(x))).toEqual([7n, 0n]);
   });
 });

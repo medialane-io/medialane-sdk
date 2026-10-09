@@ -47,6 +47,13 @@ export class PopService {
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
   }
+
+  /** Destroys the caller's own credential; the address cannot receive another from this collection. */
+  async burn(account: AccountInterface, params: { collection: string; tokenId: string | bigint }): Promise<TxResult> {
+    const call = this._collection(params.collection, account).populate("burn", [BigInt(params.tokenId)]);
+    const res = await account.execute([call]);
+    return { txHash: res.transaction_hash };
+  }
 }
 
 /** Whether `address` already holds this collection's credential (read from chain). */

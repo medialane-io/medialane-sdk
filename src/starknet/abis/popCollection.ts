@@ -338,6 +338,18 @@ export const POPCollectionABI = [
       },
       {
         "type": "function",
+        "name": "burn",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
         "name": "organizer",
         "inputs": [],
         "outputs": [
