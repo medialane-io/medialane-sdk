@@ -23,6 +23,7 @@ export interface StarknetCoordinates {
   collection1155StartBlock?: number;
   popFactory?: `0x${string}`;
   popCollectionClassHash?: `0x${string}`;
+  popFactoryStartBlock?: number;
   dropFactory?: `0x${string}`;
   dropCollectionClassHash?: `0x${string}`;
   nftComments?: `0x${string}`;

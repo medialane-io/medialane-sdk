@@ -80,3 +80,9 @@ test("certificate-emission adds airdrop on top of pop-protocol's capabilities, b
   expect(hasCapability("certificate-emission", "claim")).toBe(false);
   expect(hasCapability("pop-protocol", "airdrop")).toBe(false);
 });
+
+test("pop-protocol credentials are soulbound and only their factory is indexed", () => {
+  const pop = getService("pop-protocol")!;
+  expect(pop.capabilities).not.toContain("transfer");
+  expect(pop.events?.map((e) => e.name)).toEqual(["CollectionCreated"]);
+});
