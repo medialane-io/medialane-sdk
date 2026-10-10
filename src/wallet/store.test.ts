@@ -72,3 +72,17 @@ test("unreadable storage reports no wallet instead of throwing", () => {
   localStorage.setItem("app-one.wallet.owner.v1", "not json");
   expect(store.load()).toBeNull();
 });
+
+test("saving a different wallet keeps the previous wallet's key under its address", () => {
+  store.save(FAKE);
+  const next: SealedOwner = { ...FAKE, credentialId: "cred2", address: "0x123", ciphertext: "ct2" };
+  store.save(next);
+  expect(store.load()).toEqual(next);
+  expect(JSON.parse(localStorage.getItem(`app-one.wallet.owner.v1:${FAKE.address}`)!)).toEqual(FAKE);
+});
+
+test("saving the same wallet again keeps no extra copy", () => {
+  store.save(FAKE);
+  store.save({ ...FAKE, ciphertext: "ct-new" });
+  expect(localStorage.length).toBe(1);
+});

@@ -29,6 +29,10 @@ export function createOwnerStore(config: { storeKey: string; changeEvent: string
       return this.load()?.address ?? null;
     },
     save(sealed) {
+      const previous = this.load();
+      if (previous && previous.address !== sealed.address) {
+        localStorage.setItem(`${storeKey}:${previous.address}`, JSON.stringify(previous));
+      }
       localStorage.setItem(storeKey, JSON.stringify(sealed));
       announce();
     },

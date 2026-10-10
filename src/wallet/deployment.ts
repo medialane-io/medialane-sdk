@@ -165,8 +165,10 @@ export async function completeDeployment(
   options: { forceNew?: boolean } = {},
 ): Promise<DeploymentResult> {
   let sealed = options.forceNew ? null : deps.store.load();
+  if (sealed && (await (deps.isDeployedImpl ?? isDeployed)(deps.provider(), sealed.address).catch(() => false))) {
+    sealed = null;
+  }
   let privateKeyHex: string;
-  const wasStored = sealed !== null;
 
   if (!sealed) {
     onStep("creating-passkey");
@@ -178,13 +180,8 @@ export async function completeDeployment(
     privateKeyHex = await deps.passkey.unlockOwnerKey(sealed);
   }
 
-  const onChain = wasStored
-    ? await (deps.isDeployedImpl ?? isDeployed)(deps.provider(), sealed.address).catch(() => false)
-    : false;
-  if (!onChain) {
-    onStep("deploying");
-    await deployWallet(deps, { ownerAddress: sealed.address, ownerPubKey: sealed.ownerPubKey, privateKeyHex });
-  }
+  onStep("deploying");
+  await deployWallet(deps, { ownerAddress: sealed.address, ownerPubKey: sealed.ownerPubKey, privateKeyHex });
 
   onStep("signing-in");
   const address = sealed.address;

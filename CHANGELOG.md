@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.163.0] — 2026-10-10
+
+### Changed
+
+- `completeDeployment`: a stored owner whose address `isDeployed` is not reused; a new owner is created.
+- `OwnerStore.save`: a stored owner with a different address is kept under `<storeKey>:<address>`.
+
 ## [0.162.1] — 2026-10-10
 
 ### Added
