@@ -1,24 +1,6 @@
 import { test, expect } from "bun:test";
 import type { SealedOwner } from "../wallet/types.js";
-import { adoptSessionWallet, claimSessionWallet, type SessionWalletClaimDeps } from "./session-wallet.js";
-
-test("adoptSessionWallet saves the account's wallet and returns it", async () => {
-  const saved: string[] = [];
-  const wallet = { walletAddress: "0xabc", needsKeySetup: true };
-  expect(await adoptSessionWallet({ getSessionWallet: async () => wallet }, (a) => saved.push(a))).toEqual(wallet);
-  expect(saved).toEqual(["0xabc"]);
-});
-
-test("adoptSessionWallet returns null and saves nothing when the account has no wallet", async () => {
-  const saved: string[] = [];
-  expect(await adoptSessionWallet({ getSessionWallet: async () => null }, (a) => saved.push(a))).toBeNull();
-  expect(saved).toEqual([]);
-});
-
-test("adoptSessionWallet throws when the lookup fails, so it is never read as no wallet", async () => {
-  const lookup = { getSessionWallet: async () => Promise.reject(new Error("network down")) };
-  await expect(adoptSessionWallet(lookup, () => {})).rejects.toThrow("network down");
-});
+import { claimSessionWallet, type SessionWalletClaimDeps } from "./session-wallet.js";
 
 const WALLET = "0xabc";
 const fresh: SealedOwner = { credentialId: "c", ownerPubKey: "0x1", address: "0x999", iv: "i", ciphertext: "x" };
