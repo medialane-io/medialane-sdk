@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.162.1] — 2026-10-10
+
+### Fixed
+
+- `completeDeployment`: a stored wallet already on chain skips deployment and goes to sign-in.
+
 ## [0.162.0] — 2026-10-09
 
 ### Added

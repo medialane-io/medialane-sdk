@@ -41,6 +41,7 @@ function setup(
     provider: () => ({}) as ProviderInterface,
     backendUrl: "/api/proxy",
     requestSiwsTokenImpl: async () => "siws-token",
+    isDeployedImpl: async () => false,
     waitUntilDeployedImpl: async () => {
       log.push("waited");
     },
@@ -136,4 +137,27 @@ test("a wallet that never appears fails with a message worth showing", async () 
     },
   });
   await expect(completeDeployment(deps, () => {})).rejects.toThrow(/has not appeared on Starknet/);
+});
+
+test("a stored wallet already on chain skips deployment and goes straight to sign-in", async () => {
+  const { deps, log } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    isDeployedImpl: async () => true,
+  });
+  const steps: string[] = [];
+  const result = await completeDeployment(deps, (step) => steps.push(step));
+  expect(log).toEqual([]);
+  expect(steps).toEqual(["signing-in"]);
+  expect(result.siwsToken).toBe("siws-token");
+});
+
+test("a failed on-chain check still attempts the deployment", async () => {
+  const { deps, log } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    isDeployedImpl: async () => {
+      throw new Error("rpc down");
+    },
+  });
+  await completeDeployment(deps, () => {});
+  expect(log).toEqual(["sponsored", "waited"]);
 });
