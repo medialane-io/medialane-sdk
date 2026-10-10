@@ -125,29 +125,13 @@ export interface DeploymentDeps {
   deploySelfFundedImpl?: typeof deploySelfFunded;
   requestSiwsTokenImpl?: typeof requestSiwsToken;
   waitUntilDeployedImpl?: typeof waitUntilDeployed;
+  isDeployedImpl?: typeof isDeployed;
 }
 
-export async function completeDeployment(
+async function deployWallet(
   deps: DeploymentDeps,
-  onStep: (step: DeploymentStep) => void,
-  options: { forceNew?: boolean } = {},
-): Promise<DeploymentResult> {
-  let sealed = options.forceNew ? null : deps.store.load();
-  let privateKeyHex: string;
-
-  if (!sealed) {
-    onStep("creating-passkey");
-    const created = await deps.passkey.createOwnerKey();
-    sealed = created.sealed;
-    privateKeyHex = created.privateKeyHex;
-    deps.store.save(sealed);
-  } else {
-    privateKeyHex = await deps.passkey.unlockOwnerKey(sealed);
-  }
-
-  onStep("deploying");
-  const wallet = { ownerAddress: sealed.address, ownerPubKey: sealed.ownerPubKey, privateKeyHex };
-
+  wallet: { ownerAddress: string; ownerPubKey: string; privateKeyHex: string },
+): Promise<void> {
   const sponsored = deps.deploySponsoredImpl ?? deploySponsored;
   const selfFunded = deps.deploySelfFundedImpl ?? deploySelfFunded;
 
@@ -172,7 +156,35 @@ export async function completeDeployment(
     await selfFunded({ provider: deps.provider(), ...wallet });
   }
 
-  await (deps.waitUntilDeployedImpl ?? waitUntilDeployed)(deps.provider(), sealed.address);
+  await (deps.waitUntilDeployedImpl ?? waitUntilDeployed)(deps.provider(), wallet.ownerAddress);
+}
+
+export async function completeDeployment(
+  deps: DeploymentDeps,
+  onStep: (step: DeploymentStep) => void,
+  options: { forceNew?: boolean } = {},
+): Promise<DeploymentResult> {
+  let sealed = options.forceNew ? null : deps.store.load();
+  let privateKeyHex: string;
+  const wasStored = sealed !== null;
+
+  if (!sealed) {
+    onStep("creating-passkey");
+    const created = await deps.passkey.createOwnerKey();
+    sealed = created.sealed;
+    privateKeyHex = created.privateKeyHex;
+    deps.store.save(sealed);
+  } else {
+    privateKeyHex = await deps.passkey.unlockOwnerKey(sealed);
+  }
+
+  const onChain = wasStored
+    ? await (deps.isDeployedImpl ?? isDeployed)(deps.provider(), sealed.address).catch(() => false)
+    : false;
+  if (!onChain) {
+    onStep("deploying");
+    await deployWallet(deps, { ownerAddress: sealed.address, ownerPubKey: sealed.ownerPubKey, privateKeyHex });
+  }
 
   onStep("signing-in");
   const address = sealed.address;
