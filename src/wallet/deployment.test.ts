@@ -139,19 +139,19 @@ test("a wallet that never appears fails with a message worth showing", async () 
   await expect(completeDeployment(deps, () => {})).rejects.toThrow(/has not appeared on Starknet/);
 });
 
-test("a stored wallet already on chain skips deployment and goes straight to sign-in", async () => {
-  const { deps, log } = setup({
+test("a stored wallet already on chain is not reused: a new wallet is created and deployed", async () => {
+  const { deps, log, counts } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
     isDeployedImpl: async () => true,
   });
   const steps: string[] = [];
-  const result = await completeDeployment(deps, (step) => steps.push(step));
-  expect(log).toEqual([]);
-  expect(steps).toEqual(["signing-in"]);
-  expect(result.siwsToken).toBe("siws-token");
+  await completeDeployment(deps, (step) => steps.push(step));
+  expect(steps).toEqual(["creating-passkey", "deploying", "signing-in"]);
+  expect(log).toEqual(["sponsored", "waited"]);
+  expect(counts()).toEqual({ unlocks: 0, creates: 1, saved: 1, announced: 1 });
 });
 
-test("a failed on-chain check still attempts the deployment", async () => {
+test("a failed on-chain check keeps the stored wallet", async () => {
   const { deps, log } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
     isDeployedImpl: async () => {
