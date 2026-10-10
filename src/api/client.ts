@@ -27,6 +27,7 @@ import type {
   ApiBusinessProvisioning,
   ApiWalletActivity,
   ApiUserWallet,
+  ApiSession,
   ApiChain,
   ApiActivity,
   ApiActivitiesQuery,
@@ -206,8 +207,8 @@ export class ApiClient {
     return this.request<T>(path, { method: "PATCH", body: JSON.stringify(body) });
   }
 
-  private bearer(siwsToken: string): Record<string, string> {
-    return { Authorization: `Bearer ${siwsToken}` };
+  private bearer(siwsToken?: string): Record<string, string> {
+    return siwsToken ? { Authorization: `Bearer ${siwsToken}` } : {};
   }
 
   private asSubject(siwsToken?: string): Record<string, string> | undefined {
@@ -603,7 +604,7 @@ export class ApiClient {
   async claimCollection(
     contractAddress: string,
     walletAddress: string,
-    siwsToken: string
+    siwsToken?: string
   ): Promise<{ verified: boolean; collection?: ApiCollection; reason?: string }> {
     return this.request("/v1/collections/claim", {
       method: "POST",
@@ -645,7 +646,7 @@ export class ApiClient {
   updateCollectionProfile(
     contractAddress: string,
     data: UpdateCollectionProfileInput,
-    siwsToken: string
+    siwsToken?: string
   ): Promise<ApiCollectionProfile> {
     return this.request<ApiCollectionProfile>(
       `/v1/collections/${this.addr(contractAddress)}/profile`,
@@ -664,7 +665,7 @@ export class ApiClient {
 
   getGatedContent(
     contractAddress: string,
-    siwsToken: string
+    siwsToken?: string
   ): Promise<{ title: string; url: string; type: string } | null> {
     return this.request<{ title: string; url: string; type: string } | null>(
       `/v1/collections/${this.addr(contractAddress)}/gated-content`,
@@ -701,7 +702,7 @@ export class ApiClient {
   updateCreatorProfile(
     walletAddress: string,
     data: Partial<Omit<ApiCreatorProfile, "walletAddress" | "chain" | "updatedAt">>,
-    siwsToken: string
+    siwsToken?: string
   ): Promise<ApiCreatorProfile> {
     return this.request<ApiCreatorProfile>(
       `/v1/creators/${this.addr(walletAddress)}/profile`,
@@ -718,7 +719,7 @@ export class ApiClient {
   submitCollectionSlugClaim(
     contractAddress: string,
     slug: string,
-    siwsToken: string,
+    siwsToken?: string,
     notifyEmail?: string
   ): Promise<{ claim: ApiCollectionSlugClaim }> {
     return this.request<{ claim: ApiCollectionSlugClaim }>("/v1/collection-slug-claims", {
@@ -728,7 +729,7 @@ export class ApiClient {
     });
   }
 
-  getMyCollectionSlugClaims(siwsToken: string): Promise<{ claims: ApiCollectionSlugClaim[] }> {
+  getMyCollectionSlugClaims(siwsToken?: string): Promise<{ claims: ApiCollectionSlugClaim[] }> {
     return this.request<{ claims: ApiCollectionSlugClaim[] }>("/v1/collection-slug-claims/me", {
       method: "GET",
       headers: this.bearer(siwsToken),
@@ -762,7 +763,7 @@ export class ApiClient {
   }
 
   async upsertMyWallet(
-    siwsToken: string,
+    siwsToken?: string,
     options: {
 
       walletType?: string;
@@ -819,7 +820,16 @@ export class ApiClient {
     return body.walletAddress ? { walletAddress: body.walletAddress, needsKeySetup: body.needsKeySetup === true } : null;
   }
 
-  getMyWallet(siwsToken: string): Promise<ApiUserWallet | null> {
+  async getSession(): Promise<ApiSession | null> {
+    try {
+      return await this.request<ApiSession>("/v1/users/me", { method: "GET" });
+    } catch (err) {
+      if (err instanceof MedialaneApiError && (err.status === 401 || err.status === 403)) return null;
+      throw err;
+    }
+  }
+
+  getMyWallet(siwsToken?: string): Promise<ApiUserWallet | null> {
     return this.request<ApiUserWallet | null>(
       "/v1/users/me",
       { method: "GET", headers: this.bearer(siwsToken) },
@@ -827,7 +837,7 @@ export class ApiClient {
     );
   }
 
-  changeMyEmail(email: string, siwsToken: string): Promise<{ email: string }> {
+  changeMyEmail(email: string, siwsToken?: string): Promise<{ email: string }> {
     return this.request<{ email: string }>("/v1/users/me/email", {
       method: "POST",
       headers: this.bearer(siwsToken),
@@ -851,40 +861,40 @@ export class ApiClient {
 
   submitRemixOffer(
     params: CreateRemixOfferParams,
-    siwsToken: string
+    siwsToken?: string
   ): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>("/v1/remix-offers", {
       method: "POST",
       body: JSON.stringify(params),
-      headers: { "Authorization": `Bearer ${siwsToken}` },
+      headers: this.bearer(siwsToken),
     });
   }
 
   submitAutoRemixOffer(
     params: AutoRemixOfferParams,
-    siwsToken: string
+    siwsToken?: string
   ): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>("/v1/remix-offers/auto", {
       method: "POST",
       body: JSON.stringify(params),
-      headers: { "Authorization": `Bearer ${siwsToken}` },
+      headers: this.bearer(siwsToken),
     });
   }
 
   confirmSelfRemix(
     params: ConfirmSelfRemixParams,
-    siwsToken: string
+    siwsToken?: string
   ): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>("/v1/remix-offers/self/confirm", {
       method: "POST",
       body: JSON.stringify(params),
-      headers: { "Authorization": `Bearer ${siwsToken}` },
+      headers: this.bearer(siwsToken),
     });
   }
 
   getRemixOffers(
     query: ApiRemixOffersQuery,
-    siwsToken: string
+    siwsToken?: string
   ): Promise<ApiResponse<ApiRemixOffer[]>> {
     const params = new URLSearchParams({ role: query.role });
     if (query.status) params.set("status", query.status);
@@ -906,28 +916,28 @@ export class ApiClient {
   confirmRemixOffer(
     id: string,
     params: ConfirmRemixOfferParams,
-    siwsToken: string
+    siwsToken?: string
   ): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/confirm`, {
       method: "POST",
       body: JSON.stringify(params),
-      headers: { "Authorization": `Bearer ${siwsToken}` },
+      headers: this.bearer(siwsToken),
     });
   }
 
-  rejectRemixOffer(id: string, siwsToken: string): Promise<ApiResponse<ApiRemixOffer>> {
+  rejectRemixOffer(id: string, siwsToken?: string): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/reject`, {
       method: "POST",
       body: JSON.stringify({}),
-      headers: { "Authorization": `Bearer ${siwsToken}` },
+      headers: this.bearer(siwsToken),
     });
   }
 
-  extendRemixOffer(id: string, days: number, siwsToken: string): Promise<ApiResponse<ApiRemixOffer>> {
+  extendRemixOffer(id: string, days: number, siwsToken?: string): Promise<ApiResponse<ApiRemixOffer>> {
     return this.request<ApiResponse<ApiRemixOffer>>(`/v1/remix-offers/${id}/extend`, {
       method: "POST",
       body: JSON.stringify({ days }),
-      headers: { "Authorization": `Bearer ${siwsToken}` },
+      headers: this.bearer(siwsToken),
     });
   }
 
@@ -951,10 +961,10 @@ export class ApiClient {
     return this.get<ApiResponse<ApiCoinPrices>>("/v1/coins/prices");
   }
 
-  claimCoin(coinAddress: string, siwsToken: string): Promise<ApiCoinClaimResult> {
+  claimCoin(coinAddress: string, siwsToken?: string): Promise<ApiCoinClaimResult> {
     return this.request<ApiCoinClaimResult>("/v1/coins/claim", {
       method: "POST",
-      headers: { Authorization: `Bearer ${siwsToken}` },
+      headers: this.bearer(siwsToken),
       body: JSON.stringify({ coinAddress }),
     });
   }
@@ -968,7 +978,7 @@ export class ApiClient {
   updateCoinProfile(
     contract: string,
     data: { image?: string | null; description?: string | null },
-    siwsToken: string
+    siwsToken?: string
   ): Promise<ApiResponse<ApiCoin>> {
     return this.request<ApiResponse<ApiCoin>>(`/v1/coins/${this.addr(contract)}`, {
       method: "PATCH",
@@ -1051,7 +1061,7 @@ export class ApiClient {
     return res.isHidden;
   }
 
-  getMyUsernameClaim(siwsToken: string): Promise<{ username: string | null; claim: ApiUsernameClaim | null }> {
+  getMyUsernameClaim(siwsToken?: string): Promise<{ username: string | null; claim: ApiUsernameClaim | null }> {
     return this.request<{ username: string | null; claim: ApiUsernameClaim | null }>("/v1/username-claims/me", {
       method: "GET",
       headers: this.bearer(siwsToken),
@@ -1064,7 +1074,7 @@ export class ApiClient {
     );
   }
 
-  async submitUsernameClaim(username: string, siwsToken: string, notifyEmail?: string): Promise<ApiUsernameClaim> {
+  async submitUsernameClaim(username: string, siwsToken?: string, notifyEmail?: string): Promise<ApiUsernameClaim> {
     const res = await this.request<{ claim: ApiUsernameClaim }>("/v1/username-claims", {
       method: "POST",
       headers: this.bearer(siwsToken),
@@ -1073,7 +1083,7 @@ export class ApiClient {
     return res.claim;
   }
 
-  async submitReport(report: ApiSubmitReport, siwsToken: string): Promise<void> {
+  async submitReport(report: ApiSubmitReport, siwsToken?: string): Promise<void> {
     const targetContract = report.targetContract ? this.addr(report.targetContract) : undefined;
     const targetAddress = report.targetAddress ? this.addr(report.targetAddress) : undefined;
     let targetKey: string | null = null;
@@ -1114,7 +1124,7 @@ export class ApiClient {
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections${qs ? `?${qs}` : ""}`);
   }
 
-  generateWallet(newWalletSiwsToken: string, siwsToken: string): Promise<{ walletAddress: string }> {
+  generateWallet(newWalletSiwsToken: string, siwsToken?: string): Promise<{ walletAddress: string }> {
     return this.request<{ walletAddress: string }>("/v1/users/me/generate-wallet", {
       method: "POST",
       headers: this.bearer(siwsToken),

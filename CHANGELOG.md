@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.164.0] — 2026-10-10
+
+### Added
+
+- `ApiClient.getSession()`, `ApiSession`.
+
+### Changed
+
+- `ApiClient` methods taking `siwsToken`: the token is optional; without it no `Authorization` header is sent.
+
 ## [0.163.0] — 2026-10-10
 
 ### Changed
