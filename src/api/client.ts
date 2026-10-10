@@ -772,8 +772,6 @@ export class ApiClient {
 
 
       email?: string;
-
-      accountToken?: string;
     } = {},
   ): Promise<ApiUserWallet> {
     const body: Record<string, string> = {
@@ -781,7 +779,6 @@ export class ApiClient {
     };
     if (options.chain) body.chain = options.chain;
     if (options.email) body.email = options.email;
-    if (options.accountToken) body.accountToken = options.accountToken;
     return this.request<ApiUserWallet>("/v1/users/me", {
       method: "POST",
       body: JSON.stringify(body),

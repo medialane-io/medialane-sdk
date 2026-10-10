@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.165.0] — 2026-10-10
+
+### Removed
+
+- `ApiClient.upsertMyWallet` option `accountToken`.
+
 ## [0.164.0] — 2026-10-10
 
 ### Added
