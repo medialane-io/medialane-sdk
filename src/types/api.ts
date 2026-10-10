@@ -982,6 +982,14 @@ export interface ApiCreatorListResult {
 
 export type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BASE" | "BITCOIN";
 
+export interface ApiSession {
+  accountId: string;
+  publicId: string;
+  walletAddress: string | null;
+  email: string | null;
+  emailDeadline: string | null;
+}
+
 export interface ApiUserWallet {
   walletAddress: string;
   email?: string | null;
