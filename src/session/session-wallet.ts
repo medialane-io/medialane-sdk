@@ -8,15 +8,6 @@ export interface SessionWallet {
   needsKeySetup: boolean;
 }
 
-export async function adoptSessionWallet(
-  api: Pick<ApiClient, "getSessionWallet">,
-  saveAddress: (walletAddress: string) => void,
-): Promise<SessionWallet | null> {
-  const wallet = await api.getSessionWallet();
-  if (wallet) saveAddress(wallet.walletAddress);
-  return wallet;
-}
-
 export interface SessionWalletClaimDeps {
   createOwnerKey(): Promise<CreatedOwner>;
   loadOwner(): SealedOwner | null;

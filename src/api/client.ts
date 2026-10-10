@@ -27,7 +27,6 @@ import type {
   ApiBusinessProvisioning,
   ApiWalletActivity,
   ApiUserWallet,
-  ApiSession,
   ApiChain,
   ApiActivity,
   ApiActivitiesQuery,
@@ -817,14 +816,6 @@ export class ApiClient {
     return body.walletAddress ? { walletAddress: body.walletAddress, needsKeySetup: body.needsKeySetup === true } : null;
   }
 
-  async getSession(): Promise<ApiSession | null> {
-    try {
-      return await this.request<ApiSession>("/v1/users/me", { method: "GET" });
-    } catch (err) {
-      if (err instanceof MedialaneApiError && (err.status === 401 || err.status === 403)) return null;
-      throw err;
-    }
-  }
 
   getMyWallet(siwsToken?: string): Promise<ApiUserWallet | null> {
     return this.request<ApiUserWallet | null>(

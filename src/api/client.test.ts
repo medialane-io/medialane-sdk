@@ -134,21 +134,7 @@ test("getSessionWallet returns null when the session has no wallet", async () =>
   expect(await client().getSessionWallet()).toBeNull();
 });
 
-test("getSession returns the signed-in account from GET /v1/users/me, with no token", async () => {
-  const session = { accountId: "acc_1", publicId: "p1", walletAddress: null, email: "a@example.com", emailDeadline: null };
-  const calls = scriptFetch(() => ({ status: 200, body: session }));
-  expect(await client().getSession()).toEqual(session);
-  expect(calls[0].url).toContain("/v1/users/me");
-  expect(calls[0].init.method).toBe("GET");
-  expect(new Headers(calls[0].init.headers).has("Authorization")).toBe(false);
-});
 
-test("getSession is null when signed out or the account is inactive", async () => {
-  scriptFetch(() => ({ status: 401, body: { error: "Authentication required" } }));
-  expect(await client().getSession()).toBeNull();
-  scriptFetch(() => ({ status: 403, body: { error: "Account is not active", code: "account_inactive" } }));
-  expect(await client().getSession()).toBeNull();
-});
 
 test("account calls without a token send no Authorization header", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { email: "b@example.com" } }));

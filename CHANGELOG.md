@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.166.0] — 2026-10-10
+
+### Removed
+
+- `ApiClient.getSession()`.
+- `adoptSessionWallet` (use `ApiClient.getSessionWallet()`).
+
 ## [0.165.0] — 2026-10-10
 
 ### Removed
