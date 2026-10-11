@@ -22,6 +22,10 @@ export function collectionHref(chain: Chain, contract: Idish): string {
   return `/collections/${chainSlug(chain)}/${seg(contract)}`;
 }
 
+export function dropHref(contract: Idish): string {
+  return `/launchpad/drop/${seg(contract)}`;
+}
+
 export function coinHref(chain: Chain, address: Idish): string {
   return `/coins/${chainSlug(chain)}/${seg(address)}`;
 }

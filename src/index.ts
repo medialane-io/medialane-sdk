@@ -91,7 +91,7 @@ export {
   type CoordinatesByChain,
 } from "./chains.js";
 
-export { SUPPORTED_URL_CHAINS, chainSlug, chainFromSlug, assetHref, collectionHref, coinHref } from "./routes.js";
+export { SUPPORTED_URL_CHAINS, chainSlug, chainFromSlug, assetHref, collectionHref, dropHref, coinHref } from "./routes.js";
 
 export {
   getService,
