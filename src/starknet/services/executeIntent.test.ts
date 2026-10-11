@@ -172,3 +172,17 @@ test("assertTransactionSucceeded returns the receipt once it has a status", asyn
   const receipt = { execution_status: "SUCCEEDED", events: [] };
   await expect(assertTransactionSucceeded(fakeProvider(async () => receipt), "0xtx", [0])).resolves.toBe(receipt);
 });
+
+test("executeIntent passes its intent id to the signer", async () => {
+  const seen: unknown[] = [];
+  const signer = fakeSigner({ execute: async (_calls, opts) => { seen.push(opts); return { txHash: "0xtx" }; } });
+  await executeIntent(fakeProvider(), signer, fakeClient(), PREBUILT);
+  expect(seen).toEqual([{ intentIds: ["intent-1"] }]);
+});
+
+test("executeIntents passes all intent ids to the signer", async () => {
+  const seen: unknown[] = [];
+  const signer = fakeSigner({ execute: async (_calls, opts) => { seen.push(opts); return { txHash: "0xtx" }; } });
+  await executeIntents(fakeProvider(), signer, fakeClient(), [PREBUILT, { ...PREBUILT, id: "intent-3" }]);
+  expect(seen).toEqual([{ intentIds: ["intent-1", "intent-3"] }]);
+});

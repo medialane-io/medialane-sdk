@@ -11,6 +11,7 @@ export interface BackendProxyConfig {
   fetchImpl?: typeof fetch;
 
   forwardCookie?: { name: string; header: string };
+  forwardAuthorization?: boolean;
 }
 
 function readCookie(req: Request, name: string): string | null {
@@ -50,6 +51,10 @@ export function createBackendProxyHandler(
     if (config.forwardCookie) {
       const value = readCookie(req, config.forwardCookie.name);
       if (value) headers[config.forwardCookie.header] = value;
+    }
+    if (config.forwardAuthorization) {
+      const authorization = req.headers.get("authorization");
+      if (authorization) headers.authorization = authorization;
     }
 
     try {

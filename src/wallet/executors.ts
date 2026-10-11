@@ -60,7 +60,7 @@ export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
   const fallback = deps.fallback ?? selfFundedExecutor(deps);
   return {
     async execute(input): Promise<ExecutedTransaction> {
-      const { userAddress, privateKeyHex, calls } = input;
+      const { userAddress, privateKeyHex, calls, intentIds } = input;
       const result = await executeSponsored(
         { proxyUrl: deps.proxyUrl, fetchImpl: deps.fetchImpl },
         {
@@ -69,6 +69,7 @@ export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
             signWithPrivateKey(privateKeyHex, starknetTypedData.getMessageHash(data, userAddress)),
         },
         calls,
+        intentIds,
       );
       if (result.status === "sponsored") return { transactionHash: result.transactionHash };
 

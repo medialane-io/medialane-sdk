@@ -76,3 +76,15 @@ test("forwards every request, with no volume limit", async () => {
   for (let i = 0; i < 5; i++) expect((await handler(request({ userAddress: "0x1" }))).status).toBe(200);
   expect(forwarded).toBe(5);
 });
+
+test("forwards Authorization only when asked", async () => {
+  const seen: (string | null)[] = [];
+  const fetchImpl = (async (_u: string, init?: RequestInit) => {
+    seen.push(new Headers(init?.headers).get("authorization"));
+    return new Response("{}", { status: 200 });
+  }) as unknown as typeof fetch;
+  const config = { path: "/v1/x", backendUrl: "https://backend.test", apiKey: "k", fetchImpl };
+  await createBackendProxyHandler({ ...config, forwardAuthorization: true })(request({}, { authorization: "Bearer t" }));
+  await createBackendProxyHandler(config)(request({}, { authorization: "Bearer t" }));
+  expect(seen).toEqual(["Bearer t", null]);
+});

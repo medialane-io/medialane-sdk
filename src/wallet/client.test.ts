@@ -16,7 +16,8 @@ const SEALED: SealedOwner = {
 const TARGET = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
 
 function walletWith(overrides: { unlocks?: () => Promise<string> } = {}) {
-  const sent: Array<{ userAddress: string; calls: Call[] }> = [];
+  const sent: Array<{ userAddress: string; calls: Call[]; intentIds?: string[] }> = [];
+  const intents: Array<Record<string, unknown>> = [];
   let unlockCount = 0;
   const passkey = {
     unlockOwnerKey: async () => {
@@ -25,8 +26,8 @@ function walletWith(overrides: { unlocks?: () => Promise<string> } = {}) {
     },
   } as unknown as PasskeyOwner;
   const executor: WalletExecutor = {
-    execute: async ({ userAddress, calls }) => {
-      sent.push({ userAddress, calls });
+    execute: async ({ userAddress, calls, intentIds }) => {
+      sent.push({ userAddress, calls, intentIds });
       return { transactionHash: "0xsent" };
     },
   };
@@ -36,8 +37,12 @@ function walletWith(overrides: { unlocks?: () => Promise<string> } = {}) {
     executor,
     provider: () => ({}) as ProviderInterface,
     unlockTtlMs: 10_000,
+    walletIntents: async (params) => {
+      intents.push(params as Record<string, unknown>);
+      return { id: `wm-${intents.length}`, calls: [{ contractAddress: params.owner, entrypoint: params.action, calldata: [] }] };
+    },
   });
-  return { wallet, sent, unlockCount: () => unlockCount };
+  return { wallet, sent, intents, unlockCount: () => unlockCount };
 }
 
 test("setting a guardian sends one call from the wallet's own address", async () => {
@@ -128,4 +133,22 @@ test("a device that is not an owner cannot be removed", () => {
   const devices = describeDevices(owners, "0xaaa");
   expect(canRemoveDevice(devices, computeOwnerGuid("0xccc"))).toBe(false);
   expect(canRemoveDevice(devices, computeOwnerGuid("0xbbb"))).toBe(true);
+});
+
+test("device and recovery operations run the backend's wallet-manage intent with its id", async () => {
+  const { wallet, sent, intents } = walletWith();
+  await wallet.addDevice(SEALED, "0xbeef01");
+  await wallet.triggerEscapeOwner(SEALED, TARGET, "0xdef456");
+  expect(intents).toEqual([
+    { owner: SEALED.address, action: "add_owner", pubkey: "0xbeef01" },
+    { owner: TARGET, action: "trigger_escape", newOwnerPubkey: "0xdef456" },
+  ]);
+  expect(sent.map((s) => s.intentIds)).toEqual([["wm-1"], ["wm-2"]]);
+  expect(sent[0]!.calls).toEqual([{ contractAddress: SEALED.address, entrypoint: "add_owner", calldata: [] }]);
+});
+
+test("a signer passes intent ids through to the executor", async () => {
+  const { wallet, sent } = walletWith();
+  await wallet.signerFor(SEALED).execute([{ contractAddress: "0x1", entrypoint: "x", calldata: [] }], { intentIds: ["i7"] });
+  expect(sent[0]!.intentIds).toEqual(["i7"]);
 });

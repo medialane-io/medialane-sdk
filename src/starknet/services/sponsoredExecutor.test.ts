@@ -173,3 +173,27 @@ test("an execute that may have broadcast is never offered for self-funding", asy
     ),
   ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
 });
+
+test("with intent ids, build and execute send only the ids", async () => {
+  const bodies: unknown[] = [];
+  const fetchImpl = (async (_url: string, init: RequestInit) => {
+    bodies.push(JSON.parse(String(init.body)));
+    return bodies.length === 1
+      ? new Response(JSON.stringify({ typedData: { t: 1 } }), { status: 200 })
+      : new Response(JSON.stringify({ transactionHash: "0xtx" }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const signer: TypedDataSigner = { address: "0x1", signTypedData: async () => ["0xs"] };
+  const result = await executeSponsored({ proxyUrl: "/p", fetchImpl }, signer, [{ contractAddress: "0x2", entrypoint: "x", calldata: [] }], ["i1"]);
+  expect(result).toEqual({ status: "sponsored", transactionHash: "0xtx" });
+  expect(bodies).toEqual([{ intentIds: ["i1"] }, { intentIds: ["i1"], typedData: { t: 1 }, signature: ["0xs"] }]);
+});
+
+test("extra headers are sent on both requests", async () => {
+  const seen: Headers[] = [];
+  const fetchImpl = (async (_url: string, init: RequestInit) => {
+    seen.push(new Headers(init.headers));
+    return new Response(JSON.stringify(seen.length === 1 ? { typedData: {} } : { transactionHash: "0x1" }), { status: 200 });
+  }) as unknown as typeof fetch;
+  await executeSponsored({ proxyUrl: "/p", fetchImpl, headers: { authorization: "Bearer t" } }, { address: "0x1", signTypedData: async () => [] }, [], ["i1"]);
+  expect(seen.map((h) => h.get("authorization"))).toEqual(["Bearer t", "Bearer t"]);
+});
