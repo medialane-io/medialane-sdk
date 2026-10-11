@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.169.0] — 2026-10-11
+
+### Changed
+
+- `executeSponsored(config, signer, intentIds)` requires intent ids and no longer takes calls.
+- `sponsoredExecutor` sends a transaction without intent ids straight to the self-fund consent, without contacting the sponsor.
+
 ## [0.168.0] — 2026-10-11
 
 ### Added

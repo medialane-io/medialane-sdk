@@ -1,4 +1,4 @@
-import type { Call, TypedData } from "starknet";
+import type { TypedData } from "starknet";
 
 export interface TypedDataSigner {
   address: string;
@@ -42,8 +42,7 @@ async function failureOf(res: Response, fallback: string): Promise<{ reason: str
 export async function executeSponsored(
   config: SponsoredExecuteConfig,
   signer: TypedDataSigner,
-  calls: Call[],
-  intentIds?: string[],
+  intentIds: string[],
 ): Promise<SponsoredExecuteResult> {
   const doFetch = config.fetchImpl ?? fetch;
   const base = config.proxyUrl.replace(/\/$/, "");
@@ -52,7 +51,7 @@ export async function executeSponsored(
   const buildRes = await doFetch(`${base}/build`, {
     method: "POST",
     headers,
-    body: JSON.stringify(intentIds ? { intentIds } : { userAddress: signer.address, calls }),
+    body: JSON.stringify({ intentIds }),
   });
   if (!buildRes.ok) {
     const { reason, code } = await failureOf(buildRes, "We couldn't prepare this transaction.");
@@ -66,7 +65,7 @@ export async function executeSponsored(
   const executeRes = await doFetch(`${base}/execute`, {
     method: "POST",
     headers,
-    body: JSON.stringify(intentIds ? { intentIds, typedData, signature } : { userAddress: signer.address, typedData, signature, calls }),
+    body: JSON.stringify({ intentIds, typedData, signature }),
   });
   if (!executeRes.ok) {
     const { reason, code } = await failureOf(executeRes, "We couldn't submit this transaction.");
