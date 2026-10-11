@@ -37,3 +37,10 @@ d2("per-chain coordinate shapes", () => {
     }
   });
 });
+
+test("drop-collection points at the permissionless factory", () => {
+  const c = getCoordinates("STARKNET");
+  expect(c.dropFactory).toBe("0x049cae891b9195277e018ae99765a3b0e5f6b0f6a1807c5db789342bccc0e130");
+  expect(c.dropCollectionClassHash).toBe("0x0641d0255db1d218e08b367f40559d5ccdc22d34fee8ef0500b4247092a60132");
+  expect(c.dropFactoryStartBlock).toBe(16240820);
+});
