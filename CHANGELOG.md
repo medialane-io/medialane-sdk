@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.167.0] — 2026-10-10
+
+### Added
+
+- `fundWithChainTransfer` option `amount` (in the chosen token), alternative to `amountUsdc`.
+
 ## [0.166.0] — 2026-10-10
 
 ### Removed

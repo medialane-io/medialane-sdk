@@ -57,8 +57,12 @@ export type FundingResult =
   | { status: "SETTLED"; intentId: string; credited?: number }
   | { status: "PENDING"; intentId: string; reason: string };
 
-export interface FundWithTransferOptions {
-  amountUsdc: string;
+export type FundWithTransferOptions = (
+  | { amount: string; amountUsdc?: never }
+  | { amountUsdc: string; amount?: never }
+) & FundWithTransferRest;
+
+interface FundWithTransferRest {
   onStep?: (step: FundingStep) => void;
   pollMs?: number;
   maxPolls?: number;
@@ -76,7 +80,8 @@ export async function fundWithChainTransfer(
   const maxPolls = options.maxPolls ?? 20;
 
   step("creating");
-  const { data: intent } = await api.createFunding({ method: "chain-transfer", params: { amountUsdc: options.amountUsdc } });
+  const params = options.amount !== undefined ? { amount: options.amount } : { amountUsdc: options.amountUsdc };
+  const { data: intent } = await api.createFunding({ method: "chain-transfer", params });
 
   let txHash: string;
   let transferStarted = false;

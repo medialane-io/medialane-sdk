@@ -57,6 +57,18 @@ describe("funding with a chain transfer", () => {
     expect(result).toEqual({ status: "SETTLED", intentId: "fi1", credited: 500 });
   });
 
+  test("an amount in the chosen token is sent as is, not as dollars", async () => {
+    const created: unknown[] = [];
+    const { api } = fakeApi({
+      createFunding: async (input) => {
+        created.push(input);
+        return { data: { id: "fi1", method: "chain-transfer", status: "PENDING", expiresAt: "x" } };
+      },
+    });
+    await fundWithChainTransfer(api, fakeWallet().wallet, { amount: "5", ...fast });
+    expect(created).toEqual([{ method: "chain-transfer", params: { amount: "5" } }]);
+  });
+
   test("keeps confirming until the credits land", async () => {
     let n = 0;
     const { api } = fakeApi({
