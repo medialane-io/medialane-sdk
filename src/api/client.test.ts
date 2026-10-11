@@ -223,6 +223,8 @@ test.each([
   ["createWalletManageIntent", "/v1/intents/wallet-manage", { owner: "0x1", action: "cancel_escape" }],
   ["createSwapIntent", "/v1/intents/swap", { taker: "0x1", sellTokenAddress: "0x2", buyTokenAddress: "0x3", sellAmountRaw: "1" }],
   ["createFundingTransferIntent", "/v1/intents/funding-transfer", { owner: "0x1", asset: "0x2", amountAtomic: "1" }],
+  ["createDropManageIntent", "/v1/intents/drop-manage", { owner: "0x1", collection: "0x2", action: "withdraw_payments" }],
+  ["createPopManageIntent", "/v1/intents/pop-manage", { owner: "0x1", collection: "0x2", action: "set_allowlist_root", root: "0xabc" }],
 ])("%s posts its params to %s", async (method, path, params) => {
   const calls = scriptFetch(() => ({ status: 201, body: { data: { id: "i", requiresSignature: false, calls: [], expiresAt: "" } } }));
   const c = new ApiClient("https://api.test", "k");

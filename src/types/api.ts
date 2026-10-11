@@ -1383,3 +1383,25 @@ export interface CreateFundingTransferIntentParams {
   asset: string;
   amountAtomic: string;
 }
+
+export type DropManageAction = "allowlist_enabled" | "allowlist_add" | "allowlist_remove" | "withdraw_payments";
+
+export interface CreateDropManageIntentParams {
+  owner: string;
+  collection: string;
+  action: DropManageAction;
+  enabled?: boolean;
+  addresses?: string[];
+  address?: string;
+}
+
+export type PopManageAction = "issue" | "set_allowlist_root";
+
+export interface CreatePopManageIntentParams {
+  owner: string;
+  collection: string;
+  action: PopManageAction;
+  recipient?: string;
+  tokenUri?: string;
+  root?: string;
+}

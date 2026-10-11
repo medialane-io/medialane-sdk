@@ -66,6 +66,8 @@ import type {
   CreateWalletManageIntentParams,
   CreateSwapIntentParams,
   CreateFundingTransferIntentParams,
+  CreateDropManageIntentParams,
+  CreatePopManageIntentParams,
   CreateCollectionIntentParams,
   CreateTierIntentParams,
   EmissionParams,
@@ -438,6 +440,14 @@ export class ApiClient {
 
   createFundingTransferIntent(params: CreateFundingTransferIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/funding-transfer", params);
+  }
+
+  createDropManageIntent(params: CreateDropManageIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/drop-manage", params);
+  }
+
+  createPopManageIntent(params: CreatePopManageIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/pop-manage", params);
   }
 
   createCollectionIntent(params: CreateCollectionIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
