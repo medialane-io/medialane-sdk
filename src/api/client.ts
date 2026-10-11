@@ -62,7 +62,6 @@ import type {
   CreatePopClaimIntentParams,
   CreatePopBurnIntentParams,
   CreateDropClaimIntentParams,
-  CreateDropAllowlistIntentParams,
   CreateWalletManageIntentParams,
   CreateSwapIntentParams,
   CreateFundingTransferIntentParams,
@@ -424,10 +423,6 @@ export class ApiClient {
 
   createDropClaimIntent(params: CreateDropClaimIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/drop-claim", params);
-  }
-
-  createDropAllowlistIntent(params: CreateDropAllowlistIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
-    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/drop-allowlist", params);
   }
 
   createWalletManageIntent(params: CreateWalletManageIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
