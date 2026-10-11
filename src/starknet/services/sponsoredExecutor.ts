@@ -8,6 +8,7 @@ export interface TypedDataSigner {
 export interface SponsoredExecuteConfig {
   proxyUrl: string;
   fetchImpl?: typeof fetch;
+  headers?: Record<string, string>;
 }
 
 export type SponsoredExecuteResult =
@@ -42,15 +43,16 @@ export async function executeSponsored(
   config: SponsoredExecuteConfig,
   signer: TypedDataSigner,
   calls: Call[],
+  intentIds?: string[],
 ): Promise<SponsoredExecuteResult> {
   const doFetch = config.fetchImpl ?? fetch;
   const base = config.proxyUrl.replace(/\/$/, "");
-  const headers = { "Content-Type": "application/json" };
+  const headers = { "Content-Type": "application/json", ...config.headers };
 
   const buildRes = await doFetch(`${base}/build`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ userAddress: signer.address, calls }),
+    body: JSON.stringify(intentIds ? { intentIds } : { userAddress: signer.address, calls }),
   });
   if (!buildRes.ok) {
     const { reason, code } = await failureOf(buildRes, "We couldn't prepare this transaction.");
@@ -64,7 +66,7 @@ export async function executeSponsored(
   const executeRes = await doFetch(`${base}/execute`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ userAddress: signer.address, typedData, signature, calls }),
+    body: JSON.stringify(intentIds ? { intentIds, typedData, signature } : { userAddress: signer.address, typedData, signature, calls }),
   });
   if (!executeRes.ok) {
     const { reason, code } = await failureOf(executeRes, "We couldn't submit this transaction.");

@@ -2,6 +2,20 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.168.0] — 2026-10-11
+
+### Added
+
+- `ApiClient` intent methods: `createTransferTokenIntent`, `createTransferNftIntent`, `createTransferCollectionOwnershipIntent`, `createCommentIntent`, `createGenesisMintIntent`, `createPopClaimIntent`, `createPopBurnIntent`, `createDropClaimIntent`, `createDropAllowlistIntent`, `createWalletManageIntent`, `createSwapIntent`, `createFundingTransferIntent`, `createDropManageIntent`, `createPopManageIntent`.
+- `VenueSigner.execute(calls, { intentIds })`; `executeSponsored(config, signer, calls, intentIds)` sends intent ids instead of calls when given; `SponsoredExecuteConfig.headers`.
+- `createBackendProxyHandler` option `forwardAuthorization`.
+- `MediaWalletConfig.walletIntents`.
+
+### Changed
+
+- `executeIntent` and `executeIntents` pass their intent ids to the signer.
+- Media Wallet guardian and device operations run through wallet-manage intents.
+
 ## [0.167.0] — 2026-10-10
 
 ### Added

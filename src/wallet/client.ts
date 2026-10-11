@@ -1,10 +1,6 @@
 import { typedData as starknetTypedData, type Call, type ProviderInterface, type TypedData } from "starknet";
 import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 import {
-  buildCancelEscapeCall,
-  buildCompleteEscapeOwnerCall,
-  buildSetFirstGuardianCall,
-  buildTriggerEscapeOwnerCall,
   getEscape,
   getEscapeSecurityPeriod,
   getGuardians,
@@ -12,12 +8,10 @@ import {
   type EscapeInfo,
   type GuardianInfo,
 } from "../starknet/media-wallet/guardian.js";
-import {
-  buildAddOwnerCall,
-  buildRemoveOwnerByGuidCall,
-  computeOwnerGuid,
-} from "../starknet/media-wallet/owners.js";
+import { computeOwnerGuid } from "../starknet/media-wallet/owners.js";
 import { normalizeWalletAddress } from "./addresses.js";
+import { ApiClient } from "../api/client.js";
+import type { CreateWalletManageIntentParams } from "../types/api.js";
 import {
   completeDeployment,
   createDeploymentCoordinator,
@@ -58,6 +52,7 @@ export interface MediaWalletConfig {
   backendUrl?: string;
   deployProxyUrl?: string;
   fetchImpl?: typeof fetch;
+  walletIntents?: (params: CreateWalletManageIntentParams) => Promise<{ id: string; calls: Call[] }>;
 }
 
 export interface MediaWallet {
@@ -67,9 +62,9 @@ export interface MediaWallet {
   signerFor(sealed: SealedOwner): {
     address: string;
     signTypedData(data: TypedData): Promise<string[]>;
-    execute(calls: Call[]): Promise<{ txHash: string }>;
+    execute(calls: Call[], opts?: { intentIds?: string[] }): Promise<{ txHash: string }>;
   };
-  run(sealed: SealedOwner, calls: Call[], userAddress?: string): Promise<ExecutedTransaction>;
+  run(sealed: SealedOwner, calls: Call[], userAddress?: string, intentIds?: string[]): Promise<ExecutedTransaction>;
   getGuardians(address: string): Promise<GuardianInfo[]>;
   getEscape(address: string): Promise<EscapeInfo>;
   getEscapeSecurityPeriod(address: string): Promise<number>;
@@ -123,13 +118,26 @@ export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
     return promise;
   };
 
-  const run = async (sealed: SealedOwner, calls: Call[], userAddress?: string): Promise<ExecutedTransaction> => {
+  const run = async (sealed: SealedOwner, calls: Call[], userAddress?: string, intentIds?: string[]): Promise<ExecutedTransaction> => {
     const privateKeyHex = await unlockOnce(sealed);
     return config.executor.execute({
       userAddress: userAddress ?? sealed.address,
       privateKeyHex,
       calls,
+      intentIds,
     });
+  };
+
+  const walletIntents = config.walletIntents ?? (async (params: CreateWalletManageIntentParams) => {
+    if (!config.backendUrl) throw new Error("This wallet has no backend url configured");
+    const created = await new ApiClient(config.backendUrl).createWalletManageIntent(params);
+    return created.data as { id: string; calls: Call[] };
+  });
+
+  const manage = async (sealed: SealedOwner, params: CreateWalletManageIntentParams): Promise<string> => {
+    const intent = await walletIntents(params);
+    const { transactionHash } = await run(sealed, intent.calls, params.owner, [intent.id]);
+    return transactionHash;
   };
 
   return {
@@ -144,8 +152,8 @@ export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
           const privateKeyHex = await unlockOnce(sealed);
           return signWithPrivateKey(privateKeyHex, starknetTypedData.getMessageHash(data, sealed.address));
         },
-        execute: async (calls) => {
-          const { transactionHash } = await run(sealed, calls);
+        execute: async (calls, opts) => {
+          const { transactionHash } = await run(sealed, calls, undefined, opts?.intentIds);
           return { txHash: transactionHash };
         },
       };
@@ -164,43 +172,19 @@ export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
       return owners.some((owner) => BigInt(owner.guid) === guid);
     },
 
-    async setFirstGuardian(sealed, guardianPubkey) {
-      const { transactionHash } = await run(sealed, [buildSetFirstGuardianCall(sealed.address, guardianPubkey)]);
-      return transactionHash;
-    },
+    setFirstGuardian: (sealed, guardianPubkey) => manage(sealed, { owner: sealed.address, action: "set_first_guardian", pubkey: guardianPubkey }),
 
-    async triggerEscapeOwner(guardianSealed, targetAddress, newOwnerPubkey) {
-      const { transactionHash } = await run(
-        guardianSealed,
-        [buildTriggerEscapeOwnerCall(targetAddress, newOwnerPubkey)],
-        normalizeWalletAddress(targetAddress),
-      );
-      return transactionHash;
-    },
+    triggerEscapeOwner: (guardianSealed, targetAddress, newOwnerPubkey) =>
+      manage(guardianSealed, { owner: normalizeWalletAddress(targetAddress), action: "trigger_escape", newOwnerPubkey }),
 
-    async completeEscapeOwner(guardianSealed, targetAddress) {
-      const { transactionHash } = await run(
-        guardianSealed,
-        [buildCompleteEscapeOwnerCall(targetAddress)],
-        normalizeWalletAddress(targetAddress),
-      );
-      return transactionHash;
-    },
+    completeEscapeOwner: (guardianSealed, targetAddress) =>
+      manage(guardianSealed, { owner: normalizeWalletAddress(targetAddress), action: "complete_escape" }),
 
-    async cancelEscape(sealed) {
-      const { transactionHash } = await run(sealed, [buildCancelEscapeCall(sealed.address)]);
-      return transactionHash;
-    },
+    cancelEscape: (sealed) => manage(sealed, { owner: sealed.address, action: "cancel_escape" }),
 
-    async addDevice(sealed, devicePubkey) {
-      const { transactionHash } = await run(sealed, [buildAddOwnerCall(sealed.address, devicePubkey)]);
-      return transactionHash;
-    },
+    addDevice: (sealed, devicePubkey) => manage(sealed, { owner: sealed.address, action: "add_owner", pubkey: devicePubkey }),
 
-    async removeDevice(sealed, ownerGuid) {
-      const { transactionHash } = await run(sealed, [buildRemoveOwnerByGuidCall(sealed.address, ownerGuid)]);
-      return transactionHash;
-    },
+    removeDevice: (sealed, ownerGuid) => manage(sealed, { owner: sealed.address, action: "remove_owner", ownerGuid }),
 
     completeDeployment: (onStep, options) => deployments.run(onStep, options),
     isDeploying: () => deployments.isDeploying(),

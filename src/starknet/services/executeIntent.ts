@@ -86,7 +86,7 @@ export async function executeIntent(
     calls = intent.calls as Call[];
   }
 
-  const { txHash } = await signer.execute(calls);
+  const { txHash } = await signer.execute(calls, { intentIds: [intent.id] });
   const receipt = await assertTransactionSucceeded(provider, txHash);
   await Promise.all([
     syncTransactionBestEffort(client, txHash),
@@ -106,7 +106,7 @@ export async function executeIntents(
     throw new Error("Expected prebuilt intents (requiresSignature=false)");
   }
   const calls = intents.flatMap((i) => (i as Extract<ApiIntentCreated, { requiresSignature: false }>).calls) as Call[];
-  const { txHash } = await signer.execute(calls);
+  const { txHash } = await signer.execute(calls, { intentIds: intents.map((i) => i.id) });
   const receipt = await assertTransactionSucceeded(provider, txHash);
   await Promise.all([
     syncTransactionBestEffort(client, txHash),

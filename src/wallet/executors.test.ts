@@ -118,3 +118,17 @@ test("a refused transaction is never offered for self-funding", async () => {
   ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
   expect(asked).toBe(0);
 });
+
+test("the executor sends intent ids to sponsorship", async () => {
+  const bodies: unknown[] = [];
+  const fetchImpl = (async (url: string, init: RequestInit) => {
+    bodies.push(JSON.parse(String(init.body)));
+    return String(url).endsWith("/build")
+      ? new Response(JSON.stringify({ typedData: TYPED_DATA }), { status: 200 })
+      : new Response(JSON.stringify({ transactionHash: "0xsponsored" }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const executor = sponsoredExecutor({ provider, proxyUrl: "/p", fetchImpl, fallback: never, consent: createSelfFundConsent(async () => ({ feeRaw: "1", unit: "FRI" }) as never) });
+  const result = await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i9"] });
+  expect(result.transactionHash).toBe("0xsponsored");
+  expect(bodies[0]).toEqual({ intentIds: ["i9"] });
+});

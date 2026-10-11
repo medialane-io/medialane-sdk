@@ -3,7 +3,7 @@ import type { Chain } from "../chains.js";
 export interface VenueSigner<TypedData = unknown, Call = unknown> {
   readonly address: string;
   signTypedData(data: TypedData): Promise<string[]>;
-  execute(calls: Call[]): Promise<{ txHash: string }>;
+  execute(calls: Call[], opts?: { intentIds?: string[] }): Promise<{ txHash: string }>;
 }
 
 export interface AssetRef {

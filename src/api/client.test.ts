@@ -209,3 +209,27 @@ test("a JSON POST still sends Content-Type", async () => {
   const h = await headersOf((c) => c.createMintIntent({ owner: "0x1", recipient: "0x1" }));
   expect(h.get("content-type")).toBe("application/json");
 });
+
+test.each([
+  ["createTransferTokenIntent", "/v1/intents/transfer-token", { owner: "0x1", token: "0x2", recipient: "0x3", amount: "1" }],
+  ["createTransferNftIntent", "/v1/intents/transfer-nft", { owner: "0x1", contractAddress: "0x2", tokenId: "1", recipient: "0x3", tokenStandard: "ERC721" }],
+  ["createTransferCollectionOwnershipIntent", "/v1/intents/transfer-collection-ownership", { owner: "0x1", collectionId: "1", newOwner: "0x3" }],
+  ["createCommentIntent", "/v1/intents/comment", { author: "0x1", nftContract: "0x2", tokenId: "1", text: "hi" }],
+  ["createGenesisMintIntent", "/v1/intents/genesis-mint", { owner: "0x1", recipient: "0x1" }],
+  ["createPopClaimIntent", "/v1/intents/pop-claim", { claimer: "0x1", collection: "0x2", proof: [] }],
+  ["createPopBurnIntent", "/v1/intents/pop-burn", { owner: "0x1", collection: "0x2", tokenId: "1" }],
+  ["createDropClaimIntent", "/v1/intents/drop-claim", { claimer: "0x1", collection: "0x2" }],
+  ["createDropAllowlistIntent", "/v1/intents/drop-allowlist", { owner: "0x1", collection: "0x2", addresses: ["0x3"] }],
+  ["createWalletManageIntent", "/v1/intents/wallet-manage", { owner: "0x1", action: "cancel_escape" }],
+  ["createSwapIntent", "/v1/intents/swap", { taker: "0x1", sellTokenAddress: "0x2", buyTokenAddress: "0x3", sellAmountRaw: "1" }],
+  ["createFundingTransferIntent", "/v1/intents/funding-transfer", { owner: "0x1", asset: "0x2", amountAtomic: "1" }],
+  ["createDropManageIntent", "/v1/intents/drop-manage", { owner: "0x1", collection: "0x2", action: "withdraw_payments" }],
+  ["createPopManageIntent", "/v1/intents/pop-manage", { owner: "0x1", collection: "0x2", action: "set_allowlist_root", root: "0xabc" }],
+])("%s posts its params to %s", async (method, path, params) => {
+  const calls = scriptFetch(() => ({ status: 201, body: { data: { id: "i", requiresSignature: false, calls: [], expiresAt: "" } } }));
+  const c = new ApiClient("https://api.test", "k");
+  await (c as unknown as Record<string, (p: unknown) => Promise<unknown>>)[method]!(params);
+  expect(calls[0]!.url).toBe(`https://api.test${path}`);
+  expect(calls[0]!.init.method).toBe("POST");
+  expect(JSON.parse(String(calls[0]!.init.body))).toEqual(params);
+});

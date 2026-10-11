@@ -22,6 +22,7 @@ export interface WalletExecutor {
     userAddress: string;
     privateKeyHex: string;
     calls: Call[];
+    intentIds?: string[];
   }): Promise<ExecutedTransaction>;
 }
 
