@@ -54,6 +54,18 @@ import type {
   FulfillOrderIntentParams,
   CancelOrderIntentParams,
   CreateMintIntentParams,
+  CreateTransferTokenIntentParams,
+  CreateTransferNftIntentParams,
+  CreateTransferCollectionOwnershipIntentParams,
+  CreateCommentIntentParams,
+  CreateGenesisMintIntentParams,
+  CreatePopClaimIntentParams,
+  CreatePopBurnIntentParams,
+  CreateDropClaimIntentParams,
+  CreateDropAllowlistIntentParams,
+  CreateWalletManageIntentParams,
+  CreateSwapIntentParams,
+  CreateFundingTransferIntentParams,
   CreateCollectionIntentParams,
   CreateTierIntentParams,
   EmissionParams,
@@ -378,6 +390,54 @@ export class ApiClient {
 
   createMintIntent(params: CreateMintIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
     return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/mint", params);
+  }
+
+  createTransferTokenIntent(params: CreateTransferTokenIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/transfer-token", params);
+  }
+
+  createTransferNftIntent(params: CreateTransferNftIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/transfer-nft", params);
+  }
+
+  createTransferCollectionOwnershipIntent(params: CreateTransferCollectionOwnershipIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/transfer-collection-ownership", params);
+  }
+
+  createCommentIntent(params: CreateCommentIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/comment", params);
+  }
+
+  createGenesisMintIntent(params: CreateGenesisMintIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/genesis-mint", params);
+  }
+
+  createPopClaimIntent(params: CreatePopClaimIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/pop-claim", params);
+  }
+
+  createPopBurnIntent(params: CreatePopBurnIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/pop-burn", params);
+  }
+
+  createDropClaimIntent(params: CreateDropClaimIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/drop-claim", params);
+  }
+
+  createDropAllowlistIntent(params: CreateDropAllowlistIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/drop-allowlist", params);
+  }
+
+  createWalletManageIntent(params: CreateWalletManageIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/wallet-manage", params);
+  }
+
+  createSwapIntent(params: CreateSwapIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/swap", params);
+  }
+
+  createFundingTransferIntent(params: CreateFundingTransferIntentParams): Promise<ApiResponse<ApiIntentCreated>> {
+    return this.post<ApiResponse<ApiIntentCreated>>("/v1/intents/funding-transfer", params);
   }
 
   createCollectionIntent(params: CreateCollectionIntentParams): Promise<ApiResponse<ApiIntentCreated>> {

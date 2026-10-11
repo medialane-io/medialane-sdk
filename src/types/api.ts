@@ -1303,3 +1303,83 @@ export interface ApiPricing {
   mdln?: { contract: string | null; tiers: { minWholeTokens: number; multiplier: number }[] };
   pricing: { default: number; rules: ApiPricingRule[] };
 }
+
+export interface CreateTransferTokenIntentParams {
+  owner: string;
+  token: string;
+  recipient: string;
+  amount: string;
+}
+
+export interface CreateTransferNftIntentParams {
+  owner: string;
+  contractAddress: string;
+  tokenId: string;
+  recipient: string;
+  tokenStandard: "ERC721" | "ERC1155";
+}
+
+export interface CreateTransferCollectionOwnershipIntentParams {
+  owner: string;
+  collectionId: string;
+  newOwner: string;
+}
+
+export interface CreateCommentIntentParams {
+  author: string;
+  nftContract: string;
+  tokenId: string;
+  text: string;
+}
+
+export interface CreateGenesisMintIntentParams {
+  owner: string;
+  recipient: string;
+}
+
+export interface CreatePopClaimIntentParams {
+  claimer: string;
+  collection: string;
+  proof: string[];
+}
+
+export interface CreatePopBurnIntentParams {
+  owner: string;
+  collection: string;
+  tokenId: string;
+}
+
+export interface CreateDropClaimIntentParams {
+  claimer: string;
+  collection: string;
+}
+
+export interface CreateDropAllowlistIntentParams {
+  owner: string;
+  collection: string;
+  addresses: string[];
+}
+
+export type WalletManageAction = "add_owner" | "remove_owner" | "cancel_escape" | "set_first_guardian" | "trigger_escape" | "complete_escape";
+
+export interface CreateWalletManageIntentParams {
+  owner: string;
+  action: WalletManageAction;
+  pubkey?: string;
+  ownerGuid?: string;
+  newOwnerPubkey?: string;
+}
+
+export interface CreateSwapIntentParams {
+  taker: string;
+  sellTokenAddress: string;
+  buyTokenAddress: string;
+  sellAmountRaw?: string;
+  buyAmountRaw?: string;
+}
+
+export interface CreateFundingTransferIntentParams {
+  owner: string;
+  asset: string;
+  amountAtomic: string;
+}
