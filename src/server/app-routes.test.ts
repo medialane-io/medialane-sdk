@@ -12,6 +12,7 @@ describe("public app routes", () => {
     ["GET", "search"],
     ["GET", `coins/${A}/guarantees`],
     ["GET", `pop/${A}/claim-info`],
+    ["GET", `drops/${A}/state`],
     ["GET", `ipnft/${A}/1`],
     ["GET", `club/${A}/1/member/${A}`],
     ["GET", "metadata/resolve"],

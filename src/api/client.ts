@@ -5,6 +5,7 @@ import type { MedialaneErrorCode } from "../types/errors.js";
 import { withRetry, type RetryOptions } from "../utils/retry.js";
 import type { CreatorCoinGuarantees } from "../starknet/services/creatorCoin.js";
 import type { PopClaimInfo } from "../starknet/pop-claim.js";
+import type { DropOnchain } from "../starknet/drop-state.js";
 import type {
   ApiOrder,
   ApiOrdersQuery,
@@ -1112,6 +1113,25 @@ export class ApiClient {
   async getPopClaimInfo(collection: string): Promise<PopClaimInfo | null> {
     const res = await this.get<{ data: PopClaimInfo | null }>(`/v1/pop/${this.addr(collection)}/claim-info`);
     return res.data;
+  }
+
+  async getDropState(contract: string): Promise<DropOnchain | null> {
+    const res = await this.get<{
+      data: (Omit<DropOnchain, "price" | "maxPerWallet" | "maxSupply" | "totalMinted"> & {
+        price: string;
+        maxPerWallet: string;
+        maxSupply: string;
+        totalMinted: string;
+      }) | null;
+    }>(`/v1/drops/${this.addr(contract)}/state`);
+    if (!res.data) return null;
+    return {
+      ...res.data,
+      price: BigInt(res.data.price),
+      maxPerWallet: BigInt(res.data.maxPerWallet),
+      maxSupply: BigInt(res.data.maxSupply),
+      totalMinted: BigInt(res.data.totalMinted),
+    };
   }
 
   async getSwapQuote(body: ApiSwapQuoteRequest): Promise<ApiSwapQuote> {
