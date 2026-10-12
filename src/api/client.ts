@@ -91,11 +91,9 @@ import type {
   ConfirmRemixOfferParams,
   ApiResponse,
   CollectionTokensSort,
-  DropMintStatus,
   ApiPlatformStats,
-  ApiDropInfo,
-  ApiDropState,
   ApiDrop,
+  ApiDropFee,
   ApiDropMint,
   ApiDropListStatus,
   ApiTierOnchain,
@@ -1043,25 +1041,8 @@ export class ApiClient {
     });
   }
 
-  async getDropMintStatus(collection: string, wallet: string): Promise<DropMintStatus> {
-    const res = await this.get<{ data: DropMintStatus }>(
-      `/v1/drop/mint-status/${this.addr(collection)}/${this.addr(wallet)}`
-    );
-    return res.data;
-  }
-
-  async getDropInfo(contract: string): Promise<ApiDropInfo | null> {
-    const res = await this.request<{ data: ApiDropInfo } | null>(
-      `/v1/drop/${this.addr(contract)}/info`,
-      { method: "GET" },
-      { allow404: true },
-    );
-    return res?.data ?? null;
-  }
-
-  async getDropState(contract: string): Promise<ApiDropState> {
-    const res = await this.get<{ data: ApiDropState }>(`/v1/drop/${this.addr(contract)}/state`);
-    return res.data;
+  getDropFee(): Promise<ApiDropFee> {
+    return this.get<{ data: ApiDropFee }>("/v1/drops/fee").then((r) => r.data);
   }
 
   getDrops(query: { status?: ApiDropListStatus; organizer?: string; page?: number; limit?: number } = {}): Promise<ApiResponse<ApiDrop[]>> {

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { resolveFeeConfig } from "../fee/config.js";
 import { encodeByteArray } from "./bytearray.js";
-import { buildFeeCall } from "./fee/build-fee-call.js";
-import { dropCalls, dropMintCost } from "./drop-calls.js";
+import { buildFeeCall, feeBps } from "./fee/build-fee-call.js";
+import { DROP_MAX_CLAIM_QUANTITY, dropCalls, dropMintCost } from "./drop-calls.js";
 
 const pad = (h: string) => "0x" + h.replace(/^0x/, "").padStart(64, "0");
 const FACTORY = "0x49cae891b9195277e018ae99765a3b0e5f6b0f6a1807c5db789342bccc0e130";
@@ -72,20 +72,31 @@ describe("dropCalls.issue and setAllowlistRoot", () => {
 });
 
 describe("dropMintCost", () => {
-  const cfg = resolveFeeConfig({ fundAddress: "0x123" }); // launchpad 100 bps
-
-  test("adds the launchpad fee to price × quantity", () => {
-    expect(dropMintCost(5_000_000n, 2, cfg)).toEqual({ subtotal: 10_000_000n, fee: 100_000n, total: 10_100_000n });
+  test("adds the fee in basis points to price × quantity", () => {
+    expect(dropMintCost(5_000_000n, 2, 100)).toEqual({ subtotal: 10_000_000n, fee: 100_000n, total: 10_100_000n });
   });
 
   test("equals the fee buildFeeCall charges for the same amount", () => {
-    const { fee } = dropMintCost(1_234_567n, 3, cfg);
+    const cfg = resolveFeeConfig({ fundAddress: "0x123" });
+    const { fee } = dropMintCost(1_234_567n, 3, feeBps("launchpad", cfg));
     const call = buildFeeCall({ surface: "launchpad", token: USDC, grossAmount: 1_234_567n * 3n }, cfg)!;
     expect(BigInt((call.calldata as string[])[1]!)).toBe(fee);
   });
 
-  test("no fee when the fee is disabled or has no fund address", () => {
-    expect(dropMintCost(100n, 1, resolveFeeConfig({})).fee).toBe(0n);
-    expect(dropMintCost(100n, 1, resolveFeeConfig({ fundAddress: "0x1", enabled: false })).fee).toBe(0n);
+  test("no fee at 0 bps", () => {
+    expect(dropMintCost(100n, 1, 0).fee).toBe(0n);
+  });
+});
+
+describe("quantity guards", () => {
+  const p = { price: 0n, paymentToken: "0x0" };
+  test("claim refuses 0, negative and above the per-call cap", () => {
+    expect(() => dropCalls.claim(DROP, { ...p, quantity: 0 })).toThrow(RangeError);
+    expect(() => dropCalls.claim(DROP, { ...p, quantity: -1 })).toThrow(RangeError);
+    expect(() => dropCalls.claim(DROP, { ...p, quantity: DROP_MAX_CLAIM_QUANTITY + 1n })).toThrow(RangeError);
+    expect(dropCalls.claim(DROP, { ...p, quantity: DROP_MAX_CLAIM_QUANTITY })).toHaveLength(1);
+  });
+  test("issue refuses 0", () => {
+    expect(() => dropCalls.issue(DROP, "0x222", 0)).toThrow(RangeError);
   });
 });

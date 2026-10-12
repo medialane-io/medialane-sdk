@@ -1,9 +1,11 @@
 import { CallData, cairo, type Call } from "starknet";
-import type { ResolvedFeeConfig } from "../fee/config.js";
 import type { CreateDropParams, DropTerms } from "../types/services.js";
 import { normalizeAddress } from "../utils/address.js";
 import { DropCollectionABI, DropFactoryABI } from "./abis/index.js";
-import { feeAmount, feeBps } from "./fee/build-fee-call.js";
+import { feeAmount } from "./fee/build-fee-call.js";
+
+/** Most tokens one claim transaction mints. */
+export const DROP_MAX_CLAIM_QUANTITY = 50n;
 
 const addr = (a: string) => normalizeAddress("STARKNET", a);
 const factoryData = new CallData(DropFactoryABI as never);
@@ -44,6 +46,7 @@ export const dropCalls = {
     p: { quantity: bigint | string | number; proof?: string[]; price: bigint | string; paymentToken: string },
   ): Call[] {
     const quantity = BigInt(p.quantity);
+    if (quantity < 1n || quantity > DROP_MAX_CLAIM_QUANTITY) throw new RangeError(`quantity must be 1 to ${DROP_MAX_CLAIM_QUANTITY}`);
     const total = BigInt(p.price) * quantity;
     const calls: Call[] = [];
     if (total > 0n) {
@@ -63,10 +66,12 @@ export const dropCalls = {
 
   /** Organizer only: free mint within the supply cap. */
   issue(collection: string, recipient: string, quantity: bigint | string | number): Call {
+    const q = BigInt(quantity);
+    if (q < 1n) throw new RangeError("quantity must be at least 1");
     return {
       contractAddress: addr(collection),
       entrypoint: "issue",
-      calldata: collectionData.compile("issue", { recipient: addr(recipient), quantity: cairo.uint256(BigInt(quantity)) }),
+      calldata: collectionData.compile("issue", { recipient: addr(recipient), quantity: cairo.uint256(q) }),
     };
   },
 
@@ -84,8 +89,8 @@ export interface DropMintCost {
   total: bigint;
 }
 
-export function dropMintCost(price: bigint | string, quantity: bigint | string | number, cfg: ResolvedFeeConfig): DropMintCost {
+export function dropMintCost(price: bigint | string, quantity: bigint | string | number, feeBps: number): DropMintCost {
   const subtotal = BigInt(price) * BigInt(quantity);
-  const fee = feeAmount(subtotal, feeBps("launchpad", cfg));
+  const fee = feeAmount(subtotal, feeBps);
   return { subtotal, fee, total: subtotal + fee };
 }

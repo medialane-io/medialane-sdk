@@ -56,13 +56,12 @@ export {
   type PopClaimState,
 } from "./pop-claim.js";
 export { DropService } from "./services/drop.js";
-export { dropCalls, dropMintCost, toContractTerms as toDropContractTerms, type DropMintCost } from "./drop-calls.js";
+export { DROP_MAX_CLAIM_QUANTITY, dropCalls, dropMintCost, toContractTerms as toDropContractTerms, type DropMintCost } from "./drop-calls.js";
 export {
   readDrop,
   dropClaimedBy,
   dropMintState,
   dropClaimLinks,
-  DROP_MAX_CLAIM_QUANTITY,
   type DropOnchain,
   type DropMintState,
   type DropMintStateKind,
