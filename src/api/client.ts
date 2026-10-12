@@ -3,6 +3,8 @@ import type { Chain } from "../chains.js";
 import type { ChainFilter } from "../types/api.js";
 import type { MedialaneErrorCode } from "../types/errors.js";
 import { withRetry, type RetryOptions } from "../utils/retry.js";
+import type { CreatorCoinGuarantees } from "../starknet/services/creatorCoin.js";
+import type { PopClaimInfo } from "../starknet/pop-claim.js";
 import type {
   ApiOrder,
   ApiOrdersQuery,
@@ -98,6 +100,8 @@ import type {
   ApiDropListStatus,
   ApiTierOnchain,
   ApiIpNftTokenData,
+  ApiSwapQuote,
+  ApiSwapQuoteRequest,
   ApiTokensQuery,
   ApiUsernameClaim,
   ApiSubmitReport,
@@ -1098,6 +1102,21 @@ export class ApiClient {
   async getIpNftTokenData(contract: string, tokenId: string): Promise<ApiIpNftTokenData | null> {
     const res = await this.get<{ data: ApiIpNftTokenData | null }>(`/v1/ipnft/${this.addr(contract)}/${tokenId}`);
     return res.data;
+  }
+
+  async getCoinGuarantees(contract: string): Promise<CreatorCoinGuarantees | null> {
+    const res = await this.get<{ data: CreatorCoinGuarantees | null }>(`/v1/coins/${this.addr(contract)}/guarantees`);
+    return res.data;
+  }
+
+  async getPopClaimInfo(collection: string): Promise<PopClaimInfo | null> {
+    const res = await this.get<{ data: PopClaimInfo | null }>(`/v1/pop/${this.addr(collection)}/claim-info`);
+    return res.data;
+  }
+
+  async getSwapQuote(body: ApiSwapQuoteRequest): Promise<ApiSwapQuote> {
+    const res = await this.post<{ quote: ApiSwapQuote }>("/v1/swap/quote", body);
+    return res.quote;
   }
 
   async getPlatformStats(): Promise<ApiPlatformStats> {
