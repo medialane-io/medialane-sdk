@@ -130,6 +130,7 @@ export {
 } from "./server/backend-metadata.js";
 export type { BackendMetadataConfig, BackendUploadResult } from "./server/backend-metadata.js";
 export { isSameOrigin } from "./server/origin.js";
+export { isPublicAppRoute } from "./server/app-routes.js";
 export {
   issueSiwsToken,
   verifySiwsToken,
