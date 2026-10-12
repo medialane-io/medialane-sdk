@@ -106,7 +106,7 @@ export {
   SponsoredCallRejectedError,
   type TypedDataSigner,
   type SponsoredExecuteConfig,
-  type SponsoredExecuteResult, allowsFallbackFunding, type SponsorshipFailureCode } from "./services/sponsoredExecutor.js";
+  type SponsoredExecuteResult, type SponsoredRequest, allowsFallbackFunding, type SponsorshipFailureCode } from "./services/sponsoredExecutor.js";
 export type {
   DeployCollectionParams,
   MintEditionParams,

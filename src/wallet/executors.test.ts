@@ -55,7 +55,7 @@ test("a sponsored transaction never asks the user to pay", async () => {
     fallback: never,
   });
 
-  const result = await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS });
+  const result = await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] });
   expect(result).toEqual({ transactionHash: "0xsponsored" });
   expect(asked).toBe(0);
 });
@@ -73,7 +73,7 @@ test("an unavailable sponsor asks the user, then pays from their wallet", async 
     fallback: fallbackTo("0xselffunded"),
   });
 
-  expect(await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS })).toEqual({
+  expect(await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] })).toEqual({
     transactionHash: "0xselffunded",
   });
 });
@@ -92,7 +92,7 @@ test("declining leaves the transaction unsent", async () => {
   });
 
   await expect(
-    executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS }),
+    executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] }),
   ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
 });
 
@@ -114,7 +114,7 @@ test("a refused transaction is never offered for self-funding", async () => {
   });
 
   await expect(
-    executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS }),
+    executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] }),
   ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
   expect(asked).toBe(0);
 });
@@ -131,4 +131,16 @@ test("the executor sends intent ids to sponsorship", async () => {
   const result = await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i9"] });
   expect(result.transactionHash).toBe("0xsponsored");
   expect(bodies[0]).toEqual({ intentIds: ["i9"] });
+});
+
+test("a transaction with no intent ids is never sent to the sponsor and goes straight to the user", async () => {
+  let fetched = false;
+  const fetchImpl = (async () => { fetched = true; return new Response("{}"); }) as unknown as typeof fetch;
+  const asked: unknown[] = [];
+  const consent = { request: async (p: unknown) => { asked.push(p); return true; } };
+  const executor = sponsoredExecutor({ provider, proxyUrl: "/p", fetchImpl, fallback: fallbackTo("0xself"), consent: consent as never });
+  const result = await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS });
+  expect(result.transactionHash).toBe("0xself");
+  expect(fetched).toBe(false);
+  expect(asked).toHaveLength(1);
 });

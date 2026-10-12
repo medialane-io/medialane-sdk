@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.172.0] — 2026-10-12
+
+### Changed
+
+- `executeSponsored(config, signer, request)` takes a `SponsoredRequest` — `{ intentIds }` or `{ userAddress }` — instead of `calls` and optional intent ids. Build sends the request; execute sends it with `typedData` and `signature`.
+- `sponsoredExecutor` sends a transaction without intent ids straight to the self-pay consent and fallback.
+
 ## [0.171.0] — 2026-10-12
 
 ### Added
