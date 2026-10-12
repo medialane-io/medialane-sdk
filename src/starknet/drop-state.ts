@@ -1,8 +1,7 @@
 import type { ProviderInterface } from "starknet";
-import type { ResolvedFeeConfig } from "../fee/config.js";
 import { dropHref } from "../routes.js";
 import { normalizeAddress } from "../utils/address.js";
-import { dropMintCost } from "./drop-calls.js";
+import { DROP_MAX_CLAIM_QUANTITY, dropMintCost } from "./drop-calls.js";
 import { encodePopClaimFragment, verifyPopProof, type PopAllowlist } from "./pop-allowlist.js";
 import type { PopClaimLink } from "./pop-claim.js";
 
@@ -57,9 +56,6 @@ export async function dropClaimedBy(
   return u256(res[0], res[1]);
 }
 
-/** Most tokens one claim transaction mints. */
-export const DROP_MAX_CLAIM_QUANTITY = 50n;
-
 export type DropMintStateKind =
   | "loading" | "upcoming" | "ended" | "sold-out" | "no-wallet" | "no-link"
   | "not-on-list" | "limit-reached" | "insufficient-balance" | "ready";
@@ -80,7 +76,8 @@ export function dropMintState(input: {
   proof: string[] | null;
   /** Wallet balance of the payment token; null while loading (ignored for free drops). */
   balance: bigint | null;
-  feeConfig: ResolvedFeeConfig;
+  /** Platform fee added to a mint, in basis points. */
+  feeBps: number;
   /** Unix seconds. */
   now: number;
 }): DropMintState {
@@ -105,7 +102,7 @@ export function dropMintState(input: {
   if (walletLeft !== null && walletLeft < max) max = walletLeft;
   if (drop.price > 0n) {
     if (balance === null) return none("loading");
-    while (max > 0n && dropMintCost(drop.price, max, input.feeConfig).total > balance) max--;
+    while (max > 0n && dropMintCost(drop.price, max, input.feeBps).total > balance) max--;
     if (max === 0n) return none("insufficient-balance");
   }
   return { state: "ready", maxQuantity: max };

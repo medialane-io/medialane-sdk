@@ -2,6 +2,21 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.171.0] — 2026-10-12
+
+### Added
+
+- `ApiClient.getDropFee()` → `ApiDropFee { launchpadBps }`: the platform fee added to a mint, in basis points.
+
+### Changed
+
+- `dropMintCost(price, quantity, feeBps)` and `dropMintState({ …, feeBps })` take the fee in basis points instead of a fee config.
+- `dropCalls.claim` throws `RangeError` for a quantity below 1 or above `DROP_MAX_CLAIM_QUANTITY`; `dropCalls.issue` for a quantity below 1.
+
+### Removed
+
+- `getDropMintStatus`, `getDropInfo`, `getDropState` and the types `DropMintStatus`, `ApiDropInfo`, `ApiDropConditions`, `ApiDropState` — their routes no longer exist; use `getDrop`, `getDropMints` and `readDrop`.
+
 ## [0.170.0] — 2026-10-11
 
 ### Added

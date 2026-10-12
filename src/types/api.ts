@@ -545,6 +545,11 @@ export interface ApiDrop {
   createdBlock: string;
 }
 
+export interface ApiDropFee {
+  /** Platform fee added to a mint, in basis points; 0 when none applies. */
+  launchpadBps: number;
+}
+
 export interface ApiDropMint {
   kind: "claim" | "issue";
   wallet: string;
@@ -1083,11 +1088,6 @@ export interface ApiWalletActivity {
   amountOut: string | null;
 }
 
-export interface DropMintStatus {
-  mintedByWallet: number;
-  totalMinted: number;
-}
-
 export interface ApiRewardsBadge {
   key: string;
   name: string;
@@ -1157,33 +1157,6 @@ export interface ApiPlatformStats {
   collections: number;
   tokens: number;
   sales: number;
-}
-
-export interface ApiDropInfo {
-  contractAddress: string;
-  name: string | null;
-  symbol: string | null;
-  description: string | null;
-  image: string | null;
-  owner: string | null;
-  totalMinted: number;
-}
-
-export interface ApiDropConditions {
-  maxSupply: string;
-  price: string;
-  paymentToken: string;
-  startTime: number;
-  endTime: number;
-  maxPerWallet: string;
-}
-
-export interface ApiDropState {
-  conditions: ApiDropConditions;
-  totalMinted: number;
-  maxSupply: number;
-  allowlistEnabled: boolean;
-  paused: boolean;
 }
 
 export interface ApiTierOnchain {

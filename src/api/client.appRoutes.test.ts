@@ -74,11 +74,10 @@ test("on-chain reads return the route's data", async () => {
   });
 });
 
-test("drop info and state read their routes", async () => {
-  await withStub({ data: { contractAddress: A } }, async (client, calls) => {
-    expect((await client.getDropInfo(A))?.contractAddress).toBe(A);
-    await client.getDropState(A);
-    expect(calls.map((c) => new URL(c.url).pathname)).toEqual([`/v1/drop/${A}/info`, `/v1/drop/${A}/state`]);
+test("drop fee reads its route", async () => {
+  await withStub({ data: { launchpadBps: 100 } }, async (client, calls) => {
+    expect(await client.getDropFee()).toEqual({ launchpadBps: 100 });
+    expect(new URL(calls[0].url).pathname).toBe("/v1/drops/fee");
   });
 });
 

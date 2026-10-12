@@ -1,17 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { resolveFeeConfig } from "../fee/config.js";
 import { buildPopAllowlist } from "./pop-allowlist.js";
-import { DROP_MAX_CLAIM_QUANTITY, dropClaimLinks, dropClaimedBy, dropMintState, readDrop, type DropOnchain } from "./drop-state.js";
+import { DROP_MAX_CLAIM_QUANTITY } from "./drop-calls.js";
+import { dropClaimLinks, dropClaimedBy, dropMintState, readDrop, type DropOnchain } from "./drop-state.js";
 
 const pad = (h: string) => "0x" + h.replace(/^0x/, "").padStart(64, "0");
 const USDC = "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb";
-const cfg = resolveFeeConfig({ fundAddress: "0x123" }); // launchpad 100 bps
 
 const drop = (over: Partial<DropOnchain> = {}): DropOnchain => ({
   organizer: pad("0x1"), startTime: 0, endTime: 0, price: 0n, paymentToken: pad("0x0"),
   maxPerWallet: 0n, allowlistRoot: "0x0", maxSupply: 500n, totalMinted: 0n, ...over,
 });
-const base = { wallet: "0x222", claimed: 0n, proof: null, balance: null, feeConfig: cfg, now: 1000 };
+const base = { wallet: "0x222", claimed: 0n, proof: null, balance: null, feeBps: 100, now: 1000 };
 
 describe("readDrop / dropClaimedBy", () => {
   test("decode terms, root and supply from the collection's views", async () => {
