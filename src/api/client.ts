@@ -95,6 +95,9 @@ import type {
   ApiPlatformStats,
   ApiDropInfo,
   ApiDropState,
+  ApiDrop,
+  ApiDropMint,
+  ApiDropListStatus,
   ApiTierOnchain,
   ApiIpNftTokenData,
   ApiTokensQuery,
@@ -1059,6 +1062,29 @@ export class ApiClient {
   async getDropState(contract: string): Promise<ApiDropState> {
     const res = await this.get<{ data: ApiDropState }>(`/v1/drop/${this.addr(contract)}/state`);
     return res.data;
+  }
+
+  getDrops(query: { status?: ApiDropListStatus; organizer?: string; page?: number; limit?: number } = {}): Promise<ApiResponse<ApiDrop[]>> {
+    const params = new URLSearchParams();
+    if (query.status) params.set("status", query.status);
+    if (query.organizer) params.set("organizer", this.addr(query.organizer));
+    if (query.page !== undefined) params.set("page", String(query.page));
+    if (query.limit !== undefined) params.set("limit", String(query.limit));
+    const qs = params.toString();
+    return this.get<ApiResponse<ApiDrop[]>>(`/v1/drops${qs ? `?${qs}` : ""}`);
+  }
+
+  async getDrop(contract: string): Promise<ApiDrop | null> {
+    const res = await this.request<{ data: ApiDrop } | null>(`/v1/drops/${this.addr(contract)}`, { method: "GET" }, { allow404: true });
+    return res?.data ?? null;
+  }
+
+  getDropMints(contract: string, opts: { page?: number; limit?: number } = {}): Promise<ApiResponse<ApiDropMint[]>> {
+    const params = new URLSearchParams();
+    if (opts.page !== undefined) params.set("page", String(opts.page));
+    if (opts.limit !== undefined) params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return this.get<ApiResponse<ApiDropMint[]>>(`/v1/drops/${this.addr(contract)}/mints${qs ? `?${qs}` : ""}`);
   }
 
   async getTicket(contract: string, tokenId: string): Promise<ApiTierOnchain> {

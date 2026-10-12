@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.170.0] — 2026-10-11
+
+### Added
+
+- `ApiClient.getDrops({ status, organizer, page, limit })`, `getDrop(contract)`, `getDropMints(contract, { page, limit })`; types `ApiDrop`, `ApiDropMint`, `ApiDropListStatus`.
+
 ## [0.169.0] — 2026-10-11
 
 ### Changed
