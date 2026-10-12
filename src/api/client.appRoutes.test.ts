@@ -239,3 +239,26 @@ test("a collection looked up by slug is the collection, not its response envelop
     expect((await client.getCollectionBySlug("c"))?.contractAddress).toBe(A);
   });
 });
+
+test("coin guarantees are read from the backend", async () => {
+  await withStub({ data: { isLaunched: true } }, async (client, calls) => {
+    expect(await client.getCoinGuarantees(A)).toEqual({ isLaunched: true } as never);
+    expect(new URL(calls[0].url).pathname).toBe(`/v1/coins/${A}/guarantees`);
+  });
+});
+
+test("POP claim info is read from the backend", async () => {
+  await withStub({ data: { root: "0x5", claimEndTime: 0 } }, async (client, calls) => {
+    expect(await client.getPopClaimInfo(W)).toEqual({ root: "0x5", claimEndTime: 0 });
+    expect(new URL(calls[0].url).pathname).toBe(`/v1/pop/${W}/claim-info`);
+  });
+});
+
+test("a swap quote is requested from the backend", async () => {
+  const quote = { quoteId: "q", sellTokenAddress: A, sellAmount: "1", buyTokenAddress: W, buyAmount: "2" };
+  await withStub({ quote }, async (client, calls) => {
+    expect(await client.getSwapQuote({ sellSymbol: "USDC", buySymbol: "STRK", buyAmountRaw: "2" })).toEqual(quote);
+    expect(calls[0]).toMatchObject({ method: "POST", body: { sellSymbol: "USDC", buySymbol: "STRK", buyAmountRaw: "2" } });
+    expect(new URL(calls[0].url).pathname).toBe("/v1/swap/quote");
+  });
+});

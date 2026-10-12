@@ -1167,6 +1167,24 @@ export interface ApiTierOnchain {
   royaltyBps: number;
 }
 
+export interface ApiSwapQuoteRequest {
+  sellSymbol?: string;
+  buySymbol?: string;
+  sellTokenAddress?: string;
+  buyTokenAddress?: string;
+  sellAmountRaw?: string;
+  buyAmountRaw?: string;
+  takerAddress?: string;
+}
+
+export interface ApiSwapQuote {
+  quoteId: string;
+  sellTokenAddress: string;
+  sellAmount: string;
+  buyTokenAddress: string;
+  buyAmount: string;
+}
+
 export interface ApiIpNftTokenData {
   owner: string;
   metadataUri: string;

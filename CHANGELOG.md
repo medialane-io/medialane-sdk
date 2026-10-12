@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.173.0] — 2026-10-12
+
+### Added
+
+- `createAppGateway` and `createAppSessionHandler` for app server routes, `ACCOUNT_SESSION_COOKIE`, and `isPublicAppRoute`.
+- `signInWithWallet` (`@medialane/sdk/starknet`).
+- `getCoinGuarantees`, `getPopClaimInfo` and `getSwapQuote` API methods.
+
+### Removed
+
+- `createRpcProxyHandler` and `createBackendProxyHandler`; use `createAppGateway`.
+
 ## [0.172.0] — 2026-10-12
 
 ### Changed

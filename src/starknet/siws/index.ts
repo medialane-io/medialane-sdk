@@ -7,3 +7,4 @@ export {
   getSiwsStorageKey,
   normalizeSiwsSignature,
 } from "./client.js";
+export { signInWithWallet } from "./sign-in.js";
