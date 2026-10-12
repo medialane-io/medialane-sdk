@@ -23,6 +23,7 @@ describe("public app routes", () => {
     ["POST", "auth/email/confirm"],
     ["POST", "auth/siws/nonce"],
     ["POST", "auth/siws/verify"],
+    ["POST", "users/register"],
   ];
   for (const [method, path] of open) {
     test(`${method} ${path} is public`, () => expect(isPublicAppRoute(method, path)).toBe(true));

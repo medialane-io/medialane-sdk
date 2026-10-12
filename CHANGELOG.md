@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.175.0] — 2026-10-12
+
+### Changed
+
+- `users/register` is a public app route.
+
 ## [0.174.0] — 2026-10-12
 
 ### Added
