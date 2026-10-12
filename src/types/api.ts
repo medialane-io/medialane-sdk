@@ -521,6 +521,41 @@ export interface DropTermsBody {
   maxPerWallet: string;
 }
 
+export type ApiDropListStatus = "live" | "upcoming" | "ended";
+
+export interface ApiDrop {
+  contractAddress: string;
+  dropId: string;
+  organizer: string;
+  name: string | null;
+  symbol: string | null;
+  description: string | null;
+  image: string | null;
+  /** Token URI = baseUri + token id. */
+  baseUri: string | null;
+  /** "0" = no cap. */
+  maxSupply: string;
+  minted: string;
+  /** Total paid to the organizer, in the payment token's smallest unit. */
+  revenue: string;
+  collectors: number;
+  terms: DropTermsBody;
+  /** "0x0" = open to everyone. */
+  allowlistRoot: string;
+  createdBlock: string;
+}
+
+export interface ApiDropMint {
+  kind: "claim" | "issue";
+  wallet: string;
+  quantity: string;
+  firstTokenId: string;
+  totalPaid: string;
+  txHash: string;
+  blockNumber: string;
+  createdAt: string;
+}
+
 export interface CreateCollectionIntentParams {
   owner: string;
   name: string;

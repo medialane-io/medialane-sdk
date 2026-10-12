@@ -240,3 +240,22 @@ test("drop intent params carry a quantity, a proof and the issue / allowlist-roo
   const root: CreateDropManageIntentParams = { owner: "0x1", collection: "0x2", action: "set_allowlist_root", root: "0x0" };
   expect([claim.quantity, issue.action, root.action]).toEqual(["2", "issue", "set_allowlist_root"]);
 });
+
+const P1 = "0x0000000000000000000000000000000000000000000000000000000000000001";
+const PD = "0x000000000000000000000000000000000000000000000000000000000000d409";
+
+test.each([
+  ["getDrops", [{ status: "live", organizer: "0x1", page: 2, limit: 10 }], `/v1/drops?status=live&organizer=${P1}&page=2&limit=10`],
+  ["getDrops", [], "/v1/drops"],
+  ["getDropMints", ["0xd409", { page: 1, limit: 5 }], `/v1/drops/${PD}/mints?page=1&limit=5`],
+])("%s requests %#", async (method, args, path) => {
+  const calls = scriptFetch(() => ({ status: 200, body: { data: [], meta: { page: 1, limit: 24, total: 0 } } }));
+  const c = new ApiClient("https://api.test", "k");
+  await (c as unknown as Record<string, (...a: unknown[]) => Promise<unknown>>)[method]!(...(args as unknown[]));
+  expect(new URL(calls[0]!.url).pathname + new URL(calls[0]!.url).search).toBe(path);
+});
+
+test("getDrop is null for an unknown drop", async () => {
+  scriptFetch(() => ({ status: 404, body: { error: "Drop not found" } }));
+  expect(await new ApiClient("https://api.test", "k").getDrop("0xd409")).toBeNull();
+});
