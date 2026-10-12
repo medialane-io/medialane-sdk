@@ -110,8 +110,10 @@ export { stringifyBigInts, u256ToBigInt, encodeU256 } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
 export { isTransientRpcError, isPolicyRefusal, POLICY_REFUSAL_CODES, createFailoverFetch } from "./utils/rpc.js";
 export type { FailoverFetchOptions } from "./utils/rpc.js";
-export { createRpcProxyHandler } from "./server/rpc-proxy.js";
-export { createBackendProxyHandler } from "./server/backend-proxy.js";
+export { createAppGateway, ACCOUNT_SESSION_COOKIE } from "./server/app-gateway.js";
+export type { AppGatewayConfig } from "./server/app-gateway.js";
+export { createAppSessionHandler } from "./server/app-session.js";
+export type { AppSessionConfig } from "./server/app-session.js";
 export {
   isPrivateHost,
   validateUrl,
@@ -140,8 +142,6 @@ export {
   ACCOUNT_SESSION_TTL_SECONDS,
 } from "./server/siws-token.js";
 export type { SiwsIdentity } from "./server/siws-token.js";
-export type { RpcProxyConfig } from "./server/rpc-proxy.js";
-export type { BackendProxyConfig } from "./server/backend-proxy.js";
 
 export { buildAssetMetadata, RESERVED_TRAITS } from "./metadata.js";
 export { getDerivativesTerm, resolveRemixPolicy } from "./remix-policy.js";
