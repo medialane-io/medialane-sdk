@@ -19,6 +19,7 @@ const PUBLIC_ROUTES: Record<string, RegExp[]> = {
   POST: [
     "auth/email/(request-code|verify-code|register-account|confirm)",
     "auth/siws/(nonce|verify)",
+    "users/register",
   ].map((p) => new RegExp(`^${p}$`)),
 };
 
