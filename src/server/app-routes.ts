@@ -8,7 +8,7 @@ const PUBLIC_ROUTES: Record<string, RegExp[]> = {
     "activities", `activities/${SEG}`, "search", "metadata/resolve",
     "creators", `creators/${SEG}/profile`, `creators/by-username/${SEG}`, `creators/${SEG}/hidden`,
     "coins", "coins/prices", "coins/claims", `coins/${SEG}`, `coins/${SEG}/guarantees`, `pop/${SEG}/claim-info`,
-    "drops", `drops/${SEG}`, `drops/${SEG}/mints`,
+    "drops", `drops/${SEG}`, `drops/${SEG}/mints`, `drops/${SEG}/state`,
     "rewards", "rewards/config", "rewards/batch", `rewards/${SEG}`, `rewards/${SEG}/events`,
     `club/${SEG}/${SEG}`, `club/${SEG}/${SEG}/member/${SEG}`, `tickets/${SEG}/${SEG}`, `tickets/${SEG}/count`, `ipnft/${SEG}/${SEG}`,
     "stats", "prices", `remix-offers/${SEG}`,

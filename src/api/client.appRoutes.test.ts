@@ -262,3 +262,21 @@ test("a swap quote is requested from the backend", async () => {
     expect(new URL(calls[0].url).pathname).toBe("/v1/swap/quote");
   });
 });
+
+test("a drop's state is read from the backend, amounts as bigints", async () => {
+  await withStub(
+    { data: { organizer: A, startTime: 1, endTime: 2, price: "5", paymentToken: W, maxPerWallet: "3", allowlistRoot: "0x0", maxSupply: "10", totalMinted: "4" } },
+    async (client, calls) => {
+      expect(await client.getDropState(A)).toEqual({
+        organizer: A, startTime: 1, endTime: 2, price: 5n, paymentToken: W, maxPerWallet: 3n, allowlistRoot: "0x0", maxSupply: 10n, totalMinted: 4n,
+      });
+      expect(new URL(calls[0].url).pathname).toBe(`/v1/drops/${A}/state`);
+    },
+  );
+});
+
+test("a drop the backend cannot read is null", async () => {
+  await withStub({ data: null }, async (client) => {
+    expect(await client.getDropState(A)).toBeNull();
+  });
+});

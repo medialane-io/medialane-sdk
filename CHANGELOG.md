@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.174.0] — 2026-10-12
+
+### Added
+
+- `getDropState(contract)`: a drop's terms and supply, read by the backend from chain.
+- `drops/:contract/state` is a public app route.
+
 ## [0.173.0] — 2026-10-12
 
 ### Added
