@@ -508,6 +508,19 @@ export interface CreateMintIntentParams {
   collectionContract?: string;
 }
 
+/** Drop sale terms on the wire: amounts as decimal strings in the token's smallest unit. */
+export interface DropTermsBody {
+  /** Unix seconds; 0 = open from creation. */
+  startTime: number;
+  /** Unix seconds; 0 = never closes. */
+  endTime: number;
+  /** Per token; "0" = free. */
+  price: string;
+  paymentToken: string;
+  /** "0" = unlimited. */
+  maxPerWallet: string;
+}
+
 export interface CreateCollectionIntentParams {
   owner: string;
   name: string;
@@ -527,13 +540,11 @@ export interface CreateCollectionIntentParams {
 
   maxSupply?: string;
 
-  conditions?: {
-    startTime: number;
-    endTime: number;
-    price: string;
-    paymentToken: string;
-    maxQuantityPerWallet: string;
-  };
+  /** drop-collection */
+  terms?: DropTermsBody;
+
+  /** drop-collection — Merkle root of the allowlist; omitted = open to everyone */
+  allowlistRoot?: string;
 }
 
 export interface CheckoutIntentItem {
@@ -1352,12 +1363,10 @@ export interface CreatePopBurnIntentParams {
 export interface CreateDropClaimIntentParams {
   claimer: string;
   collection: string;
-}
-
-export interface CreateDropAllowlistIntentParams {
-  owner: string;
-  collection: string;
-  addresses: string[];
+  /** Tokens to mint, decimal string. */
+  quantity: string;
+  /** Allowlist proof from the claim link; omitted for open drops. */
+  proof?: string[];
 }
 
 export type WalletManageAction = "add_owner" | "remove_owner" | "cancel_escape" | "set_first_guardian" | "trigger_escape" | "complete_escape";
@@ -1384,15 +1393,18 @@ export interface CreateFundingTransferIntentParams {
   amountAtomic: string;
 }
 
-export type DropManageAction = "allowlist_enabled" | "allowlist_add" | "allowlist_remove" | "withdraw_payments";
+export type DropManageAction = "issue" | "set_allowlist_root";
 
 export interface CreateDropManageIntentParams {
   owner: string;
   collection: string;
   action: DropManageAction;
-  enabled?: boolean;
-  addresses?: string[];
-  address?: string;
+  /** issue */
+  recipient?: string;
+  /** issue — decimal string */
+  quantity?: string;
+  /** set_allowlist_root — 0x0 opens the drop to everyone */
+  root?: string;
 }
 
 export type PopManageAction = "issue" | "set_allowlist_root";

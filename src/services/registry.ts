@@ -115,7 +115,7 @@ const SERVICES = {
   "drop-collection": {
     id: "drop-collection",
     displayName: "Collection Drop",
-    description: "Sequential mint with claim windows + allowlist.",
+    description: "Sell an edition or a collection at a fixed price, with a sale window and an optional allowlist.",
     standard: "ERC721",
     provenance: "MEDIALANE",
     onchain: {
@@ -128,7 +128,9 @@ const SERVICES = {
     capabilities: ["claim", "list", "buy", "make_offer", "cancel", "transfer"],
     events: [
       { name: "DropCreated", emittedBy: "factory" },
-      { name: "AllowlistUpdated", emittedBy: "instance", poll: "slow" },
+      { name: "Claimed", emittedBy: "instance" },
+      { name: "Issued", emittedBy: "instance" },
+      { name: "AllowlistRootSet", emittedBy: "instance" },
     ],
     metadataSchema: { licenseDefault: "CC BY-SA" },
   },

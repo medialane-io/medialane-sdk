@@ -11,21 +11,28 @@ export interface BuildFeeCallParams {
   grossAmount: bigint;
 }
 
+/** Basis points charged on `surface`; 0 when the fee is off or has nowhere to go. */
+export function feeBps(surface: FeeSurface, cfg: ResolvedFeeConfig): number {
+  if (!cfg.enabled || !cfg.fundAddress) return 0;
+  return surface === "marketplace" ? cfg.marketplaceBps
+    : surface === "launchpad" ? cfg.launchpadBps
+    : cfg.sponsorshipBps;
+}
+
+export function feeAmount(grossAmount: bigint, bps: number): bigint {
+  return bps <= 0 ? 0n : (grossAmount * BigInt(bps)) / 10000n;
+}
+
 export function buildFeeCall(
   p: BuildFeeCallParams,
   cfg: ResolvedFeeConfig
 ): Call | null {
-  if (!cfg.enabled || !cfg.fundAddress) return null;
-  const bps = p.surface === "marketplace" ? cfg.marketplaceBps
-    : p.surface === "launchpad" ? cfg.launchpadBps
-    : cfg.sponsorshipBps;
-  if (bps <= 0) return null;
-  const fee = (p.grossAmount * BigInt(bps)) / 10000n;
+  const fee = feeAmount(p.grossAmount, feeBps(p.surface, cfg));
   if (fee <= 0n) return null;
   const u = cairo.uint256(fee.toString());
   return {
     contractAddress: p.token,
     entrypoint: "transfer",
-    calldata: [cfg.fundAddress, u.low.toString(), u.high.toString()],
+    calldata: [cfg.fundAddress!, u.low.toString(), u.high.toString()],
   };
 }

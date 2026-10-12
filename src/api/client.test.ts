@@ -1,5 +1,6 @@
 import { test, expect, mock, afterEach } from "bun:test";
 import { ApiClient, MedialaneApiError } from "./client.js";
+import type { CreateDropClaimIntentParams, CreateDropManageIntentParams } from "../types/api.js";
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
@@ -218,12 +219,11 @@ test.each([
   ["createGenesisMintIntent", "/v1/intents/genesis-mint", { owner: "0x1", recipient: "0x1" }],
   ["createPopClaimIntent", "/v1/intents/pop-claim", { claimer: "0x1", collection: "0x2", proof: [] }],
   ["createPopBurnIntent", "/v1/intents/pop-burn", { owner: "0x1", collection: "0x2", tokenId: "1" }],
-  ["createDropClaimIntent", "/v1/intents/drop-claim", { claimer: "0x1", collection: "0x2" }],
-  ["createDropAllowlistIntent", "/v1/intents/drop-allowlist", { owner: "0x1", collection: "0x2", addresses: ["0x3"] }],
+  ["createDropClaimIntent", "/v1/intents/drop-claim", { claimer: "0x1", collection: "0x2", quantity: "2", proof: [] }],
   ["createWalletManageIntent", "/v1/intents/wallet-manage", { owner: "0x1", action: "cancel_escape" }],
   ["createSwapIntent", "/v1/intents/swap", { taker: "0x1", sellTokenAddress: "0x2", buyTokenAddress: "0x3", sellAmountRaw: "1" }],
   ["createFundingTransferIntent", "/v1/intents/funding-transfer", { owner: "0x1", asset: "0x2", amountAtomic: "1" }],
-  ["createDropManageIntent", "/v1/intents/drop-manage", { owner: "0x1", collection: "0x2", action: "withdraw_payments" }],
+  ["createDropManageIntent", "/v1/intents/drop-manage", { owner: "0x1", collection: "0x2", action: "set_allowlist_root", root: "0x0" }],
   ["createPopManageIntent", "/v1/intents/pop-manage", { owner: "0x1", collection: "0x2", action: "set_allowlist_root", root: "0xabc" }],
 ])("%s posts its params to %s", async (method, path, params) => {
   const calls = scriptFetch(() => ({ status: 201, body: { data: { id: "i", requiresSignature: false, calls: [], expiresAt: "" } } }));
@@ -232,4 +232,11 @@ test.each([
   expect(calls[0]!.url).toBe(`https://api.test${path}`);
   expect(calls[0]!.init.method).toBe("POST");
   expect(JSON.parse(String(calls[0]!.init.body))).toEqual(params);
+});
+
+test("drop intent params carry a quantity, a proof and the issue / allowlist-root actions", () => {
+  const claim: CreateDropClaimIntentParams = { claimer: "0x1", collection: "0x2", quantity: "2", proof: ["0xa"] };
+  const issue: CreateDropManageIntentParams = { owner: "0x1", collection: "0x2", action: "issue", recipient: "0x3", quantity: "1" };
+  const root: CreateDropManageIntentParams = { owner: "0x1", collection: "0x2", action: "set_allowlist_root", root: "0x0" };
+  expect([claim.quantity, issue.action, root.action]).toEqual(["2", "issue", "set_allowlist_root"]);
 });

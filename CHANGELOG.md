@@ -2,6 +2,24 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.169.0] — 2026-10-11
+
+### Changed
+
+- `drop-collection` points at the new drop factory. Anyone can create a drop; sale terms are fixed at creation and payments go straight to the organizer.
+- `DropService`: `createDrop({ name, symbol, baseUri, maxSupply, terms, allowlistRoot })`, `claim({ collection, quantity, proof })`, `issue`, `setAllowlistRoot`.
+- Drop ABIs are generated from the compiled contracts.
+- `createDropClaimIntent` takes `quantity` and `proof`; `createDropManageIntent` actions are `issue` and `set_allowlist_root`; drop creation intents take `terms` and `allowlistRoot`.
+
+### Added
+
+- `dropCalls`, `dropMintCost`, `toDropContractTerms`, `readDrop`, `dropClaimedBy`, `dropMintState`, `dropClaimLinks`, `DROP_MAX_CLAIM_QUANTITY`, `dropHref`, `feeBps`, `feeAmount`, `STARKNET_DROP_FACTORY_START_BLOCK`.
+
+### Removed
+
+- `DropService.adminMint`, `setClaimConditions`, `setAllowlistEnabled`, `addToAllowlist`, `batchAddToAllowlist`, `setPaused`, `withdrawPayments`.
+- `ClaimConditions`, `toDropContractConditions`, `createDropAllowlistIntent`, `CreateDropAllowlistIntentParams`.
+
 ## [0.168.0] — 2026-10-11
 
 ### Added

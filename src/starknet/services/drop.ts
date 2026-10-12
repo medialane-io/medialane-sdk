@@ -1,154 +1,62 @@
-import { newContract } from "../marketplace/utils.js";
-import { type AccountInterface } from "starknet";
+import { RpcProvider, type AccountInterface, type ProviderInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
-import { normalizeAddress } from "../../utils/address.js";
-import { DropCollectionABI, DropFactoryABI } from "../abis/index.js";
 import { getStarknetCoordinates } from "../../chains.js";
-import type { ClaimConditions, CreateDropParams } from "../../types/services.js";
+import type { CreateDropParams, DropTerms } from "../../types/services.js";
 import type { TxResult } from "../../types/marketplace.js";
 import { buildFeeCall } from "../fee/index.js";
+import { dropCalls } from "../drop-calls.js";
+import { readDrop } from "../drop-state.js";
 
-export type { ClaimConditions, CreateDropParams };
-
-export function toContractConditions(c: ClaimConditions) {
-  return {
-    start_time: c.startTime,
-    end_time: c.endTime,
-    price: BigInt(c.price),
-    payment_token: c.paymentToken,
-    max_quantity_per_wallet: BigInt(c.maxQuantityPerWallet),
-  };
-}
+export type { CreateDropParams, DropTerms };
 
 export class DropService {
   private readonly factoryAddress: string;
   private readonly config: ResolvedConfig;
+  private readonly reader: Pick<ProviderInterface, "callContract">;
 
-  constructor(config: ResolvedConfig) {
+  constructor(config: ResolvedConfig, reader?: Pick<ProviderInterface, "callContract">) {
     this.factoryAddress = getStarknetCoordinates(config.chain).dropFactory!;
     this.config = config;
-  }
-
-  private _collection(address: string, account: AccountInterface) {
-    return newContract(DropCollectionABI as any, normalizeAddress("STARKNET",address), account as any);
-  }
-
-  async claim(
-    account: AccountInterface,
-    collectionAddress: string,
-    quantity: bigint | string | number = 1
-  ): Promise<TxResult> {
-    const collection = this._collection(collectionAddress, account);
-    const qty = BigInt(quantity);
-    const claimCall = collection.populate("claim", [qty]);
-
-    const conditions = (await collection.get_claim_conditions()) as {
-      price: bigint;
-      payment_token: bigint | string;
-    };
-    const price = BigInt(conditions.price);
-    const paymentToken =
-      typeof conditions.payment_token === "bigint"
-        ? "0x" + conditions.payment_token.toString(16)
-        : conditions.payment_token;
-
-    const feeCall =
-      price > 0n
-        ? buildFeeCall(
-            { surface: "launchpad", token: paymentToken, grossAmount: price * qty },
-            this.config.feeConfig
-          )
-        : null;
-
-    const calls = feeCall ? [claimCall, feeCall] : [claimCall];
-    const res = await account.execute(calls);
-    return { txHash: res.transaction_hash };
-  }
-
-  async adminMint(
-    account: AccountInterface,
-    params: { collection: string; recipient: string; quantity?: bigint | string | number; customUri?: string }
-  ): Promise<TxResult> {
-    const call = this._collection(params.collection, account).populate("admin_mint", [
-      params.recipient,
-      BigInt(params.quantity ?? 1),
-      params.customUri ?? "",
-    ]);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
-  }
-
-  async setClaimConditions(
-    account: AccountInterface,
-    params: { collection: string; conditions: ClaimConditions }
-  ): Promise<TxResult> {
-    const call = this._collection(params.collection, account).populate("set_claim_conditions", [
-      toContractConditions(params.conditions),
-    ]);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
-  }
-
-  async setAllowlistEnabled(
-    account: AccountInterface,
-    params: { collection: string; enabled: boolean }
-  ): Promise<TxResult> {
-    const call = this._collection(params.collection, account).populate("set_allowlist_enabled", [params.enabled]);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
-  }
-
-  async addToAllowlist(
-    account: AccountInterface,
-    params: { collection: string; address: string }
-  ): Promise<TxResult> {
-    const call = this._collection(params.collection, account).populate("add_to_allowlist", [params.address]);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
-  }
-
-  async batchAddToAllowlist(
-    account: AccountInterface,
-    params: { collection: string; addresses: string[] }
-  ): Promise<TxResult> {
-    const collection = this._collection(params.collection, account);
-    const CHUNK = 200;
-    const calls = [];
-    for (let i = 0; i < params.addresses.length; i += CHUNK) {
-      calls.push(collection.populate("batch_add_to_allowlist", [params.addresses.slice(i, i + CHUNK)]));
-    }
-    const res = await account.execute(calls);
-    return { txHash: res.transaction_hash };
-  }
-
-  async setPaused(
-    account: AccountInterface,
-    params: { collection: string; paused: boolean }
-  ): Promise<TxResult> {
-    const call = this._collection(params.collection, account).populate("set_paused", [params.paused]);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
-  }
-
-  async withdrawPayments(
-    account: AccountInterface,
-    params: { collection: string }
-  ): Promise<TxResult> {
-    const call = this._collection(params.collection, account).populate("withdraw_payments", []);
-    const res = await account.execute([call]);
-    return { txHash: res.transaction_hash };
+    this.reader = reader ?? new RpcProvider({ nodeUrl: config.rpcUrl });
   }
 
   async createDrop(account: AccountInterface, params: CreateDropParams): Promise<TxResult> {
-    const factory = newContract(DropFactoryABI as any, this.factoryAddress, account as any);
-    const call = factory.populate("create_drop", [
-      params.name,
-      params.symbol,
-      params.baseUri,
-      BigInt(params.maxSupply),
-      toContractConditions(params.initialConditions),
-    ]);
-    const res = await account.execute([call]);
+    const res = await account.execute([dropCalls.create(this.factoryAddress, params)]);
+    return { txHash: res.transaction_hash };
+  }
+
+  /** Mints `quantity` to the account, paying the drop's price and the platform fee. */
+  async claim(
+    account: AccountInterface,
+    params: { collection: string; quantity: bigint | string | number; proof?: string[] },
+  ): Promise<TxResult> {
+    const drop = await readDrop(this.reader, params.collection);
+    const calls = dropCalls.claim(params.collection, {
+      quantity: params.quantity,
+      proof: params.proof,
+      price: drop.price,
+      paymentToken: drop.paymentToken,
+    });
+    const fee = drop.price > 0n
+      ? buildFeeCall(
+          { surface: "launchpad", token: drop.paymentToken, grossAmount: drop.price * BigInt(params.quantity) },
+          this.config.feeConfig,
+        )
+      : null;
+    const res = await account.execute(fee ? [...calls, fee] : calls);
+    return { txHash: res.transaction_hash };
+  }
+
+  async issue(
+    account: AccountInterface,
+    params: { collection: string; recipient: string; quantity: bigint | string | number },
+  ): Promise<TxResult> {
+    const res = await account.execute([dropCalls.issue(params.collection, params.recipient, params.quantity)]);
+    return { txHash: res.transaction_hash };
+  }
+
+  async setAllowlistRoot(account: AccountInterface, params: { collection: string; root: string }): Promise<TxResult> {
+    const res = await account.execute([dropCalls.setAllowlistRoot(params.collection, params.root)]);
     return { txHash: res.transaction_hash };
   }
 }

@@ -26,6 +26,7 @@ export interface StarknetCoordinates {
   popFactoryStartBlock?: number;
   dropFactory?: `0x${string}`;
   dropCollectionClassHash?: `0x${string}`;
+  dropFactoryStartBlock?: number;
   nftComments?: `0x${string}`;
   creatorCoinFactory?: `0x${string}`;
   creatorCoinEkuboLauncher?: `0x${string}`;
@@ -108,8 +109,9 @@ const COORDINATES: CoordinatesByChain = {
     popFactory: "0x06af6ffdde310991a40570716dc3681acc7effc610aeb548ea0baa02d4208d5f",
     popCollectionClassHash: "0x076200229933dd10b8d6d41ecb1a53ba1972510a42f4d505dae4f6b54d1b317e",
     popFactoryStartBlock: 16126169,
-    dropFactory: "0x03587f42e29daee1b193f6cf83bf8627908ed6632d0d83fcb26225c50547d800",
-    dropCollectionClassHash: "0x00092e72cdb63067521e803aaf7d4101c3e3ce026ae6bc045ec4228027e58282",
+    dropFactory: "0x049cae891b9195277e018ae99765a3b0e5f6b0f6a1807c5db789342bccc0e130",
+    dropCollectionClassHash: "0x0641d0255db1d218e08b367f40559d5ccdc22d34fee8ef0500b4247092a60132",
+    dropFactoryStartBlock: 16240820,
     nftComments: "0x02cdac70c94447189af0389dfea63f4d5e4154ea8a563de288a5ab1c39e37843",
     creatorCoinFactory: "0x50fa807b5274079fb19374673d7bab6d2dc3af7e1032ea43eb6e44bcbde4c3c",
     creatorCoinEkuboLauncher: "0x4f7fceb5ac10f12f9544a09580592e5bdf1b7f04f48765eecf12286d8ccb7b4",

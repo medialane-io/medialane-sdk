@@ -55,6 +55,7 @@ export {
   STARKNET_POP_FACTORY_START_BLOCK,
   STARKNET_DROP_FACTORY_CONTRACT,
   STARKNET_DROP_COLLECTION_CLASS_HASH,
+  STARKNET_DROP_FACTORY_START_BLOCK,
   STARKNET_NFTCOMMENTS_CONTRACT,
   STARKNET_IP_TICKETS_FACTORY_CONTRACT,
   STARKNET_IP_TICKET_COLLECTION_CLASS_HASH,
@@ -90,7 +91,7 @@ export {
   type CoordinatesByChain,
 } from "./chains.js";
 
-export { SUPPORTED_URL_CHAINS, chainSlug, chainFromSlug, assetHref, collectionHref, coinHref } from "./routes.js";
+export { SUPPORTED_URL_CHAINS, chainSlug, chainFromSlug, assetHref, collectionHref, dropHref, coinHref } from "./routes.js";
 
 export {
   getService,

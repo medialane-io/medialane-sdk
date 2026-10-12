@@ -14,7 +14,7 @@ import type { TypedData, Call } from "starknet";
 import type { VenueSigner as _VenueSigner } from "../adapters/types.js";
 export type StarknetVenueSigner = _VenueSigner<TypedData, Call>;
 
-export { buildFeeCall } from "./fee/build-fee-call.js";
+export { buildFeeCall, feeBps, feeAmount } from "./fee/build-fee-call.js";
 export type { FeeSurface, BuildFeeCallParams } from "./fee/build-fee-call.js";
 
 export * from "./siws/index.js";
@@ -55,7 +55,18 @@ export {
   type PopClaimInfo,
   type PopClaimState,
 } from "./pop-claim.js";
-export { DropService, toContractConditions as toDropContractConditions } from "./services/drop.js";
+export { DropService } from "./services/drop.js";
+export { dropCalls, dropMintCost, toContractTerms as toDropContractTerms, type DropMintCost } from "./drop-calls.js";
+export {
+  readDrop,
+  dropClaimedBy,
+  dropMintState,
+  dropClaimLinks,
+  DROP_MAX_CLAIM_QUANTITY,
+  type DropOnchain,
+  type DropMintState,
+  type DropMintStateKind,
+} from "./drop-state.js";
 export { TicketService } from "./services/ticket.js";
 export { ClubService } from "./services/club.js";
 export { SponsorshipService } from "./services/sponsorship.js";
@@ -103,7 +114,7 @@ export type {
   BatchMintEditionParams,
   AddSupplyParams,
 } from "./services/erc1155collection.js";
-export type { ClaimConditions, CreateDropParams, CreatePopCollectionParams } from "../types/services.js";
+export type { DropTerms, CreateDropParams, CreatePopCollectionParams } from "../types/services.js";
 
 export { encodeByteArray } from "./bytearray.js";
 
