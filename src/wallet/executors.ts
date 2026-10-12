@@ -61,6 +61,11 @@ export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
   return {
     async execute(input): Promise<ExecutedTransaction> {
       const { userAddress, privateKeyHex, calls, intentIds } = input;
+      if (!intentIds?.length) {
+        const consented = await deps.consent.request({ address: userAddress, calls });
+        if (!consented) throw new SponsoredCallRejectedError("This action can't be sponsored");
+        return fallback.execute(input);
+      }
       const result = await executeSponsored(
         { proxyUrl: deps.proxyUrl, fetchImpl: deps.fetchImpl },
         {
@@ -68,8 +73,7 @@ export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
           signTypedData: async (data) =>
             signWithPrivateKey(privateKeyHex, starknetTypedData.getMessageHash(data, userAddress)),
         },
-        calls,
-        intentIds,
+        { intentIds },
       );
       if (result.status === "sponsored") return { transactionHash: result.transactionHash };
 
