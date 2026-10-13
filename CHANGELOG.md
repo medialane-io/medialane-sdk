@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.176.0] — 2026-10-13
+
+### Added
+
+- `buildCollectionMetadata`: collection metadata with `name`, `description`, `image` and `external_link`; `external_link` defaults to the owner's account page.
+
 ## [0.175.0] — 2026-10-12
 
 ### Changed

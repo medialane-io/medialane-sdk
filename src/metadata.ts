@@ -81,3 +81,29 @@ export function buildAssetMetadata(input: BuildAssetMetadataInput): AssetMetadat
     attributes,
   };
 }
+
+export interface CollectionMetadata {
+  name: string;
+  description?: string;
+  image?: string;
+  external_link: string;
+}
+
+export interface BuildCollectionMetadataInput {
+  name: string;
+  owner: string;
+  description?: string | null;
+  image?: string | null;
+  externalLink?: string | null;
+}
+
+export function buildCollectionMetadata(input: BuildCollectionMetadataInput): CollectionMetadata {
+  const description = input.description?.trim();
+  const image = input.image?.trim();
+  return {
+    name: input.name,
+    ...(description ? { description } : {}),
+    ...(image ? { image } : {}),
+    external_link: input.externalLink?.trim() || `https://medialane.io/account/${input.owner}`,
+  };
+}
