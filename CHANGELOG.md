@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.177.0] — 2026-10-13
+
+### Changed
+
+- `completeDeployment` ends once the wallet is deployed and returns `{ sealed }`; it no longer signs in with the wallet. The `signing-in` step is removed.
+
 ## [0.176.0] — 2026-10-13
 
 ### Added
