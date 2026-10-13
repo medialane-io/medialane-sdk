@@ -86,12 +86,10 @@ export interface MediaWallet {
 export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
   const ttl = config.unlockTtlMs ?? 20_000;
   const deployments = createDeploymentCoordinator((onStep, options) => {
-    if (!config.backendUrl) throw new Error("This wallet has no backend url configured for sign-in");
     const deps: DeploymentDeps = {
       store: config.store,
       passkey: config.passkey,
       provider: config.provider,
-      backendUrl: config.backendUrl,
       deployProxyUrl: config.deployProxyUrl,
       fetchImpl: config.fetchImpl,
     };

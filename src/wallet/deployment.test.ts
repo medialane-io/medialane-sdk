@@ -39,8 +39,6 @@ function setup(
       },
     },
     provider: () => ({}) as ProviderInterface,
-    backendUrl: "/api/proxy",
-    requestSiwsTokenImpl: async () => "siws-token",
     isDeployedImpl: async () => false,
     waitUntilDeployedImpl: async () => {
       log.push("waited");
@@ -59,13 +57,13 @@ function setup(
   return { deps, log, counts: () => ({ unlocks, creates, saved: saved.length, announced }) };
 }
 
-test("an existing wallet unlocks once, and that key covers deploy and sign-in", async () => {
+test("an existing wallet unlocks once and setup ends when it is deployed", async () => {
   const { deps, log, counts } = setup({ deployProxyUrl: "/api/wallet/deploy-sponsored" });
   const steps: string[] = [];
   const result = await completeDeployment(deps, (step) => steps.push(step));
 
-  expect(result.siwsToken).toBe("siws-token");
-  expect(steps).toEqual(["deploying", "signing-in"]);
+  expect(result).toEqual({ sealed: SEALED });
+  expect(steps).toEqual(["deploying"]);
   expect(log).toEqual(["sponsored", "waited"]);
   expect(counts()).toEqual({ unlocks: 1, creates: 0, saved: 0, announced: 1 });
 });
@@ -78,7 +76,7 @@ test("a first wallet is created and saved before it is deployed", async () => {
   const steps: string[] = [];
   await completeDeployment(deps, (step) => steps.push(step));
 
-  expect(steps).toEqual(["creating-passkey", "deploying", "signing-in"]);
+  expect(steps).toEqual(["creating-passkey", "deploying"]);
   expect(counts().creates).toBe(1);
   expect(counts().unlocks).toBe(0);
 });
@@ -103,7 +101,7 @@ test("a sponsor that cannot deploy falls back to the user paying, once", async (
   );
   const result = await completeDeployment(deps, () => {});
   expect(log).toEqual(["sponsored", "self-funded", "waited"]);
-  expect(result.siwsToken).toBe("siws-token");
+  expect(result).toEqual({ sealed: SEALED });
 });
 
 test("when both deploys fail, neither failure is hidden", async () => {
@@ -117,7 +115,7 @@ test("when both deploys fail, neither failure is hidden", async () => {
   await expect(completeDeployment(deps, () => {})).rejects.toThrow(/sponsor down.*no funds/);
 });
 
-test("sign-in waits until the account is really on chain", async () => {
+test("setup waits until the wallet is really on chain", async () => {
   const seen: string[] = [];
   const { deps } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
@@ -146,7 +144,7 @@ test("a stored wallet already on chain is not reused: a new wallet is created an
   });
   const steps: string[] = [];
   await completeDeployment(deps, (step) => steps.push(step));
-  expect(steps).toEqual(["creating-passkey", "deploying", "signing-in"]);
+  expect(steps).toEqual(["creating-passkey", "deploying"]);
   expect(log).toEqual(["sponsored", "waited"]);
   expect(counts()).toEqual({ unlocks: 0, creates: 1, saved: 1, announced: 1 });
 });

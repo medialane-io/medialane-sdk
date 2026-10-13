@@ -1,16 +1,13 @@
-import { Account, stark, typedData as starknetTypedData, type ProviderInterface } from "starknet";
+import { Account, stark, type ProviderInterface } from "starknet";
 import { getCoordinates } from "../chains.js";
-import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 import { ownerConstructorCalldata } from "../starknet/media-wallet/account.js";
-import { requestSiwsToken } from "../starknet/siws/client.js";
 import { isDeployed } from "./addresses.js";
 import type { ExecutedTransaction, SealedOwner } from "./types.js";
 
-export type DeploymentStep = "creating-passkey" | "deploying" | "signing-in";
+export type DeploymentStep = "creating-passkey" | "deploying";
 
 export interface DeploymentResult {
   sealed: SealedOwner;
-  siwsToken: string;
 }
 
 async function describeFailure(res: Response, fallback: string): Promise<never> {
@@ -118,12 +115,10 @@ export interface DeploymentDeps {
     unlockOwnerKey(sealed: SealedOwner): Promise<string>;
   };
   provider: () => ProviderInterface;
-  backendUrl: string;
   deployProxyUrl?: string;
   fetchImpl?: typeof fetch;
   deploySponsoredImpl?: typeof deploySponsored;
   deploySelfFundedImpl?: typeof deploySelfFunded;
-  requestSiwsTokenImpl?: typeof requestSiwsToken;
   waitUntilDeployedImpl?: typeof waitUntilDeployed;
   isDeployedImpl?: typeof isDeployed;
 }
@@ -183,19 +178,8 @@ export async function completeDeployment(
   onStep("deploying");
   await deployWallet(deps, { ownerAddress: sealed.address, ownerPubKey: sealed.ownerPubKey, privateKeyHex });
 
-  onStep("signing-in");
-  const address = sealed.address;
-  const siwsToken = await (deps.requestSiwsTokenImpl ?? requestSiwsToken)({
-    backendUrl: deps.backendUrl,
-    walletAddress: address,
-    signer: {
-      signMessage: async (td) =>
-        signWithPrivateKey(privateKeyHex, starknetTypedData.getMessageHash(td as never, address)),
-    },
-  });
-
   deps.store.notifyChange();
-  return { sealed, siwsToken };
+  return { sealed };
 }
 
 export interface DeploymentCoordinator {

@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import { createDeploymentCoordinator, type DeploymentResult, type DeploymentStep } from "./deployment.js";
 
-const RESULT = { sealed: {}, siwsToken: "siws-token" } as unknown as DeploymentResult;
+const RESULT = { sealed: {} } as unknown as DeploymentResult;
 
 function deferredRun() {
   let runs = 0;
@@ -38,11 +38,10 @@ test("a joining caller hears the current step at once and every step after", asy
   const pending = coordinator.run((s) => first.push(s));
   d.emit("deploying");
   const joined = coordinator.run((s) => second.push(s));
-  d.emit("signing-in");
   d.finish();
   await Promise.all([pending, joined]);
-  expect(first).toEqual(["deploying", "signing-in"]);
-  expect(second).toEqual(["deploying", "signing-in"]);
+  expect(first).toEqual(["deploying"]);
+  expect(second).toEqual(["deploying"]);
 });
 
 test("it reports deploying only while a run is in flight", async () => {
