@@ -45,6 +45,18 @@ describe("app gateway", () => {
     expect(seen[0].headers.get("x-account-session")).toBe("sess");
   });
 
+  test("sends the app secret from config and drops one sent by the browser", async () => {
+    const { handle, seen } = gateway(() => Response.json({}), { appSecret: "s3cret" });
+    await handle(req("collections", { headers: { "x-app-secret": "forged" } }), ["collections"]);
+    expect(seen[0].headers.get("x-app-secret")).toBe("s3cret");
+  });
+
+  test("without an app secret configured, no secret header is sent", async () => {
+    const { handle, seen } = gateway(() => Response.json({}));
+    await handle(req("collections", { headers: { "x-app-secret": "forged" } }), ["collections"]);
+    expect(seen[0].headers.get("x-app-secret")).toBeNull();
+  });
+
   test("no cookie means no session header", async () => {
     const { handle, seen } = gateway(() => Response.json({}));
     await handle(req("collections", { headers: { "x-account-session": "forged" } }), ["collections"]);
