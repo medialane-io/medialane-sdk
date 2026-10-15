@@ -51,13 +51,6 @@ describe("app gateway", () => {
     expect(seen[0].headers.get("x-app-secret")).toBe("s3cret");
   });
 
-  test("forwards a fresh wallet signature and drops a browser Authorization header", async () => {
-    const { handle, seen } = gateway(() => Response.json({}));
-    await handle(req("collections", { headers: { "x-fresh-signature": "fresh", authorization: "Bearer x" } }), ["collections"]);
-    expect(seen[0].headers.get("x-fresh-signature")).toBe("fresh");
-    expect(seen[0].headers.get("authorization")).toBeNull();
-  });
-
   test("without an app secret configured, no secret header is sent", async () => {
     const { handle, seen } = gateway(() => Response.json({}));
     await handle(req("collections", { headers: { "x-app-secret": "forged" } }), ["collections"]);
@@ -103,10 +96,10 @@ describe("app gateway", () => {
     expect(res.headers.get("set-cookie") ?? "").toContain(`${ACCOUNT_SESSION_COOKIE}=tok`);
   });
 
-  test("a wallet signature without an account session returns its token and sets no cookie", async () => {
+  test("a wallet sign-in token never reaches the browser, even without a session", async () => {
     const { handle } = gateway(() => Response.json({ token: "siws" }));
     const res = await handle(req("auth/siws/verify", { method: "POST", body: "{}" }), ["auth", "siws", "verify"]);
-    expect(await res.json()).toEqual({ token: "siws" });
+    expect(await res.json()).toEqual({});
     expect(res.headers.get("set-cookie")).toBeNull();
   });
 

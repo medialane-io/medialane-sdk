@@ -102,12 +102,12 @@ export function createAppGateway(config: AppGatewayConfig): (req: Request, path:
       } catch {
         body = null;
       }
-      const token = typeof body?.accountToken === "string" ? body.accountToken : null;
-      if (!body || !token) return new Response(text, { status: res.status, headers: out });
+      if (!body) return new Response(text, { status: res.status, headers: out });
+      const token = typeof body.accountToken === "string" ? body.accountToken : null;
       delete body.accountToken;
       delete body.token;
       out.set("content-type", "application/json");
-      out.append("set-cookie", sessionCookie(token));
+      if (token) out.append("set-cookie", sessionCookie(token));
       return new Response(JSON.stringify(body), { status: res.status, headers: out });
     }
 
