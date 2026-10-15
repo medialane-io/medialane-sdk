@@ -7,7 +7,7 @@ const EDGE_CACHE_CONTROL = "public, s-maxage=30, stale-while-revalidate=120";
 const DROPPED_REQUEST_HEADERS = new Set([
   "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailers",
   "transfer-encoding", "upgrade", "host", "content-length", "accept-encoding", "cookie",
-  "x-api-key", "x-app-id", "x-account-session", "authorization",
+  "x-api-key", "x-app-id", "x-app-secret", "x-account-session", "authorization",
 ]);
 const DROPPED_RESPONSE_HEADERS = new Set([
   "connection", "keep-alive", "transfer-encoding", "content-length", "content-encoding", "set-cookie",
@@ -17,6 +17,7 @@ export interface AppGatewayConfig {
   appId: string;
   backendUrl: string;
   apiKey: string | undefined;
+  appSecret?: string;
   allow: Record<string, RegExp[]>;
   cacheableGets?: RegExp[];
   timeoutMs?: number;
@@ -63,6 +64,7 @@ export function createAppGateway(config: AppGatewayConfig): (req: Request, path:
     });
     headers.set("x-api-key", config.apiKey);
     headers.set("x-app-id", config.appId);
+    if (config.appSecret) headers.set("x-app-secret", config.appSecret);
     const session = readCookie(req, ACCOUNT_SESSION_COOKIE);
     if (session) headers.set("x-account-session", session);
 

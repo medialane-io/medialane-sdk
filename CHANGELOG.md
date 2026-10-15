@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.178.0] — 2026-10-14
+
+### Added
+
+- `appSecret` on `createAppGateway` and `createAppSessionHandler`: sent to the backend as `x-app-secret`. An `x-app-secret` header from the browser is dropped.
+
 ## [0.177.0] — 2026-10-13
 
 ### Changed

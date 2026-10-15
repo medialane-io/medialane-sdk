@@ -4,6 +4,7 @@ export interface AppSessionConfig {
   appId: string;
   backendUrl: string;
   apiKey: string | undefined;
+  appSecret?: string;
   fetchImpl?: typeof fetch;
 }
 
@@ -24,7 +25,12 @@ export function createAppSessionHandler(config: AppSessionConfig): {
       const session = readCookie(req, ACCOUNT_SESSION_COOKIE);
       if (!session) return Response.json(null);
       const res = await doFetch(`${base}/v1/users/me`, {
-        headers: { "x-api-key": config.apiKey ?? "", "x-app-id": config.appId, "x-account-session": session },
+        headers: {
+          "x-api-key": config.apiKey ?? "",
+          "x-app-id": config.appId,
+          ...(config.appSecret ? { "x-app-secret": config.appSecret } : {}),
+          "x-account-session": session,
+        },
         cache: "no-store",
       });
       if (res.status === 401 || res.status === 403) return signedOut();
