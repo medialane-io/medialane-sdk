@@ -2,6 +2,27 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.181.0] — 2026-10-14
+
+### Added
+
+- `apiKeyConfirmationTypedData` (`@medialane/sdk/starknet`): the message an account's wallet signs to approve one API key change. Types `ApiKeyAction`, `ApiKeyConfirmation`, `ApiKeyConfirmationInput`.
+
+### Changed
+
+- `createApiKey(input, confirmation)` and `deleteApiKey(id, confirmation)` send the wallet's confirmation in the body.
+- Portal methods (`getMe`, `getApiKeys`, credits and funding) no longer take a wallet token; the account comes from the session.
+- `createLaunchpadRunsClient` no longer takes `getToken`; `authorizedFetch` is now `fetch`.
+- `fundingApiFor(client)` no longer takes a wallet token.
+
+### Removed
+
+- `x-fresh-signature`, and `TokenSource`.
+
+### Fixed
+
+- `createAppGateway` always removes `token` from wallet sign-in responses.
+
 ## [0.180.0] — 2026-10-14
 
 ### Changed

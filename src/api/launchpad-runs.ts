@@ -89,31 +89,22 @@ export class RunRequestError extends Error {
   }
 }
 
-export type TokenSource = () => Promise<string | null>;
-
-
 export interface LaunchpadRunsClientOptions {
   baseUrl: string;
-  getToken: TokenSource;
   fetchImpl?: typeof fetch;
 }
 
-export function createLaunchpadRunsClient({ baseUrl, getToken, fetchImpl = fetch }: LaunchpadRunsClientOptions) {
+export function createLaunchpadRunsClient({ baseUrl, fetchImpl = fetch }: LaunchpadRunsClientOptions) {
   const runsUrl = `${baseUrl.replace(/\/$/, "")}/v1/portal/runs`;
   const runBase = (id: string): string => `${runsUrl}/${id}`;
   const runBatchBase = (id: string, index: number): string => `${runBase(id)}/batches/${index}`;
   const runCollectionBase = (id: string): string => `${runBase(id)}/collection`;
   const runTierBase = (id: string): string => `${runBase(id)}/tier`;
 
-  const authorizedFetch: typeof fetch = async (input, init) => {
-    const token = await getToken();
-    const headers = new Headers(init?.headers);
-    if (token) headers.set("authorization", `Bearer ${token}`);
-    return fetchImpl(input, { ...init, headers, cache: "no-store" });
-  };
+  const runFetch: typeof fetch = (input, init) => fetchImpl(input, { ...init, cache: "no-store" });
 
   async function call<T>(url: string, init?: RequestInit): Promise<{ status: number; data: T }> {
-    const res = await authorizedFetch(url, {
+    const res = await runFetch(url, {
       ...init,
       headers: { "content-type": "application/json", ...(init?.headers as Record<string, string> | undefined) },
     });
@@ -174,7 +165,7 @@ export function createLaunchpadRunsClient({ baseUrl, getToken, fetchImpl = fetch
   };
 
   return {
-    authorizedFetch,
+    fetch: runFetch,
     runBase,
     runBatchBase,
     runCollectionBase,

@@ -28,7 +28,6 @@ export type {
   CertificateEmissionNextStep,
   WalletRequest,
   ConfirmResult,
-  TokenSource,
 } from "./api/launchpad-runs.js";
 export { PasskeyCancelledError, PasskeyUnsupportedError, type PasskeyUnsupportedReason } from "./wallet/passkey.js";
 

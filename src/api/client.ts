@@ -6,6 +6,7 @@ import { withRetry, type RetryOptions } from "../utils/retry.js";
 import type { CreatorCoinGuarantees } from "../starknet/services/creatorCoin.js";
 import type { PopClaimInfo } from "../starknet/pop-claim.js";
 import type { DropOnchain } from "../starknet/drop-state.js";
+import type { ApiKeyConfirmation } from "../starknet/api-key-confirmation.js";
 import type {
   ApiOrder,
   ApiOrdersQuery,
@@ -229,13 +230,6 @@ export class ApiClient {
     return siwsToken ? { Authorization: `Bearer ${siwsToken}` } : {};
   }
 
-  private asSubject(siwsToken?: string): Record<string, string> | undefined {
-    return siwsToken ? this.bearer(siwsToken) : undefined;
-  }
-
-  private withFreshSignature(token: string): Record<string, string> {
-    return { ...this.bearer(token), "x-fresh-signature": token };
-  }
 
   getOrders(query: ApiOrdersQuery = {}): Promise<ApiResponse<ApiOrder[]>> {
     const params = new URLSearchParams();
@@ -561,119 +555,105 @@ export class ApiClient {
     });
   }
 
-  getMe(siwsToken?: string): Promise<ApiResponse<ApiPortalMe>> {
+  getMe(): Promise<ApiResponse<ApiPortalMe>> {
     return this.request<ApiResponse<ApiPortalMe>>("/v1/portal/me", {
       method: "GET",
-      headers: this.asSubject(siwsToken),
     });
   }
 
-  getApiKeys(siwsToken?: string): Promise<ApiResponse<ApiPortalKey[]>> {
+  getApiKeys(): Promise<ApiResponse<ApiPortalKey[]>> {
     return this.request<ApiResponse<ApiPortalKey[]>>("/v1/portal/keys", {
       method: "GET",
-      headers: this.asSubject(siwsToken),
     });
   }
 
-  /** `freshSignature`: a wallet sign-in token from the last few minutes, sent as `x-fresh-signature`. */
+  /** `confirmation`: the account's wallet signature over `apiKeyConfirmationTypedData` for this change. */
   createApiKey(
     input: { label?: string } | undefined,
-    freshSignature: string,
+    confirmation: ApiKeyConfirmation,
   ): Promise<ApiResponse<ApiPortalKeyCreated>> {
     return this.request<ApiResponse<ApiPortalKeyCreated>>("/v1/portal/keys", {
       method: "POST",
-      body: JSON.stringify(input ?? {}),
-      headers: this.withFreshSignature(freshSignature),
+      body: JSON.stringify({ ...(input ?? {}), confirmation }),
     });
   }
 
-  /** `freshSignature`: a wallet sign-in token from the last few minutes, sent as `x-fresh-signature`. */
-  deleteApiKey(id: string, freshSignature: string): Promise<ApiResponse<{ id: string }>> {
+  /** `confirmation`: the account's wallet signature over `apiKeyConfirmationTypedData` for this change. */
+  deleteApiKey(id: string, confirmation: ApiKeyConfirmation): Promise<ApiResponse<{ id: string }>> {
     return this.request<ApiResponse<{ id: string }>>(`/v1/portal/keys/${id}`, {
       method: "DELETE",
-      headers: this.withFreshSignature(freshSignature),
+      body: JSON.stringify({ confirmation }),
     });
   }
 
-  getCreditHistory(siwsToken?: string): Promise<ApiResponse<ApiCreditPayment[]>> {
+  getCreditHistory(): Promise<ApiResponse<ApiCreditPayment[]>> {
     return this.request<ApiResponse<ApiCreditPayment[]>>("/v1/portal/credits/history", {
       method: "GET",
-      headers: this.asSubject(siwsToken),
     });
   }
 
-  getSpend(siwsToken?: string): Promise<ApiResponse<ApiPortalSpend>> {
+  getSpend(): Promise<ApiResponse<ApiPortalSpend>> {
     return this.request<ApiResponse<ApiPortalSpend>>("/v1/portal/credits/spend", {
       method: "GET",
-      headers: this.asSubject(siwsToken),
     });
   }
 
-  checkDeposit(txHash: string, siwsToken?: string): Promise<ApiResponse<{ deposits: number }>> {
+  checkDeposit(txHash: string): Promise<ApiResponse<{ deposits: number }>> {
     return this.request<ApiResponse<{ deposits: number }>>("/v1/portal/credits/check", {
       method: "POST",
       body: JSON.stringify({ txHash }),
-      headers: this.asSubject(siwsToken),
     });
   }
 
-  getFundingMethods(siwsToken?: string): Promise<ApiResponse<ApiFundingMethod[]>> {
+  getFundingMethods(): Promise<ApiResponse<ApiFundingMethod[]>> {
     return this.request<ApiResponse<ApiFundingMethod[]>>("/v1/portal/funding/methods", {
       method: "GET",
-      headers: this.asSubject(siwsToken),
     });
   }
 
   createFunding(
-    input: { method: string; params: Record<string, unknown> },
-    siwsToken?: string,
+    input: { method: string; params: Record<string, unknown> }
   ): Promise<ApiResponse<ApiFundingIntent>> {
     return this.request<ApiResponse<ApiFundingIntent>>("/v1/portal/funding", {
       method: "POST",
       body: JSON.stringify({ method: input.method, params: input.params }),
-      headers: this.asSubject(siwsToken),
     });
   }
 
-  getFunding(id: string, siwsToken?: string): Promise<ApiResponse<ApiFundingIntent>> {
+  getFunding(id: string): Promise<ApiResponse<ApiFundingIntent>> {
     return this.request<ApiResponse<ApiFundingIntent>>(`/v1/portal/funding/${encodeURIComponent(id)}`, {
       method: "GET",
-      headers: this.asSubject(siwsToken),
     });
   }
 
-  getFundingChallenge(id: string, payer: string, siwsToken?: string): Promise<ApiResponse<{ typedData: unknown }>> {
+  getFundingChallenge(id: string, payer: string): Promise<ApiResponse<{ typedData: unknown }>> {
     return this.request<ApiResponse<{ typedData: unknown }>>(`/v1/portal/funding/${encodeURIComponent(id)}/challenge`, {
       method: "POST",
       body: JSON.stringify({ payer }),
-      headers: this.asSubject(siwsToken),
     });
   }
 
   authorizeFunding(
     id: string,
-    input: { payer: string; signature: string[] },
-    siwsToken?: string,
+    input: { payer: string; signature: string[] }
   ): Promise<ApiResponse<{ instructions: ApiFundingInstructions }>> {
     return this.request<ApiResponse<{ instructions: ApiFundingInstructions }>>(
       `/v1/portal/funding/${encodeURIComponent(id)}/authorize`,
-      { method: "POST", body: JSON.stringify({ payer: input.payer, signature: input.signature }), headers: this.asSubject(siwsToken) },
+      { method: "POST", body: JSON.stringify({ payer: input.payer, signature: input.signature }) },
     );
   }
 
-  submitFunding(id: string, txHash: string, siwsToken?: string): Promise<ApiResponse<ApiFundingSubmit>> {
+  submitFunding(id: string, txHash: string): Promise<ApiResponse<ApiFundingSubmit>> {
     return this.request<ApiResponse<ApiFundingSubmit>>(`/v1/portal/funding/${encodeURIComponent(id)}/submit`, {
       method: "POST",
       body: JSON.stringify({ txHash }),
-      headers: this.asSubject(siwsToken),
     });
   }
 
-  cancelFunding(id: string, siwsToken?: string): Promise<ApiResponse<{ status: string }>> {
+  cancelFunding(id: string): Promise<ApiResponse<{ status: string }>> {
     return this.request<ApiResponse<{ status: string }>>(`/v1/portal/funding/${encodeURIComponent(id)}/cancel`, {
       method: "POST",
       body: JSON.stringify({}),
-      headers: this.asSubject(siwsToken),
     });
   }
 

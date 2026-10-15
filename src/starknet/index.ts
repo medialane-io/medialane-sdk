@@ -18,6 +18,8 @@ export { buildFeeCall, feeBps, feeAmount } from "./fee/build-fee-call.js";
 export type { FeeSurface, BuildFeeCallParams } from "./fee/build-fee-call.js";
 
 export * from "./siws/index.js";
+export { apiKeyConfirmationTypedData } from "./api-key-confirmation.js";
+export type { ApiKeyAction, ApiKeyConfirmation, ApiKeyConfirmationInput } from "./api-key-confirmation.js";
 export * from "./funding/index.js";
 
 export { IPMarketplaceABI, POPCollectionABI, POPFactoryABI, DropCollectionABI, DropFactoryABI, IPCollectionABI, IPNftABI, Medialane1155ABI, IPCollection1155FactoryABI, IPCollection1155ABI, CreatorCoinFactoryABI, IPTicketCollectionABI, IPTicketCollectionFactoryABI, IPClubFactoryABI, IPClubCollectionABI, IPSponsorshipABI, IPGenesisABI } from "./abis/index.js";

@@ -31,13 +31,13 @@ export interface FundingApi {
   cancelFunding(id: string): Res<{ status: string }>;
 }
 
-export function fundingApiFor(client: ApiClient, siwsToken?: string): FundingApi {
+export function fundingApiFor(client: ApiClient): FundingApi {
   return {
-    createFunding: (input) => client.createFunding(input, siwsToken),
-    getFundingChallenge: (id, payer) => client.getFundingChallenge(id, payer, siwsToken),
-    authorizeFunding: (id, input) => client.authorizeFunding(id, input, siwsToken),
-    submitFunding: (id, txHash) => client.submitFunding(id, txHash, siwsToken),
-    cancelFunding: (id) => client.cancelFunding(id, siwsToken),
+    createFunding: (input) => client.createFunding(input),
+    getFundingChallenge: (id, payer) => client.getFundingChallenge(id, payer),
+    authorizeFunding: (id, input) => client.authorizeFunding(id, input),
+    submitFunding: (id, txHash) => client.submitFunding(id, txHash),
+    cancelFunding: (id) => client.cancelFunding(id),
   };
 }
 

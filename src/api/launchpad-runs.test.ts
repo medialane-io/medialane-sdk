@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { createLaunchpadRunsClient } from "./launchpad-runs.js";
 
 const BASE = "https://portal.test/api/proxy";
-const make = (impl: typeof fetch) => createLaunchpadRunsClient({ baseUrl: BASE, getToken: () => null, fetchImpl: impl });
+const make = (impl: typeof fetch) => createLaunchpadRunsClient({ baseUrl: BASE, fetchImpl: impl });
 
 function recordingFetch() {
   const bodies: unknown[] = [];
@@ -66,7 +66,7 @@ test("a ticketing run's sponsored steps post to the same bases as any other run"
 });
 
 test("a base URL with a trailing slash does not double the slash", () => {
-  const client = createLaunchpadRunsClient({ baseUrl: `${BASE}/`, getToken: () => null, fetchImpl: recordingFetch().impl });
+  const client = createLaunchpadRunsClient({ baseUrl: `${BASE}/`, fetchImpl: recordingFetch().impl });
   expect(client.runBase("run1")).toBe(`${BASE}/v1/portal/runs/run1`);
 });
 
