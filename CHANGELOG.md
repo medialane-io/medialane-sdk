@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.180.0] — 2026-10-14
+
+### Changed
+
+- `createApiKey` and `deleteApiKey` take a required `freshSignature` (a recent wallet sign-in token) and send it as `x-fresh-signature`, which app gateways forward.
+
 ## [0.179.0] — 2026-10-14
 
 ### Fixed

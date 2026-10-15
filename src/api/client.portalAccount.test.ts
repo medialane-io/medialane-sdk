@@ -63,3 +63,11 @@ test("keys are created and revoked as the signed-in wallet", async () => {
   expect(calls[1].url).toBe("https://api.test/v1/portal/keys/key-1");
   expect(calls[1].init.method).toBe("DELETE");
 });
+
+test("key changes carry the fresh wallet signature in x-fresh-signature", async () => {
+  const calls = capture({ data: {} });
+  const api = client();
+  await api.createApiKey({}, "fresh");
+  await api.deleteApiKey("key-1", "fresh");
+  for (const call of calls) expect((call.init.headers as Record<string, string>)["x-fresh-signature"]).toBe("fresh");
+});

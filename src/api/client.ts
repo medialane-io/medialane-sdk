@@ -233,6 +233,10 @@ export class ApiClient {
     return siwsToken ? this.bearer(siwsToken) : undefined;
   }
 
+  private withFreshSignature(token: string): Record<string, string> {
+    return { ...this.bearer(token), "x-fresh-signature": token };
+  }
+
   getOrders(query: ApiOrdersQuery = {}): Promise<ApiResponse<ApiOrder[]>> {
     const params = new URLSearchParams();
     if (query.status) params.set("status", query.status);
@@ -571,21 +575,23 @@ export class ApiClient {
     });
   }
 
+  /** `freshSignature`: a wallet sign-in token from the last few minutes, sent as `x-fresh-signature`. */
   createApiKey(
-    input?: { label?: string },
-    siwsToken?: string,
+    input: { label?: string } | undefined,
+    freshSignature: string,
   ): Promise<ApiResponse<ApiPortalKeyCreated>> {
     return this.request<ApiResponse<ApiPortalKeyCreated>>("/v1/portal/keys", {
       method: "POST",
       body: JSON.stringify(input ?? {}),
-      headers: this.asSubject(siwsToken),
+      headers: this.withFreshSignature(freshSignature),
     });
   }
 
-  deleteApiKey(id: string, siwsToken?: string): Promise<ApiResponse<{ id: string }>> {
+  /** `freshSignature`: a wallet sign-in token from the last few minutes, sent as `x-fresh-signature`. */
+  deleteApiKey(id: string, freshSignature: string): Promise<ApiResponse<{ id: string }>> {
     return this.request<ApiResponse<{ id: string }>>(`/v1/portal/keys/${id}`, {
       method: "DELETE",
-      headers: this.asSubject(siwsToken),
+      headers: this.withFreshSignature(freshSignature),
     });
   }
 
