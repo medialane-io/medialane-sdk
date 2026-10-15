@@ -1,3 +1,5 @@
+import type { TypedData } from "starknet";
+
 export type ApiKeyAction = "replace_api_key" | "delete_api_key";
 
 export interface ApiKeyConfirmationInput {
@@ -16,7 +18,7 @@ export interface ApiKeyConfirmation {
   signature: string[];
 }
 
-export function apiKeyConfirmationTypedData(input: ApiKeyConfirmationInput) {
+export function apiKeyConfirmationTypedData(input: ApiKeyConfirmationInput): TypedData {
   return {
     domain: { name: "Medialane", version: "1", chainId: "SN_MAIN", revision: "1" },
     primaryType: "ApiKeyConfirmation",
