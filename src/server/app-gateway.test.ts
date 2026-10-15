@@ -96,6 +96,13 @@ describe("app gateway", () => {
     expect(res.headers.get("set-cookie") ?? "").toContain(`${ACCOUNT_SESSION_COOKIE}=tok`);
   });
 
+  test("a wallet signature without an account session returns its token and sets no cookie", async () => {
+    const { handle } = gateway(() => Response.json({ token: "siws" }));
+    const res = await handle(req("auth/siws/verify", { method: "POST", body: "{}" }), ["auth", "siws", "verify"]);
+    expect(await res.json()).toEqual({ token: "siws" });
+    expect(res.headers.get("set-cookie")).toBeNull();
+  });
+
   test("the rpc body is forwarded unchanged", async () => {
     const { handle, seen } = gateway(() => Response.json({ jsonrpc: "2.0", result: "0x1", id: 1 }));
     const body = JSON.stringify({ jsonrpc: "2.0", method: "starknet_chainId", id: 1 });

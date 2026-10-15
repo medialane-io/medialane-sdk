@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.179.0] — 2026-10-14
+
+### Fixed
+
+- `createAppGateway`: a wallet sign-in response without an `accountToken` is returned unchanged, so a signature-only request receives its `token`. A response with an `accountToken` still sets the session cookie and drops both tokens from the body.
+
 ## [0.178.0] — 2026-10-14
 
 ### Added
