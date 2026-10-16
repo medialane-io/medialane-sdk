@@ -66,16 +66,6 @@ export interface ServiceDefinition {
   };
 }
 
-export interface ApiCollectionsQuery {
-  page?: number;
-  limit?: number;
-  isKnown?: boolean;
-  sort?: CollectionSort;
-  owner?: string;
-
-  service?: string;
-}
-
 export type OrderStatus = "ACTIVE" | "FULFILLED" | "CANCELLED" | "EXPIRED";
 export type SortOrder = "price_asc" | "price_desc" | "recent";
 export type ActivityType = "mint" | "transfer" | "sale" | "listing" | "offer" | "cancelled";

@@ -280,3 +280,24 @@ test("a drop the backend cannot read is null", async () => {
     expect(await client.getDropState(A)).toBeNull();
   });
 });
+
+test("a contract is read with starknet_call through /v1/rpc", async () => {
+  await withStub({ jsonrpc: "2.0", id: 1, result: ["0x5", "0x0"] }, async (client, calls) => {
+    const result = await client.callContract({ contractAddress: "0xa", selector: "0x2e4", calldata: [W] });
+    expect(result).toEqual(["0x5", "0x0"]);
+    expect(new URL(calls[0].url).pathname).toBe("/v1/rpc");
+    expect(calls[0].method).toBe("POST");
+    expect(calls[0].body).toEqual({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "starknet_call",
+      params: [{ contract_address: "0x" + "0".repeat(63) + "a", entry_point_selector: "0x2e4", calldata: [W] }, "latest"],
+    });
+  });
+});
+
+test("a contract call the node rejects is an error", async () => {
+  await withStub({ jsonrpc: "2.0", id: 1, error: { code: 40, message: "Contract error" } }, async (client) => {
+    await expect(client.callContract({ contractAddress: "0xa", selector: "0x2e4" })).rejects.toThrow("Contract error");
+  });
+});

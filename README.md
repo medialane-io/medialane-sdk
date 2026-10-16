@@ -189,6 +189,17 @@ const collection = await client.api.getCollection(contract);
 const tokens = await client.api.getCollectionTokens(contract);
 ```
 
+### Read a Contract
+
+```typescript
+// starknet_call through the backend's /v1/rpc; returns the raw result felts
+const result = await client.api.callContract({
+  contractAddress: "0x...",
+  selector: "0x2e4263afad30923c891518314c3c95dbe830a16874e8abc5777a9a20b54c76e", // balanceOf
+  calldata: ["0x..."],
+});
+```
+
 ### Search
 
 ```typescript

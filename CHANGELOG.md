@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.182.0] — 2026-10-15
+
+### Added
+
+- `ApiClient.callContract({ contractAddress, selector, calldata })`: reads a Starknet contract with `starknet_call` through the backend's `/v1/rpc` and returns the result felts.
+
+### Removed
+
+- `ApiCollectionsQuery`, which no method used. `listCollections` takes `ApiCollectionsListQuery`.
+
 ## [0.181.0] — 2026-10-14
 
 ### Added

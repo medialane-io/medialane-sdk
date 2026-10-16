@@ -1209,6 +1209,34 @@ export class ApiClient {
     return this.get<ApiResponse<ApiCollection[]>>(`/v1/collections${qs ? `?${qs}` : ""}`);
   }
 
+  /**
+   * Read a Starknet contract through the backend's `/v1/rpc` (`starknet_call`
+   * at the latest block). Returns the raw result felts.
+   */
+  async callContract(call: {
+    contractAddress: string;
+    selector: string;
+    calldata?: string[];
+  }): Promise<string[]> {
+    const body = await this.post<{ result?: unknown; error?: { code?: number; message?: string } }>("/v1/rpc", {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "starknet_call",
+      params: [
+        {
+          contract_address: this.addr(call.contractAddress),
+          entry_point_selector: call.selector,
+          calldata: call.calldata ?? [],
+        },
+        "latest",
+      ],
+    });
+    if (!Array.isArray(body.result)) {
+      throw new MedialaneApiError(502, body.error?.message ?? "Contract call returned no result", undefined, body.error);
+    }
+    return body.result as string[];
+  }
+
   generateWallet(newWalletSiwsToken: string, siwsToken?: string): Promise<{ walletAddress: string }> {
     return this.request<{ walletAddress: string }>("/v1/users/me/generate-wallet", {
       method: "POST",
