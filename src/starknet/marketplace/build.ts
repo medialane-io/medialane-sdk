@@ -4,7 +4,7 @@ import type { ResolvedConfig } from "../../config.js";
 import { stringifyBigInts } from "../../utils/bigint.js";
 import { buildOrderTypedData, buildCancellationTypedData } from "./signing.js";
 import { buildFeeCall } from "../fee/index.js";
-import { getChainId, getProvider, newContract } from "./utils.js";
+import { getChainId, newContract } from "./utils.js";
 
 export interface OrderLeg {
   item_type: string;
@@ -43,7 +43,7 @@ export interface BuildListingInput {
 export type BuildOfferInput = BuildListingInput;
 
 function contractFor(cfg: ResolvedConfig): Contract {
-  return newContract(IPMarketplaceABI as unknown as Abi, cfg.marketplaceContract, getProvider(cfg));
+  return newContract(IPMarketplaceABI as unknown as Abi, cfg.marketplaceContract);
 }
 
 export function buildListingOrder(

@@ -66,7 +66,6 @@ import { MedialaneClient } from "@medialane/sdk/starknet";
 
 const client = new MedialaneClient({
   chain: "STARKNET",                                                          // chain-scoped (default "STARKNET"); replaces `network` (v0.37.0)
-  rpcUrl: "https://rpc.starknet.lava.build",                                  // optional; defaults to the chain's registry rpcUrl
   backendUrl: "https://api.medialane.io",                                     // required for .api methods
   apiKey: "ml_live_...",                                                       // from Medialane Portal
 });
@@ -100,7 +99,7 @@ const { data: intent } = await client.api.createListingIntent({
   endTime: Math.floor(Date.now() / 1000) + 86400 * 30,
 });
 
-const { txHash } = await executeIntent(provider, signer, client, intent);
+const { txHash } = await executeIntent(signer, client, intent);
 ```
 
 The same pattern works with `createOfferIntent`, `createFulfillIntent`, `createCancelIntent`, `createCheckoutIntent`, `createMintIntent`, `createCollectionIntent`, `createCoinIntent` and the sponsorship intents.
@@ -313,7 +312,7 @@ import { MedialaneError, executeIntent } from "@medialane/sdk/starknet";
 
 // Onchain errors
 try {
-  await executeIntent(provider, signer, client, intent);
+  await executeIntent(signer, client, intent);
 } catch (err) {
   if (err instanceof MedialaneError) {
     console.error("On-chain error:", err.message, err.cause);
@@ -372,7 +371,6 @@ without reaching a reader.
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `chain` | `Chain` (`"STARKNET" \| "ETHEREUM" \| "SOLANA" \| "BASE" \| "BITCOIN"`) | `"STARKNET"` | The chain this client is scoped to. Coordinates resolve from the `coordinates[chain]` registry (`chains.ts`). Replaces `network` (v0.37.0). |
-| `rpcUrl` | `string` | the chain's registry `rpcUrl` | JSON-RPC URL override |
 | `backendUrl` | `string` | (none) | Medialane API base URL (required for `.api.*`) |
 | `apiKey` | `string` | (none) | API key from [Medialane Portal](https://portal.medialane.io) |
 | `marketplace721Contract` | `string` | Mainnet default | ERC-721 marketplace protocol override |

@@ -6,7 +6,6 @@ import { FeeConfigSchema, resolveFeeConfig, type ResolvedFeeConfig } from "./fee
 export const MedialaneConfigSchema = z.object({
 
   chain: z.enum(CHAINS).default(DEFAULT_CHAIN),
-  rpcUrl: z.string().url().optional(),
   backendUrl: z.string().url().optional(),
   apiKey: z.string().optional(),
 
@@ -28,7 +27,6 @@ export type MedialaneConfig = z.input<typeof MedialaneConfigSchema>;
 
 export interface ResolvedConfig {
   chain: Chain;
-  rpcUrl: string;
   backendUrl: string | undefined;
   apiKey: string | undefined;
   marketplace721Contract: string;
@@ -54,7 +52,6 @@ export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
 
   return {
     chain: parsed.chain,
-    rpcUrl: parsed.rpcUrl ?? coords.rpcUrl,
     backendUrl: parsed.backendUrl,
     apiKey: parsed.apiKey,
     marketplace721Contract,

@@ -12,7 +12,6 @@ import type { Call } from "starknet";
 
 const CFG = resolveConfig({
   backendUrl: "https://api.example.com",
-  rpcUrl: "https://rpc.example.com",
   marketplaceContract: "0x100",
   collectionContract: "0x200",
   marketplace1155Contract: "0x101",
@@ -133,7 +132,6 @@ describe("721 builders", () => {
   it("buildFulfillCalls appends a fee transfer when fee config is enabled", () => {
     const feeCfg = resolveConfig({
       backendUrl: "https://api.example.com",
-      rpcUrl: "https://rpc.example.com",
       marketplaceContract: "0x100",
       collectionContract: "0x200",
       marketplace1155Contract: "0x101",

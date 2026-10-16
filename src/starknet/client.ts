@@ -1,3 +1,4 @@
+import type { RpcProvider } from "starknet";
 import { type MedialaneConfig, resolveConfig, type ResolvedConfig } from "../config.js";
 import { ApiClient } from "../api/client.js";
 import { PopService } from "./services/pop.js";
@@ -7,6 +8,7 @@ import { CreatorCoinService } from "./services/creatorCoin.js";
 import { TicketService } from "./services/ticket.js";
 import { ClubService } from "./services/club.js";
 import { SponsorshipService } from "./services/sponsorship.js";
+import { createChainProvider } from "./chain-provider.js";
 
 export class MedialaneClient {
 
@@ -23,6 +25,8 @@ export class MedialaneClient {
   };
 
   private readonly config: ResolvedConfig;
+
+  private _provider: RpcProvider | undefined;
 
   constructor(rawConfig: MedialaneConfig = {}) {
     this.config = resolveConfig(rawConfig);
@@ -66,8 +70,11 @@ export class MedialaneClient {
     return this.config.chain;
   }
 
-  get rpcUrl() {
-    return this.config.rpcUrl;
+  get provider(): RpcProvider {
+    if (!this.config.backendUrl) {
+      throw new Error("backendUrl not configured. Pass backendUrl to MedialaneClient to use .provider");
+    }
+    return (this._provider ??= createChainProvider(this.config.backendUrl, this.config.apiKey));
   }
 
   get marketplaceContract() {

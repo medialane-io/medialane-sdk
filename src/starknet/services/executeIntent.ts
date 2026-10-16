@@ -71,7 +71,6 @@ export interface ExecuteIntentOpts {
 }
 
 export async function executeIntent(
-  provider: ReceiptProvider,
   signer: StarknetVenueSigner,
   client: MedialaneClient,
   intent: ApiIntentCreated,
@@ -87,7 +86,7 @@ export async function executeIntent(
   }
 
   const { txHash } = await signer.execute(calls, { intentIds: [intent.id] });
-  const receipt = await assertTransactionSucceeded(provider, txHash);
+  const receipt = await assertTransactionSucceeded(client.provider, txHash);
   await Promise.all([
     syncTransactionBestEffort(client, txHash),
     opts.confirm !== false ? confirmIntentBestEffort(client, intent.id, txHash) : undefined,
@@ -96,7 +95,6 @@ export async function executeIntent(
 }
 
 export async function executeIntents(
-  provider: ReceiptProvider,
   signer: StarknetVenueSigner,
   client: MedialaneClient,
   intents: ApiIntentCreated[],
@@ -107,7 +105,7 @@ export async function executeIntents(
   }
   const calls = intents.flatMap((i) => (i as Extract<ApiIntentCreated, { requiresSignature: false }>).calls) as Call[];
   const { txHash } = await signer.execute(calls, { intentIds: intents.map((i) => i.id) });
-  const receipt = await assertTransactionSucceeded(provider, txHash);
+  const receipt = await assertTransactionSucceeded(client.provider, txHash);
   await Promise.all([
     syncTransactionBestEffort(client, txHash),
     ...(opts.confirm !== false ? intents.map((i) => confirmIntentBestEffort(client, i.id, txHash)) : []),

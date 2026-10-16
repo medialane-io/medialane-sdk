@@ -1,4 +1,4 @@
-import { type Call, cairo, hash, num, type ProviderInterface } from "starknet";
+import { type Abi, type Call, cairo, hash, num, type ProviderInterface } from "starknet";
 import type {
   VenueAdapter,
   RegisterOrderParams,
@@ -7,8 +7,8 @@ import type {
 } from "../adapters/types.js";
 import type { StarknetVenueSigner } from "./index.js";
 import type { ResolvedConfig } from "../config.js";
-import { getOrderDetails } from "./marketplace/orders.js";
-import { resolveToken, START_TIME_BUFFER_SECS } from "./marketplace/utils.js";
+import { IPMarketplaceABI } from "./abis/index.js";
+import { newContract, resolveToken, START_TIME_BUFFER_SECS } from "./marketplace/utils.js";
 import {
   buildListingOrder,
   buildOfferOrder,
@@ -59,7 +59,8 @@ export class StarknetVenue implements VenueAdapter<StarknetVenueSigner> {
   }
 
   getOrderDetails(orderRef: OrderRef): Promise<unknown> {
-    return getOrderDetails(orderRef, this.deps.config);
+    const marketplace = newContract(IPMarketplaceABI as unknown as Abi, this.deps.config.marketplaceContract, this.deps.provider);
+    return marketplace.get_order_details(orderRef);
   }
 
   async getCounter(address: string): Promise<bigint> {

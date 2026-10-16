@@ -2,6 +2,27 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.182.0] — 2026-10-16
+
+### Added
+
+- `MedialaneClient.provider`: an `RpcProvider` at `${backendUrl}/v1/rpc` that sends the client's API key. Throws when `backendUrl` is not configured.
+- `createChainProvider(backendUrl, apiKey?)`.
+- `erc20Balance(provider, token, holder)`: reads `balanceOf`, falling back to `balance_of`.
+
+### Changed
+
+- `executeIntent(signer, client, intent, opts?)` and `executeIntents(signer, client, intents, opts?)` no longer take a provider; they read receipts through `client.provider`.
+- `StarknetVenue.getOrderDetails` reads through the venue's `provider`.
+- `DropService.claim` reads the drop through `account.provider`; the constructor no longer takes a reader.
+
+### Removed
+
+- `rpcUrl` from `MedialaneConfig` and `ResolvedConfig`, the `MedialaneClient.rpcUrl` getter, the built-in Starknet RPC URL, and `rpcUrl` from the chain coordinate types.
+- `getOrderDetails`, `getCounter`, `getOrderDetails1155` and `getCounter1155`.
+- Chain reads on the services: `club.isMember`, `isMemberOf`, `getMembership`; `ticket.isValid`, `getTicketCount`, `getTicket`; `sponsorship.getOffer`, `getBid`, `getProposal`, `getLastOfferId`, `getLastProposalId`, `getLastLicenseId`, `royaltyInfo`; `creatorCoin.getGuarantees`. The API client has these reads (`getClubMembership`, `getTicket`, `getTicketCount`, `getSponsorshipOffer`, `getSponsorshipProposal`, `getSponsorshipBids`, `getCoinGuarantees`).
+- `createFailoverFetch`, `isTransientRpcError`, `isPolicyRefusal`, `POLICY_REFUSAL_CODES` and the `FailoverFetchOptions` type.
+
 ## [0.181.0] — 2026-10-14
 
 ### Added

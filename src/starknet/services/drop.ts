@@ -1,4 +1,4 @@
-import { RpcProvider, type AccountInterface, type ProviderInterface } from "starknet";
+import type { AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { getStarknetCoordinates } from "../../chains.js";
 import type { CreateDropParams, DropTerms } from "../../types/services.js";
@@ -12,12 +12,10 @@ export type { CreateDropParams, DropTerms };
 export class DropService {
   private readonly factoryAddress: string;
   private readonly config: ResolvedConfig;
-  private readonly reader: Pick<ProviderInterface, "callContract">;
 
-  constructor(config: ResolvedConfig, reader?: Pick<ProviderInterface, "callContract">) {
+  constructor(config: ResolvedConfig) {
     this.factoryAddress = getStarknetCoordinates(config.chain).dropFactory!;
     this.config = config;
-    this.reader = reader ?? new RpcProvider({ nodeUrl: config.rpcUrl });
   }
 
   async createDrop(account: AccountInterface, params: CreateDropParams): Promise<TxResult> {
@@ -30,7 +28,7 @@ export class DropService {
     account: AccountInterface,
     params: { collection: string; quantity: bigint | string | number; proof?: string[] },
   ): Promise<TxResult> {
-    const drop = await readDrop(this.reader, params.collection);
+    const drop = await readDrop(account.provider, params.collection);
     const calls = dropCalls.claim(params.collection, {
       quantity: params.quantity,
       proof: params.proof,
