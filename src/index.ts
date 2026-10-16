@@ -107,8 +107,6 @@ export { parseAmount, formatAmount, getTokenByAddress, getTokenBySymbol, getList
 export type { SupportedToken } from "./utils/token.js";
 export { stringifyBigInts, u256ToBigInt, encodeU256 } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
-export { isTransientRpcError, isPolicyRefusal, POLICY_REFUSAL_CODES, createFailoverFetch } from "./utils/rpc.js";
-export type { FailoverFetchOptions } from "./utils/rpc.js";
 export { createAppGateway, ACCOUNT_SESSION_COOKIE } from "./server/app-gateway.js";
 export type { AppGatewayConfig } from "./server/app-gateway.js";
 export { createAppSessionHandler } from "./server/app-session.js";
