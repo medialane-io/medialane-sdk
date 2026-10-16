@@ -4,7 +4,6 @@ export const CHAINS = ["STARKNET", "ETHEREUM", "SOLANA", "BASE", "STELLAR", "BIT
 export type Chain = (typeof CHAINS)[number];
 
 export interface StarknetCoordinates {
-  rpcUrl: string;
   marketplace721?: `0x${string}`;
   marketplace721ClassHash?: `0x${string}`;
   marketplace721StartBlock?: number;
@@ -50,7 +49,6 @@ export interface StarknetCoordinates {
 }
 
 export interface EvmCoordinates {
-  rpcUrl: string;
   marketplace721?: `0x${string}`;
   marketplace721StartBlock?: number;
   marketplace1155?: `0x${string}`;
@@ -62,14 +60,12 @@ export interface EvmCoordinates {
 }
 
 export interface SolanaCoordinates {
-  rpcUrl: string;
   mipCollectionsProgram?: string;
   marketplaceProgram?: string;
   startSlot?: number;
 }
 
 export interface StellarCoordinates {
-  rpcUrl: string;
   mipRegistry?: string;
   marketplace?: string;
   collectionWasmHash?: string;
@@ -89,7 +85,6 @@ export type ChainCoordinates = StarknetCoordinates;
 
 const COORDINATES: CoordinatesByChain = {
   STARKNET: {
-    rpcUrl: "https://rpc.starknet.lava.build",
     marketplace721: "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
     marketplace721ClassHash: "0x0700d9230d07e5203e27778c0dc70f9134d2b25bf319f7cf8348dc66a6923e90",
     marketplace721StartBlock: 11198146,

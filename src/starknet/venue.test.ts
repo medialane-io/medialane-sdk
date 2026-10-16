@@ -7,7 +7,6 @@ import type { StarknetVenueSigner } from "./index.js";
 const ORDER_CREATED_SELECTOR = hash.getSelectorFromName("OrderCreated");
 const CFG = resolveConfig({
   backendUrl: "https://api.example.com",
-  rpcUrl: "https://rpc.example.com",
   marketplaceContract: "0x100",
   collectionContract: "0x200",
   marketplace1155Contract: "0x101",
@@ -166,4 +165,17 @@ test("registerOrder throws if no OrderCreated event in the receipt", async () =>
       salt: "0x1",
     }),
   ).rejects.toThrow("OrderCreated event not found");
+});
+
+test("getOrderDetails reads get_order_details on the 721 marketplace through the given provider", async () => {
+  const seen: any[] = [];
+  const provider = {
+    callContract: mock(async (req: any) => {
+      seen.push(req);
+      throw new Error("read sent");
+    }),
+  } as any;
+  await expect(new StarknetVenue(deps({ provider })).getOrderDetails("0xabc")).rejects.toThrow("read sent");
+  expect(seen[0].contractAddress).toBe("0x100");
+  expect(seen[0].entrypoint).toBe("get_order_details");
 });

@@ -1,5 +1,5 @@
 import { newContract } from "../marketplace/utils.js";
-import { CairoOption, CairoOptionVariant, RpcProvider, cairo, type AccountInterface } from "starknet";
+import { CairoOption, CairoOptionVariant, cairo, type AccountInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { normalizeAddress } from "../../utils/address.js";
 import { IPClubCollectionABI, IPClubFactoryABI } from "../abis/index.js";
@@ -9,21 +9,10 @@ import type { TxResult } from "../../types/marketplace.js";
 
 export type { CreateMembershipParams, MintMembershipsParams };
 
-export interface MembershipRecord {
-  maxSupply: bigint;
-  minted: bigint;
-  startTime: number | null;
-  endTime: number | null;
-  royaltyBps: number;
-  metadataUri: string;
-}
-
 export class ClubService {
   private readonly factoryAddress?: string;
-  private readonly config: ResolvedConfig;
 
   constructor(config: ResolvedConfig) {
-    this.config = config;
     this.factoryAddress = getStarknetCoordinates(config.chain).ipClubFactory;
   }
 
@@ -35,11 +24,6 @@ export class ClubService {
 
   private _collection(address: string, account: AccountInterface) {
     return newContract(IPClubCollectionABI as any, normalizeAddress("STARKNET", address), account as any);
-  }
-
-  private _collectionRead(address: string) {
-    const provider = new RpcProvider({ nodeUrl: this.config.rpcUrl });
-    return newContract(IPClubCollectionABI as any, normalizeAddress("STARKNET", address), provider);
   }
 
   async deployCollection(
@@ -81,37 +65,5 @@ export class ClubService {
     ]);
     const res = await account.execute([call]);
     return { txHash: res.transaction_hash };
-  }
-
-  async isMember(params: { collection: string; holder: string }): Promise<boolean> {
-    const result = await this._collectionRead(params.collection).call("is_member", [
-      params.holder,
-    ]);
-    return Boolean(result);
-  }
-
-  async isMemberOf(params: { collection: string; tokenId: bigint | string; holder: string }): Promise<boolean> {
-    const result = await this._collectionRead(params.collection).call("is_member_of", [
-      cairo.uint256(params.tokenId),
-      params.holder,
-    ]);
-    return Boolean(result);
-  }
-
-  async getMembership(params: {
-    collection: string;
-    tokenId: bigint | string;
-  }): Promise<MembershipRecord> {
-    const m = await this._collectionRead(params.collection).call("get_membership", [
-      cairo.uint256(params.tokenId),
-    ]) as any;
-    return {
-      maxSupply: BigInt(m.max_supply),
-      minted: BigInt(m.minted),
-      startTime: m.start_time?.variant === "Some" ? Number(m.start_time.values[0] ?? m.start_time.value) : null,
-      endTime: m.end_time?.variant === "Some" ? Number(m.end_time.values[0] ?? m.end_time.value) : null,
-      royaltyBps: Number(m.royalty_bps),
-      metadataUri: m.metadata_uri as string,
-    };
   }
 }

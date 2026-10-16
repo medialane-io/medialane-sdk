@@ -66,10 +66,6 @@ export class MedialaneClient {
     return this.config.chain;
   }
 
-  get rpcUrl() {
-    return this.config.rpcUrl;
-  }
-
   get marketplaceContract() {
     return this.config.marketplaceContract;
   }

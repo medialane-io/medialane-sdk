@@ -2,7 +2,6 @@ import { Contract, RpcProvider, cairo, constants, num, type Abi } from "starknet
 import type { ResolvedConfig } from "../../config.js";
 import { SUPPORTED_TOKENS } from "../../constants.js";
 import { MedialaneError } from "./errors.js";
-import { createFailoverFetch } from "../../utils/rpc.js";
 
 export const START_TIME_BUFFER_SECS = 30;
 
@@ -65,17 +64,4 @@ export function resolveToken(currency: string) {
   );
   if (!token) throw new MedialaneError(`Unsupported currency: ${currency}`, "INVALID_PARAMS");
   return token;
-}
-
-const _providerCache = new WeakMap<ResolvedConfig, RpcProvider>();
-
-export function getProvider(config: ResolvedConfig): RpcProvider {
-  let p = _providerCache.get(config);
-  if (!p) {
-
-    const urls = [config.rpcUrl];
-    p = new RpcProvider({ nodeUrl: urls[0], baseFetch: createFailoverFetch(urls) });
-    _providerCache.set(config, p);
-  }
-  return p;
 }

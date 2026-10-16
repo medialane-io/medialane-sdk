@@ -1,5 +1,5 @@
 import { newContract } from "../marketplace/utils.js";
-import { RpcProvider, hash, uint256, type AccountInterface, type Call, type Contract, type ProviderInterface } from "starknet";
+import { hash, uint256, type AccountInterface, type Call, type Contract, type ProviderInterface } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { CreatorCoinFactoryABI } from "../abis/index.js";
 import { getStarknetCoordinates } from "../../chains.js";
@@ -229,11 +229,9 @@ export function parseCreatorCoinCreated(receipt: CreatorCoinReceiptLike): string
 
 export class CreatorCoinService {
   private readonly factoryAddress: string;
-  private readonly config: ResolvedConfig;
 
   constructor(config: ResolvedConfig) {
     this.factoryAddress = getStarknetCoordinates(config.chain).creatorCoinFactory!;
-    this.config = config;
   }
 
   private _factory(account: AccountInterface) {
@@ -256,9 +254,5 @@ export class CreatorCoinService {
   async isCreatorCoin(address: string, account: AccountInterface): Promise<boolean> {
     const r = await this._factory(account).is_creator_coin(address);
     return BigInt(r as any) === 1n;
-  }
-
-  async getGuarantees(coinAddress: string): Promise<CreatorCoinGuarantees | null> {
-    return getCreatorCoinGuarantees(coinAddress, new RpcProvider({ nodeUrl: this.config.rpcUrl }));
   }
 }

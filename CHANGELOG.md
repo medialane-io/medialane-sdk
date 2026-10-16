@@ -2,6 +2,19 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [Unreleased]
+
+### Removed
+
+- `rpcUrl` from `MedialaneConfig` and `ResolvedConfig`, the `MedialaneClient.rpcUrl` getter, the built-in Starknet RPC URL, and `rpcUrl` from the chain coordinate types. The SDK no longer opens an RPC connection of its own.
+- `getOrderDetails`, `getCounter`, `getOrderDetails1155` and `getCounter1155`.
+- Chain reads on the services: `club.isMember`, `isMemberOf`, `getMembership`; `ticket.isValid`, `getTicketCount`, `getTicket`; `sponsorship.getOffer`, `getBid`, `getProposal`, `getLastOfferId`, `getLastProposalId`, `getLastLicenseId`, `royaltyInfo`; `creatorCoin.getGuarantees`. The API client has these reads (`getClubMembership`, `getTicket`, `getTicketCount`, `getSponsorshipOffer`, `getSponsorshipProposal`, `getSponsorshipBids`, `getCoinGuarantees`).
+
+### Changed
+
+- `StarknetVenue.getOrderDetails` reads through the venue's `provider`.
+- `DropService.claim` reads the drop through `account.provider`; the constructor no longer takes a reader.
+
 ## [0.181.0] — 2026-10-14
 
 ### Added

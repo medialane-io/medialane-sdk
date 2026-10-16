@@ -3,9 +3,6 @@
 export { MedialaneClient } from "./client.js";
 export { MedialaneError } from "./marketplace/errors.js";
 
-export { getOrderDetails, getCounter } from "./marketplace/orders.js";
-export { getOrderDetails1155, getCounter1155 } from "./marketplace1155/orders.js";
-
 export { StarknetVenue } from "./venue.js";
 export type { StarknetVenueDeps, ResolvedOrder } from "./venue.js";
 

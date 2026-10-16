@@ -16,7 +16,7 @@ function fakeAccount() {
   };
   return {
     executed,
-    callContract: async (req: { entrypoint: string }) => reads[req.entrypoint]!,
+    provider: { callContract: async (req: { entrypoint: string }) => reads[req.entrypoint]! },
     execute: async (calls: { entrypoint: string; calldata: unknown }[]) => {
       executed.push(calls);
       return { transaction_hash: "0xabc" };
@@ -24,9 +24,9 @@ function fakeAccount() {
   };
 }
 
-test("claim reads the price from chain and sends approve, claim and the platform fee", async () => {
+test("claim reads the price through the account and sends approve, claim and the platform fee", async () => {
   const account = fakeAccount();
-  const service = new DropService(resolveConfig({ chain: "STARKNET", feeConfig: { fundAddress: "0x999" } }), account as never);
+  const service = new DropService(resolveConfig({ chain: "STARKNET", feeConfig: { fundAddress: "0x999" } }));
   const res = await service.claim(account as never, { collection: DROP, quantity: 2 });
   expect(res.txHash).toBe("0xabc");
   expect(account.executed[0]!.map((c) => c.entrypoint)).toEqual(["approve", "claim", "transfer"]);
