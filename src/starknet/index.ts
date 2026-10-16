@@ -1,6 +1,7 @@
 
 
 export { MedialaneClient } from "./client.js";
+export { createChainProvider } from "./chain-provider.js";
 export { MedialaneError } from "./marketplace/errors.js";
 
 export { StarknetVenue } from "./venue.js";
