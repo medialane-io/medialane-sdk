@@ -16,8 +16,9 @@ function fakeSigner(overrides: Partial<StarknetVenueSigner> = {}): StarknetVenue
   };
 }
 
-function fakeClient(overrides: Record<string, unknown> = {}) {
+function fakeClient(overrides: Record<string, unknown> = {}, provider: ReceiptProvider = fakeProvider()) {
   return {
+    provider,
     api: {
       confirmIntent: async () => ({}),
       syncTransaction: async () => ({ data: { applied: 1, pending: false } }),
@@ -44,7 +45,7 @@ const SIGNED: ApiIntentCreated = {
 test("executeIntent executes a prebuilt intent's calls directly and confirms by default", async () => {
   let confirmedWith: [string, string] | null = null;
   const client = fakeClient({ confirmIntent: async (id: string, txHash: string) => { confirmedWith = [id, txHash]; } });
-  const result = await executeIntent(fakeProvider(), fakeSigner(), client, PREBUILT);
+  const result = await executeIntent(fakeSigner(), client, PREBUILT);
   expect(result.txHash).toBe("0xtx");
   expect(confirmedWith).toEqual(["intent-1", "0xtx"]);
 });
@@ -52,13 +53,13 @@ test("executeIntent executes a prebuilt intent's calls directly and confirms by 
 test("executeIntent skips confirmation when confirm:false", async () => {
   let confirmCalled = false;
   const client = fakeClient({ confirmIntent: async () => { confirmCalled = true; } });
-  await executeIntent(fakeProvider(), fakeSigner(), client, PREBUILT, { confirm: false });
+  await executeIntent(fakeSigner(), client, PREBUILT, { confirm: false });
   expect(confirmCalled).toBe(false);
 });
 
 test("executeIntent never throws when confirmation fails (best-effort)", async () => {
   const client = fakeClient({ confirmIntent: async () => { throw new Error("network error"); } });
-  const result = await executeIntent(fakeProvider(), fakeSigner(), client, PREBUILT);
+  const result = await executeIntent(fakeSigner(), client, PREBUILT);
   expect(result.txHash).toBe("0xtx");
 });
 
@@ -66,7 +67,7 @@ test("executeIntent signs typed data, submits, then executes the populated calls
   const signed: unknown[] = [];
   const signer = fakeSigner({ signTypedData: async (td) => { signed.push(td); return ["0xr", "0xs"]; } });
   const client = fakeClient();
-  const result = await executeIntent(fakeProvider(), signer, client, SIGNED);
+  const result = await executeIntent(signer, client, SIGNED);
   expect(signed.length).toBe(1);
   expect(result.txHash).toBe("0xtx");
 });
@@ -83,7 +84,7 @@ test("executeIntents bundles multiple prebuilt intents' calls into one multicall
   const client = fakeClient({ confirmIntent: async (id: string) => { confirmed.push(id); } });
 
   const second: ApiIntentCreated = { ...PREBUILT, id: "intent-3", calls: [{ contractAddress: "0xd", entrypoint: "f", calldata: [] }] };
-  const result = await executeIntents(fakeProvider(), signer, client, [PREBUILT, second]);
+  const result = await executeIntents(signer, client, [PREBUILT, second]);
 
   expect(calls.length).toBe(2);
   expect(result.txHash).toBe("0xbundled");
@@ -91,19 +92,19 @@ test("executeIntents bundles multiple prebuilt intents' calls into one multicall
 });
 
 test("executeIntents throws if any intent requires a signature", async () => {
-  await expect(executeIntents(fakeProvider(), fakeSigner(), fakeClient(), [PREBUILT, SIGNED])).rejects.toThrow(
+  await expect(executeIntents(fakeSigner(), fakeClient(), [PREBUILT, SIGNED])).rejects.toThrow(
     "Expected prebuilt intents (requiresSignature=false)",
   );
 });
 
 test("executeIntent throws when the submitted transaction reverted onchain", async () => {
   const provider = fakeProvider(async () => ({ execution_status: "REVERTED" }));
-  await expect(executeIntent(provider, fakeSigner(), fakeClient(), PREBUILT)).rejects.toThrow("reverted onchain");
+  await expect(executeIntent(fakeSigner(), fakeClient({}, provider), PREBUILT)).rejects.toThrow("reverted onchain");
 });
 
 test("executeIntents throws when the bundled transaction reverted onchain", async () => {
   const provider = fakeProvider(async () => ({ execution_status: "REVERTED" }));
-  await expect(executeIntents(provider, fakeSigner(), fakeClient(), [PREBUILT])).rejects.toThrow("reverted onchain");
+  await expect(executeIntents(fakeSigner(), fakeClient({}, provider), [PREBUILT])).rejects.toThrow("reverted onchain");
 });
 
 test("assertTransactionSucceeded retries past a not-yet-indexed receipt and then succeeds", async () => {
@@ -128,7 +129,7 @@ test("executeIntent syncs the transaction before it returns", async () => {
     syncTransaction: async (txHash: string) => { order.push(`sync ${txHash}`); return { data: { applied: 1, pending: false } }; },
   });
   const signer = fakeSigner({ execute: async () => { order.push("execute"); return { txHash: "0xtx" }; } });
-  await executeIntent(fakeProvider(), signer, client, PREBUILT, { confirm: false });
+  await executeIntent(signer, client, PREBUILT, { confirm: false });
   order.push("returned");
   expect(order).toEqual(["execute", "sync 0xtx", "returned"]);
 });
@@ -137,21 +138,21 @@ test("executeIntents syncs the bundled transaction once", async () => {
   const synced: string[] = [];
   const client = fakeClient({ syncTransaction: async (txHash: string) => { synced.push(txHash); return { data: { applied: 2, pending: false } }; } });
   const second: ApiIntentCreated = { ...PREBUILT, id: "intent-3" };
-  await executeIntents(fakeProvider(), fakeSigner(), client, [PREBUILT, second]);
+  await executeIntents(fakeSigner(), client, [PREBUILT, second]);
   expect(synced).toEqual(["0xtx"]);
 });
 
 test("a failing sync never fails the transaction", async () => {
   const client = fakeClient({ syncTransaction: async () => { throw new Error("Transaction not found yet"); } });
-  const result = await executeIntent(fakeProvider(), fakeSigner(), client, PREBUILT);
+  const result = await executeIntent(fakeSigner(), client, PREBUILT);
   expect(result.txHash).toBe("0xtx");
 });
 
 test("a reverted transaction is never synced", async () => {
   let synced = false;
-  const client = fakeClient({ syncTransaction: async () => { synced = true; } });
   const provider = fakeProvider(async () => ({ execution_status: "REVERTED" }));
-  await expect(executeIntent(provider, fakeSigner(), client, PREBUILT)).rejects.toThrow("reverted onchain");
+  const client = fakeClient({ syncTransaction: async () => { synced = true; } }, provider);
+  await expect(executeIntent(fakeSigner(), client, PREBUILT)).rejects.toThrow("reverted onchain");
   expect(synced).toBe(false);
 });
 
@@ -164,7 +165,7 @@ test("syncTransactionBestEffort stops waiting at its timeout", async () => {
 
 test("executeIntent returns the receipt it verified", async () => {
   const receipt = { execution_status: "SUCCEEDED", events: [{ from_address: "0xc", keys: ["0x1"], data: [] }] };
-  const result = await executeIntent(fakeProvider(async () => receipt), fakeSigner(), fakeClient(), PREBUILT);
+  const result = await executeIntent(fakeSigner(), fakeClient({}, fakeProvider(async () => receipt)), PREBUILT);
   expect(result.receipt).toBe(receipt);
 });
 
@@ -176,13 +177,20 @@ test("assertTransactionSucceeded returns the receipt once it has a status", asyn
 test("executeIntent passes its intent id to the signer", async () => {
   const seen: unknown[] = [];
   const signer = fakeSigner({ execute: async (_calls, opts) => { seen.push(opts); return { txHash: "0xtx" }; } });
-  await executeIntent(fakeProvider(), signer, fakeClient(), PREBUILT);
+  await executeIntent(signer, fakeClient(), PREBUILT);
   expect(seen).toEqual([{ intentIds: ["intent-1"] }]);
 });
 
 test("executeIntents passes all intent ids to the signer", async () => {
   const seen: unknown[] = [];
   const signer = fakeSigner({ execute: async (_calls, opts) => { seen.push(opts); return { txHash: "0xtx" }; } });
-  await executeIntents(fakeProvider(), signer, fakeClient(), [PREBUILT, { ...PREBUILT, id: "intent-3" }]);
+  await executeIntents(signer, fakeClient(), [PREBUILT, { ...PREBUILT, id: "intent-3" }]);
   expect(seen).toEqual([{ intentIds: ["intent-1", "intent-3"] }]);
+});
+
+test("executeIntent reads the receipt through the client's provider", async () => {
+  const seen: string[] = [];
+  const client = fakeClient({}, fakeProvider(async (txHash) => { seen.push(txHash); return { execution_status: "SUCCEEDED" }; }));
+  await executeIntent(fakeSigner(), client, PREBUILT);
+  expect(seen).toEqual(["0xtx"]);
 });
