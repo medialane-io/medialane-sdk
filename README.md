@@ -99,7 +99,7 @@ const { data: intent } = await client.api.createListingIntent({
   endTime: Math.floor(Date.now() / 1000) + 86400 * 30,
 });
 
-const { txHash } = await executeIntent(provider, signer, client, intent);
+const { txHash } = await executeIntent(signer, client, intent);
 ```
 
 The same pattern works with `createOfferIntent`, `createFulfillIntent`, `createCancelIntent`, `createCheckoutIntent`, `createMintIntent`, `createCollectionIntent`, `createCoinIntent` and the sponsorship intents.
@@ -312,7 +312,7 @@ import { MedialaneError, executeIntent } from "@medialane/sdk/starknet";
 
 // Onchain errors
 try {
-  await executeIntent(provider, signer, client, intent);
+  await executeIntent(signer, client, intent);
 } catch (err) {
   if (err instanceof MedialaneError) {
     console.error("On-chain error:", err.message, err.cause);

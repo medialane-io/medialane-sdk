@@ -4,6 +4,7 @@ import { executeSponsored, SponsoredCallRejectedError } from "../starknet/servic
 import type { SelfFundConsent, SelfFundFeeEstimate } from "./self-fund-consent.js";
 import type { ExecutedTransaction, WalletExecutor } from "./types.js";
 import { getTokenBySymbol } from "../utils/token.js";
+import { erc20Balance } from "../starknet/erc20.js";
 
 export interface SelfFundedDeps {
   provider: () => ProviderInterface;
@@ -31,12 +32,7 @@ export async function estimateSelfFundedFee(
 async function feeTokenBalance(provider: ProviderInterface, address: string, unit: string): Promise<bigint> {
   const token = getTokenBySymbol(unit === "FRI" ? "STRK" : "ETH");
   if (!token) throw new Error(`No fee token for unit ${unit}`);
-  const [low = "0x0", high = "0x0"] = await provider.callContract({
-    contractAddress: token.address,
-    entrypoint: "balance_of",
-    calldata: [address],
-  });
-  return BigInt(low) + (BigInt(high) << 128n);
+  return erc20Balance(provider, token.address, address);
 }
 
 export function selfFundedExecutor(deps: SelfFundedDeps): WalletExecutor {
