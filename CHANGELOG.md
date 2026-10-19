@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.183.0] — 2026-10-19
+
+### Added
+
+- `UPLOAD_LIMITS`: the accepted MIME types and maximum size for each upload kind (`image` 50 MB, `document` 20 MB, `media` 100 MB). Types `UploadKind`, `UploadLimit`.
+- `uploadSizeError(file, kind?)`: a message for a file over its kind's limit, or `null`.
+- `formatFileSize(bytes)`.
+
 ## [0.182.0] — 2026-10-16
 
 ### Added
