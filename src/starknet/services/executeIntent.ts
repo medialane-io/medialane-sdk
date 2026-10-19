@@ -1,4 +1,5 @@
 import { UserFacingError } from "../../errors.js";
+import { MedialaneApiError } from "../../api/client.js";
 import type { Call, TypedData } from "starknet";
 import type { StarknetVenueSigner } from "../index.js";
 import type { MedialaneClient } from "../client.js";
@@ -17,21 +18,39 @@ export async function confirmIntentBestEffort(
   await client.api.confirmIntent(intentId, txHash).catch(() => {});
 }
 
-const SYNC_TIMEOUT_MS = 6000;
+const SYNC_TIMEOUT_MS = 20_000;
+const SYNC_RETRY_MS = 2000;
+
+function readableLater(err: unknown): boolean {
+  return err instanceof MedialaneApiError && err.status === 404;
+}
 
 export async function syncTransactionBestEffort(
   client: MedialaneClient,
   txHash: string,
   timeoutMs = SYNC_TIMEOUT_MS,
+  retryMs = SYNC_RETRY_MS,
 ): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  let stopped = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<void>((resolve) => {
     timer = setTimeout(() => resolve(), timeoutMs);
   });
-  const sync = client.api.syncTransaction(txHash).then(() => {}, () => {});
+  const sync = (async () => {
+    while (!stopped) {
+      const again = await client.api.syncTransaction(txHash).then(
+        (res) => res.data?.pending === true,
+        readableLater,
+      );
+      if (!again || Date.now() + retryMs >= deadline) return;
+      await new Promise<void>((resolve) => setTimeout(resolve, retryMs));
+    }
+  })();
   try {
     await Promise.race([sync, timeout]);
   } finally {
+    stopped = true;
     if (timer) clearTimeout(timer);
   }
 }

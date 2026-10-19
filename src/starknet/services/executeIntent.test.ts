@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test";
 import type { StarknetVenueSigner } from "../index.js";
 import type { ApiIntentCreated } from "../../types/api.js";
+import { MedialaneApiError } from "../../api/client.js";
 import { executeIntent, executeIntents, confirmIntentBestEffort, assertTransactionSucceeded, syncTransactionBestEffort, type ReceiptProvider } from "./executeIntent.js";
 
 function fakeProvider(receiptImpl: (txHash: string) => Promise<unknown> = async () => ({ execution_status: "SUCCEEDED" })): ReceiptProvider {
@@ -161,6 +162,35 @@ test("syncTransactionBestEffort stops waiting at its timeout", async () => {
   const started = Date.now();
   await expect(syncTransactionBestEffort(client, "0xtx", 20)).resolves.toBeUndefined();
   expect(Date.now() - started).toBeLessThan(1000);
+});
+
+test("syncTransactionBestEffort asks again while the transaction is pending or not found yet", async () => {
+  const answers: Array<() => Promise<unknown>> = [
+    async () => { throw new MedialaneApiError(404, "Transaction not found yet"); },
+    async () => ({ data: { applied: 0, pending: true } }),
+    async () => ({ data: { applied: 1, pending: false } }),
+  ];
+  let calls = 0;
+  const client = fakeClient({ syncTransaction: () => answers[calls++]!() });
+  await syncTransactionBestEffort(client, "0xtx", 1000, 1);
+  expect(calls).toBe(3);
+});
+
+test("syncTransactionBestEffort does not ask again after a server error", async () => {
+  let calls = 0;
+  const client = fakeClient({ syncTransaction: async () => { calls++; throw new MedialaneApiError(500, "boom"); } });
+  await syncTransactionBestEffort(client, "0xtx", 1000, 1);
+  expect(calls).toBe(1);
+});
+
+test("syncTransactionBestEffort stops asking at its timeout", async () => {
+  let calls = 0;
+  const client = fakeClient({ syncTransaction: async () => { calls++; return { data: { applied: 0, pending: true } }; } });
+  await syncTransactionBestEffort(client, "0xtx", 50, 20);
+  const seen = calls;
+  await new Promise((r) => setTimeout(r, 80));
+  expect(seen).toBeLessThanOrEqual(3);
+  expect(calls).toBe(seen);
 });
 
 test("executeIntent returns the receipt it verified", async () => {

@@ -10,6 +10,10 @@ All notable changes to `@medialane/sdk` are documented here.
 - `uploadSizeError(file, kind?)`: a message for a file over its kind's limit, or `null`.
 - `formatFileSize(bytes)`.
 
+### Changed
+
+- `syncTransactionBestEffort` asks the backend again every 2 seconds while it answers 404 or `pending: true`, up to 20 seconds by default. It takes an optional `retryMs`.
+
 ## [0.182.0] — 2026-10-16
 
 ### Added
