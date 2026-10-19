@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.184.0] — 2026-10-19
+
+### Added
+
+- `ApiClient.getTokenBalance(contract, tokenId, owner)` → `ApiTokenBalance`.
+- `ApiToken.holderCount`, `ApiToken.supply`.
+
 ## [0.183.0] — 2026-10-19
 
 ### Added

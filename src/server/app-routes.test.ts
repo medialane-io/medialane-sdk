@@ -8,6 +8,7 @@ describe("public app routes", () => {
     ["GET", "collections"],
     ["GET", `collections/${A}/tokens`],
     ["GET", `tokens/${A}/1/history`],
+    ["GET", `tokens/${A}/1/balances/${A}`],
     ["GET", `orders/token/${A}/1`],
     ["GET", "search"],
     ["GET", `coins/${A}/guarantees`],

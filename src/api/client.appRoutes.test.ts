@@ -280,3 +280,11 @@ test("a drop the backend cannot read is null", async () => {
     expect(await client.getDropState(A)).toBeNull();
   });
 });
+
+test("a token balance is read for one owner", async () => {
+  await withStub({ data: { owner: W, amount: "3" } }, async (client, calls) => {
+    const res = await client.getTokenBalance(A, "7", W);
+    expect(new URL(calls[0].url).pathname).toBe(`/v1/tokens/${A}/7/balances/${W}`);
+    expect(res.data.amount).toBe("3");
+  });
+});

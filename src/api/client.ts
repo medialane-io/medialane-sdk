@@ -12,6 +12,7 @@ import type {
   ApiOrdersQuery,
   ApiCounterOffersQuery,
   ApiToken,
+  ApiTokenBalance,
   ApiCollection,
   ApiCoin,
   ApiCoinPrices,
@@ -269,6 +270,12 @@ export class ApiClient {
   getToken(contract: string, tokenId: string, wait = false): Promise<ApiResponse<ApiToken>> {
     return this.get<ApiResponse<ApiToken>>(
       `/v1/tokens/${contract}/${tokenId}${wait ? "?wait=true" : ""}`
+    );
+  }
+
+  getTokenBalance(contract: string, tokenId: string, owner: string): Promise<ApiResponse<ApiTokenBalance>> {
+    return this.get<ApiResponse<ApiTokenBalance>>(
+      `/v1/tokens/${contract}/${tokenId}/balances/${this.addr(owner)}`
     );
   }
 
