@@ -236,6 +236,8 @@ export interface ApiToken {
   metadata: ApiTokenMetadata;
 
   balances: ApiTokenBalance[] | null;
+  holderCount?: number;
+  supply?: string;
   activeOrders: ApiOrder[];
   createdAt: string;
   updatedAt: string;
