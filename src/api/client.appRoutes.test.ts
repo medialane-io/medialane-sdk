@@ -288,13 +288,3 @@ test("a token balance is read for one owner", async () => {
     expect(res.data.amount).toBe("3");
   });
 });
-
-test("a token's owners are read a page at a time", async () => {
-  await withStub({ data: [{ owner: W, amount: "3" }], meta: { page: 2, limit: 50, total: 51 } }, async (client, calls) => {
-    const res = await client.getTokenOwners(A, "7", 2);
-    const url = new URL(calls[0].url);
-    expect(url.pathname).toBe(`/v1/tokens/${A}/7/owners`);
-    expect(url.searchParams.get("page")).toBe("2");
-    expect(res.meta?.total).toBe(51);
-  });
-});

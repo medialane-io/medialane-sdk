@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.186.0] — 2026-10-20
+
+### Removed
+
+- `ApiClient.getTokenOwners` and the app route `tokens/:contract/:tokenId/owners`.
+
 ## [0.185.0] — 2026-10-20
 
 ### Added

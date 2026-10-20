@@ -279,12 +279,6 @@ export class ApiClient {
     );
   }
 
-  getTokenOwners(contract: string, tokenId: string, page = 1, limit = 50): Promise<ApiResponse<ApiTokenBalance[]>> {
-    return this.get<ApiResponse<ApiTokenBalance[]>>(
-      `/v1/tokens/${contract}/${tokenId}/owners?page=${page}&limit=${limit}`
-    );
-  }
-
   getTokensByOwner(address: string, page = 1, limit = 20): Promise<ApiResponse<ApiToken[]>> {
     return this.get<ApiResponse<ApiToken[]>>(
       `/v1/tokens/owned/${this.addr(address)}?page=${page}&limit=${limit}`
