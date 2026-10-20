@@ -29,3 +29,10 @@ export function dropHref(contract: Idish): string {
 export function coinHref(chain: Chain, address: Idish): string {
   return `/coins/${chainSlug(chain)}/${seg(address)}`;
 }
+
+export function profileHref(profile: { username?: string | null; address?: string | null }): string {
+  const username = profile.username?.trim();
+  if (username) return `/creator/${username}`;
+  const address = profile.address?.trim();
+  return address ? `/account/${address}` : "/creators";
+}
