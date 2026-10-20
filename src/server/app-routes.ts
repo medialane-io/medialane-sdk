@@ -3,7 +3,7 @@ const SEG = "[^/]+";
 const PUBLIC_ROUTES: Record<string, RegExp[]> = {
   GET: [
     "orders", `orders/${SEG}`, `orders/token/${SEG}/${SEG}`, `orders/user/${SEG}`, `orders/received/${SEG}`, "orders/counter-offers",
-    "tokens", `tokens/owned/${SEG}`, `tokens/${SEG}/${SEG}`, `tokens/${SEG}/${SEG}/(history|comments|remixes)`, `tokens/${SEG}/${SEG}/balances/${SEG}`,
+    "tokens", `tokens/owned/${SEG}`, `tokens/${SEG}/${SEG}`, `tokens/${SEG}/${SEG}/(history|comments|remixes|owners)`, `tokens/${SEG}/${SEG}/balances/${SEG}`,
     "collections", `collections/${SEG}`, `collections/${SEG}/tokens`, `collections/${SEG}/profile`,
     "activities", `activities/${SEG}`, "search", "metadata/resolve",
     "creators", `creators/${SEG}/profile`, `creators/by-username/${SEG}`, `creators/${SEG}/hidden`,
