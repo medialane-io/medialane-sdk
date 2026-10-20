@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { chainSlug, chainFromSlug, assetHref, collectionHref, coinHref } from "./routes.js";
+import { chainSlug, chainFromSlug, assetHref, collectionHref, coinHref, profileHref } from "./routes.js";
 
 describe("chainSlug / chainFromSlug", () => {
   test("round-trips a supported chain", () => {
@@ -29,5 +29,20 @@ describe("href builders", () => {
 
   test("nullish ids coerce to empty segments", () => {
     expect(assetHref("STARKNET", null, undefined)).toBe("/asset/starknet//");
+  });
+});
+
+describe("profileHref", () => {
+  test("links to the username page when a username is set", () => {
+    expect(profileHref({ username: "drummer", address: "0x1" })).toBe("/creator/drummer");
+  });
+
+  test("links to the account page without a username", () => {
+    expect(profileHref({ username: null, address: "0x1" })).toBe("/account/0x1");
+    expect(profileHref({ username: "  ", address: "0x1" })).toBe("/account/0x1");
+  });
+
+  test("falls back to the creators list with neither", () => {
+    expect(profileHref({})).toBe("/creators");
   });
 });

@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [Unreleased]
+
+### Added
+
+- `profileHref({ username, address })` — `/creator/<username>` when a username is set, else `/account/<address>`, else `/creators`.
+
 ## [0.186.0] — 2026-10-20
 
 ### Removed
