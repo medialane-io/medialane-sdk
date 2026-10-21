@@ -111,6 +111,56 @@ describe("image proxy", () => {
   });
 });
 
+describe("image proxy with backend credentials", () => {
+  const backend = { appId: "APP", backendUrl: "https://api.example", apiKey: "ml_live_key", appSecret: "secret" };
+
+  function recording() {
+    const seen: Array<{ url: string; headers: Record<string, string> }> = [];
+    const fetchImpl = (async (url: string, init?: RequestInit) => {
+      seen.push({ url, headers: { ...(init?.headers as Record<string, string>) } });
+      return imageResponse();
+    }) as unknown as typeof fetch;
+    return { seen, fetchImpl };
+  }
+
+  test("an image from the backend is fetched with the app's credentials", async () => {
+    const { seen, fetchImpl } = recording();
+    const h = createImageProxyHandler({ resolveHostname: async () => ["93.184.216.34"], fetchImpl, backend });
+    expect((await h(request("https://api.example/media/starknet/0xabc/1/image"))).status).toBe(200);
+    expect(seen[0]!.headers["x-api-key"]).toBe("ml_live_key");
+    expect(seen[0]!.headers["x-app-id"]).toBe("APP");
+    expect(seen[0]!.headers["x-app-secret"]).toBe("secret");
+  });
+
+  test("an image from any other host gets no credentials", async () => {
+    const { seen, fetchImpl } = recording();
+    const h = createImageProxyHandler({ resolveHostname: async () => ["93.184.216.34"], fetchImpl, backend });
+    for (const url of ["https://cdn.example/a.png", "https://api.example.evil.example/a.png", "https://api.example:8443/a.png"]) {
+      await h(request(url));
+    }
+    for (const { headers } of seen) {
+      expect(headers["x-api-key"]).toBeUndefined();
+      expect(headers["x-app-id"]).toBeUndefined();
+      expect(headers["x-app-secret"]).toBeUndefined();
+    }
+  });
+
+  test("a redirect away from the backend carries no credentials", async () => {
+    const seen: Array<Record<string, string>> = [];
+    const fetchImpl = (async (url: string, init?: RequestInit) => {
+      seen.push({ ...(init?.headers as Record<string, string>) });
+      return url.startsWith("https://api.example/")
+        ? new Response(null, { status: 302, headers: { location: "https://cdn.example/a.png" } })
+        : imageResponse();
+    }) as unknown as typeof fetch;
+    const h = createImageProxyHandler({ resolveHostname: async () => ["93.184.216.34"], fetchImpl, backend });
+    expect((await h(request("https://api.example/media/starknet/0xabc/1/image"))).status).toBe(200);
+    expect(seen[0]!["x-api-key"]).toBe("ml_live_key");
+    expect(seen[1]!["x-api-key"]).toBeUndefined();
+    expect(seen[1]!["x-app-secret"]).toBeUndefined();
+  });
+});
+
 describe("readBodyWithCap", () => {
   test("rejects a declared content-length over the cap without reading", async () => {
     const res = new Response(PNG as unknown as BodyInit, {

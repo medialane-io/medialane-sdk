@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.188.0] — 2026-10-21
+
+### Added
+
+- `ImageProxyConfig.backend` (`appId`, `backendUrl`, `apiKey`, `appSecret`): images on the backend's origin are fetched with the app's credentials; other hosts and redirects away from the backend get none.
+- App route `media/:chain/:contract/:tokenId/image` is public.
+
 ## [0.187.0] — 2026-10-20
 
 ### Added
