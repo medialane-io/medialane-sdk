@@ -15,6 +15,7 @@ const PUBLIC_ROUTES: Record<string, RegExp[]> = {
     "sponsorship/offers", `sponsorship/offers/${SEG}`, `sponsorship/offers/${SEG}/bids`,
     "sponsorship/proposals", `sponsorship/proposals/${SEG}`, "sponsorship/licenses", `sponsorship/licenses/${SEG}`,
     "auth/email/exists",
+    `media/${SEG}/${SEG}/${SEG}/image`,
   ].map((p) => new RegExp(`^${p}$`)),
   POST: [
     "auth/email/(request-code|verify-code|register-account|confirm)",

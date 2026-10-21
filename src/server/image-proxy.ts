@@ -5,12 +5,14 @@ import {
   isPrivateHost,
   validateUrl,
 } from "./ssrf-guard.js";
+import type { AppGatewayConfig } from "./app-gateway.js";
 
 export interface ImageProxyConfig {
 
   resolveHostname: (hostname: string) => Promise<string[]>;
   fetchImpl?: typeof fetch;
   userAgent?: string;
+  backend?: Pick<AppGatewayConfig, "appId" | "backendUrl" | "apiKey" | "appSecret">;
 }
 
 const DEFAULT_USER_AGENT =
@@ -64,6 +66,16 @@ export function createImageProxyHandler(
 ): (req: Request) => Promise<Response> {
   const doFetch = config.fetchImpl ?? fetch;
   const userAgent = config.userAgent ?? DEFAULT_USER_AGENT;
+  const backendOrigin = config.backend ? new URL(config.backend.backendUrl).origin : null;
+
+  function headersFor(url: URL): Record<string, string> {
+    const headers: Record<string, string> = { "User-Agent": userAgent };
+    if (!config.backend || url.origin !== backendOrigin) return headers;
+    if (config.backend.apiKey) headers["x-api-key"] = config.backend.apiKey;
+    headers["x-app-id"] = config.backend.appId;
+    if (config.backend.appSecret) headers["x-app-secret"] = config.backend.appSecret;
+    return headers;
+  }
 
   async function resolvesToPrivateHost(hostname: string): Promise<boolean> {
     try {
@@ -85,7 +97,7 @@ export function createImageProxyHandler(
 
     const res = await doFetch(url.toString(), {
       redirect: "manual",
-      headers: { "User-Agent": userAgent },
+      headers: headersFor(url),
     });
 
     if (res.status >= 300 && res.status < 400) {
