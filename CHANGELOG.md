@@ -2,7 +2,7 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
-## [0.188.0] — 2026-10-21
+## [0.189.0] — 2026-10-21
 
 ### Added
 
