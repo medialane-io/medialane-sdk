@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.190.0] — 2026-10-21
+
+### Changed
+
+- `buildAssetMetadata` keeps every template trait, whatever the length of its name or value.
+
 ## [0.189.0] — 2026-10-21
 
 ### Added

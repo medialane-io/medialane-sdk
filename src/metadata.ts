@@ -61,7 +61,6 @@ export function buildAssetMetadata(input: BuildAssetMetadataInput): AssetMetadat
     const traitType = t.traitType?.trim() ?? "";
     const traitValue = String(t.value ?? "").trim();
     if (!traitType || !traitValue || RESERVED_TRAITS_NORMALIZED.has(traitType.toLowerCase())) continue;
-    if (traitType.length > 64 || traitValue.length > 512) continue;
     attributes.push({ trait_type: traitType, value: traitValue });
   }
 
