@@ -1,20 +1,23 @@
 import { test, expect } from "bun:test";
-import { UPLOAD_LIMITS, formatFileSize, uploadSizeError } from "./uploads.js";
+import { MAX_UPLOAD_BYTES, UPLOAD_LIMITS, formatFileSize, uploadSizeError } from "./uploads.js";
 
 const MB = 1024 * 1024;
 
-test("images may be up to 50 MB", () => {
-  expect(UPLOAD_LIMITS.image.maxBytes).toBe(50 * MB);
-  expect(uploadSizeError({ size: 50 * MB })).toBeNull();
+test("one size for every kind", () => {
+  expect(MAX_UPLOAD_BYTES).toBe(94_371_840);
+  for (const kind of ["image", "document", "media"] as const) {
+    expect(uploadSizeError({ size: MAX_UPLOAD_BYTES }, kind)).toBeNull();
+  }
 });
 
-test("an image over the limit gets a message with both sizes", () => {
-  expect(uploadSizeError({ size: 63.2 * MB })).toBe("That image is 63.2 MB. Please choose one under 50 MB.");
+test("over the size gets a message with both sizes", () => {
+  expect(uploadSizeError({ size: 95 * MB })).toBe("That image is 95 MB. Please choose one under 90 MB.");
+  expect(uploadSizeError({ size: 95 * MB }, "document")).toBe("That file is 95 MB. Please choose one under 90 MB.");
 });
 
-test("documents and media use their own limits", () => {
-  expect(uploadSizeError({ size: 21 * MB }, "document")).toBe("That file is 21 MB. Please choose one under 20 MB.");
-  expect(uploadSizeError({ size: 99 * MB }, "media")).toBeNull();
+test("kinds keep their own types", () => {
+  expect(UPLOAD_LIMITS.image.mimeTypes).not.toContain("video/mp4");
+  expect(UPLOAD_LIMITS.media.mimeTypes).toContain("video/mp4");
 });
 
 test("formatFileSize shows whole megabytes without a decimal", () => {

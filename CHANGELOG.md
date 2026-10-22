@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.191.0] — 2026-10-22
+
+### Changed
+
+- One upload size for every kind: `MAX_UPLOAD_BYTES` (90 MB), the largest upload Pinata's SDK sends in a single request. `uploadSizeError` checks against it.
+- `UPLOAD_LIMITS` holds the accepted MIME types per kind only; `UploadLimit` no longer has `maxBytes`.
+
 ## [0.190.0] — 2026-10-21
 
 ### Changed

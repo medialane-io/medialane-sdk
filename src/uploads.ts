@@ -1,19 +1,18 @@
 export type UploadKind = "image" | "document" | "media";
 
 export interface UploadLimit {
-  maxBytes: number;
   mimeTypes: readonly string[];
 }
 
 const MB = 1024 * 1024;
 
+export const MAX_UPLOAD_BYTES = 90 * MB;
+
 export const UPLOAD_LIMITS: Record<UploadKind, UploadLimit> = {
   image: {
-    maxBytes: 50 * MB,
     mimeTypes: ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/webp"],
   },
   document: {
-    maxBytes: 20 * MB,
     mimeTypes: [
       "application/pdf",
       "application/msword",
@@ -26,7 +25,6 @@ export const UPLOAD_LIMITS: Record<UploadKind, UploadLimit> = {
     ],
   },
   media: {
-    maxBytes: 100 * MB,
     mimeTypes: [
       "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml", "image/avif",
       "video/mp4", "video/webm", "video/ogg",
@@ -42,8 +40,7 @@ export function formatFileSize(bytes: number): string {
 }
 
 export function uploadSizeError(file: { size: number }, kind: UploadKind = "image"): string | null {
-  const { maxBytes } = UPLOAD_LIMITS[kind];
-  if (file.size <= maxBytes) return null;
+  if (file.size <= MAX_UPLOAD_BYTES) return null;
   const noun = kind === "image" ? "image" : "file";
-  return `That ${noun} is ${formatFileSize(file.size)}. Please choose one under ${formatFileSize(maxBytes)}.`;
+  return `That ${noun} is ${formatFileSize(file.size)}. Please choose one under ${formatFileSize(MAX_UPLOAD_BYTES)}.`;
 }
