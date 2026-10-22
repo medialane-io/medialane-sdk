@@ -1,7 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { buildCollectionMetadata } from "./metadata.js";
+import { buildAssetMetadata, buildCollectionMetadata } from "./metadata.js";
 
 const OWNER = "0x0123";
+
+describe("buildAssetMetadata", () => {
+  test("keeps template traits whatever their length", () => {
+    const longName = "n".repeat(200);
+    const longValue = "v".repeat(100_000);
+    const { attributes } = buildAssetMetadata({ name: "Post", templateTraits: [{ traitType: longName, value: longValue }] });
+    expect(attributes).toEqual([{ trait_type: longName, value: longValue }]);
+  });
+});
 
 describe("buildCollectionMetadata", () => {
   test("writes name, description, image and external_link", () => {
