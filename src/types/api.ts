@@ -1,3 +1,6 @@
+import type { z } from "zod";
+import type * as intents from "../contract/intents.js";
+
 export type IPType =
   | "Audio"
   | "Art"
@@ -438,77 +441,21 @@ export interface ApiTxSyncResult {
   pending: boolean;
 }
 
-export interface CreateListingIntentParams {
-  offerer: string;
-  nftContract: string;
-  tokenId: string;
-  currency: string;
-  price: string;
-  endTime: number;
-  salt?: string;
+export type CreateListingIntentParams = z.input<typeof intents.listingSchema>;
 
-  amount?: string;
-}
+export type MakeOfferIntentParams = z.input<typeof intents.offerSchema>;
 
-export interface MakeOfferIntentParams {
-  offerer: string;
-  nftContract: string;
-  tokenId: string;
-  currency: string;
-  price: string;
-  endTime: number;
-  salt?: string;
+export type FulfillOrderIntentParams = z.input<typeof intents.fulfillSchema>;
 
-  tokenStandard?: string;
+export type CancelOrderIntentParams = z.input<typeof intents.cancelSchema>;
 
-  quantity?: string;
-}
+export type FactoryFamilyServiceId = (typeof intents.FACTORY_FAMILY_SERVICE_IDS)[number];
 
-export interface FulfillOrderIntentParams {
-  fulfiller: string;
-  orderHash: string;
+export type TierServiceId = (typeof intents.TIER_SERVICE_IDS)[number];
 
-  tokenStandard?: string;
+export type CollectionServiceId = (typeof intents.COLLECTION_SERVICE_IDS)[number];
 
-  quantity?: string;
-}
-
-export interface CancelOrderIntentParams {
-  offerer: string;
-  orderHash: string;
-
-  tokenStandard?: string;
-}
-
-export type FactoryFamilyServiceId = "mip-erc1155" | "ip-tickets" | "ip-ticketing" | "ip-club";
-
-export type TierServiceId = "ip-tickets" | "ip-ticketing" | "ip-club";
-
-export type CollectionServiceId =
-  | FactoryFamilyServiceId
-  | "pop-protocol"
-  | "drop-collection"
-  | "data-tokenization-erc721";
-
-export interface CreateMintIntentParams {
-
-  owner: string;
-  recipient: string;
-
-  collectionId?: string;
-
-  tokenUri?: string;
-
-  royaltyBps?: number;
-
-  tokenId?: string;
-
-  amount?: string;
-
-  value?: string;
-
-  collectionContract?: string;
-}
+export type CreateMintIntentParams = z.input<typeof intents.mintSchema>;
 
 /** Drop sale terms on the wire: amounts as decimal strings in the token's smallest unit. */
 export interface DropTermsBody {
@@ -563,31 +510,7 @@ export interface ApiDropMint {
   createdAt: string;
 }
 
-export interface CreateCollectionIntentParams {
-  owner: string;
-  name: string;
-  symbol: string;
-
-  description?: string;
-
-  image?: string;
-
-  baseUri?: string;
-
-  collectionContract?: string;
-
-  service?: CollectionServiceId;
-
-  claimEndTimestamp?: number;
-
-  maxSupply?: string;
-
-  /** drop-collection */
-  terms?: DropTermsBody;
-
-  /** drop-collection — Merkle root of the allowlist; omitted = open to everyone */
-  allowlistRoot?: string;
-}
+export type CreateCollectionIntentParams = z.input<typeof intents.createCollectionSchema>;
 
 export interface CheckoutIntentItem {
   orderHash: string;
@@ -595,13 +518,7 @@ export interface CheckoutIntentItem {
   quantity?: string;
 }
 
-export interface CreateCheckoutIntentParams {
-  fulfiller: string;
-
-  items?: CheckoutIntentItem[];
-
-  orderHashes?: string[];
-}
+export type CreateCheckoutIntentParams = z.input<typeof intents.checkoutBodySchema>;
 
 export interface ApiCheckoutIntentResult {
   id?: string;
@@ -613,17 +530,7 @@ export interface ApiCheckoutIntentResult {
   error?: string;
 }
 
-export interface CreateTierIntentParams {
-  owner: string;
-
-  collection: string;
-  service: TierServiceId;
-  maxSupply: string;
-  startTime?: number;
-  endTime?: number;
-  royaltyBps: number;
-  metadataUri: string;
-}
+export type CreateTierIntentParams = z.output<typeof intents.createTierSchema>;
 
 export interface EmissionParams {
   chain?: "STARKNET";
@@ -651,126 +558,29 @@ export interface ApiEmissionResult {
   batches: ApiEmissionCall[][];
 }
 
-export interface CreateCoinIntentParams {
+export type CreateCoinIntentParams = z.input<typeof intents.createCoinSchema>;
 
-  owner: string;
-  name: string;
-  symbol: string;
+export type LaunchCoinIntentParams = z.output<typeof intents.launchCoinSchema>;
 
-  initialSupply: string;
+export type CreateSponsorshipOfferIntentParams = z.output<typeof intents.sponsorshipOfferSchema>;
 
-  salt?: string;
-}
+export type SetSponsorshipOfferOpenIntentParams = z.input<typeof intents.sponsorshipOfferOpenSchema>;
 
-export interface LaunchCoinIntentParams {
+export type PlaceSponsorshipBidIntentParams = z.input<typeof intents.sponsorshipBidSchema>;
 
-  owner: string;
+export type RetractSponsorshipBidIntentParams = z.input<typeof intents.sponsorshipBidRetractSchema>;
 
-  creatorCoin: string;
+export type AcceptSponsorshipBidIntentParams = z.input<typeof intents.sponsorshipBidAcceptSchema>;
 
-  quoteToken: string;
+export type CreateSponsorshipProposalIntentParams = z.output<typeof intents.sponsorshipProposalSchema>;
 
-  price: number;
+export type WithdrawSponsorshipProposalIntentParams = z.input<typeof intents.sponsorshipProposalWithdrawSchema>;
 
-  initialHolders: string[];
-  initialHoldersAmounts: string[];
+export type AcceptSponsorshipProposalIntentParams = z.input<typeof intents.sponsorshipProposalAcceptSchema>;
 
-  transferRestrictionDelay?: number;
+export type RejectSponsorshipProposalIntentParams = z.input<typeof intents.sponsorshipProposalRejectSchema>;
 
-  maxPercentageBuyLaunch?: number;
-
-  quoteFundAmount?: string;
-}
-
-export interface CreateSponsorshipOfferIntentParams {
-
-  author: string;
-  nftContract: string;
-  tokenId: string;
-  minAmount: string;
-
-  duration: number;
-  paymentToken: string;
-  licenseTermsUri: string;
-  transferable: boolean;
-
-  royaltyBps: number;
-
-  specificSponsor?: string;
-}
-
-export interface SetSponsorshipOfferOpenIntentParams {
-
-  author: string;
-  offerId: string;
-  open: boolean;
-}
-
-export interface PlaceSponsorshipBidIntentParams {
-
-  sponsor: string;
-  offerId: string;
-  amount: string;
-  paymentToken: string;
-}
-
-export interface RetractSponsorshipBidIntentParams {
-  sponsor: string;
-  offerId: string;
-}
-
-export interface AcceptSponsorshipBidIntentParams {
-
-  author: string;
-  offerId: string;
-
-  sponsor: string;
-}
-
-export interface CreateSponsorshipProposalIntentParams {
-
-  proposer: string;
-  nftContract: string;
-  tokenId: string;
-
-  amount: string;
-  duration: number;
-
-  validUntil?: number;
-  paymentToken: string;
-  licenseTermsUri: string;
-  transferable: boolean;
-  royaltyBps: number;
-}
-
-export interface WithdrawSponsorshipProposalIntentParams {
-  proposer: string;
-  proposalId: string;
-}
-
-export interface AcceptSponsorshipProposalIntentParams {
-
-  owner: string;
-  proposalId: string;
-}
-
-export interface RejectSponsorshipProposalIntentParams {
-  owner: string;
-  proposalId: string;
-}
-
-export interface CreateCounterOfferIntentParams {
-
-  sellerAddress: string;
-
-  originalOrderHash: string;
-
-  priceRaw: string;
-
-  durationSeconds: number;
-
-  message?: string;
-}
+export type CreateCounterOfferIntentParams = z.input<typeof intents.counterOfferSchema>;
 
 export interface ApiCounterOffersQuery {
 
@@ -1343,105 +1153,34 @@ export interface ApiPricing {
   pricing: { default: number; rules: ApiPricingRule[] };
 }
 
-export interface CreateTransferTokenIntentParams {
-  owner: string;
-  token: string;
-  recipient: string;
-  amount: string;
-}
+export type CreateTransferTokenIntentParams = z.input<typeof intents.transferTokenSchema>;
 
-export interface CreateTransferNftIntentParams {
-  owner: string;
-  contractAddress: string;
-  tokenId: string;
-  recipient: string;
-  tokenStandard: "ERC721" | "ERC1155";
-}
+export type CreateTransferNftIntentParams = z.input<typeof intents.transferNftSchema>;
 
-export interface CreateTransferCollectionOwnershipIntentParams {
-  owner: string;
-  collectionId: string;
-  newOwner: string;
-}
+export type CreateTransferCollectionOwnershipIntentParams = z.input<typeof intents.transferCollectionOwnershipSchema>;
 
-export interface CreateCommentIntentParams {
-  author: string;
-  nftContract: string;
-  tokenId: string;
-  text: string;
-}
+export type CreateCommentIntentParams = z.input<typeof intents.commentSchema>;
 
-export interface CreateGenesisMintIntentParams {
-  owner: string;
-  recipient: string;
-}
+export type CreateGenesisMintIntentParams = z.input<typeof intents.genesisMintSchema>;
 
-export interface CreatePopClaimIntentParams {
-  claimer: string;
-  collection: string;
-  proof: string[];
-}
+export type CreatePopClaimIntentParams = z.input<typeof intents.popClaimSchema>;
 
-export interface CreatePopBurnIntentParams {
-  owner: string;
-  collection: string;
-  tokenId: string;
-}
+export type CreatePopBurnIntentParams = z.input<typeof intents.popBurnSchema>;
 
-export interface CreateDropClaimIntentParams {
-  claimer: string;
-  collection: string;
-  /** Tokens to mint, decimal string. */
-  quantity: string;
-  /** Allowlist proof from the claim link; omitted for open drops. */
-  proof?: string[];
-}
+export type CreateDropClaimIntentParams = z.input<typeof intents.dropClaimSchema>;
 
 export type WalletManageAction = "add_owner" | "remove_owner" | "cancel_escape" | "set_first_guardian" | "trigger_escape" | "complete_escape";
 
-export interface CreateWalletManageIntentParams {
-  owner: string;
-  action: WalletManageAction;
-  pubkey?: string;
-  ownerGuid?: string;
-  newOwnerPubkey?: string;
-}
+export type CreateWalletManageIntentParams = z.input<typeof intents.walletManageSchema>;
 
-export interface CreateSwapIntentParams {
-  taker: string;
-  sellTokenAddress: string;
-  buyTokenAddress: string;
-  sellAmountRaw?: string;
-  buyAmountRaw?: string;
-}
+export type CreateSwapIntentParams = z.input<typeof intents.swapIntentSchema>;
 
-export interface CreateFundingTransferIntentParams {
-  owner: string;
-  asset: string;
-  amountAtomic: string;
-}
+export type CreateFundingTransferIntentParams = z.input<typeof intents.fundingTransferSchema>;
 
 export type DropManageAction = "issue" | "set_allowlist_root";
 
-export interface CreateDropManageIntentParams {
-  owner: string;
-  collection: string;
-  action: DropManageAction;
-  /** issue */
-  recipient?: string;
-  /** issue — decimal string */
-  quantity?: string;
-  /** set_allowlist_root — 0x0 opens the drop to everyone */
-  root?: string;
-}
+export type CreateDropManageIntentParams = z.input<typeof intents.dropManageSchema>;
 
 export type PopManageAction = "issue" | "set_allowlist_root";
 
-export interface CreatePopManageIntentParams {
-  owner: string;
-  collection: string;
-  action: PopManageAction;
-  recipient?: string;
-  tokenUri?: string;
-  root?: string;
-}
+export type CreatePopManageIntentParams = z.input<typeof intents.popManageSchema>;

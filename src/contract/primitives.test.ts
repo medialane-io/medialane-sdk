@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { address, felt, uint } from "./starknet.js";
+import { address, felt, uint } from "./primitives.js";
 
 const message = (schema: { safeParse(v: unknown): { success: boolean; error?: { issues: { message: string }[] } } }, value: unknown) => {
   const r = schema.safeParse(value);
