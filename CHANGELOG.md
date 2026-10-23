@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.196.0] — 2026-10-23
+
+### Fixed
+
+- Registration reads the PRF secret once after creating a passkey that did not return it, also when the browser reported PRF as not enabled at creation (restores the behaviour before 0.162.0).
+
 ## [0.195.0] — 2026-10-23
 
 ### Fixed

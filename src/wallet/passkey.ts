@@ -59,7 +59,6 @@ export interface PasskeyOwner {
 interface Registration {
   credentialId: string;
   prfFirst: ArrayBuffer | null;
-  prfEnabled: boolean | undefined;
 }
 
 const encodeBase64 = (buf: ArrayBuffer | Uint8Array): string => {
@@ -144,7 +143,6 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
     return {
       credentialId: encodeBase64(credential.rawId),
       prfFirst: prf?.results?.first ?? null,
-      prfEnabled: prf?.enabled,
     };
   }
 
@@ -193,7 +191,6 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
   async function secretFromRegistration(registration: Registration): Promise<Uint8Array<ArrayBuffer>> {
     if (registration.prfFirst) return new Uint8Array(registration.prfFirst);
     try {
-      if (registration.prfEnabled === false) throw new PasskeyUnsupportedError("no-prf");
       return await prfSecret(registration.credentialId);
     } catch (err) {
       if (err instanceof PasskeyUnsupportedError) await forgetCredential(registration.credentialId);

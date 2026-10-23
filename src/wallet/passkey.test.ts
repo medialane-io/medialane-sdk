@@ -180,13 +180,27 @@ test("a browser that is unsure, or can't answer, still gets the passkey prompt",
   }
 });
 
-test("a passkey created without PRF support fails after one prompt, with no follow-up read", async () => {
+test("a passkey created reporting PRF disabled is still read once, since the secret may only come on read", async () => {
   let reads = 0;
   const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled: false, onGet: () => reads++ }));
   const err = await owner.createOwnerKey().catch((e: unknown) => e);
   expect(err).toBeInstanceOf(PasskeyUnsupportedError);
   expect((err as PasskeyUnsupportedError).reason).toBe("no-prf");
-  expect(reads).toBe(0);
+  expect(reads).toBe(1);
+});
+
+test("a passkey reporting PRF disabled at creation that returns the secret on read creates the wallet key", async () => {
+  const created = {
+    rawId: CREDENTIAL_ID_BYTES.buffer,
+    getClientExtensionResults: () => ({ prf: { enabled: false } }),
+  };
+  const read = {
+    rawId: CREDENTIAL_ID_BYTES.buffer,
+    getClientExtensionResults: () => ({ prf: { results: { first: PRF_SECRET.buffer } } }),
+  };
+  const credentials = { create: async () => created, get: async () => read } as unknown as CredentialsContainer;
+  const result = await ownerFor(credentials).createOwnerKey();
+  expect(result.sealed.credentialId).toBe(CREDENTIAL_ID);
 });
 
 test("a passkey that reports PRF enabled but returns no value at creation is read once more", async () => {
