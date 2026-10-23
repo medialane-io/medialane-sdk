@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.192.0] — 2026-10-22
+
+### Added
+
+- `uploadError(file, kind)`: checks the file type (by MIME type, or by extension when the browser gives none), then the size.
+- `acceptFor(kind)`: the `<input accept>` value for a kind.
+- `UploadLimit.extensions`.
+
+### Changed
+
+- `image` uploads accept AVIF.
+
 ## [0.191.0] — 2026-10-22
 
 ### Changed
