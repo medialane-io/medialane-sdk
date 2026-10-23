@@ -1,3 +1,4 @@
+import type { FetchLike } from "../../utils/fetch.js";
 import type { TypedData } from "starknet";
 
 export interface TypedDataSigner {
@@ -7,7 +8,7 @@ export interface TypedDataSigner {
 
 export interface SponsoredExecuteConfig {
   proxyUrl: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
   headers?: Record<string, string>;
 }
 

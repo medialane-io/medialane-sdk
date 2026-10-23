@@ -29,7 +29,7 @@ const SEALED_BY_APP = {
     "UZRng/3Hcx4L+SYAP+FxPSHh6z8ydQaptBp8XyCJEB3bZaIqSkKzd5Hy6J4a5ZTanrZClYAn6gjGMS3rESwcPCqJTJ+fsng59Pmqqu+6JfYoCQ==",
 } as const;
 
-const bytes = (b64: string): Uint8Array => Uint8Array.from(Buffer.from(b64, "base64"));
+const bytes = (b64: string): Uint8Array<ArrayBuffer> => Uint8Array.from(Buffer.from(b64, "base64"));
 const toB64 = (buf: ArrayBuffer): string => Buffer.from(new Uint8Array(buf)).toString("base64");
 const info = (value: string): Uint8Array => new TextEncoder().encode(value);
 

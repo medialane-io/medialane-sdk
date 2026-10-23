@@ -3,15 +3,13 @@
 export { MedialaneClient } from "./client.js";
 export { createChainProvider } from "./chain-provider.js";
 export { erc20Balance } from "./erc20.js";
-export { MedialaneError } from "./marketplace/errors.js";
+export { MedialaneError } from "../errors.js";
 
 export { StarknetVenue } from "./venue.js";
 export type { StarknetVenueDeps, ResolvedOrder } from "./venue.js";
 
 export type { VenueSigner } from "../adapters/types.js";
-import type { TypedData, Call } from "starknet";
-import type { VenueSigner as _VenueSigner } from "../adapters/types.js";
-export type StarknetVenueSigner = _VenueSigner<TypedData, Call>;
+export type { StarknetVenueSigner } from "./signer.js";
 
 export { buildFeeCall, feeBps, feeAmount } from "./fee/build-fee-call.js";
 export type { FeeSurface, BuildFeeCallParams } from "./fee/build-fee-call.js";
@@ -30,6 +28,7 @@ export {
   confirmIntentBestEffort,
   syncTransactionBestEffort,
   type ExecuteIntentOpts,
+  type IntentClient,
   type ReceiptProvider,
 } from "./services/executeIntent.js";
 export {
@@ -38,7 +37,6 @@ export {
   type ReceiptLike,
   type DeployingServiceId,
 } from "./services/receipts.js";
-export { PopService, popHasClaimed } from "./services/pop.js";
 export {
   buildPopAllowlist,
   verifyPopProof,
@@ -51,15 +49,16 @@ export {
   popClaimLinksCsv,
   popClaimInfo,
   popClaimState,
+  popHasClaimed,
   popCalls,
   type PopClaimLink,
   type PopClaimInfo,
   type PopClaimState,
 } from "./pop-claim.js";
-export { DropService } from "./services/drop.js";
 export { DROP_MAX_CLAIM_QUANTITY, dropCalls, dropMintCost, toContractTerms as toDropContractTerms, type DropMintCost } from "./drop-calls.js";
 export {
   readDrop,
+  buildDropClaimCalls,
   dropClaimedBy,
   dropMintState,
   dropClaimLinks,
@@ -67,12 +66,8 @@ export {
   type DropMintState,
   type DropMintStateKind,
 } from "./drop-state.js";
-export { TicketService } from "./services/ticket.js";
-export { ClubService } from "./services/club.js";
-export { SponsorshipService } from "./services/sponsorship.js";
-export { ERC1155CollectionService } from "./services/erc1155collection.js";
 export {
-  CreatorCoinService,
+  isCreatorCoin,
   VALIDATED_EKUBO_PARAMS,
   getCreatorCoinGuarantees,
   MAX_TEAM_ALLOCATION_PERCENT,
@@ -113,10 +108,22 @@ export type {
   MintEditionParams,
   BatchMintEditionParams,
   AddSupplyParams,
-} from "./services/erc1155collection.js";
-export type { DropTerms, CreateDropParams, CreatePopCollectionParams } from "../types/services.js";
+  DropTerms,
+  CreateDropParams,
+  CreatePopCollectionParams,
+} from "../types/services.js";
 
 export { encodeByteArray } from "./bytearray.js";
+
+export {
+  populateCall,
+  popFactoryCalls,
+  ticketCalls,
+  clubCalls,
+  sponsorshipCalls,
+  editionCalls,
+  type DeployCollectionArgs,
+} from "./service-calls.js";
 
 export {
   buildOrderTypedData,

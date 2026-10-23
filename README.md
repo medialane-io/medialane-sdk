@@ -90,7 +90,7 @@ const signer = {
   execute: async (calls) => ({ txHash: (await account.execute(calls)).transaction_hash }),
 };
 
-const { data: intent } = await client.api.createListingIntent({
+const intent = await client.api.intents.create("listing", {
   offerer: account.address,
   nftContract: "0x...",
   tokenId: "42",
@@ -102,30 +102,61 @@ const { data: intent } = await client.api.createListingIntent({
 const { txHash } = await executeIntent(signer, client, intent);
 ```
 
-The same pattern works with `createOfferIntent`, `createFulfillIntent`, `createCancelIntent`, `createCheckoutIntent`, `createMintIntent`, `createCollectionIntent`, `createCoinIntent` and the sponsorship intents.
+The same call takes every other kind: `"offer"`, `"fulfill"`, `"cancel"`, `"mint"`, `"create-collection"`, `"create-coin"`, the sponsorship kinds and the rest of `INTENT_KINDS` from `@medialane/sdk/contract`. The params are typed by kind. `client.api.intents.checkout(...)` prepares several purchases at once.
 
-### Launchpad services
+### Calls without the backend
 
-Launchpad services are available under `client.services`:
+The calls each Launchpad service sends are plain functions that return `Call` values, so any account or agent can run them directly, with no backend in between:
 
-| Service | What it does |
+| Builder | What it builds |
 |---|---|
-| `client.services.pop` | Proof of participation badges: create, claim, issue, burn |
-| `client.services.drop` | Timed collection drops |
-| `client.services.erc1155Collection` | Limited editions collections |
-| `client.services.creatorCoin` | Creator coins with a public trading pool |
-| `client.services.ticket` | IP Tickets |
-| `client.services.club` | IP Club memberships |
-| `client.services.sponsorship` | IP Sponsorship |
+| `popCalls`, `popFactoryCalls` | Proof of participation badges: create, claim, issue, burn |
+| `dropCalls`, `buildDropClaimCalls` | Timed collection drops, including the priced claim with the platform fee |
+| `editionCalls` | Limited editions collections |
+| `buildCreateCreatorCoinCall`, `buildLaunchOnEkuboCalls` | Creator coins with a public trading pool |
+| `ticketCalls` | IP Tickets |
+| `clubCalls` | IP Club memberships |
+| `sponsorshipCalls` | IP Sponsorship |
+
+```typescript
+import { ticketCalls, getStarknetCoordinates } from "@medialane/sdk/starknet";
+
+const call = ticketCalls.deployCollection(getStarknetCoordinates("STARKNET").ipTicketsFactory, {
+  name: "Launch party", symbol: "LP", baseUri: "ipfs://...",
+});
+await account.execute([call]);
+```
 
 ---
 
 ## REST API
 
+`client.api` is grouped by domain: `orders`, `tokens`, `collections`, `activity`, `search`, `intents`, `metadata`, `creators`, `account`, `portal` (with `portal.funding`), `business`, `remix`, `coins`, `drops`, `sponsorship`, `rewards`, `platform` and `chainReads`.
+
+The domain methods follow one set of rules:
+
+- A single resource comes back as the resource itself. A list comes back as `{ data, meta }`, with `meta` carrying the page.
+- `get` throws `MedialaneApiError` when the resource is missing. `find` returns `null`.
+- Authentication belongs to the client, not to each call: `client.api.withBearer(token)` returns a client that sends `Authorization: Bearer <token>` (a function is read on every request).
+- Every intent goes through one call, typed by kind: `client.api.intents.create("listing", params)`. The kinds, and the path each one posts to, are `INTENT_KINDS` and `intentPath` in `@medialane/sdk/contract`.
+
+```typescript
+const page = await client.api.orders.list({ status: "ACTIVE" });
+const order = await client.api.orders.get("0x...");
+const drop = await client.api.drops.find(contract);
+
+const account = client.api.withBearer(siwsToken);
+await account.creators.updateProfile(address, { displayName: "Ada" });
+
+const intent = await client.api.intents.create("pop-claim", { claimer, collection, proof });
+```
+
+`ApiClient` takes an options object: `new ApiClient({ baseUrl, apiKey, bearer, retry, chain, fetch })`.
+
 ### Query Orders
 
 ```typescript
-const orders = await client.api.getOrders({
+const orders = await client.api.orders.list({
   status: "ACTIVE",
   sort: "price_asc",
   currency: "0x033068...", // USDC address
@@ -133,17 +164,17 @@ const orders = await client.api.getOrders({
   limit: 20,
 });
 
-const order = await client.api.getOrder("0x...");
-const tokenOrders = await client.api.getActiveOrdersForToken(contract, tokenId);
-const userOrders = await client.api.getOrdersByUser(address);
+const order = await client.api.orders.get("0x...");
+const tokenOrders = await client.api.orders.forToken(contract, tokenId);
+const userOrders = await client.api.orders.byUser(address);
 ```
 
 ### Query Tokens
 
 ```typescript
-const token = await client.api.getToken(contract, tokenId);
-const tokens = await client.api.getTokensByOwner(address);
-const history = await client.api.getTokenHistory(contract, tokenId);
+const token = await client.api.tokens.get(contract, tokenId);
+const tokens = await client.api.tokens.ownedBy(address);
+const history = await client.api.tokens.history(contract, tokenId);
 ```
 
 ### ERC-1155 Ownership
@@ -153,7 +184,7 @@ For ERC-1155 tokens, a single token ID can be held by many wallets simultaneousl
 ```typescript
 import type { ApiTokenBalance } from "@medialane/sdk";
 
-const { data: token } = await client.api.getToken(contract, tokenId);
+const token = await client.api.tokens.get(contract, tokenId);
 
 // Check if a wallet owns any quantity of this token
 const isOwner = token.balances?.some(
@@ -176,16 +207,16 @@ token.balances?.forEach((b: ApiTokenBalance) => {
 
 ```typescript
 // All collections: newest first by default
-const collections = await client.api.listCollections();
+const collections = await client.api.collections.list();
 
 // Filter, sort and paginate in one query
-const byVolume = await client.api.listCollections({ page: 1, limit: 20, sort: "volume" });
-const featured = await client.api.listCollections({ limit: 18, isFeatured: true, sort: "recent" });
-const myDrops = await client.api.getDrops({ organizer: "0x..." });
+const byVolume = await client.api.collections.list({ page: 1, limit: 20, sort: "volume" });
+const featured = await client.api.collections.list({ limit: 18, isFeatured: true, sort: "recent" });
+const myDrops = await client.api.drops.list({ organizer: "0x..." });
 
 // Sort options: "recent" | "supply" | "floor" | "volume" | "name"
-const collection = await client.api.getCollection(contract);
-const tokens = await client.api.getCollectionTokens(contract);
+const collection = await client.api.collections.get(contract);
+const tokens = await client.api.collections.tokens(contract);
 ```
 
 ### Search
@@ -200,19 +231,19 @@ const results = await client.api.search("landscape painting", 10);
 ### Activities
 
 ```typescript
-const feed = await client.api.getActivities({ type: "sale", page: 1 });
-const userFeed = await client.api.getActivitiesByAddress(address);
+const feed = await client.api.activity.list({ type: "sale", page: 1 });
+const userFeed = await client.api.activity.byAddress(address);
 ```
 
 ### Upload Metadata to IPFS
 
 ```typescript
 // Upload a file
-const fileResult = await client.api.uploadFile(imageFile);
+const fileResult = await client.api.metadata.uploadFile(imageFile);
 // fileResult.data.url → "ipfs://..."
 
 // Upload metadata JSON
-const metaResult = await client.api.uploadMetadata({
+const metaResult = await client.api.metadata.upload({
   name: "My Work",
   description: "...",
   image: "ipfs://...",
@@ -257,11 +288,11 @@ const metadata: IpNftMetadata = {
 };
 
 // Token from the API: includes indexed licensing fields for fast access
-const token = await client.api.getToken(contract, tokenId);
-token.data.metadata.licenseType;   // "CC BY-NC-SA"
-token.data.metadata.commercialUse; // "No"
-token.data.metadata.derivatives;   // "Share-Alike"
-token.data.metadata.attributes;    // IpAttribute[] | null
+const token = await client.api.tokens.get(contract, tokenId);
+token.metadata.licenseType;   // "CC BY-NC-SA"
+token.metadata.commercialUse; // "No"
+token.metadata.derivatives;   // "Share-Alike"
+token.metadata.attributes;    // IpAttribute[] | null
 ```
 
 ---
@@ -321,13 +352,15 @@ try {
 
 // REST API errors
 try {
-  await client.api.getOrders();
+  await client.api.orders.list();
 } catch (err) {
   if (err instanceof MedialaneApiError) {
-    console.error(`API ${err.status}:`, err.message);
+    console.error(`API ${err.status} ${err.code}:`, err.message, err.serverCode);
   }
 }
 ```
+
+`MedialaneApiError` extends `MedialaneError`, so one `instanceof MedialaneError` check covers both. `err.code` comes from the status (a 404 names the resource: `ORDER_NOT_FOUND`, `TOKEN_NOT_FOUND`, `COLLECTION_NOT_FOUND`, `INTENT_NOT_FOUND`, otherwise `NOT_FOUND`). `err.serverCode` is the machine code the API put in the response body, when it sent one.
 
 ### Showing an error to a user
 
@@ -374,10 +407,8 @@ without reaching a reader.
 | `backendUrl` | `string` | (none) | Medialane API base URL (required for `.api.*`) |
 | `apiKey` | `string` | (none) | API key from [Medialane Portal](https://portal.medialane.io) |
 | `marketplace721Contract` | `string` | Mainnet default | ERC-721 marketplace protocol override |
-| `marketplaceContract` | `string` | Mainnet default | Legacy alias for `marketplace721Contract` |
 | `marketplace1155Contract` | `string` | Mainnet default | ERC-1155 marketplace protocol override |
 | `collection721Contract` | `string` | Mainnet default | ERC-721 mint / collection registry override |
-| `collectionContract` | `string` | Mainnet default | Legacy alias for `collection721Contract` |
 | `collection1155Contract` | `string` | Mainnet default | ERC-1155 mint / collection factory override |
 
 ---
@@ -410,6 +441,21 @@ Built with:
 - **TypeScript**: full type safety
 - **Zod**: runtime config validation
 - Peer dep: `starknet >= 6.0.0`
+
+`bun run typecheck` checks the sources and the test files.
+
+### Entry points
+
+| Import | Contents | Loads a chain library |
+|---|---|---|
+| `@medialane/sdk` | client, config, registry, routes, uploads, types | no |
+| `@medialane/sdk/contract` | request and response schemas shared with the API | no |
+| `@medialane/sdk/server` | gateway, image proxy, SSRF guard, session tokens | no |
+| `@medialane/sdk/starknet` | call builders, signing, readers, ABIs, services | `starknet` |
+| `@medialane/sdk/wallet` | passkey, media wallet, deployment, signers | `starknet` |
+| `@medialane/sdk/evm`, `/solana`, `/stellar` | venue and issuance adapters | `viem`, `@solana/web3.js`, `@stellar/stellar-sdk` |
+
+The server exports are still re-exported from `@medialane/sdk`, and the wallet exports from `@medialane/sdk/starknet`.
 
 ---
 

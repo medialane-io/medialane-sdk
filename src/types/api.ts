@@ -1126,3 +1126,38 @@ export type CreateDropManageIntentParams = z.input<typeof intents.dropManageSche
 export type PopManageAction = "issue" | "set_allowlist_root";
 
 export type CreatePopManageIntentParams = z.input<typeof intents.popManageSchema>;
+
+export interface IntentParamsByKind {
+  listing: CreateListingIntentParams;
+  offer: MakeOfferIntentParams;
+  fulfill: FulfillOrderIntentParams;
+  cancel: CancelOrderIntentParams;
+  mint: CreateMintIntentParams;
+  "transfer-token": CreateTransferTokenIntentParams;
+  "transfer-nft": CreateTransferNftIntentParams;
+  "transfer-collection-ownership": CreateTransferCollectionOwnershipIntentParams;
+  comment: CreateCommentIntentParams;
+  "genesis-mint": CreateGenesisMintIntentParams;
+  "pop-claim": CreatePopClaimIntentParams;
+  "pop-burn": CreatePopBurnIntentParams;
+  "drop-claim": CreateDropClaimIntentParams;
+  "wallet-manage": CreateWalletManageIntentParams;
+  swap: CreateSwapIntentParams;
+  "funding-transfer": CreateFundingTransferIntentParams;
+  "drop-manage": CreateDropManageIntentParams;
+  "pop-manage": CreatePopManageIntentParams;
+  "create-collection": CreateCollectionIntentParams;
+  "create-tier": CreateTierIntentParams;
+  "create-coin": CreateCoinIntentParams;
+  "launch-coin": LaunchCoinIntentParams;
+  "sponsorship-offer": CreateSponsorshipOfferIntentParams;
+  "sponsorship-offer-open": SetSponsorshipOfferOpenIntentParams;
+  "sponsorship-bid": PlaceSponsorshipBidIntentParams;
+  "sponsorship-bid-retract": RetractSponsorshipBidIntentParams;
+  "sponsorship-bid-accept": AcceptSponsorshipBidIntentParams;
+  "sponsorship-proposal": CreateSponsorshipProposalIntentParams;
+  "sponsorship-proposal-withdraw": WithdrawSponsorshipProposalIntentParams;
+  "sponsorship-proposal-accept": AcceptSponsorshipProposalIntentParams;
+  "sponsorship-proposal-reject": RejectSponsorshipProposalIntentParams;
+  "counter-offer": CreateCounterOfferIntentParams;
+}

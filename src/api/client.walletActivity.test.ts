@@ -22,8 +22,8 @@ test("getWalletActivity GETs /v1/wallet-activity with the address query param â€
     status: 200,
     body: { data: [{ id: "a1", chain: "STARKNET", accountAddress: "0x1", type: "SEND", txHash: "0xtx", blockNumber: "175", timestamp: "2026-08-01T00:00:00.000Z", tokenAddress: "0xtoken", amount: "100", counterparty: "0xother", tokenInAddress: null, amountIn: null, tokenOutAddress: null, amountOut: null }] },
   }));
-  const client = new ApiClient("https://api.test.invalid", "test-key");
-  const res = await client.getWalletActivity("0x1");
+  const client = new ApiClient({ baseUrl: "https://api.test.invalid", apiKey: "test-key" });
+  const res = await client.activity.wallet("0x1");
   expect(calls[0].url).toBe(
     "https://api.test.invalid/v1/wallet-activity?address=0x0000000000000000000000000000000000000000000000000000000000000001&chain=STARKNET",
   );
@@ -35,7 +35,7 @@ test("getWalletActivity GETs /v1/wallet-activity with the address query param â€
 
 test("getWalletActivity normalizes the address for the client's chain", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { data: [] } }));
-  const client = new ApiClient("https://api.test.invalid", "test-key");
-  await client.getWalletActivity("0x1");
+  const client = new ApiClient({ baseUrl: "https://api.test.invalid", apiKey: "test-key" });
+  await client.activity.wallet("0x1");
   expect(calls[0].url).toContain("address=0x0000000000000000000000000000000000000000000000000000000000000001");
 });

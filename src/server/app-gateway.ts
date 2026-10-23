@@ -1,3 +1,4 @@
+import type { FetchLike } from "../utils/fetch.js";
 import { isSameOrigin } from "./origin.js";
 
 export const ACCOUNT_SESSION_COOKIE = "ml_account_session";
@@ -21,7 +22,7 @@ export interface AppGatewayConfig {
   allow: Record<string, RegExp[]>;
   cacheableGets?: RegExp[];
   timeoutMs?: number;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 }
 
 export function readCookie(req: Request, name: string): string | null {

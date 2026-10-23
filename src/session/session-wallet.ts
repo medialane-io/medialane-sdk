@@ -1,4 +1,4 @@
-import type { ApiClient } from "../api/client.js";
+import type { AccountApi } from "../api/domains/account.js";
 import type { CreatedOwner } from "../wallet/passkey.js";
 import type { SealedOwner } from "../wallet/types.js";
 import { normalizeWalletAddress } from "../wallet/addresses.js";
@@ -16,7 +16,7 @@ export interface SessionWalletClaimDeps {
 }
 
 export async function claimSessionWallet(
-  api: Pick<ApiClient, "setupWalletKey">,
+  api: { account: Pick<AccountApi, "setupWalletKey"> },
   walletAddress: string,
   deps: SessionWalletClaimDeps,
 ): Promise<void> {
@@ -25,6 +25,6 @@ export async function claimSessionWallet(
   const sealed = resuming ? saved : { ...(await deps.createOwnerKey()).sealed, address: walletAddress };
   if (!resuming) deps.saveOwner(sealed);
 
-  const { removeOwnerGuid } = await api.setupWalletKey({ newOwnerPubkey: sealed.ownerPubKey });
+  const { removeOwnerGuid } = await api.account.setupWalletKey({ newOwnerPubkey: sealed.ownerPubKey });
   if (removeOwnerGuid) await deps.removeOwner(sealed, removeOwnerGuid);
 }

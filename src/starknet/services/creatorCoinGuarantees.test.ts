@@ -25,9 +25,12 @@ const launched = {
   liquidity_type: ["0x0", "0x0", "0x2a"],
 };
 
+const guarantees = async (...args: Parameters<typeof getCreatorCoinGuarantees>) =>
+  (await getCreatorCoinGuarantees(...args))!;
+
 describe("getCreatorCoinGuarantees", () => {
   it("reads a launched coin's guarantees from chain", async () => {
-    const g = await getCreatorCoinGuarantees("0x1", providerWith(launched));
+    const g = await guarantees("0x1", providerWith(launched));
     expect(g.isLaunched).toBe(true);
     expect(g.totalSupplyRaw).toBe(SUPPLY_1B);
     expect(g.teamAllocationRaw).toBe(ALLOC_10PCT);
@@ -37,12 +40,12 @@ describe("getCreatorCoinGuarantees", () => {
   });
 
   it("never reports an allocation above the contract cap for a valid launch", async () => {
-    const g = await getCreatorCoinGuarantees("0x1", providerWith(launched));
+    const g = await guarantees("0x1", providerWith(launched));
     expect(g.teamAllocationPercent!).toBeLessThanOrEqual(MAX_TEAM_ALLOCATION_PERCENT);
   });
 
   it("reports no liquidity position when the option is None", async () => {
-    const g = await getCreatorCoinGuarantees(
+    const g = await guarantees(
       "0x1",
       providerWith({ ...launched, is_launched: ["0x0"], liquidity_type: ["0x1"] })
     );
@@ -52,7 +55,7 @@ describe("getCreatorCoinGuarantees", () => {
   });
 
   it("survives an older coin that does not expose the optional reads", async () => {
-    const g = await getCreatorCoinGuarantees(
+    const g = await guarantees(
       "0x1",
       providerWith({
         ...launched,
@@ -67,7 +70,7 @@ describe("getCreatorCoinGuarantees", () => {
   });
 
   it("reports a zero allocation as zero rather than unknown", async () => {
-    const g = await getCreatorCoinGuarantees(
+    const g = await guarantees(
       "0x1",
       providerWith({ ...launched, get_team_allocation: ["0x0", "0x0"] })
     );
@@ -76,7 +79,7 @@ describe("getCreatorCoinGuarantees", () => {
   });
 
   it("handles a u256 supply that spans the high word", async () => {
-    const g = await getCreatorCoinGuarantees(
+    const g = await guarantees(
       "0x1",
       providerWith({ ...launched, total_supply: ["0x0", "0x1"], get_team_allocation: ["0x0", "0x0"] })
     );

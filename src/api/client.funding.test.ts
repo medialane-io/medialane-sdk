@@ -17,21 +17,21 @@ function scriptFetch(script: (url: string) => { status: number; body?: unknown }
   return captured;
 }
 
-const client = () => new ApiClient("https://api.test.invalid");
+const client = () => new ApiClient({ baseUrl: "https://api.test.invalid" });
 const auth = (c: Captured) => (c.init.headers as Record<string, string> | undefined)?.Authorization;
 
 test("getFundingMethods reads /v1/portal/funding/methods with no wallet token", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { data: [{ id: "chain-transfer", asset: "USDC" }] } }));
-  const res = await client().getFundingMethods();
+  const res = await client().portal.funding.methods();
   expect(calls[0]!.url).toBe("https://api.test.invalid/v1/portal/funding/methods");
   expect(calls[0]!.init.method).toBe("GET");
   expect(auth(calls[0]!)).toBeUndefined();
-  expect(res.data[0]!.id).toBe("chain-transfer");
+  expect(res[0]!.id).toBe("chain-transfer");
 });
 
 test("createFunding posts the method and parameters, and nothing else", async () => {
   const calls = scriptFetch(() => ({ status: 201, body: { data: { id: "fi1", method: "chain-transfer", status: "PENDING", expiresAt: "2026-10-01T00:00:00Z" } } }));
-  await client().createFunding({ method: "chain-transfer", params: { amountUsdc: "5" } });
+  await client().portal.funding.create({ method: "chain-transfer", params: { amountUsdc: "5" } });
   expect(calls[0]!.url).toBe("https://api.test.invalid/v1/portal/funding");
   expect(JSON.parse(calls[0]!.init.body as string)).toEqual({ method: "chain-transfer", params: { amountUsdc: "5" } });
 });
@@ -39,10 +39,10 @@ test("createFunding posts the method and parameters, and nothing else", async ()
 test("getFundingChallenge, authorizeFunding, submitFunding and cancelFunding hit the intent's own paths", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { data: {} } }));
   const c = client();
-  await c.getFundingChallenge("fi 1", "0xabc");
-  await c.authorizeFunding("fi 1", { payer: "0xabc", signature: ["0x1", "0x2"] });
-  await c.submitFunding("fi 1", "0xhash");
-  await c.cancelFunding("fi 1");
+  await c.portal.funding.challenge("fi 1", "0xabc");
+  await c.portal.funding.authorize("fi 1", { payer: "0xabc", signature: ["0x1", "0x2"] });
+  await c.portal.funding.submit("fi 1", "0xhash");
+  await c.portal.funding.cancel("fi 1");
   expect(calls.map((x) => x.url)).toEqual([
     "https://api.test.invalid/v1/portal/funding/fi%201/challenge",
     "https://api.test.invalid/v1/portal/funding/fi%201/authorize",
@@ -56,13 +56,13 @@ test("getFundingChallenge, authorizeFunding, submitFunding and cancelFunding hit
 
 test("getFunding reads one intent", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { data: { id: "fi1", method: "chain-transfer", status: "SETTLED", expiresAt: "x" } } }));
-  const res = await client().getFunding("fi1");
+  const res = await client().portal.funding.get("fi1");
   expect(calls[0]!.url).toBe("https://api.test.invalid/v1/portal/funding/fi1");
-  expect(res.data.status).toBe("SETTLED");
+  expect(res.status).toBe("SETTLED");
 });
 
 test("a 202 from submit is a pending result, not an error", async () => {
   scriptFetch(() => ({ status: 202, body: { data: { status: "PENDING", reason: "not in a block yet" } } }));
-  const res = await client().submitFunding("fi1", "0xhash");
-  expect(res.data).toEqual({ status: "PENDING", reason: "not in a block yet" });
+  const res = await client().portal.funding.submit("fi1", "0xhash");
+  expect(res).toEqual({ status: "PENDING", reason: "not in a block yet" });
 });

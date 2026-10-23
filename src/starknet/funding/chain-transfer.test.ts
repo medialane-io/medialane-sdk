@@ -3,20 +3,20 @@ import {
   buildFundingTransferCall,
   fundWithChainTransfer,
   FundingTransferNotSentError,
-  type FundingApi,
+  type FundingTransferApi,
   type FundingWallet,
 } from "./chain-transfer.js";
 
 const instructions = { chain: "STARKNET", payTo: "0xtreasury", asset: "0xusdc", amountAtomic: "5000000" };
 
-function fakeApi(over: Partial<FundingApi> = {}) {
+function fakeApi(over: Partial<FundingTransferApi> = {}) {
   const calls: string[] = [];
-  const api: FundingApi = {
-    createFunding: async () => { calls.push("create"); return { data: { id: "fi1", method: "chain-transfer", status: "PENDING", expiresAt: "x" } }; },
-    getFundingChallenge: async () => { calls.push("challenge"); return { data: { typedData: { primaryType: "FundingIntent", domain: {}, types: {}, message: {} } } }; },
-    authorizeFunding: async () => { calls.push("authorize"); return { data: { instructions } }; },
-    submitFunding: async () => { calls.push("submit"); return { data: { status: "SETTLED", credited: 500 } }; },
-    cancelFunding: async () => { calls.push("cancel"); return { data: { status: "EXPIRED" } }; },
+  const api: FundingTransferApi = {
+    create: async () => { calls.push("create"); return { id: "fi1", method: "chain-transfer", status: "PENDING", expiresAt: "x" } as never; },
+    challenge: async () => { calls.push("challenge"); return { typedData: { primaryType: "FundingIntent", domain: {}, types: {}, message: {} } }; },
+    authorize: async () => { calls.push("authorize"); return { instructions } as never; },
+    submit: async () => { calls.push("submit"); return { status: "SETTLED", credited: 500 } as never; },
+    cancel: async () => { calls.push("cancel"); return { status: "EXPIRED" }; },
     ...over,
   };
   return { api, calls };
@@ -59,21 +59,17 @@ describe("funding with a chain transfer", () => {
 
   test("an amount in the chosen token is sent as is, not as dollars", async () => {
     const created: unknown[] = [];
-    const { api } = fakeApi({
-      createFunding: async (input) => {
-        created.push(input);
-        return { data: { id: "fi1", method: "chain-transfer", status: "PENDING", expiresAt: "x" } };
-      },
-    });
+    const { api } = fakeApi({ create: async (input) => {
+      created.push(input);
+      return { id: "fi1", method: "chain-transfer", status: "PENDING", expiresAt: "x" } as never;
+    } });
     await fundWithChainTransfer(api, fakeWallet().wallet, { amount: "5", ...fast });
     expect(created).toEqual([{ method: "chain-transfer", params: { amount: "5" } }]);
   });
 
   test("keeps confirming until the credits land", async () => {
     let n = 0;
-    const { api } = fakeApi({
-      submitFunding: async () => (++n < 3 ? { data: { status: "PENDING", reason: "not in a block yet" } } : { data: { status: "SETTLED", credited: 500 } }),
-    });
+    const { api } = fakeApi({ submit: async () => (++n < 3 ? { status: "PENDING", reason: "not in a block yet" } : { status: "SETTLED", credited: 500 }) as never });
     const result = await fundWithChainTransfer(api, fakeWallet().wallet, { amountUsdc: "5", ...fast });
     expect(n).toBe(3);
     expect(result.status).toBe("SETTLED");
@@ -81,7 +77,7 @@ describe("funding with a chain transfer", () => {
 
   test("a transfer that never confirms in time is pending, not an error, and is not cancelled", async () => {
     let submits = 0;
-    const { api, calls } = fakeApi({ submitFunding: async () => { submits++; return { data: { status: "PENDING", reason: "not in a block yet" } }; } });
+    const { api, calls } = fakeApi({ submit: async () => { submits++; return { status: "PENDING", reason: "not in a block yet" } as never; } });
     const result = await fundWithChainTransfer(api, fakeWallet().wallet, { amountUsdc: "5", maxPolls: 3, ...fast });
     expect(result).toEqual({ status: "PENDING", intentId: "fi1", reason: "not in a block yet" });
     expect(submits).toBe(3);
@@ -99,7 +95,7 @@ describe("failing before any money moved", () => {
   });
 
   test("a refused authorization closes the intent", async () => {
-    const { api, calls } = fakeApi({ authorizeFunding: async () => { throw new Error("That wallet is not deployed on Starknet yet."); } });
+    const { api, calls } = fakeApi({ authorize: async () => { throw new Error("That wallet is not deployed on Starknet yet."); } });
     await expect(fundWithChainTransfer(api, fakeWallet().wallet, { amountUsdc: "5", ...fast })).rejects.toThrow("not deployed");
     expect(calls).toContain("cancel");
   });
@@ -113,7 +109,7 @@ describe("failing before any money moved", () => {
   });
 
   test("a creation failure has nothing to close", async () => {
-    const { api, calls } = fakeApi({ createFunding: async () => { throw new Error("too many open"); } });
+    const { api, calls } = fakeApi({ create: async () => { throw new Error("too many open"); } });
     await expect(fundWithChainTransfer(api, fakeWallet().wallet, { amountUsdc: "5", ...fast })).rejects.toThrow("too many open");
     expect(calls).not.toContain("cancel");
   });
@@ -128,7 +124,7 @@ describe("failing when a transfer may have gone out", () => {
   });
 
   test("a failed cancel never hides the original error", async () => {
-    const { api } = fakeApi({ cancelFunding: async () => { throw new Error("offline"); } });
+    const { api } = fakeApi({ cancel: async () => { throw new Error("offline"); } });
     const { wallet } = fakeWallet({ signTypedData: async () => { throw new Error("signature refused"); } });
     await expect(fundWithChainTransfer(api, wallet, { amountUsdc: "5", ...fast })).rejects.toThrow("signature refused");
   });

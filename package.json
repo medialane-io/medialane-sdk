@@ -1,6 +1,6 @@
 {
   "name": "@medialane/sdk",
-  "version": "0.198.0",
+  "version": "0.199.0",
   "description": "Framework-agnostic TypeScript SDK for Medialane.io — the IP marketplace on Starknet",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -36,6 +36,16 @@
       "types": "./dist/contract/index.d.ts",
       "import": "./dist/contract/index.js",
       "require": "./dist/contract/index.cjs"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js",
+      "require": "./dist/server/index.cjs"
+    },
+    "./wallet": {
+      "types": "./dist/wallet/index.d.ts",
+      "import": "./dist/wallet/index.js",
+      "require": "./dist/wallet/index.cjs"
     }
   },
   "license": "MIT",
@@ -50,7 +60,7 @@
     "build": "tsup",
     "prepublishOnly": "bun run typecheck && bun test && bun run build",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "test": "bun test"
   },
   "peerDependencies": {
@@ -62,6 +72,7 @@
   "devDependencies": {
     "@solana/web3.js": "^1.98.4",
     "@stellar/stellar-sdk": "^16.0.1",
+    "@types/bun": "^1.4.4",
     "starknet": "10.0.2",
     "tsup": "^8.0.0",
     "typescript": "^5.6.0",

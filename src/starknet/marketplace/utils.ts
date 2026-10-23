@@ -1,7 +1,7 @@
 import { Contract, RpcProvider, cairo, constants, num, type Abi } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import { SUPPORTED_TOKENS } from "../../constants.js";
-import { MedialaneError } from "./errors.js";
+import { MedialaneError } from "../../errors.js";
 
 export const START_TIME_BUFFER_SECS = 30;
 

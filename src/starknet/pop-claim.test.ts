@@ -76,7 +76,7 @@ describe("popClaimInfo", () => {
 
 describe("popCalls", () => {
   const { CallData, byteArray } = require("starknet") as typeof import("starknet");
-  const felts = (xs: readonly unknown[]) => xs.map((x) => BigInt(x as string));
+  const felts = (xs: unknown) => (xs as readonly unknown[]).map((x) => BigInt(x as string));
   const { popCalls } = require("./pop-claim.js") as typeof import("./pop-claim.js");
 
   test("claim sends the proof as a span", () => {

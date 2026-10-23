@@ -5,7 +5,7 @@ import type {
   OrderRef,
   AdapterTxResult,
 } from "../adapters/types.js";
-import type { StarknetVenueSigner } from "./index.js";
+import type { StarknetVenueSigner } from "./signer.js";
 import type { ResolvedConfig } from "../config.js";
 import { IPMarketplaceABI } from "./abis/index.js";
 import { newContract, resolveToken, START_TIME_BUFFER_SECS } from "./marketplace/utils.js";
@@ -54,17 +54,17 @@ export class StarknetVenue implements VenueAdapter<StarknetVenueSigner> {
 
   async incrementCounter(signer: StarknetVenueSigner): Promise<AdapterTxResult> {
     return signer.execute([
-      { contractAddress: this.deps.config.marketplaceContract, entrypoint: "increment_counter", calldata: [] },
+      { contractAddress: this.deps.config.marketplace721Contract, entrypoint: "increment_counter", calldata: [] },
     ]);
   }
 
   getOrderDetails(orderRef: OrderRef): Promise<unknown> {
-    const marketplace = newContract(IPMarketplaceABI as unknown as Abi, this.deps.config.marketplaceContract, this.deps.provider);
+    const marketplace = newContract(IPMarketplaceABI as unknown as Abi, this.deps.config.marketplace721Contract, this.deps.provider);
     return marketplace.get_order_details(orderRef);
   }
 
   async getCounter(address: string): Promise<bigint> {
-    return this.readCounter(this.deps.config.marketplaceContract, address);
+    return this.readCounter(this.deps.config.marketplace721Contract, address);
   }
 
   async fulfillOrder(
@@ -108,7 +108,7 @@ export class StarknetVenue implements VenueAdapter<StarknetVenueSigner> {
     const endTime = p.endTime && p.endTime > 0 ? p.endTime : startTime + NO_EXPIRY_SECONDS;
     const quantity = p.quantity ?? "1";
     const marketplace =
-      standard === "ERC1155" ? this.deps.config.marketplace1155Contract : this.deps.config.marketplaceContract;
+      standard === "ERC1155" ? this.deps.config.marketplace1155Contract : this.deps.config.marketplace721Contract;
     const counter = String(await this.readCounter(marketplace, signer.address));
 
     let typedData;
@@ -188,7 +188,7 @@ export class StarknetVenue implements VenueAdapter<StarknetVenueSigner> {
     const approve: Call = {
       contractAddress: nftContract,
       entrypoint: "approve",
-      calldata: [this.deps.config.marketplaceContract, id.low.toString(), id.high.toString()],
+      calldata: [this.deps.config.marketplace721Contract, id.low.toString(), id.high.toString()],
     };
     let approved = false;
     try {
@@ -197,7 +197,7 @@ export class StarknetVenue implements VenueAdapter<StarknetVenueSigner> {
         entrypoint: "get_approved",
         calldata: [id.low.toString(), id.high.toString()],
       });
-      approved = BigInt(res[0]).toString() === BigInt(this.deps.config.marketplaceContract).toString();
+      approved = BigInt(res[0]).toString() === BigInt(this.deps.config.marketplace721Contract).toString();
     } catch {
 
     }

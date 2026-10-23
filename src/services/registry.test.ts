@@ -49,7 +49,7 @@ test("data tokenization is a separate factory from IP Collection", () => {
 
 test("data tokenization assets are tradeable", () => {
   const service = getService("data-tokenization-erc721")!;
-  for (const capability of ["list", "buy", "make_offer", "cancel", "transfer"]) {
+  for (const capability of ["list", "buy", "make_offer", "cancel", "transfer"] as const) {
     expect(service.capabilities).toContain(capability);
   }
 });

@@ -1,10 +1,8 @@
-import { newContract } from "../marketplace/utils.js";
-import { hash, uint256, type AccountInterface, type Call, type Contract, type ProviderInterface } from "starknet";
-import type { ResolvedConfig } from "../../config.js";
+import { hash, uint256, type Call, type ProviderInterface } from "starknet";
 import { CreatorCoinFactoryABI } from "../abis/index.js";
 import { getStarknetCoordinates } from "../../chains.js";
 import { normalizeAddress } from "../../utils/address.js";
-import type { TxResult } from "../../types/marketplace.js";
+import { populateCall } from "../service-calls.js";
 import { SUGGESTED_DEFAULT_PRICE, COIN_DECIMALS } from "./coinLaunchMath.js";
 
 export interface CreateCreatorCoinParams {
@@ -149,20 +147,11 @@ export async function getCreatorCoinGuarantees(
   };
 }
 
-let _factoryContract: Contract | null = null;
-function factoryContract(): Contract {
-  if (!_factoryContract) {
-    _factoryContract = newContract(
-      CreatorCoinFactoryABI as any,
-      getStarknetCoordinates("STARKNET").creatorCoinFactory!,
-    );
-  }
-  return _factoryContract;
-}
+const factoryAddress = () => getStarknetCoordinates("STARKNET").creatorCoinFactory;
 
 export function buildCreateCreatorCoinCall(params: CreateCreatorCoinParams): Call {
   const salt = params.salt ?? BigInt("0x" + Date.now().toString(16));
-  return factoryContract().populate("create_creator_coin", [
+  return populateCall(CreatorCoinFactoryABI, factoryAddress(), "create_creator_coin", [
     params.owner,
     params.name,
     params.symbol,
@@ -195,10 +184,10 @@ export function buildLaunchOnEkuboCalls(params: EkuboLaunchParams): Call[] {
     calls.push({
       contractAddress: params.quoteToken,
       entrypoint: "transfer",
-      calldata: [getStarknetCoordinates("STARKNET").creatorCoinFactory!, amt.low, amt.high],
+      calldata: [factoryAddress(), amt.low, amt.high],
     });
   }
-  calls.push(factoryContract().populate("launch_on_ekubo", [launchParameters, ekuboParameters]));
+  calls.push(populateCall(CreatorCoinFactoryABI, factoryAddress(), "launch_on_ekubo", [launchParameters, ekuboParameters]));
   return calls;
 }
 
@@ -209,7 +198,7 @@ export interface CreatorCoinReceiptLike {
 const CREATOR_COIN_CREATED_SELECTOR = hash.getSelectorFromName("CreatorCoinCreated");
 
 export function parseCreatorCoinCreated(receipt: CreatorCoinReceiptLike): string {
-  const factory = normalizeAddress("STARKNET",getStarknetCoordinates("STARKNET").creatorCoinFactory!);
+  const factory = normalizeAddress("STARKNET",getStarknetCoordinates("STARKNET").creatorCoinFactory);
   for (const ev of receipt?.events ?? []) {
     let from: string;
     try {
@@ -227,32 +216,11 @@ export function parseCreatorCoinCreated(receipt: CreatorCoinReceiptLike): string
   throw new Error("Coin deployed but the coin address could not be read from the receipt");
 }
 
-export class CreatorCoinService {
-  private readonly factoryAddress: string;
-
-  constructor(config: ResolvedConfig) {
-    this.factoryAddress = getStarknetCoordinates(config.chain).creatorCoinFactory!;
-  }
-
-  private _factory(account: AccountInterface) {
-    return newContract(CreatorCoinFactoryABI as any, this.factoryAddress, account as any);
-  }
-
-  async createCreatorCoin(
-    account: AccountInterface,
-    params: CreateCreatorCoinParams
-  ): Promise<TxResult> {
-    const res = await account.execute([buildCreateCreatorCoinCall(params)]);
-    return { txHash: res.transaction_hash };
-  }
-
-  async launchOnEkubo(account: AccountInterface, params: EkuboLaunchParams): Promise<TxResult> {
-    const res = await account.execute(buildLaunchOnEkuboCalls(params));
-    return { txHash: res.transaction_hash };
-  }
-
-  async isCreatorCoin(address: string, account: AccountInterface): Promise<boolean> {
-    const r = await this._factory(account).is_creator_coin(address);
-    return BigInt(r as any) === 1n;
-  }
+export async function isCreatorCoin(provider: Pick<ProviderInterface, "callContract">, address: string): Promise<boolean> {
+  const res = await provider.callContract({
+    contractAddress: factoryAddress(),
+    entrypoint: "is_creator_coin",
+    calldata: [address],
+  });
+  return BigInt(res[0] ?? "0x0") === 1n;
 }

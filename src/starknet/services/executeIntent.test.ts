@@ -17,14 +17,16 @@ function fakeSigner(overrides: Partial<StarknetVenueSigner> = {}): StarknetVenue
   };
 }
 
-function fakeClient(overrides: Record<string, unknown> = {}, provider: ReceiptProvider = fakeProvider()) {
+function fakeClient(overrides: { intents?: Record<string, unknown> } = {}, provider: ReceiptProvider = fakeProvider()) {
   return {
     provider,
     api: {
-      confirmIntent: async () => ({}),
-      syncTransaction: async () => ({ data: { applied: 1, pending: false } }),
-      submitIntentSignature: async () => ({ data: { calls: [{ contractAddress: "0xc", entrypoint: "e", calldata: [] }] } }),
-      ...overrides,
+      intents: {
+        confirm: async () => ({}),
+        syncTransaction: async () => ({ applied: 1, pending: false }),
+        submitSignature: async () => ({ calls: [{ contractAddress: "0xc", entrypoint: "e", calldata: [] }] }),
+        ...overrides.intents,
+      },
     },
   } as never;
 }
@@ -44,8 +46,8 @@ const SIGNED: ApiIntentCreated = {
 };
 
 test("executeIntent executes a prebuilt intent's calls directly and confirms by default", async () => {
-  let confirmedWith: [string, string] | null = null;
-  const client = fakeClient({ confirmIntent: async (id: string, txHash: string) => { confirmedWith = [id, txHash]; } });
+  let confirmedWith = null as [string, string] | null;
+  const client = fakeClient({ intents: { confirm: async (id: string, txHash: string) => { confirmedWith = [id, txHash]; } } });
   const result = await executeIntent(fakeSigner(), client, PREBUILT);
   expect(result.txHash).toBe("0xtx");
   expect(confirmedWith).toEqual(["intent-1", "0xtx"]);
@@ -53,13 +55,13 @@ test("executeIntent executes a prebuilt intent's calls directly and confirms by 
 
 test("executeIntent skips confirmation when confirm:false", async () => {
   let confirmCalled = false;
-  const client = fakeClient({ confirmIntent: async () => { confirmCalled = true; } });
+  const client = fakeClient({ intents: { confirm: async () => { confirmCalled = true; } } });
   await executeIntent(fakeSigner(), client, PREBUILT, { confirm: false });
   expect(confirmCalled).toBe(false);
 });
 
 test("executeIntent never throws when confirmation fails (best-effort)", async () => {
-  const client = fakeClient({ confirmIntent: async () => { throw new Error("network error"); } });
+  const client = fakeClient({ intents: { confirm: async () => { throw new Error("network error"); } } });
   const result = await executeIntent(fakeSigner(), client, PREBUILT);
   expect(result.txHash).toBe("0xtx");
 });
@@ -74,7 +76,7 @@ test("executeIntent signs typed data, submits, then executes the populated calls
 });
 
 test("confirmIntentBestEffort swallows errors", async () => {
-  const client = fakeClient({ confirmIntent: async () => { throw new Error("boom"); } });
+  const client = fakeClient({ intents: { confirm: async () => { throw new Error("boom"); } } });
   await expect(confirmIntentBestEffort(client, "id", "0xtx")).resolves.toBeUndefined();
 });
 
@@ -82,7 +84,7 @@ test("executeIntents bundles multiple prebuilt intents' calls into one multicall
   const calls: unknown[] = [];
   const signer = fakeSigner({ execute: async (c) => { calls.push(...c); return { txHash: "0xbundled" }; } });
   const confirmed: string[] = [];
-  const client = fakeClient({ confirmIntent: async (id: string) => { confirmed.push(id); } });
+  const client = fakeClient({ intents: { confirm: async (id: string) => { confirmed.push(id); } } });
 
   const second: ApiIntentCreated = { ...PREBUILT, id: "intent-3", calls: [{ contractAddress: "0xd", entrypoint: "f", calldata: [] }] };
   const result = await executeIntents(signer, client, [PREBUILT, second]);
@@ -109,13 +111,13 @@ test("executeIntents throws when the bundled transaction reverted onchain", asyn
 });
 
 test("assertTransactionSucceeded retries past a not-yet-indexed receipt and then succeeds", async () => {
-  let calls = 0;
+  let calls = 0 as number;
   const provider = fakeProvider(async () => {
     calls += 1;
     if (calls < 3) throw new Error("Transaction hash not found");
     return { execution_status: "SUCCEEDED" };
   });
-  await expect(assertTransactionSucceeded(provider, "0xtx", [0, 0, 0, 0])).resolves.toEqual({ execution_status: "SUCCEEDED" });
+  await expect(assertTransactionSucceeded(provider, "0xtx", [0, 0, 0, 0]) as Promise<unknown>).resolves.toEqual({ execution_status: "SUCCEEDED" });
   expect(calls).toBe(3);
 });
 
@@ -126,9 +128,7 @@ test("assertTransactionSucceeded times out with a distinguishable error if the r
 
 test("executeIntent syncs the transaction before it returns", async () => {
   const order: string[] = [];
-  const client = fakeClient({
-    syncTransaction: async (txHash: string) => { order.push(`sync ${txHash}`); return { data: { applied: 1, pending: false } }; },
-  });
+  const client = fakeClient({ intents: { syncTransaction: async (txHash: string) => { order.push(`sync ${txHash}`); return { applied: 1, pending: false }; } } });
   const signer = fakeSigner({ execute: async () => { order.push("execute"); return { txHash: "0xtx" }; } });
   await executeIntent(signer, client, PREBUILT, { confirm: false });
   order.push("returned");
@@ -137,14 +137,14 @@ test("executeIntent syncs the transaction before it returns", async () => {
 
 test("executeIntents syncs the bundled transaction once", async () => {
   const synced: string[] = [];
-  const client = fakeClient({ syncTransaction: async (txHash: string) => { synced.push(txHash); return { data: { applied: 2, pending: false } }; } });
+  const client = fakeClient({ intents: { syncTransaction: async (txHash: string) => { synced.push(txHash); return { applied: 2, pending: false }; } } });
   const second: ApiIntentCreated = { ...PREBUILT, id: "intent-3" };
   await executeIntents(fakeSigner(), client, [PREBUILT, second]);
   expect(synced).toEqual(["0xtx"]);
 });
 
 test("a failing sync never fails the transaction", async () => {
-  const client = fakeClient({ syncTransaction: async () => { throw new Error("Transaction not found yet"); } });
+  const client = fakeClient({ intents: { syncTransaction: async () => { throw new Error("Transaction not found yet"); } } });
   const result = await executeIntent(fakeSigner(), client, PREBUILT);
   expect(result.txHash).toBe("0xtx");
 });
@@ -152,13 +152,13 @@ test("a failing sync never fails the transaction", async () => {
 test("a reverted transaction is never synced", async () => {
   let synced = false;
   const provider = fakeProvider(async () => ({ execution_status: "REVERTED" }));
-  const client = fakeClient({ syncTransaction: async () => { synced = true; } }, provider);
+  const client = fakeClient({ intents: { syncTransaction: async () => { synced = true; } } }, provider);
   await expect(executeIntent(fakeSigner(), client, PREBUILT)).rejects.toThrow("reverted onchain");
   expect(synced).toBe(false);
 });
 
 test("syncTransactionBestEffort stops waiting at its timeout", async () => {
-  const client = fakeClient({ syncTransaction: () => new Promise(() => {}) });
+  const client = fakeClient({ intents: { syncTransaction: () => new Promise(() => {}) } });
   const started = Date.now();
   await expect(syncTransactionBestEffort(client, "0xtx", 20)).resolves.toBeUndefined();
   expect(Date.now() - started).toBeLessThan(1000);
@@ -167,25 +167,25 @@ test("syncTransactionBestEffort stops waiting at its timeout", async () => {
 test("syncTransactionBestEffort asks again while the transaction is pending or not found yet", async () => {
   const answers: Array<() => Promise<unknown>> = [
     async () => { throw new MedialaneApiError(404, "Transaction not found yet"); },
-    async () => ({ data: { applied: 0, pending: true } }),
-    async () => ({ data: { applied: 1, pending: false } }),
+    async () => ({ applied: 0, pending: true }),
+    async () => ({ applied: 1, pending: false }),
   ];
   let calls = 0;
-  const client = fakeClient({ syncTransaction: () => answers[calls++]!() });
+  const client = fakeClient({ intents: { syncTransaction: () => answers[calls++]!() } });
   await syncTransactionBestEffort(client, "0xtx", 1000, 1);
   expect(calls).toBe(3);
 });
 
 test("syncTransactionBestEffort does not ask again after a server error", async () => {
   let calls = 0;
-  const client = fakeClient({ syncTransaction: async () => { calls++; throw new MedialaneApiError(500, "boom"); } });
+  const client = fakeClient({ intents: { syncTransaction: async () => { calls++; throw new MedialaneApiError(500, "boom"); } } });
   await syncTransactionBestEffort(client, "0xtx", 1000, 1);
   expect(calls).toBe(1);
 });
 
 test("syncTransactionBestEffort stops asking at its timeout", async () => {
   let calls = 0;
-  const client = fakeClient({ syncTransaction: async () => { calls++; return { data: { applied: 0, pending: true } }; } });
+  const client = fakeClient({ intents: { syncTransaction: async () => { calls++; return { applied: 0, pending: true }; } } });
   await syncTransactionBestEffort(client, "0xtx", 50, 20);
   const seen = calls;
   await new Promise((r) => setTimeout(r, 80));

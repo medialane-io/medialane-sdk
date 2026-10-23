@@ -17,8 +17,8 @@ const PADDED_2 = "0x" + "0".repeat(63) + "2";
 test("getRewards normalizes the address and unwraps data", async () => {
   const calls: string[] = [];
   mockFetch(calls, { data: { address: PADDED_1, totalXp: 42 } });
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  const rewards = await c.getRewards("0x1");
+  const c = new ApiClient({ baseUrl: "https://api.test", apiKey: "ml_live_x" });
+  const rewards = await c.rewards.get("0x1");
   expect(calls[0]).toContain(`/v1/rewards/${PADDED_1}`);
   expect(rewards.totalXp).toBe(42);
 });
@@ -26,24 +26,24 @@ test("getRewards normalizes the address and unwraps data", async () => {
 test("getRewardsLeaderboard builds paging params", async () => {
   const calls: string[] = [];
   mockFetch(calls, { data: [], meta: { page: 3, limit: 25, total: 0 } });
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.getRewardsLeaderboard(3, 25);
+  const c = new ApiClient({ baseUrl: "https://api.test", apiKey: "ml_live_x" });
+  await c.rewards.leaderboard({ page: 3, limit: 25 });
   expect(calls[0]).toContain("/v1/rewards?page=3&limit=25");
 });
 
 test("getRewardsEvents hits /:address/events with paging", async () => {
   const calls: string[] = [];
   mockFetch(calls, { data: [], meta: { page: 1, limit: 20, total: 0 } });
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.getRewardsEvents("0x1");
+  const c = new ApiClient({ baseUrl: "https://api.test", apiKey: "ml_live_x" });
+  await c.rewards.events("0x1");
   expect(calls[0]).toContain(`/v1/rewards/${PADDED_1}/events?page=1&limit=20`);
 });
 
 test("getRewardsConfig unwraps data", async () => {
   const calls: string[] = [];
   mockFetch(calls, { data: { levels: [], actions: [], badges: [] } });
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  const config = await c.getRewardsConfig();
+  const c = new ApiClient({ baseUrl: "https://api.test", apiKey: "ml_live_x" });
+  const config = await c.rewards.config();
   expect(calls[0]).toContain("/v1/rewards/config");
   expect(config.levels).toEqual([]);
 });
@@ -51,12 +51,12 @@ test("getRewardsConfig unwraps data", async () => {
 test("getRewardsBatch normalizes and joins addresses; empty input skips the request", async () => {
   const calls: string[] = [];
   mockFetch(calls, { data: [] });
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.getRewardsBatch(["0x1", "0x2"]);
+  const c = new ApiClient({ baseUrl: "https://api.test", apiKey: "ml_live_x" });
+  await c.rewards.batch(["0x1", "0x2"]);
   expect(decodeURIComponent(calls[0])).toContain(`/v1/rewards/batch?addresses=${PADDED_1},${PADDED_2}`);
 
   const before = calls.length;
-  const empty = await c.getRewardsBatch([]);
+  const empty = await c.rewards.batch([]);
   expect(empty).toEqual([]);
   expect(calls.length).toBe(before);
 });

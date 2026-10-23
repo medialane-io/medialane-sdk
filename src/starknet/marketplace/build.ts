@@ -43,7 +43,7 @@ export interface BuildListingInput {
 export type BuildOfferInput = BuildListingInput;
 
 function contractFor(cfg: ResolvedConfig): Contract {
-  return newContract(IPMarketplaceABI as unknown as Abi, cfg.marketplaceContract);
+  return newContract(IPMarketplaceABI as unknown as Abi, cfg.marketplace721Contract);
 }
 
 export function buildListingOrder(
@@ -52,7 +52,7 @@ export function buildListingOrder(
 ): { orderParams: OrderParams; typedData: TypedData } {
   const orderParams: OrderParams = {
     offerer: i.offerer,
-    marketplace: cfg.marketplaceContract,
+    marketplace: cfg.marketplace721Contract,
     offer: { item_type: "ERC721", token: i.nftContract, identifier_or_criteria: i.tokenId, amount: "1" },
     consideration: {
       item_type: "ERC20",
@@ -77,7 +77,7 @@ export function buildOfferOrder(
 ): { orderParams: OrderParams; typedData: TypedData } {
   const orderParams: OrderParams = {
     offerer: i.offerer,
-    marketplace: cfg.marketplaceContract,
+    marketplace: cfg.marketplace721Contract,
     offer: { item_type: "ERC20", token: i.paymentTokenAddress, identifier_or_criteria: "0", amount: i.priceWei },
     consideration: {
       item_type: "ERC721",
@@ -126,7 +126,7 @@ export function buildFulfillCalls(
   const approve: Call = {
     contractAddress: a.paymentToken,
     entrypoint: "approve",
-    calldata: [cfg.marketplaceContract, u.low.toString(), u.high.toString()],
+    calldata: [cfg.marketplace721Contract, u.low.toString(), u.high.toString()],
   };
   const fulfill = contractFor(cfg).populate("fulfill_order", [a.orderHash]);
   const fee = buildFeeCall(

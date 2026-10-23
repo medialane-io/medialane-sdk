@@ -12,8 +12,8 @@ import type { Call } from "starknet";
 
 const CFG = resolveConfig({
   backendUrl: "https://api.example.com",
-  marketplaceContract: "0x100",
-  collectionContract: "0x200",
+  marketplace721Contract: "0x100",
+  collection721Contract: "0x200",
   marketplace1155Contract: "0x101",
   collection1155Contract: "0x201",
   chain: "STARKNET",
@@ -132,8 +132,8 @@ describe("721 builders", () => {
   it("buildFulfillCalls appends a fee transfer when fee config is enabled", () => {
     const feeCfg = resolveConfig({
       backendUrl: "https://api.example.com",
-      marketplaceContract: "0x100",
-      collectionContract: "0x200",
+      marketplace721Contract: "0x100",
+      collection721Contract: "0x200",
       marketplace1155Contract: "0x101",
       collection1155Contract: "0x201",
       chain: "STARKNET",
@@ -145,7 +145,7 @@ describe("721 builders", () => {
     expect(calls[2].entrypoint).toBe("transfer");
     expect(calls[2].contractAddress).toBe("0xusdc");
 
-    expect(calls[2].calldata?.[0]).toBe("0xfund");
+    expect((calls[2].calldata as string[])[0]).toBe("0xfund");
   });
 
   it("buildCancelCalls = [cancel_order]; buildCancelTypedData signs {order_hash, offerer}", () => {

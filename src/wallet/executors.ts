@@ -1,3 +1,4 @@
+import type { FetchLike } from "../utils/fetch.js";
 import { Account, typedData as starknetTypedData, type Call, type ProviderInterface } from "starknet";
 import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 import { executeSponsored, SponsoredCallRejectedError } from "../starknet/services/sponsoredExecutor.js";
@@ -48,7 +49,7 @@ export function selfFundedExecutor(deps: SelfFundedDeps): WalletExecutor {
 export interface SponsoredDeps extends SelfFundedDeps {
   proxyUrl: string;
   consent: SelfFundConsent;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
   fallback?: WalletExecutor;
 }
 

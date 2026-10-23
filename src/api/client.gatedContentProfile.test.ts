@@ -12,13 +12,13 @@ test("updateCollectionProfile sends gatedContentUrl/gatedContentType without a c
     return new Response(JSON.stringify({ contractAddress: "0x1" }), { status: 200 });
   }) as unknown as typeof fetch;
 
-  const c = new ApiClient("https://api.test", "ml_live_x");
+  const c = new ApiClient({ baseUrl: "https://api.test", apiKey: "ml_live_x" });
   const payload: UpdateCollectionProfileInput = {
     gatedContentTitle: "Behind the scenes",
     gatedContentUrl: "https://example.com/secret",
     gatedContentType: "VIDEO",
   };
-  await c.updateCollectionProfile("0x1", payload, "siws_tok");
+  await c.withBearer("siws_tok").collections.updateProfile("0x1", payload);
 
   expect(JSON.parse(sentBody!)).toEqual(payload);
 });

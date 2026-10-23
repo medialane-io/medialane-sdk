@@ -1,3 +1,4 @@
+import type { FetchLike } from "../utils/fetch.js";
 import { Account, stark, type ProviderInterface } from "starknet";
 import { getCoordinates } from "../chains.js";
 import { ownerConstructorCalldata } from "../starknet/media-wallet/account.js";
@@ -22,7 +23,7 @@ export async function deploySponsored(input: {
   ownerPubKey: string;
   privateKeyHex: string;
   salt?: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 }): Promise<ExecutedTransaction> {
   const doFetch = input.fetchImpl ?? fetch;
   const base = input.proxyUrl.replace(/\/$/, "");
@@ -116,7 +117,7 @@ export interface DeploymentDeps {
   };
   provider: () => ProviderInterface;
   deployProxyUrl?: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
   deploySponsoredImpl?: typeof deploySponsored;
   deploySelfFundedImpl?: typeof deploySelfFunded;
   waitUntilDeployedImpl?: typeof waitUntilDeployed;

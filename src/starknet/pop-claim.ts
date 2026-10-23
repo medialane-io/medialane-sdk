@@ -82,3 +82,17 @@ export const popCalls = {
     return { contractAddress: addr(collection), entrypoint: "set_allowlist_root", calldata: [root] };
   },
 };
+
+/** Whether `address` already holds this collection's credential (read from chain). */
+export async function popHasClaimed(
+  provider: Pick<ProviderInterface, "callContract">,
+  collection: string,
+  address: string,
+): Promise<boolean> {
+  const res = await provider.callContract({
+    contractAddress: normalizeAddress("STARKNET", collection),
+    entrypoint: "has_claimed",
+    calldata: [normalizeAddress("STARKNET", address)],
+  });
+  return BigInt(res[0] ?? "0x0") !== 0n;
+}
