@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.193.0] — 2026-10-22
+
+### Fixed
+
+- The image proxy fetches `/media/<chain>/<contract>/<id>/image` links from the configured backend with the app's credentials, whatever host the link names.
+
 ## [0.192.0] — 2026-10-22
 
 ### Added
