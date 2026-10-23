@@ -11,6 +11,10 @@ export async function deriveAesKey(prfSecret: Uint8Array, hkdfInfo: Uint8Array):
   );
 }
 
+export function generateDeviceKey(): Promise<CryptoKey> {
+  return crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+
 export function generateStarkKeyPair(): { privateKeyHex: string; publicKeyHex: string } {
   const privateKeyHex =
     "0x" +

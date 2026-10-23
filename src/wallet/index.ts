@@ -31,11 +31,13 @@ export {
   createPasskeyOwner,
   PasskeyCancelledError,
   PasskeyUnsupportedError,
+  DeviceKeyMissingError,
   type PasskeyUnsupportedReason,
   type PasskeyConfig,
   type PasskeyOwner,
   type CreatedOwner,
 } from "./passkey.js";
+export { indexedDbDeviceKeys, type DeviceKeyStore } from "./device-keys.js";
 export {
   selfFundedExecutor,
   sponsoredExecutor,

@@ -1,5 +1,6 @@
 import {
   deriveAesKey,
+  generateDeviceKey,
   generateStarkKeyPair,
   sealPrivateKey,
   starkKeyPairFromPrivateKey,
@@ -8,11 +9,19 @@ import {
 import { computeAccountAddress } from "../starknet/media-wallet/account.js";
 import type { SealedOwner } from "./types.js";
 import type { RecoveryKey } from "./recovery-key.js";
+import { indexedDbDeviceKeys, type DeviceKeyStore } from "./device-keys.js";
 
 export class PasskeyCancelledError extends Error {
   constructor(message = "Passkey prompt was cancelled.") {
     super(message);
     this.name = "PasskeyCancelledError";
+  }
+}
+
+export class DeviceKeyMissingError extends Error {
+  constructor() {
+    super("This browser no longer holds the wallet key. Recover the wallet with its recovery key.");
+    this.name = "DeviceKeyMissingError";
   }
 }
 
@@ -40,8 +49,7 @@ export interface PasskeyConfig {
   passkeyUser: () => Promise<PublicKeyCredentialUserEntity>;
   knownCredentials: () => PublicKeyCredentialDescriptor[];
   credentials?: CredentialsContainer;
-  clientCapabilities?: () => Promise<Record<string, boolean | undefined>>;
-  signalUnknownCredential?: (options: { rpId: string; credentialId: string }) => Promise<void>;
+  deviceKeys?: DeviceKeyStore;
   randomBytes?: (length: number) => Uint8Array<ArrayBuffer>;
 }
 
@@ -59,6 +67,11 @@ export interface PasskeyOwner {
 interface Registration {
   credentialId: string;
   prfFirst: ArrayBuffer | null;
+}
+
+interface OwnerLock {
+  aes: CryptoKey;
+  lock?: "device";
 }
 
 const encodeBase64 = (buf: ArrayBuffer | Uint8Array): string => {
@@ -89,28 +102,7 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
     return api;
   };
 
-  const browserRefusesPrf = async (): Promise<boolean> => {
-    const read =
-      config.clientCapabilities ??
-      (typeof PublicKeyCredential !== "undefined" &&
-      typeof (PublicKeyCredential as { getClientCapabilities?: unknown }).getClientCapabilities === "function"
-        ? () => (PublicKeyCredential as unknown as { getClientCapabilities(): Promise<Record<string, boolean | undefined>> }).getClientCapabilities()
-        : undefined);
-    if (!read) return false;
-    try {
-      return (await read())["extension:prf"] === false;
-    } catch {
-      return false;
-    }
-  };
-
-  const ensurePrfPossible = async (): Promise<void> => {
-    credentialsApi();
-    if (await browserRefusesPrf()) throw new PasskeyUnsupportedError("no-prf");
-  };
-
   async function registerPasskey(): Promise<Registration> {
-    await ensurePrfPossible();
     let credential: PublicKeyCredential;
     try {
       credential = (await credentialsApi().create({
@@ -146,60 +138,61 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
     };
   }
 
-  async function prfSecret(credentialId: string): Promise<Uint8Array<ArrayBuffer>> {
-    await ensurePrfPossible();
-    let assertion: PublicKeyCredential;
+  async function assertPasskey(
+    credentialId: string,
+    extensions?: AuthenticationExtensionsClientInputs,
+  ): Promise<PublicKeyCredential> {
     try {
-      assertion = (await credentialsApi().get({
+      return (await credentialsApi().get({
         publicKey: {
           challenge: randomBytes(32),
           rpId: config.relyingPartyId(),
           allowCredentials: [{ type: "public-key", id: decodeBase64(credentialId) }],
           userVerification: "required",
-          extensions: { prf: { eval: { first: config.prfSalt } } } as AuthenticationExtensionsClientInputs,
+          ...(extensions ? { extensions } : {}),
         },
       })) as PublicKeyCredential;
     } catch (err) {
       if (isPasskeyCancellation(err)) throw new PasskeyCancelledError();
       throw err;
     }
+  }
+
+  async function prfSecret(credentialId: string): Promise<Uint8Array<ArrayBuffer>> {
+    const assertion = await assertPasskey(credentialId, {
+      prf: { eval: { first: config.prfSalt } },
+    } as AuthenticationExtensionsClientInputs);
     const result = (assertion.getClientExtensionResults() as { prf?: { results?: { first?: ArrayBuffer } } }).prf
       ?.results?.first;
     if (!result) throw new PasskeyUnsupportedError("no-prf");
     return new Uint8Array(result);
   }
 
-  const forgetCredential = async (credentialId: string): Promise<void> => {
-    const signal =
-      config.signalUnknownCredential ??
-      (typeof PublicKeyCredential !== "undefined" &&
-      typeof (PublicKeyCredential as { signalUnknownCredential?: unknown }).signalUnknownCredential === "function"
-        ? (options: { rpId: string; credentialId: string }) =>
-            (PublicKeyCredential as unknown as {
-              signalUnknownCredential(options: { rpId: string; credentialId: string }): Promise<void>;
-            }).signalUnknownCredential(options)
-        : undefined);
-    if (!signal) return;
-    const base64url = credentialId.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    try {
-      await signal({ rpId: config.relyingPartyId(), credentialId: base64url });
-    } catch {
-      return;
-    }
-  };
+  const deviceKeys = config.deviceKeys ?? indexedDbDeviceKeys;
 
-  async function secretFromRegistration(registration: Registration): Promise<Uint8Array<ArrayBuffer>> {
-    if (registration.prfFirst) return new Uint8Array(registration.prfFirst);
-    try {
-      return await prfSecret(registration.credentialId);
-    } catch (err) {
-      if (err instanceof PasskeyUnsupportedError) await forgetCredential(registration.credentialId);
-      throw err;
+  async function lockFor(registration: Registration): Promise<OwnerLock> {
+    if (registration.prfFirst) {
+      return { aes: await deriveAesKey(new Uint8Array(registration.prfFirst), config.hkdfInfo) };
     }
+    try {
+      return { aes: await deriveAesKey(await prfSecret(registration.credentialId), config.hkdfInfo) };
+    } catch (err) {
+      if (!(err instanceof PasskeyUnsupportedError) || err.reason !== "no-prf") throw err;
+    }
+    const aes = await generateDeviceKey();
+    await deviceKeys.save(registration.credentialId, aes);
+    return { aes, lock: "device" };
   }
 
-  async function seal(secret: Uint8Array<ArrayBuffer>, privateKeyHex: string): Promise<{ iv: string; ciphertext: string }> {
-    const aes = await deriveAesKey(secret, config.hkdfInfo);
+  async function unlockFor(sealed: SealedOwner): Promise<CryptoKey> {
+    if (sealed.lock !== "device") return deriveAesKey(await prfSecret(sealed.credentialId), config.hkdfInfo);
+    await assertPasskey(sealed.credentialId);
+    const aes = await deviceKeys.load(sealed.credentialId);
+    if (!aes) throw new DeviceKeyMissingError();
+    return aes;
+  }
+
+  async function seal(aes: CryptoKey, privateKeyHex: string): Promise<{ iv: string; ciphertext: string }> {
     const iv = randomBytes(12);
     const ciphertext = await sealPrivateKey(aes, iv, privateKeyHex);
     return { iv: encodeBase64(iv), ciphertext: encodeBase64(ciphertext) };
@@ -208,9 +201,9 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
   return {
     async createOwnerKey() {
       const registration = await registerPasskey();
-      const secret = await secretFromRegistration(registration);
+      const { aes, lock } = await lockFor(registration);
       const { privateKeyHex, publicKeyHex } = generateStarkKeyPair();
-      const { iv, ciphertext } = await seal(secret, privateKeyHex);
+      const { iv, ciphertext } = await seal(aes, privateKeyHex);
       return {
         sealed: {
           credentialId: registration.credentialId,
@@ -218,28 +211,29 @@ export function createPasskeyOwner(config: PasskeyConfig): PasskeyOwner {
           address: computeAccountAddress(publicKeyHex, 0),
           iv,
           ciphertext,
+          ...(lock ? { lock } : {}),
         },
         privateKeyHex,
       };
     },
 
     async unlockOwnerKey(sealed) {
-      const secret = await prfSecret(sealed.credentialId);
-      const aes = await deriveAesKey(secret, config.hkdfInfo);
+      const aes = await unlockFor(sealed);
       return unsealPrivateKey(aes, decodeBase64(sealed.iv), decodeBase64(sealed.ciphertext));
     },
 
     async sealImportedOwnerKey(recovery) {
       const { privateKeyHex, publicKeyHex } = starkKeyPairFromPrivateKey(recovery.privateKey);
       const registration = await registerPasskey();
-      const secret = await secretFromRegistration(registration);
-      const { iv, ciphertext } = await seal(secret, privateKeyHex);
+      const { aes, lock } = await lockFor(registration);
+      const { iv, ciphertext } = await seal(aes, privateKeyHex);
       return {
         credentialId: registration.credentialId,
         ownerPubKey: publicKeyHex,
         address: recovery.walletAddress,
         iv,
         ciphertext,
+        ...(lock ? { lock } : {}),
       };
     },
   };
