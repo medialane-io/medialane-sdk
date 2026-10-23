@@ -118,6 +118,8 @@ import type {
   ApiCollectionsListQuery,
   ApiPricing,
 } from "../types/api.js";
+import type { z } from "zod";
+import type * as provisioning from "../contract/provisioning.js";
 
 function deriveErrorCode(status: number): MedialaneErrorCode {
   if (status === 404) return "TOKEN_NOT_FOUND";
@@ -688,10 +690,7 @@ export class ApiClient {
     });
   }
 
-  registerBusinessProvisioning(params: {
-    chain?: "STARKNET";
-    email: string;
-  }): Promise<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }> {
+  registerBusinessProvisioning(params: z.input<typeof provisioning.provisioningRegisterSchema>): Promise<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }> {
     return this.post<ApiResponse<ApiBusinessProvisioning> & { reusedExistingWallet?: boolean }>(
       "/v1/business/provisioning",
       { chain: params.chain ?? "STARKNET", email: params.email },

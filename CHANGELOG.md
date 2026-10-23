@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.194.0] — 2026-10-23
+
+### Added
+
+- `@medialane/sdk/contract`: the request schemas of the intent, order list, collection and creator profile, emission, business provisioning and report routes; the page and limit query schema; and response schemas for orders, tokens and collections. Starknet-shaped schemas are under the `starknet` namespace.
+
+### Changed
+
+- The request types for intents, the order list, collection profile updates, emission and business provisioning are derived from those schemas, so the client and the API check the same rules.
+- `tokenStandard` on offer, fulfill and cancel intents is `"ERC721" | "ERC1155"`, the two values the API accepts.
+- `ApiOrder` is derived from its response schema; its shape is unchanged.
+
 ## [0.193.0] — 2026-10-22
 
 ### Fixed

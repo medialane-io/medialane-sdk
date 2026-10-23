@@ -1,6 +1,6 @@
 {
   "name": "@medialane/sdk",
-  "version": "0.193.0",
+  "version": "0.194.0",
   "description": "Framework-agnostic TypeScript SDK for Medialane.io — the IP marketplace on Starknet",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -31,6 +31,11 @@
       "types": "./dist/stellar/index.d.ts",
       "import": "./dist/stellar/index.js",
       "require": "./dist/stellar/index.cjs"
+    },
+    "./contract": {
+      "types": "./dist/contract/index.d.ts",
+      "import": "./dist/contract/index.js",
+      "require": "./dist/contract/index.cjs"
     }
   },
   "license": "MIT",
