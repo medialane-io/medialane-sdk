@@ -147,10 +147,10 @@ test("without a credentials API the failure is no-webauthn", async () => {
   }
 });
 
-test("a passkey can be saved anywhere that supports PRF, not only on this device", async () => {
+test("the passkey is saved on this device", async () => {
   let seen: CredentialCreationOptions | undefined;
   await ownerFor(credentialsStub({ onCreate: (o) => (seen = o) })).createOwnerKey();
-  expect(seen?.publicKey?.authenticatorSelection?.authenticatorAttachment).toBeUndefined();
+  expect(seen?.publicKey?.authenticatorSelection?.authenticatorAttachment).toBe("platform");
   expect(seen?.publicKey?.authenticatorSelection?.residentKey).toBe("required");
   expect(seen?.publicKey?.authenticatorSelection?.userVerification).toBe("required");
 });
