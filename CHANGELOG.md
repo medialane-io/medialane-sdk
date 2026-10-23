@@ -2,6 +2,44 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.199.0] — 2026-10-23
+
+This release removes the flat `ApiClient` methods, the service classes and several duplicate names. Pin the exact version and move the calls in the same change; the lists below say what each one becomes.
+
+### Added
+
+- `client.api` is grouped by domain: `orders`, `tokens`, `collections`, `activity`, `search`, `intents`, `metadata`, `creators`, `account`, `portal` (with `portal.funding`), `business`, `remix`, `coins`, `drops`, `sponsorship`, `rewards`, `platform`, `chainReads`.
+- In the domain methods a single resource is returned as itself and a list as `{ data, meta }`. `get` throws when the resource is missing and `find` returns `null`.
+- `client.api.withBearer(token)` returns a client that sends the bearer token on every request; the token can be a function.
+- `client.api.intents.create(kind, params)`, typed by kind. `INTENT_KINDS`, `IntentKind` and `intentPath` are in `@medialane/sdk/contract`. `intents.checkout(params)` prepares several purchases.
+- `@medialane/sdk/contract`: schemas for the on-chain read responses (drop state, tier, IP NFT token data, POP claim info, creator coin guarantees) and the API error body, plus `dropStateToWire` and `dropStateFromWire`.
+- `@medialane/sdk/server` and `@medialane/sdk/wallet` entry points.
+- `MedialaneApiError.serverCode`: the machine code the API sent in the response body, when there is one.
+- `MedialaneError` is exported from the package root. `MedialaneApiError` extends it.
+- `ticketCalls`, `clubCalls`, `sponsorshipCalls`, `editionCalls`, `popFactoryCalls`, `populateCall`, `buildDropClaimCalls` and `isCreatorCoin` in `@medialane/sdk/starknet`: the calls the removed service classes sent, as plain functions.
+- `FetchLike`, `IntentClient`, `FundingTransferApi`.
+- `bun run typecheck` also checks the test files.
+
+### Changed
+
+- `new ApiClient({ baseUrl, apiKey, bearer, retry, chain, fetch })` is the only constructor form.
+- `executeIntent`, `executeIntents`, `confirmIntentBestEffort` and `syncTransactionBestEffort` take an `IntentClient`: `api.intents` with `submitSignature`, `confirm` and `syncTransaction`, and a provider.
+- `claimSessionWallet` takes `{ account }` (`client.api`) and calls `account.setupWalletKey`.
+- `fundingApiFor(client)` returns `client.api.portal.funding`, and `fundWithChainTransfer` takes its `create`, `challenge`, `authorize`, `submit` and `cancel`, which return the resource itself.
+- A 404 error code names the resource when the path does: `ORDER_NOT_FOUND`, `TOKEN_NOT_FOUND`, `COLLECTION_NOT_FOUND`, `INTENT_NOT_FOUND`. Any other 404 is `NOT_FOUND` (it was `TOKEN_NOT_FOUND`).
+- `MedialaneClient` has `api`, `chain` and `provider`. Without `backendUrl`, `client.api` calls reject with "backendUrl not configured".
+- `StarknetCoordinates` fields are required.
+- `PasskeyCancelledError`, `PasskeyUnsupportedError` and `DeviceKeyMissingError` are defined in a module that loads no chain library, so `@medialane/sdk` no longer loads `starknet`.
+- A query value with a space is sent with `+` instead of `%20`.
+
+### Removed
+
+- The flat `ApiClient` methods. Each one is now a domain method, for example `getOrders` is `orders.list`, `getToken` is `tokens.get`, `createMintIntent` is `intents.create("mint", params)`, `getMe` is `portal.me`, `checkEmail` is `account.emailExists` (a boolean), `getDrop` is `drops.find`. The `siwsToken` argument of those methods is `withBearer(token)`.
+- `PopService`, `DropService`, `TicketService`, `ClubService`, `SponsorshipService`, `ERC1155CollectionService`, `CreatorCoinService` and `MedialaneClient.services`. Use the call builders above.
+- `marketplaceContract` and `collectionContract` in the config and in the resolved config. Use `marketplace721Contract` and `collection721Contract`. `MedialaneClient.marketplaceContract` is removed.
+- `resolveAppFeeConfig`, `FeeEnv` and `FeeConfigSchema` from the package root.
+- The constants `STARKNET_COLLECTION_1155_CLASS_HASH`, `STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH`, `STARKNET_COLLECTION_1155_START_BLOCK`, `STARKNET_COLLECTION_721_START_BLOCK`, `STARKNET_CREATOR_COIN_CLASS_HASH`, `STARKNET_CREATOR_COIN_EKUBO_LAUNCHER`, `STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH`, `STARKNET_CREATOR_COIN_START_BLOCK`, `STARKNET_DROP_COLLECTION_CLASS_HASH`, `STARKNET_EKUBO_CORE`, `STARKNET_IPCOLLECTION_CLASS_HASH`, `STARKNET_IPNFT_CLASS_HASH`, `STARKNET_IP_CLUB_COLLECTION_CLASS_HASH`, `STARKNET_IP_SPONSORSHIP_CLASS_HASH`, `STARKNET_IP_TICKET_COLLECTION_CLASS_HASH`, `STARKNET_MARKETPLACE_1155_CLASS_HASH`, `STARKNET_MARKETPLACE_1155_START_BLOCK`, `STARKNET_MARKETPLACE_721_CLASS_HASH`, `STARKNET_MARKETPLACE_721_START_BLOCK`, `STARKNET_POP_COLLECTION_CLASS_HASH`. The values are in `getCoordinates("STARKNET")` and `getService(id).onchain`.
+
 ## [0.198.0] — 2026-10-23
 
 ### Added

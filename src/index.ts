@@ -2,10 +2,30 @@
 
 export { type MedialaneConfig, type ResolvedConfig, resolveConfig } from "./config.js";
 
-export { resolveFeeConfig, FeeConfigSchema, resolveAppFeeConfig } from "./fee/index.js";
-export type { FeeConfig, ResolvedFeeConfig, FeeEnv } from "./fee/index.js";
+export { resolveFeeConfig } from "./fee/index.js";
+export type { FeeConfig, ResolvedFeeConfig } from "./fee/index.js";
 
 export { ApiClient, MedialaneApiError } from "./api/client.js";
+export type { ApiClientOptions } from "./api/client.js";
+export type { BearerSource } from "./api/transport.js";
+export type { FetchLike } from "./utils/fetch.js";
+export type { OrdersApi } from "./api/domains/orders.js";
+export type { TokensApi } from "./api/domains/tokens.js";
+export type { CollectionsApi, GatedContent } from "./api/domains/collections.js";
+export type { ActivityApi, SearchApi } from "./api/domains/activity.js";
+export type { IntentsApi } from "./api/domains/intents.js";
+export type { MetadataApi } from "./api/domains/metadata.js";
+export type { CreatorsApi } from "./api/domains/creators.js";
+export type { AccountApi, RegisteredUser } from "./api/domains/account.js";
+export type { PortalApi, FundingApi } from "./api/domains/portal.js";
+export type { BusinessApi, ProvisioningResult } from "./api/domains/business.js";
+export type { RemixApi } from "./api/domains/remix.js";
+export type { CoinsApi } from "./api/domains/coins.js";
+export type { DropsApi } from "./api/domains/drops.js";
+export type { SponsorshipApi } from "./api/domains/sponsorship.js";
+export type { RewardsApi } from "./api/domains/rewards.js";
+export type { PlatformApi } from "./api/domains/platform.js";
+export type { ChainReadsApi } from "./api/domains/chainReads.js";
 export {
   createLaunchpadRunsClient,
   isDataTokenizationRun,
@@ -34,48 +54,28 @@ export {
   PasskeyUnsupportedError,
   DeviceKeyMissingError,
   type PasskeyUnsupportedReason,
-} from "./wallet/passkey.js";
+} from "./wallet/passkey-errors.js";
 
 export * from "./types/index.js";
 export type { MedialaneErrorCode } from "./types/errors.js";
 
 export {
   STARKNET_MARKETPLACE_721_CONTRACT,
-  STARKNET_MARKETPLACE_721_CLASS_HASH,
-  STARKNET_MARKETPLACE_721_START_BLOCK,
   STARKNET_MARKETPLACE_1155_CONTRACT,
-  STARKNET_MARKETPLACE_1155_CLASS_HASH,
-  STARKNET_MARKETPLACE_1155_START_BLOCK,
   STARKNET_COLLECTION_721_CONTRACT,
-  STARKNET_COLLECTION_721_START_BLOCK,
-  STARKNET_IPNFT_CLASS_HASH,
-  STARKNET_IPCOLLECTION_CLASS_HASH,
   STARKNET_COLLECTION_1155_CONTRACT,
-  STARKNET_COLLECTION_1155_FACTORY_CLASS_HASH,
-  STARKNET_COLLECTION_1155_CLASS_HASH,
-  STARKNET_COLLECTION_1155_START_BLOCK,
   STARKNET_POP_FACTORY_CONTRACT,
-  STARKNET_POP_COLLECTION_CLASS_HASH,
   STARKNET_POP_FACTORY_START_BLOCK,
   STARKNET_DROP_FACTORY_CONTRACT,
-  STARKNET_DROP_COLLECTION_CLASS_HASH,
   STARKNET_DROP_FACTORY_START_BLOCK,
   STARKNET_NFTCOMMENTS_CONTRACT,
   STARKNET_IP_TICKETS_FACTORY_CONTRACT,
-  STARKNET_IP_TICKET_COLLECTION_CLASS_HASH,
   STARKNET_IP_CLUB_FACTORY_CONTRACT,
-  STARKNET_IP_CLUB_COLLECTION_CLASS_HASH,
   STARKNET_IP_SPONSORSHIP_CONTRACT,
-  STARKNET_IP_SPONSORSHIP_CLASS_HASH,
   STARKNET_CREATOR_COIN_FACTORY_CONTRACT,
-  STARKNET_CREATOR_COIN_EKUBO_LAUNCHER,
-  STARKNET_CREATOR_COIN_CLASS_HASH,
-  STARKNET_CREATOR_COIN_FACTORY_CLASS_HASH,
-  STARKNET_CREATOR_COIN_START_BLOCK,
   STARKNET_DATA_TOKENIZATION_721_CONTRACT,
   STARKNET_GENESIS_MINT_CONTRACT,
   STARKNET_GENESIS_NFT_URI,
-  STARKNET_EKUBO_CORE,
   SUPPORTED_TOKENS,
   DEFAULT_CURRENCY,
   type SupportedTokenSymbol,
@@ -158,6 +158,6 @@ export {
 } from "./utils/ipfs-gateway.js";
 
 export * from "./adapters/index.js";
-export { UserFacingError } from "./errors.js";
+export { UserFacingError, MedialaneError } from "./errors.js";
 export { MAX_UPLOAD_BYTES, UPLOAD_LIMITS, acceptFor, formatFileSize, uploadError, uploadSizeError } from "./uploads.js";
 export type { UploadKind, UploadLimit } from "./uploads.js";

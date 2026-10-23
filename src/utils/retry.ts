@@ -1,4 +1,4 @@
-import { MedialaneApiError } from "../api/client.js";
+import { MedialaneApiError } from "../errors.js";
 
 export interface RetryOptions {
   maxAttempts?: number;

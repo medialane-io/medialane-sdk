@@ -1,6 +1,9 @@
 import type { TypedData } from "starknet";
 import type { ApiClient } from "../../api/client.js";
-import type { ApiFundingInstructions, ApiFundingIntent, ApiFundingSubmit } from "../../types/api.js";
+import type { FundingApi } from "../../api/domains/portal.js";
+import type { ApiFundingInstructions } from "../../types/api.js";
+
+export type FundingTransferApi = Pick<FundingApi, "create" | "challenge" | "authorize" | "submit" | "cancel">;
 
 export interface FundingTransferCall {
   contractAddress: string;
@@ -21,24 +24,8 @@ export class FundingTransferNotSentError extends Error {
   }
 }
 
-type Res<T> = Promise<{ data: T }>;
-
-export interface FundingApi {
-  createFunding(input: { method: string; params: Record<string, unknown> }): Res<ApiFundingIntent>;
-  getFundingChallenge(id: string, payer: string): Res<{ typedData: unknown }>;
-  authorizeFunding(id: string, input: { payer: string; signature: string[] }): Res<{ instructions: ApiFundingInstructions }>;
-  submitFunding(id: string, txHash: string): Res<ApiFundingSubmit>;
-  cancelFunding(id: string): Res<{ status: string }>;
-}
-
-export function fundingApiFor(client: ApiClient): FundingApi {
-  return {
-    createFunding: (input) => client.createFunding(input),
-    getFundingChallenge: (id, payer) => client.getFundingChallenge(id, payer),
-    authorizeFunding: (id, input) => client.authorizeFunding(id, input),
-    submitFunding: (id, txHash) => client.submitFunding(id, txHash),
-    cancelFunding: (id) => client.cancelFunding(id),
-  };
+export function fundingApiFor(client: ApiClient): FundingTransferApi {
+  return client.portal.funding;
 }
 
 export function buildFundingTransferCall(instructions: ApiFundingInstructions): FundingTransferCall {
@@ -70,7 +57,7 @@ interface FundWithTransferRest {
 }
 
 export async function fundWithChainTransfer(
-  api: FundingApi,
+  api: FundingTransferApi,
   wallet: FundingWallet,
   options: FundWithTransferOptions,
 ): Promise<FundingResult> {
@@ -81,24 +68,24 @@ export async function fundWithChainTransfer(
 
   step("creating");
   const params = options.amount !== undefined ? { amount: options.amount } : { amountUsdc: options.amountUsdc };
-  const { data: intent } = await api.createFunding({ method: "chain-transfer", params });
+  const intent = await api.create({ method: "chain-transfer", params });
 
   let txHash: string;
   let transferStarted = false;
   try {
     step("signing");
-    const challenge = await api.getFundingChallenge(intent.id, wallet.address);
-    const signature = await wallet.signTypedData(challenge.data.typedData as TypedData);
+    const challenge = await api.challenge(intent.id, wallet.address);
+    const signature = await wallet.signTypedData(challenge.typedData as TypedData);
 
     step("authorizing");
-    const authorized = await api.authorizeFunding(intent.id, { payer: wallet.address, signature });
+    const authorized = await api.authorize(intent.id, { payer: wallet.address, signature });
 
     step("paying");
     transferStarted = true;
-    ({ txHash } = await wallet.sendTransfer(buildFundingTransferCall(authorized.data.instructions)));
+    ({ txHash } = await wallet.sendTransfer(buildFundingTransferCall(authorized.instructions)));
   } catch (err) {
     if (!transferStarted || err instanceof FundingTransferNotSentError) {
-      await api.cancelFunding(intent.id).catch(() => undefined);
+      await api.cancel(intent.id).catch(() => undefined);
     }
     throw err;
   }
@@ -106,11 +93,11 @@ export async function fundWithChainTransfer(
   step("confirming");
   let reason = "waiting for the transfer to confirm";
   for (let attempt = 0; attempt < maxPolls; attempt++) {
-    const res = await api.submitFunding(intent.id, txHash);
-    if (res.data.status === "SETTLED") {
-      return { status: "SETTLED", intentId: intent.id, credited: res.data.credited };
+    const res = await api.submit(intent.id, txHash);
+    if (res.status === "SETTLED") {
+      return { status: "SETTLED", intentId: intent.id, credited: res.credited };
     }
-    reason = res.data.reason;
+    reason = res.reason;
     await sleep(pollMs);
   }
   return { status: "PENDING", intentId: intent.id, reason };

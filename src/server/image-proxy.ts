@@ -1,3 +1,4 @@
+import type { FetchLike } from "../utils/fetch.js";
 import {
   ALLOWED_IMAGE_CONTENT_TYPES,
   MAX_IMAGE_PROXY_BYTES,
@@ -10,7 +11,7 @@ import type { AppGatewayConfig } from "./app-gateway.js";
 export interface ImageProxyConfig {
 
   resolveHostname: (hostname: string) => Promise<string[]>;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
   userAgent?: string;
   backend?: Pick<AppGatewayConfig, "appId" | "backendUrl" | "apiKey" | "appSecret">;
 }

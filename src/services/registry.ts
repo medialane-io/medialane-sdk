@@ -12,8 +12,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.collection721!,
-        startBlock: SN.collection721StartBlock!,
+        factoryAddress: SN.collection721,
+        startBlock: SN.collection721StartBlock,
       },
     },
     uiVariant: "standard",
@@ -43,8 +43,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.dataTokenization721!,
-        startBlock: SN.dataTokenization721StartBlock!,
+        factoryAddress: SN.dataTokenization721,
+        startBlock: SN.dataTokenization721StartBlock,
       },
     },
     uiVariant: "standard",
@@ -62,9 +62,9 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.collection1155!,
-        classHash: SN.collection1155ClassHash!,
-        startBlock: SN.collection1155StartBlock!,
+        factoryAddress: SN.collection1155,
+        classHash: SN.collection1155ClassHash,
+        startBlock: SN.collection1155StartBlock,
       },
     },
     uiVariant: "edition",
@@ -82,8 +82,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.popFactory!,
-        classHash: SN.popCollectionClassHash!,
+        factoryAddress: SN.popFactory,
+        classHash: SN.popCollectionClassHash,
       },
     },
     uiVariant: "pop",
@@ -101,8 +101,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.popFactory!,
-        classHash: SN.popCollectionClassHash!,
+        factoryAddress: SN.popFactory,
+        classHash: SN.popCollectionClassHash,
       },
     },
     uiVariant: "pop",
@@ -120,8 +120,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.dropFactory!,
-        classHash: SN.dropCollectionClassHash!,
+        factoryAddress: SN.dropFactory,
+        classHash: SN.dropCollectionClassHash,
       },
     },
     uiVariant: "drop",
@@ -142,8 +142,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.ipTicketsFactory!,
-        classHash: SN.ipTicketCollectionClassHash!,
+        factoryAddress: SN.ipTicketsFactory,
+        classHash: SN.ipTicketCollectionClassHash,
       },
     },
     uiVariant: "ticket",
@@ -162,8 +162,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.ipTicketsFactory!,
-        classHash: SN.ipTicketCollectionClassHash!,
+        factoryAddress: SN.ipTicketsFactory,
+        classHash: SN.ipTicketCollectionClassHash,
       },
     },
     uiVariant: "ticket",
@@ -182,8 +182,8 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.ipClubFactory!,
-        classHash: SN.ipClubCollectionClassHash!,
+        factoryAddress: SN.ipClubFactory,
+        classHash: SN.ipClubCollectionClassHash,
       },
     },
     uiVariant: "club",
@@ -202,9 +202,9 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.ipSponsorship!,
-        classHash: SN.ipSponsorshipClassHash!,
-        startBlock: SN.ipSponsorshipStartBlock!,
+        factoryAddress: SN.ipSponsorship,
+        classHash: SN.ipSponsorshipClassHash,
+        startBlock: SN.ipSponsorshipStartBlock,
       },
     },
     uiVariant: "standard",
@@ -226,9 +226,9 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.creatorCoinFactory!,
-        classHash: SN.creatorCoinFactoryClassHash!,
-        startBlock: SN.creatorCoinStartBlock!,
+        factoryAddress: SN.creatorCoinFactory,
+        classHash: SN.creatorCoinFactoryClassHash,
+        startBlock: SN.creatorCoinStartBlock,
       },
     },
     uiVariant: "coin",
@@ -247,9 +247,9 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.marketplace721!,
-        classHash: SN.marketplace721ClassHash!,
-        startBlock: SN.marketplace721StartBlock!,
+        factoryAddress: SN.marketplace721,
+        classHash: SN.marketplace721ClassHash,
+        startBlock: SN.marketplace721StartBlock,
       },
     },
     uiVariant: "standard",
@@ -268,9 +268,9 @@ const SERVICES = {
     provenance: "MEDIALANE",
     onchain: {
       STARKNET: {
-        factoryAddress: SN.marketplace1155!,
-        classHash: SN.marketplace1155ClassHash!,
-        startBlock: SN.marketplace1155StartBlock!,
+        factoryAddress: SN.marketplace1155,
+        classHash: SN.marketplace1155ClassHash,
+        startBlock: SN.marketplace1155StartBlock,
       },
     },
     uiVariant: "edition",

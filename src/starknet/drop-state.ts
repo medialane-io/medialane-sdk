@@ -1,7 +1,10 @@
 import type { ProviderInterface } from "starknet";
 import { dropHref } from "../routes.js";
 import { normalizeAddress } from "../utils/address.js";
-import { DROP_MAX_CLAIM_QUANTITY, dropMintCost } from "./drop-calls.js";
+import type { Call } from "starknet";
+import type { ResolvedFeeConfig } from "../fee/config.js";
+import { DROP_MAX_CLAIM_QUANTITY, dropCalls, dropMintCost } from "./drop-calls.js";
+import { buildFeeCall } from "./fee/build-fee-call.js";
 import { encodePopClaimFragment, verifyPopProof, type PopAllowlist } from "./pop-allowlist.js";
 import type { PopClaimLink } from "./pop-claim.js";
 
@@ -44,6 +47,28 @@ export async function readDrop(provider: Pick<ProviderInterface, "callContract">
     maxSupply: u256(max[0], max[1]),
     totalMinted: u256(minted[0], minted[1]),
   };
+}
+
+/** Approve, claim and the platform fee for `quantity` tokens, priced from the drop's terms on chain. */
+export async function buildDropClaimCalls(
+  provider: Pick<ProviderInterface, "callContract">,
+  collection: string,
+  input: { quantity: bigint | string | number; proof?: string[] },
+  feeConfig: ResolvedFeeConfig,
+): Promise<Call[]> {
+  const drop = await readDrop(provider, collection);
+  const calls = dropCalls.claim(collection, {
+    quantity: input.quantity,
+    proof: input.proof,
+    price: drop.price,
+    paymentToken: drop.paymentToken,
+  });
+  if (drop.price === 0n) return calls;
+  const fee = buildFeeCall(
+    { surface: "launchpad", token: drop.paymentToken, grossAmount: drop.price * BigInt(input.quantity) },
+    feeConfig,
+  );
+  return fee ? [...calls, fee] : calls;
 }
 
 /** How many tokens `wallet` has claimed from this drop (gifts not included). */

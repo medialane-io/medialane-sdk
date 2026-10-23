@@ -1,7 +1,8 @@
+import type { FetchLike } from "../utils/fetch.js";
 export interface BackendMetadataConfig {
   backendUrl: string;
   apiKey: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 }
 
 function endpoint(config: BackendMetadataConfig, path: string): string {

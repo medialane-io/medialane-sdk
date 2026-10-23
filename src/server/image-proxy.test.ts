@@ -1,4 +1,5 @@
 import { describe, test, expect } from "bun:test";
+import type { FetchLike } from "../utils/fetch.js";
 import { createImageProxyHandler, readBodyWithCap } from "./image-proxy.js";
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
@@ -12,7 +13,7 @@ function imageResponse(body: Uint8Array = PNG, contentType = "image/png"): Respo
 
 function handler(overrides: {
   resolveHostname?: (h: string) => Promise<string[]>;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 } = {}) {
   return createImageProxyHandler({
     resolveHostname: overrides.resolveHostname ?? (async () => ["93.184.216.34"]),

@@ -2,7 +2,7 @@ import { test, expect } from "bun:test";
 import { deriveAesKey, generateStarkKeyPair, sealPrivateKey, unsealPrivateKey, signWithPrivateKey } from "./crypto.js";
 
 const hex = (buf: ArrayBuffer): string => Buffer.from(buf).toString("hex");
-const fromHex = (h: string): Uint8Array => new Uint8Array(Buffer.from(h, "hex"));
+const fromHex = (h: string): Uint8Array<ArrayBuffer> => new Uint8Array(Buffer.from(h, "hex"));
 
 const SECRET_HEX = "1111111111111111111111111111111111111111111111111111111111111111".slice(0, 64);
 const HKDF_INFO_HEX = "676f6c64656e2d766563746f722d696e666f";

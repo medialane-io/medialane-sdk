@@ -7,8 +7,8 @@ import type { StarknetVenueSigner } from "./index.js";
 const ORDER_CREATED_SELECTOR = hash.getSelectorFromName("OrderCreated");
 const CFG = resolveConfig({
   backendUrl: "https://api.example.com",
-  marketplaceContract: "0x100",
-  collectionContract: "0x200",
+  marketplace721Contract: "0x100",
+  collection721Contract: "0x200",
   marketplace1155Contract: "0x101",
   collection1155Contract: "0x201",
   chain: "STARKNET",

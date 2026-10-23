@@ -44,14 +44,14 @@ test("createTierIntent posts to /v1/intents/create-tier", async () => {
     return new Response(JSON.stringify({ data: { id: "i2", requiresSignature: false, calls: [], expiresAt: "" } }), { status: 201 });
   }) as typeof fetch;
   try {
-    const client = new ApiClient("https://api.test", "key");
-    const res = await client.createTierIntent({
+    const client = new ApiClient({ baseUrl: "https://api.test", apiKey: "key" });
+    const res = await client.intents.create("create-tier", {
       owner: "0x1", collection: "0x2", service: "ip-tickets",
       maxSupply: "100", royaltyBps: 250, metadataUri: "ipfs://x",
     });
     expect(String(calls[0].url)).toContain("/v1/intents/create-tier");
     expect((calls[0].body as { service?: string }).service).toBe("ip-tickets");
-    expect(res.data.id).toBe("i2");
+    expect(res.id).toBe("i2");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -66,13 +66,13 @@ test("createCheckoutIntent posts orderHashes and returns per-order results", asy
         { orderHash: "0xbbb", error: "Order not found in index" },
       ],
     }), { status: 201 })
-  ) as typeof fetch;
+  ) as unknown as typeof fetch;
   try {
-    const client = new ApiClient("https://api.test", "key");
-    const res = await client.createCheckoutIntent({ fulfiller: "0x1", orderHashes: ["0xaaa", "0xbbb"] });
-    expect(res.data).toHaveLength(2);
-    expect(res.data[0].orderHash).toBe("0xaaa");
-    expect(res.data[1].error).toBe("Order not found in index");
+    const client = new ApiClient({ baseUrl: "https://api.test", apiKey: "key" });
+    const res = await client.intents.checkout({ fulfiller: "0x1", orderHashes: ["0xaaa", "0xbbb"] });
+    expect(res).toHaveLength(2);
+    expect(res[0].orderHash).toBe("0xaaa");
+    expect(res[1].error).toBe("Order not found in index");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -86,8 +86,8 @@ test("createCollectionIntent posts service through to the request body", async (
     return new Response(JSON.stringify({ data: { id: "i1", requiresSignature: false, calls: [], expiresAt: "" } }), { status: 201 });
   }) as typeof fetch;
   try {
-    const client = new ApiClient("https://api.test", "key");
-    await client.createCollectionIntent({ owner: "0x1", name: "Test", symbol: "TST", service: "ip-tickets" });
+    const client = new ApiClient({ baseUrl: "https://api.test", apiKey: "key" });
+    await client.intents.create("create-collection", { owner: "0x1", name: "Test", symbol: "TST", service: "ip-tickets" });
     expect((calls[0] as { service?: string }).service).toBe("ip-tickets");
   } finally {
     globalThis.fetch = originalFetch;

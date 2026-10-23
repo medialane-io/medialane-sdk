@@ -10,7 +10,8 @@ test("computeOwnerGuid matches the contract's poseidon_2(\"Starknet Signer\", pu
 
 test("adding an owner keeps Option::None, since the signer is not being removed", () => {
   const call = buildAddOwnerCall("0xaccount", "0x999");
-  expect(call.calldata[call.calldata.length - 1]).toBe("0x1");
+  const calldata = call.calldata as string[];
+  expect(calldata[calldata.length - 1]).toBe("0x1");
 });
 
 test("adding an owner without removing one omits the remove list", () => {

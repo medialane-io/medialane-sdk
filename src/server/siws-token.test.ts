@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { createHmac } from "node:crypto";
+import { createHmac } from "crypto";
 import {
   issueSiwsToken,
   verifySiwsToken,

@@ -1,3 +1,4 @@
+import type { FetchLike } from "../utils/fetch.js";
 import { readCookie, sessionCookie, ACCOUNT_SESSION_COOKIE } from "./app-gateway.js";
 
 export interface AppSessionConfig {
@@ -5,7 +6,7 @@ export interface AppSessionConfig {
   backendUrl: string;
   apiKey: string | undefined;
   appSecret?: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 }
 
 function signedOut(): Response {

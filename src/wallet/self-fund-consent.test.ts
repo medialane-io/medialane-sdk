@@ -26,7 +26,7 @@ test("clearing the handler denies again", async () => {
 
 test("the handler is offered the fee when an address and calls are known", async () => {
   const consent = createSelfFundConsent(async () => FEE);
-  let offered: SelfFundFeeEstimate | null = null;
+  let offered = null as SelfFundFeeEstimate | null;
   consent.registerHandler(async (estimate) => {
     offered = await estimate;
     return true;

@@ -19,14 +19,14 @@ function scriptFetch(script: (url: string) => { status: number; body?: unknown }
 
 test("registerBusinessProvisioning sends the email", async () => {
   const calls = scriptFetch(() => ({ status: 201, body: { data: { chain: "STARKNET", walletAddress: "0xabc" } } }));
-  const client = new ApiClient("https://api.test.invalid", "test-key");
-  const res = await client.registerBusinessProvisioning({ email: "worker@example.com" });
+  const client = new ApiClient({ baseUrl: "https://api.test.invalid", apiKey: "test-key" });
+  const res = await client.business.registerProvisioning({ email: "worker@example.com" });
   expect(calls[0].url).toBe("https://api.test.invalid/v1/business/provisioning");
   expect(JSON.parse(calls[0].init.body as string)).toEqual({ chain: "STARKNET", email: "worker@example.com" });
   expect(res.data.walletAddress).toBe("0xabc");
 });
 
 test("completeBusinessProvisioning is gone", () => {
-  const client = new ApiClient("https://api.test.invalid", "test-key");
+  const client = new ApiClient({ baseUrl: "https://api.test.invalid", apiKey: "test-key" });
   expect("completeBusinessProvisioning" in client).toBe(false);
 });

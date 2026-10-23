@@ -1,3 +1,4 @@
+import type { FetchLike } from "../utils/fetch.js";
 import { typedData as starknetTypedData, type Call, type ProviderInterface, type TypedData } from "starknet";
 import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
 import {
@@ -51,7 +52,7 @@ export interface MediaWalletConfig {
   unlockTtlMs?: number;
   backendUrl?: string;
   deployProxyUrl?: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
   walletIntents?: (params: CreateWalletManageIntentParams) => Promise<{ id: string; calls: Call[] }>;
 }
 
@@ -128,8 +129,8 @@ export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
 
   const walletIntents = config.walletIntents ?? (async (params: CreateWalletManageIntentParams) => {
     if (!config.backendUrl) throw new Error("This wallet has no backend url configured");
-    const created = await new ApiClient(config.backendUrl).createWalletManageIntent(params);
-    return created.data as { id: string; calls: Call[] };
+    const created = await new ApiClient({ baseUrl: config.backendUrl }).intents.create("wallet-manage", params);
+    return created as { id: string; calls: Call[] };
   });
 
   const manage = async (sealed: SealedOwner, params: CreateWalletManageIntentParams): Promise<string> => {

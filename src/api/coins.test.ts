@@ -14,8 +14,8 @@ function mockFetch(calls: string[]) {
 test("getCoins builds /v1/coins with service + paging", async () => {
   const calls: string[] = [];
   mockFetch(calls);
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.getCoins({ service: "creator-coin", page: 2, limit: 10 });
+  const c = new ApiClient({ baseUrl: "https://api.test", apiKey: "ml_live_x" });
+  await c.coins.list({ service: "creator-coin", page: 2, limit: 10 });
   expect(calls[0]).toContain("/v1/coins");
   expect(calls[0]).toContain("service=creator-coin");
   expect(calls[0]).toContain("page=2");
@@ -25,7 +25,7 @@ test("getCoins builds /v1/coins with service + paging", async () => {
 test("getCoin normalizes the address into /v1/coins/:contract", async () => {
   const calls: string[] = [];
   mockFetch(calls);
-  const c = new ApiClient("https://api.test", "ml_live_x");
-  await c.getCoin("0x1");
+  const c = new ApiClient({ baseUrl: "https://api.test", apiKey: "ml_live_x" });
+  await c.coins.get("0x1");
   expect(calls[0]).toContain("/v1/coins/0x" + "0".repeat(63) + "1");
 });

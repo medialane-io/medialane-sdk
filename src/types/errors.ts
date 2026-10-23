@@ -1,4 +1,5 @@
 export type MedialaneErrorCode =
+  | "NOT_FOUND"
   | "TOKEN_NOT_FOUND"
   | "COLLECTION_NOT_FOUND"
   | "ORDER_NOT_FOUND"

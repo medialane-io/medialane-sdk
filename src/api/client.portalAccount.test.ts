@@ -17,12 +17,12 @@ function capture(response: unknown = { data: {} }) {
 }
 
 function client() {
-  return new ApiClient("https://api.test");
+  return new ApiClient({ baseUrl: "https://api.test" });
 }
 
 test("portal routes send no wallet token; the session identifies the account", async () => {
   const calls = capture({ data: { id: "c1", accountId: "a1", status: "ACTIVE", creditBalance: 12 } });
-  await client().getMe();
+  await client().portal.me();
   expect(calls[0].url).toBe("https://api.test/v1/portal/me");
   const headers = (calls[0].init.headers ?? {}) as Record<string, string>;
   expect(headers.Authorization).toBeUndefined();
@@ -31,8 +31,8 @@ test("portal routes send no wallet token; the session identifies the account", a
 test("credit history and spend read from the routes the backend serves", async () => {
   const calls = capture({ data: [] });
   const api = client();
-  await api.getCreditHistory();
-  await api.getSpend();
+  await api.portal.creditHistory();
+  await api.portal.spend();
   expect(calls.map((c) => c.url)).toEqual([
     "https://api.test/v1/portal/credits/history",
     "https://api.test/v1/portal/credits/spend",
@@ -41,7 +41,7 @@ test("credit history and spend read from the routes the backend serves", async (
 
 test("a deposit is checked by its transaction", async () => {
   const calls = capture({ data: { deposits: 1 } });
-  await client().checkDeposit("0xabc");
+  await client().portal.checkDeposit("0xabc");
   expect(calls[0].url).toBe("https://api.test/v1/portal/credits/check");
   expect(calls[0].init.method).toBe("POST");
   expect(JSON.parse(String(calls[0].init.body))).toEqual({ txHash: "0xabc" });
@@ -51,8 +51,8 @@ test("key changes send the wallet's confirmation in the body and no token", asyn
   const calls = capture({ data: {} });
   const api = client();
   const confirmation = { expiresAt: 1_700_000_300, signature: ["0x1", "0x2"] };
-  await api.createApiKey({ label: "server" }, confirmation);
-  await api.deleteApiKey("key-1", confirmation);
+  await api.portal.createApiKey({ label: "server" }, confirmation);
+  await api.portal.deleteApiKey("key-1", confirmation);
   expect(calls[0].url).toBe("https://api.test/v1/portal/keys");
   expect(JSON.parse(String(calls[0].init.body))).toEqual({ label: "server", confirmation });
   expect(calls[1].url).toBe("https://api.test/v1/portal/keys/key-1");

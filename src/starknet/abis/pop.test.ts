@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { CallData } from "starknet";
 import { POPCollectionABI, POPFactoryABI } from "./index.js";
-import { popHasClaimed } from "../services/pop.js";
+import { popCalls, popHasClaimed } from "../pop-claim.js";
 
 type Fn = { name: string; inputs: { name: string }[] };
 type Entry = { type: string; name: string; items?: Fn[] };
@@ -28,7 +28,7 @@ describe("POP factory ABI", () => {
     const calldata = new CallData(POPFactoryABI as never).compile("create_collection", {
       name: "Pilot", symbol: "PLT", base_uri: "ipfs://x", claim_end_time: 1700000000,
     });
-    expect(calldata.at(-1)).toBe("1700000000");
+    expect(calldata[calldata.length - 1]).toBe("1700000000");
   });
 });
 
@@ -59,18 +59,11 @@ describe("popHasClaimed", () => {
   });
 });
 
-describe("PopService.burn", () => {
-  test("burns the given token on the collection", async () => {
-    const { PopService } = await import("../services/pop.js");
-    const { resolveConfig } = await import("../../config.js");
-    const executed: { contractAddress: string; entrypoint: string; calldata: unknown }[][] = [];
-    const account = { execute: async (calls: never) => (executed.push(calls), { transaction_hash: "0xt" }) };
-    const pop = new PopService(resolveConfig({}));
-    const result = await pop.burn(account as never, { collection: "0xabc", tokenId: 7n });
-    expect(result.txHash).toBe("0xt");
-    const [call] = executed[0]!;
-    expect(call!.entrypoint).toBe("burn");
-    expect(BigInt(call!.contractAddress)).toBe(0xabcn);
-    expect((call!.calldata as string[]).map((x) => BigInt(x))).toEqual([7n, 0n]);
+describe("popCalls.burn", () => {
+  test("burns the given token on the collection", () => {
+    const call = popCalls.burn("0xabc", 7n);
+    expect(call.entrypoint).toBe("burn");
+    expect(BigInt(call.contractAddress)).toBe(0xabcn);
+    expect((call.calldata as string[]).map((x) => BigInt(x))).toEqual([7n, 0n]);
   });
 });

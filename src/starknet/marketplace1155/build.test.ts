@@ -11,8 +11,8 @@ import type { Call } from "starknet";
 
 const CFG = resolveConfig({
   backendUrl: "https://api.example.com",
-  marketplaceContract: "0x100",
-  collectionContract: "0x200",
+  marketplace721Contract: "0x100",
+  collection721Contract: "0x200",
   marketplace1155Contract: "0x101",
   collection1155Contract: "0x201",
   chain: "STARKNET",
@@ -113,8 +113,8 @@ describe("1155 builders", () => {
 
     const feeCfg = resolveConfig({
       backendUrl: "https://api.example.com",
-      marketplaceContract: "0x100",
-      collectionContract: "0x200",
+      marketplace721Contract: "0x100",
+      collection721Contract: "0x200",
       marketplace1155Contract: "0x101",
       collection1155Contract: "0x201",
       chain: "STARKNET",
@@ -126,7 +126,7 @@ describe("1155 builders", () => {
     );
     expect(withFee).toHaveLength(3);
     expect(withFee[2].entrypoint).toBe("transfer");
-    expect(withFee[2].calldata?.[0]).toBe("0xfund");
+    expect((withFee[2].calldata as string[])[0]).toBe("0xfund");
   });
 
   it("buildCancel1155Calls = [cancel_order]", () => {

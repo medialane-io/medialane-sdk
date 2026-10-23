@@ -29,7 +29,7 @@ function claimDeps(initial: SealedOwner | null = null) {
 
 test("claimSessionWallet saves the new key for the wallet before it asks the server", async () => {
   const { deps, log, stored } = claimDeps();
-  const api = { setupWalletKey: async () => (log.push("api"), { walletAddress: WALLET, removeOwnerGuid: null }) };
+  const api = { account: { setupWalletKey: async () => (log.push("api"), { walletAddress: WALLET, removeOwnerGuid: null }) } };
   await claimSessionWallet(api, WALLET, deps);
   expect(log).toEqual(["create", "save", "api"]);
   expect(stored()).toEqual({ ...fresh, address: WALLET });
@@ -37,29 +37,29 @@ test("claimSessionWallet saves the new key for the wallet before it asks the ser
 
 test("claimSessionWallet removes Medialane's key with the saved key once the server has added it", async () => {
   const { deps, log } = claimDeps();
-  const api = { setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: "0x77" }) };
+  const api = { account: { setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: "0x77" }) } };
   await claimSessionWallet(api, WALLET, deps);
   expect(log).toEqual(["create", "save", "remove:0x77"]);
 });
 
 test("claimSessionWallet removes nothing when Medialane's key is already gone", async () => {
   const { deps, log } = claimDeps();
-  await claimSessionWallet({ setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: null }) }, WALLET, deps);
+  await claimSessionWallet({ account: { setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: null }) } }, WALLET, deps);
   expect(log.some((entry) => entry.startsWith("remove"))).toBe(false);
 });
 
 test("after a failed server call the retry reuses the saved key and makes no second one", async () => {
   const { deps, created } = claimDeps();
   await expect(
-    claimSessionWallet({ setupWalletKey: async () => Promise.reject(new Error("timeout")) }, WALLET, deps),
+    claimSessionWallet({ account: { setupWalletKey: async () => Promise.reject(new Error("timeout")) } }, WALLET, deps),
   ).rejects.toThrow("timeout");
-  await claimSessionWallet({ setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: null }) }, WALLET, deps);
+  await claimSessionWallet({ account: { setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: null }) } }, WALLET, deps);
   expect(created()).toBe(1);
 });
 
 test("a cancelled removal keeps the key, and the retry removes again without a new key", async () => {
   const { deps, log, created } = claimDeps();
-  const api = { setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: "0x77" }) };
+  const api = { account: { setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: "0x77" }) } };
   let attempts = 0;
   const flaky: SessionWalletClaimDeps = {
     ...deps,
@@ -81,7 +81,7 @@ test("a failed key creation (no PRF) saves nothing and never reaches the server"
     createOwnerKey: async () => Promise.reject(new Error("This browser didn't return a passkey PRF secret.")),
   };
   let called = false;
-  const api = { setupWalletKey: async () => ((called = true), { walletAddress: WALLET, removeOwnerGuid: null }) };
+  const api = { account: { setupWalletKey: async () => ((called = true), { walletAddress: WALLET, removeOwnerGuid: null }) } };
   await expect(claimSessionWallet(api, WALLET, failing)).rejects.toThrow("PRF");
   expect(called).toBe(false);
   expect(log).toEqual([]);
@@ -90,6 +90,6 @@ test("a failed key creation (no PRF) saves nothing and never reaches the server"
 test("a key already saved for another wallet is not reused", async () => {
   const other: SealedOwner = { ...fresh, ownerPubKey: "0x5", address: "0xdef" };
   const { deps, created } = claimDeps(other);
-  await claimSessionWallet({ setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: null }) }, WALLET, deps);
+  await claimSessionWallet({ account: { setupWalletKey: async () => ({ walletAddress: WALLET, removeOwnerGuid: null }) } }, WALLET, deps);
   expect(created()).toBe(1);
 });

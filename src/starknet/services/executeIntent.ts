@@ -1,8 +1,8 @@
 import { UserFacingError } from "../../errors.js";
 import { MedialaneApiError } from "../../api/client.js";
 import type { Call, TypedData } from "starknet";
-import type { StarknetVenueSigner } from "../index.js";
-import type { MedialaneClient } from "../client.js";
+import type { StarknetVenueSigner } from "../signer.js";
+import type { IntentsApi } from "../../api/domains/intents.js";
 import type { ApiIntentCreated } from "../../types/api.js";
 import type { ReceiptLike } from "./receipts.js";
 
@@ -10,12 +10,17 @@ export interface ReceiptProvider {
   getTransactionReceipt(txHash: string): Promise<unknown>;
 }
 
+export interface IntentClient {
+  api: { intents: Pick<IntentsApi, "submitSignature" | "confirm" | "syncTransaction"> };
+  provider: ReceiptProvider;
+}
+
 export async function confirmIntentBestEffort(
-  client: MedialaneClient,
+  client: IntentClient,
   intentId: string,
   txHash: string,
 ): Promise<void> {
-  await client.api.confirmIntent(intentId, txHash).catch(() => {});
+  await client.api.intents.confirm(intentId, txHash).catch(() => {});
 }
 
 const SYNC_TIMEOUT_MS = 20_000;
@@ -26,7 +31,7 @@ function readableLater(err: unknown): boolean {
 }
 
 export async function syncTransactionBestEffort(
-  client: MedialaneClient,
+  client: IntentClient,
   txHash: string,
   timeoutMs = SYNC_TIMEOUT_MS,
   retryMs = SYNC_RETRY_MS,
@@ -39,8 +44,8 @@ export async function syncTransactionBestEffort(
   });
   const sync = (async () => {
     while (!stopped) {
-      const again = await client.api.syncTransaction(txHash).then(
-        (res) => res.data?.pending === true,
+      const again = await client.api.intents.syncTransaction(txHash).then(
+        (res) => res?.pending === true,
         readableLater,
       );
       if (!again || Date.now() + retryMs >= deadline) return;
@@ -91,15 +96,15 @@ export interface ExecuteIntentOpts {
 
 export async function executeIntent(
   signer: StarknetVenueSigner,
-  client: MedialaneClient,
+  client: IntentClient,
   intent: ApiIntentCreated,
   opts: ExecuteIntentOpts = {},
 ): Promise<{ txHash: string; receipt: ReceiptLike }> {
   let calls: Call[];
   if (intent.requiresSignature) {
     const signature = await signer.signTypedData(intent.typedData as TypedData);
-    const signed = await client.api.submitIntentSignature(intent.id, signature);
-    calls = signed.data.calls as Call[];
+    const signed = await client.api.intents.submitSignature(intent.id, signature);
+    calls = signed.calls as Call[];
   } else {
     calls = intent.calls as Call[];
   }
@@ -115,7 +120,7 @@ export async function executeIntent(
 
 export async function executeIntents(
   signer: StarknetVenueSigner,
-  client: MedialaneClient,
+  client: IntentClient,
   intents: ApiIntentCreated[],
   opts: ExecuteIntentOpts = {},
 ): Promise<{ txHash: string; receipt: ReceiptLike }> {

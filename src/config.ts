@@ -10,10 +10,8 @@ export const MedialaneConfigSchema = z.object({
   apiKey: z.string().optional(),
 
   marketplace721Contract: z.string().optional(),
-  marketplaceContract: z.string().optional(),
   marketplace1155Contract: z.string().optional(),
   collection721Contract: z.string().optional(),
-  collectionContract: z.string().optional(),
   collection1155Contract: z.string().optional(),
   retryOptions: z.object({
     maxAttempts: z.number().int().min(1).max(10).optional(),
@@ -30,10 +28,8 @@ export interface ResolvedConfig {
   backendUrl: string | undefined;
   apiKey: string | undefined;
   marketplace721Contract: string;
-  marketplaceContract: string;
   marketplace1155Contract: string;
   collection721Contract: string;
-  collectionContract: string;
   collection1155Contract: string;
   retryOptions?: RetryOptions;
   feeConfig: ResolvedFeeConfig;
@@ -46,20 +42,18 @@ export function resolveConfig(raw: MedialaneConfig): ResolvedConfig {
   const sn = (parsed.chain === "STARKNET" ? coords : {}) as import("./chains.js").StarknetCoordinates;
 
   const marketplace721Contract =
-    parsed.marketplace721Contract ?? parsed.marketplaceContract ?? sn.marketplace721!;
+    parsed.marketplace721Contract ?? sn.marketplace721;
   const collection721Contract =
-    parsed.collection721Contract ?? parsed.collectionContract ?? sn.collection721!;
+    parsed.collection721Contract ?? sn.collection721;
 
   return {
     chain: parsed.chain,
     backendUrl: parsed.backendUrl,
     apiKey: parsed.apiKey,
     marketplace721Contract,
-    marketplaceContract: marketplace721Contract,
-    marketplace1155Contract: parsed.marketplace1155Contract ?? sn.marketplace1155!,
+    marketplace1155Contract: parsed.marketplace1155Contract ?? sn.marketplace1155,
     collection721Contract,
-    collectionContract: collection721Contract,
-    collection1155Contract: parsed.collection1155Contract ?? sn.collection1155!,
+    collection1155Contract: parsed.collection1155Contract ?? sn.collection1155,
     retryOptions: parsed.retryOptions,
     feeConfig: resolveFeeConfig(parsed.feeConfig),
   };

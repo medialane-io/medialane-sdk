@@ -254,3 +254,42 @@ export const popManageSchema = z.object({
   tokenUri: z.string().optional(),
   root: felt.optional(),
 });
+
+export const INTENT_KINDS = [
+  "listing",
+  "offer",
+  "fulfill",
+  "cancel",
+  "mint",
+  "transfer-token",
+  "transfer-nft",
+  "transfer-collection-ownership",
+  "comment",
+  "genesis-mint",
+  "pop-claim",
+  "pop-burn",
+  "drop-claim",
+  "wallet-manage",
+  "swap",
+  "funding-transfer",
+  "drop-manage",
+  "pop-manage",
+  "create-collection",
+  "create-tier",
+  "create-coin",
+  "launch-coin",
+  "sponsorship-offer",
+  "sponsorship-offer-open",
+  "sponsorship-bid",
+  "sponsorship-bid-retract",
+  "sponsorship-bid-accept",
+  "sponsorship-proposal",
+  "sponsorship-proposal-withdraw",
+  "sponsorship-proposal-accept",
+  "sponsorship-proposal-reject",
+  "counter-offer",
+] as const;
+
+export type IntentKind = (typeof INTENT_KINDS)[number];
+
+export const intentPath = (kind: IntentKind | "checkout"): string => `/v1/intents/${kind}`;

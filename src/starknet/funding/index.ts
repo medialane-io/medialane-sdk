@@ -5,7 +5,7 @@ export {
   FundingTransferNotSentError,
 } from "./chain-transfer.js";
 export type {
-  FundingApi,
+  FundingTransferApi,
   FundingResult,
   FundingStep,
   FundingTransferCall,

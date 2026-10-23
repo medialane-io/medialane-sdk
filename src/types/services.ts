@@ -102,3 +102,46 @@ export interface ProposeSponsorshipParams {
 
   royaltyBps: bigint | string;
 }
+
+export interface DeployCollectionParams {
+
+  name: string;
+
+  symbol: string;
+
+  baseUri: string;
+}
+
+export interface MintEditionParams {
+
+  collection: string;
+
+  to: string;
+
+  value: bigint | string;
+
+  tokenUri: string;
+}
+
+export interface BatchMintEditionParams {
+
+  collection: string;
+
+  to: string;
+
+  items: Array<{
+    value: bigint | string;
+    tokenUri: string;
+  }>;
+}
+
+export interface AddSupplyParams {
+
+  collection: string;
+
+  to: string;
+
+  tokenId: bigint | string;
+
+  value: bigint | string;
+}

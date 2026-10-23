@@ -1,3 +1,4 @@
+import type { FetchLike } from "../utils/fetch.js";
 export type RunStatus = "DRAFT" | "PAID" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
 
 export interface RunQuoteLine {
@@ -91,7 +92,7 @@ export class RunRequestError extends Error {
 
 export interface LaunchpadRunsClientOptions {
   baseUrl: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 }
 
 export function createLaunchpadRunsClient({ baseUrl, fetchImpl = fetch }: LaunchpadRunsClientOptions) {
@@ -101,7 +102,7 @@ export function createLaunchpadRunsClient({ baseUrl, fetchImpl = fetch }: Launch
   const runCollectionBase = (id: string): string => `${runBase(id)}/collection`;
   const runTierBase = (id: string): string => `${runBase(id)}/tier`;
 
-  const runFetch: typeof fetch = (input, init) => fetchImpl(input, { ...init, cache: "no-store" });
+  const runFetch: FetchLike = (input, init) => fetchImpl(input, { ...init, cache: "no-store" });
 
   async function call<T>(url: string, init?: RequestInit): Promise<{ status: number; data: T }> {
     const res = await runFetch(url, {
