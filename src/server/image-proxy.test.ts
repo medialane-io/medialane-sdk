@@ -132,6 +132,16 @@ describe("image proxy with backend credentials", () => {
     expect(seen[0]!.headers["x-app-secret"]).toBe("secret");
   });
 
+  test("a backend image link on another host is fetched from the configured backend with credentials", async () => {
+    const { seen, fetchImpl } = recording();
+    const h = createImageProxyHandler({ resolveHostname: async () => ["93.184.216.34"], fetchImpl, backend });
+    expect((await h(request("https://public.example/media/starknet/0xabc/1/image"))).status).toBe(200);
+    expect(seen[0]!.url).toBe("https://api.example/media/starknet/0xabc/1/image");
+    expect(seen[0]!.headers["x-api-key"]).toBe("ml_live_key");
+    expect(seen[0]!.headers["x-app-id"]).toBe("APP");
+    expect(seen[0]!.headers["x-app-secret"]).toBe("secret");
+  });
+
   test("an image from any other host gets no credentials", async () => {
     const { seen, fetchImpl } = recording();
     const h = createImageProxyHandler({ resolveHostname: async () => ["93.184.216.34"], fetchImpl, backend });

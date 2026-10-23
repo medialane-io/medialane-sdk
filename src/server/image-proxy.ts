@@ -123,7 +123,11 @@ export function createImageProxyHandler(
 
     let upstream: Response;
     try {
-      upstream = await safeFetch(validated.url, MAX_IMAGE_REDIRECTS);
+      const isBackendImage = backendOrigin && /^\/media\/[^/]+\/[^/]+\/[^/]+\/image$/.test(validated.url.pathname);
+      upstream = await safeFetch(
+        isBackendImage ? new URL(validated.url.pathname, backendOrigin) : validated.url,
+        MAX_IMAGE_REDIRECTS,
+      );
     } catch {
       return jsonError("Failed to fetch image", 502);
     }
