@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.197.0] — 2026-10-23
+
+### Changed
+
+- A passkey that returns no PRF secret, at creation or on the follow-up read, no longer stops wallet setup. The owner key is sealed with a non-extractable key held by the browser (`SealedOwner.lock: "device"`), and unlocking asks for the passkey. Wallets sealed with PRF unlock as before.
+- Removed the PRF capability pre-check (`PasskeyConfig.clientCapabilities`) and the removal signal for rejected passkeys (`PasskeyConfig.signalUnknownCredential`).
+
+### Added
+
+- `PasskeyConfig.deviceKeys`, `indexedDbDeviceKeys`, `DeviceKeyStore`, `DeviceKeyMissingError`.
+
 ## [0.196.0] — 2026-10-23
 
 ### Fixed

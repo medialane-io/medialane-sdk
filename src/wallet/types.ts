@@ -6,6 +6,7 @@ export interface SealedOwner {
   address: string;
   iv: string;
   ciphertext: string;
+  lock?: "device";
 }
 
 export interface OwnerSigner {

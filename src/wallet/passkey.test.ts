@@ -1,6 +1,7 @@
 import { computeAccountAddress } from "../starknet/media-wallet/account.js";
 import { test, expect } from "bun:test";
-import { createPasskeyOwner, PasskeyCancelledError, PasskeyUnsupportedError } from "./passkey.js";
+import { createPasskeyOwner, DeviceKeyMissingError, PasskeyCancelledError, PasskeyUnsupportedError } from "./passkey.js";
+import type { DeviceKeyStore } from "./device-keys.js";
 
 const PRF_SECRET = new Uint8Array(32).map((_, i) => (i * 7 + 3) % 256);
 const IV = new Uint8Array(12).map((_, i) => (i * 11 + 5) % 256);
@@ -48,11 +49,19 @@ function credentialsStub(
   } as unknown as CredentialsContainer;
 }
 
+function memoryDeviceKeys(): DeviceKeyStore & { keys: Map<string, CryptoKey> } {
+  const keys = new Map<string, CryptoKey>();
+  return {
+    keys,
+    save: async (id, key) => void keys.set(id, key),
+    load: async (id) => keys.get(id) ?? null,
+  };
+}
+
 function ownerFor(
   credentials: CredentialsContainer,
   hkdfInfo = "medialane-io-owner-key",
-  clientCapabilities?: () => Promise<Record<string, boolean | undefined>>,
-  signalUnknownCredential?: (options: { rpId: string; credentialId: string }) => Promise<void>,
+  deviceKeys: DeviceKeyStore = memoryDeviceKeys(),
 ) {
   return createPasskeyOwner({
     appName: "Medialane",
@@ -63,8 +72,7 @@ function ownerFor(
     passkeyUser: async () => ({ id: Uint8Array.from([9]), name: "creator@example.com", displayName: "creator@example.com" }),
     knownCredentials: () => [],
     credentials,
-    clientCapabilities,
-    signalUnknownCredential,
+    deviceKeys,
     randomBytes: ((length: number) => (length === 12 ? IV : new Uint8Array(length).fill(9))) as never,
   });
 }
@@ -112,13 +120,6 @@ test("a cancelled passkey prompt is reported as cancelled, not as a failure", as
   await expect(owner.createOwnerKey()).rejects.toBeInstanceOf(PasskeyCancelledError);
 });
 
-test("a passkey that returns no PRF secret is reported as unsupported, with no-prf", async () => {
-  const owner = ownerFor(credentialsStub({ prfFirst: null }));
-  const err = await owner.createOwnerKey().catch((e: unknown) => e);
-  expect(err).toBeInstanceOf(PasskeyUnsupportedError);
-  expect((err as PasskeyUnsupportedError).reason).toBe("no-prf");
-});
-
 test("unlocking with a passkey that returns no PRF secret is reported as no-prf", async () => {
   const sealed = await ownerFor(credentialsStub()).sealImportedOwnerKey({ walletAddress: ADDRESS, privateKey: PRIVATE_KEY });
   const err = await ownerFor(credentialsStub({ prfFirst: null })).unlockOwnerKey(sealed).catch((e: unknown) => e);
@@ -156,37 +157,8 @@ test("the passkey is saved on this device", async () => {
 });
 
 test("no error message names a browser", async () => {
-  const errors = [
-    await ownerFor(credentialsStub({ prfFirst: null })).createOwnerKey().catch((e: unknown) => e),
-    new PasskeyUnsupportedError("no-webauthn"),
-  ];
-  for (const err of errors) expect((err as Error).message).not.toMatch(/brave|chrome|safari|firefox|edge/i);
-});
-
-test("a browser that says it can't do PRF is refused before any passkey prompt", async () => {
-  let prompted = false;
-  const credentials = credentialsStub({ onCreate: () => (prompted = true) });
-  const owner = ownerFor(credentials, undefined, async () => ({ "extension:prf": false }));
-  const err = await owner.createOwnerKey().catch((e: unknown) => e);
-  expect(err).toBeInstanceOf(PasskeyUnsupportedError);
-  expect((err as PasskeyUnsupportedError).reason).toBe("no-prf");
-  expect(prompted).toBe(false);
-});
-
-test("a browser that is unsure, or can't answer, still gets the passkey prompt", async () => {
-  for (const caps of [async () => ({ "extension:prf": true }), async () => ({}), async () => Promise.reject(new Error("boom"))]) {
-    const created = await ownerFor(credentialsStub(), undefined, caps).createOwnerKey();
-    expect(created.sealed.credentialId).toBe(CREDENTIAL_ID);
-  }
-});
-
-test("a passkey created reporting PRF disabled is still read once, since the secret may only come on read", async () => {
-  let reads = 0;
-  const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled: false, onGet: () => reads++ }));
-  const err = await owner.createOwnerKey().catch((e: unknown) => e);
-  expect(err).toBeInstanceOf(PasskeyUnsupportedError);
-  expect((err as PasskeyUnsupportedError).reason).toBe("no-prf");
-  expect(reads).toBe(1);
+  const errors = [new PasskeyUnsupportedError("no-webauthn"), new PasskeyUnsupportedError("no-prf"), new DeviceKeyMissingError()];
+  for (const err of errors) expect(err.message).not.toMatch(/brave|chrome|safari|firefox|edge/i);
 });
 
 test("a passkey reporting PRF disabled at creation that returns the secret on read creates the wallet key", async () => {
@@ -201,36 +173,70 @@ test("a passkey reporting PRF disabled at creation that returns the secret on re
   const credentials = { create: async () => created, get: async () => read } as unknown as CredentialsContainer;
   const result = await ownerFor(credentials).createOwnerKey();
   expect(result.sealed.credentialId).toBe(CREDENTIAL_ID);
+  expect(result.sealed.lock).toBeUndefined();
 });
 
-test("a passkey that reports PRF enabled but returns no value at creation is read once more", async () => {
-  let reads = 0;
-  const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled: true, onGet: () => reads++ }));
-  await owner.createOwnerKey().catch(() => undefined);
-  expect(reads).toBe(1);
+test("a passkey that returns no PRF secret anywhere locks the key to this device", async () => {
+  const store = memoryDeviceKeys();
+  const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled: false }), undefined, store);
+  const created = await owner.createOwnerKey();
+  expect(created.sealed.lock).toBe("device");
+  expect(created.sealed.address).toBe(computeAccountAddress(created.sealed.ownerPubKey, 0));
+  expect(store.keys.has(CREDENTIAL_ID)).toBe(true);
+  expect(await owner.unlockOwnerKey(created.sealed)).toBe(created.privateKeyHex);
 });
 
-test("a passkey rejected for missing PRF is reported to the browser as unknown, so it can be removed", async () => {
-  for (const prfEnabled of [false, undefined]) {
-    const signals: Array<{ rpId: string; credentialId: string }> = [];
-    const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled }), undefined, undefined, async (o) => {
-      signals.push(o);
-    });
-    await owner.createOwnerKey().catch(() => undefined);
-    expect(signals).toEqual([{ rpId: "www.medialane.io", credentialId: "AQIDBA" }]);
-  }
+test("a device-locked key is read once after creation, and unlocking asks for the passkey without PRF", async () => {
+  const seen: Array<CredentialRequestOptions> = [];
+  const base = credentialsStub({ prfFirst: null, prfEnabled: false });
+  const credentials = {
+    create: base.create.bind(base),
+    get: async (options: CredentialRequestOptions) => (seen.push(options), base.get(options)),
+  } as unknown as CredentialsContainer;
+  const owner = ownerFor(credentials);
+  const created = await owner.createOwnerKey();
+  expect(seen).toHaveLength(1);
+  await owner.unlockOwnerKey(created.sealed);
+  expect(seen).toHaveLength(2);
+  expect(seen[1]?.publicKey?.extensions).toBeUndefined();
+  expect(seen[1]?.publicKey?.userVerification).toBe("required");
 });
 
-test("a failed removal signal does not hide the no-prf error", async () => {
-  const owner = ownerFor(credentialsStub({ prfFirst: null, prfEnabled: false }), undefined, undefined, async () => {
-    throw new Error("not supported");
-  });
-  const err = await owner.createOwnerKey().catch((e: unknown) => e);
-  expect((err as PasskeyUnsupportedError).reason).toBe("no-prf");
+test("an imported key can be locked to this device too", async () => {
+  const owner = ownerFor(credentialsStub({ prfFirst: null }));
+  const sealed = await owner.sealImportedOwnerKey({ walletAddress: ADDRESS, privateKey: PRIVATE_KEY });
+  expect(sealed.lock).toBe("device");
+  expect(sealed.address).toBe(ADDRESS);
+  expect(await owner.unlockOwnerKey(sealed)).toBe(PRIVATE_KEY);
 });
 
-test("a cancelled follow-up read does not remove the passkey", async () => {
-  let signalled = false;
+test("a device-locked key whose browser key is gone says so", async () => {
+  const sealed = await ownerFor(credentialsStub({ prfFirst: null })).createOwnerKey();
+  const err = await ownerFor(credentialsStub({ prfFirst: null }), undefined, memoryDeviceKeys())
+    .unlockOwnerKey(sealed.sealed)
+    .catch((e: unknown) => e);
+  expect(err).toBeInstanceOf(DeviceKeyMissingError);
+});
+
+test("a cancelled passkey prompt while unlocking a device-locked key is reported as cancelled", async () => {
+  const store = memoryDeviceKeys();
+  const created = await ownerFor(credentialsStub({ prfFirst: null }), undefined, store).createOwnerKey();
+  const cancelled = Object.assign(new Error("user cancelled"), { name: "NotAllowedError" });
+  const credentials = { get: async () => { throw cancelled; } } as unknown as CredentialsContainer;
+  await expect(ownerFor(credentials, undefined, store).unlockOwnerKey(created.sealed)).rejects.toBeInstanceOf(
+    PasskeyCancelledError,
+  );
+});
+
+test("a browser that says it cannot do PRF is still asked for a passkey, and the key is locked to the device", async () => {
+  let prompted = false;
+  const credentials = credentialsStub({ prfFirst: null, onCreate: () => (prompted = true) });
+  const created = await ownerFor(credentials).createOwnerKey();
+  expect(prompted).toBe(true);
+  expect(created.sealed.lock).toBe("device");
+});
+
+test("a cancelled follow-up read creates nothing", async () => {
   let creates = 0;
   const cancelled = Object.assign(new Error("user cancelled"), { name: "NotAllowedError" });
   const base = credentialsStub({ prfFirst: null, prfEnabled: true });
@@ -240,10 +246,8 @@ test("a cancelled follow-up read does not remove the passkey", async () => {
       throw cancelled;
     },
   } as unknown as CredentialsContainer;
-  const owner = ownerFor(credentials, undefined, undefined, async () => {
-    signalled = true;
-  });
-  await expect(owner.createOwnerKey()).rejects.toBeInstanceOf(PasskeyCancelledError);
-  expect(signalled).toBe(false);
+  const store = memoryDeviceKeys();
+  await expect(ownerFor(credentials, undefined, store).createOwnerKey()).rejects.toBeInstanceOf(PasskeyCancelledError);
   expect(creates).toBe(1);
+  expect(store.keys.size).toBe(0);
 });
