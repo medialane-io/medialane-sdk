@@ -264,7 +264,7 @@ const metaResult = await client.api.metadata.upload({
 ```typescript
 import type { IpAttribute, IpNftMetadata, ApiTokenMetadata } from "@medialane/sdk";
 
-// Single OpenSea ERC-721 attribute
+// Single OpenSea attribute (the value is a string, number or boolean)
 const attr: IpAttribute = { trait_type: "License", value: "CC BY-NC-SA" };
 
 // Full IPFS metadata shape for a Medialane IP NFT
@@ -287,12 +287,11 @@ const metadata: IpNftMetadata = {
   ],
 };
 
-// Token from the API: includes indexed licensing fields for fast access
+// Token from the API: the indexed fields, and every attribute as the creator set it
 const token = await client.api.tokens.get(contract, tokenId);
-token.metadata.licenseType;   // "CC BY-NC-SA"
-token.metadata.commercialUse; // "No"
-token.metadata.derivatives;   // "Share-Alike"
-token.metadata.attributes;    // IpAttribute[] | null
+token.metadata.licenseType;   // "CC BY-NC-SA" | null
+token.metadata.commercialUse; // boolean | null
+token.metadata.attributes;    // IpAttribute[] | null, the rest of the license terms are here
 ```
 
 ---

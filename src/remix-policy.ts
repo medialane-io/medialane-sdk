@@ -1,6 +1,6 @@
 
 
-type Attribute = { trait_type?: string; value?: string };
+type Attribute = { trait_type?: string; value?: string | number | boolean };
 
 export function getDerivativesTerm(
   attributes: Attribute[] | null | undefined,

@@ -2,6 +2,21 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.200.0] — 2026-10-23
+
+### Changed
+
+- `ApiToken`, `ApiCollection`, `ApiTokenMetadata` and `IpAttribute` come from the response schemas the API is tested against, so they describe what the API sends:
+  - `ApiToken.standard` can be `null` and is never `"UNKNOWN"`.
+  - `ApiTokenMetadata` has `commercialUse` as a boolean or `null`, and no longer lists `derivatives`, `attribution`, `territory`, `aiPolicy`, `royalty` or `registration`; those terms are in `attributes`.
+  - `ApiCollection` has no `isKnown`, has `attributes`, and its `profile` holds the six fields the API sends (use `collections.findProfile` for the full profile).
+  - An attribute value is a string, number or boolean.
+- `getDerivativesTerm` accepts attributes with any of those value types.
+
+### Removed
+
+- The error codes `NETWORK_NOT_SUPPORTED`, `APPROVAL_FAILED` and `TRANSACTION_FAILED`, which nothing produced.
+
 ## [0.199.0] — 2026-10-23
 
 This release removes the flat `ApiClient` methods, the service classes and several duplicate names. Pin the exact version and move the calls in the same change; the lists below say what each one becomes.
