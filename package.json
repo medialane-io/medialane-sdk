@@ -31,6 +31,11 @@
       "types": "./dist/stellar/index.d.ts",
       "import": "./dist/stellar/index.js",
       "require": "./dist/stellar/index.cjs"
+    },
+    "./contract": {
+      "types": "./dist/contract/index.d.ts",
+      "import": "./dist/contract/index.js",
+      "require": "./dist/contract/index.cjs"
     }
   },
   "license": "MIT",
