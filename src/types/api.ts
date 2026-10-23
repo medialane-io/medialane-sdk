@@ -1,5 +1,8 @@
 import type { z } from "zod";
 import type * as intents from "../contract/intents.js";
+import type * as issuance from "../contract/issuance.js";
+import type * as orders from "../contract/orders.js";
+import type * as profiles from "../contract/profiles.js";
 
 export type IPType =
   | "Audio"
@@ -100,18 +103,7 @@ export interface ApiResponse<T> {
 
 export type ChainFilter = import("../chains.js").Chain | "all";
 
-export interface ApiOrdersQuery {
-  chain?: ChainFilter;
-  status?: OrderStatus;
-  collection?: string;
-  currency?: string;
-  sort?: SortOrder;
-  page?: number;
-  limit?: number;
-  offerer?: string;
-  minPrice?: string;
-  maxPrice?: string;
-}
+export type ApiOrdersQuery = z.input<typeof orders.ordersListQuery> & { chain?: ChainFilter };
 
 export interface ApiOrderOffer {
   itemType: string;
@@ -532,18 +524,7 @@ export interface ApiCheckoutIntentResult {
 
 export type CreateTierIntentParams = z.output<typeof intents.createTierSchema>;
 
-export interface EmissionParams {
-  chain?: "STARKNET";
-  service: string;
-  owner: string;
-  recipients: string[];
-  tokenUri?: string;
-  collectionId?: string;
-  collectionContract?: string;
-  tokenId?: string;
-  amount?: string;
-  batchSize?: number;
-}
+export type EmissionParams = z.input<typeof issuance.emissionSchema>;
 
 export interface ApiEmissionCall {
   contractAddress: string;
@@ -792,19 +773,7 @@ export interface ApiCollectionProfile {
   updatedAt: string;
 }
 
-export interface UpdateCollectionProfileInput {
-  displayName?: string | null;
-  description?: string | null;
-  image?: string | null;
-  bannerImage?: string | null;
-  websiteUrl?: string | null;
-  twitterUrl?: string | null;
-  discordUrl?: string | null;
-  telegramUrl?: string | null;
-  gatedContentTitle?: string | null;
-  gatedContentUrl?: string | null;
-  gatedContentType?: "VIDEO" | "STREAM" | "AUDIO" | "DOCUMENT" | "LINK" | null;
-}
+export type UpdateCollectionProfileInput = z.output<typeof profiles.collectionProfileSchema>;
 
 export interface ApiCollectionSlugClaim {
   id: string;
