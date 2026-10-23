@@ -96,6 +96,8 @@ export interface BuildCollectionMetadataInput {
   externalLink?: string | null;
 }
 
+export const accountPageUrl = (address: string): string => `https://www.medialane.io/account/${address}`;
+
 export function buildCollectionMetadata(input: BuildCollectionMetadataInput): CollectionMetadata {
   const description = input.description?.trim();
   const image = input.image?.trim();
@@ -103,6 +105,6 @@ export function buildCollectionMetadata(input: BuildCollectionMetadataInput): Co
     name: input.name,
     ...(description ? { description } : {}),
     ...(image ? { image } : {}),
-    external_link: input.externalLink?.trim() || `https://medialane.io/account/${input.owner}`,
+    external_link: input.externalLink?.trim() || accountPageUrl(input.owner),
   };
 }

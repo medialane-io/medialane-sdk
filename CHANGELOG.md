@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.198.0] — 2026-10-23
+
+### Added
+
+- `accountPageUrl(address)`: the account page link, `https://www.medialane.io/account/<address>`.
+
+### Changed
+
+- A collection's default `external_link` is the account page on `www.medialane.io`.
+
 ## [0.197.0] — 2026-10-23
 
 ### Changed
