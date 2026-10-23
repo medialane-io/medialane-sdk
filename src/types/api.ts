@@ -3,6 +3,7 @@ import type * as intents from "../contract/intents.js";
 import type * as issuance from "../contract/issuance.js";
 import type * as orders from "../contract/orders.js";
 import type * as profiles from "../contract/profiles.js";
+import type * as responses from "../contract/responses.js";
 
 export type IPType =
   | "Audio"
@@ -137,35 +138,7 @@ export interface ApiOrderTokenMeta {
   animationUrl: string | null;
 }
 
-export interface ApiOrder {
-  id: string;
-  chain: string;
-  orderHash: string;
-  offerer: string;
-  offer: ApiOrderOffer;
-  consideration: ApiOrderConsideration;
-  startTime: string;
-  endTime: string;
-  status: OrderStatus;
-  fulfiller: string | null;
-  nftContract: string | null;
-  nftTokenId: string | null;
-  price: ApiOrderPrice;
-  txHash: ApiOrderTxHash;
-  createdBlockNumber: string;
-
-  remainingAmount: string | null;
-  createdAt: string;
-  updatedAt: string;
-
-  token: ApiOrderTokenMeta | null;
-
-  parentOrderHash?: string | null;
-
-  counterOfferMessage?: string | null;
-
-  hasActiveCounterOffer?: boolean;
-}
+export type ApiOrder = z.output<typeof responses.orderSchema>;
 
 export interface IpAttribute {
   trait_type: string;
