@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.195.0] — 2026-10-23
+
+### Fixed
+
+- Passkey registration asks for the device's own authenticator (`authenticatorAttachment: "platform"`), so the passkey is saved where it can return the PRF secret that seals the wallet key.
+
 ## [0.194.0] — 2026-10-23
 
 ### Added
