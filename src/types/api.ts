@@ -140,10 +140,7 @@ export interface ApiOrderTokenMeta {
 
 export type ApiOrder = z.output<typeof responses.orderSchema>;
 
-export interface IpAttribute {
-  trait_type: string;
-  value: string;
-}
+export type IpAttribute = z.output<typeof responses.tokenAttributeSchema>;
 
 export interface IpNftMetadata {
   name: string;
@@ -163,26 +160,7 @@ export interface IpNftMetadata {
   registration?: string | null;
 }
 
-export interface ApiTokenMetadata {
-  name: string | null;
-  description: string | null;
-  image: string | null;
-
-  animationUrl: string | null;
-
-  attributes: IpAttribute[] | null;
-
-  ipType: string | null;
-  licenseType: string | null;
-  commercialUse: string | null;
-  derivatives: string | null;
-  attribution: string | null;
-  territory: string | null;
-  aiPolicy: string | null;
-  royalty: string | null;
-  registration: string | null;
-  author: string | null;
-}
+export type ApiTokenMetadata = ApiToken["metadata"];
 
 export interface ApiTokenBalance {
   owner: string;
@@ -190,57 +168,9 @@ export interface ApiTokenBalance {
   amount: string;
 }
 
-export interface ApiToken {
-  id: string;
-  chain: string;
-  contractAddress: string;
-  tokenId: string;
+export type ApiToken = z.output<typeof responses.tokenSchema>;
 
-  owner: string | null;
-  tokenUri: string | null;
-  metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
-
-  standard: "ERC721" | "ERC1155" | "UNKNOWN";
-  metadata: ApiTokenMetadata;
-
-  balances: ApiTokenBalance[] | null;
-  holderCount?: number;
-  supply?: string;
-  activeOrders: ApiOrder[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ApiCollection {
-  id: string;
-  chain: string;
-  contractAddress: string;
-  collectionId: string | null;
-  name: string | null;
-  symbol: string | null;
-  description: string | null;
-  image: string | null;
-  owner: string | null;
-  startBlock: string;
-  metadataStatus: "PENDING" | "FETCHING" | "FETCHED" | "FAILED";
-
-  standard: "ERC721" | "ERC1155";
-  isKnown: boolean;
-
-  isHidden: boolean;
-
-  isFeatured: boolean;
-
-  service: string | null;
-  claimedBy: string | null;
-  profile?: ApiCollectionProfile | null;
-  floorPrice: string | null;
-  totalVolume: string | null;
-  holderCount: number | null;
-  totalSupply: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
+export type ApiCollection = z.output<typeof responses.collectionSchema>;
 
 export interface ApiCoin {
   id: string;
