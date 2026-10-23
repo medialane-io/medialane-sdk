@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildAssetMetadata, buildCollectionMetadata } from "./metadata.js";
+import { accountPageUrl, buildAssetMetadata, buildCollectionMetadata } from "./metadata.js";
 
 const OWNER = "0x0123";
 
@@ -22,14 +22,14 @@ describe("buildCollectionMetadata", () => {
   test("links to the owner's account page when no external link is given", () => {
     expect(buildCollectionMetadata({ name: "Archive", owner: OWNER })).toEqual({
       name: "Archive",
-      external_link: `https://medialane.io/account/${OWNER}`,
+      external_link: `https://www.medialane.io/account/${OWNER}`,
     });
   });
 
   test("treats empty or whitespace fields as missing", () => {
     expect(buildCollectionMetadata({ name: "Archive", owner: OWNER, description: "  ", image: "", externalLink: " " })).toEqual({
       name: "Archive",
-      external_link: `https://medialane.io/account/${OWNER}`,
+      external_link: `https://www.medialane.io/account/${OWNER}`,
     });
   });
 
@@ -39,5 +39,11 @@ describe("buildCollectionMetadata", () => {
       description: "d",
       external_link: "https://me.example",
     });
+  });
+});
+
+describe("accountPageUrl", () => {
+  test("is the account page on the canonical host", () => {
+    expect(accountPageUrl("0xabc")).toBe("https://www.medialane.io/account/0xabc");
   });
 });

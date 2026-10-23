@@ -145,7 +145,7 @@ export {
 } from "./server/siws-token.js";
 export type { SiwsIdentity } from "./server/siws-token.js";
 
-export { buildAssetMetadata, buildCollectionMetadata, RESERVED_TRAITS } from "./metadata.js";
+export { buildAssetMetadata, buildCollectionMetadata, accountPageUrl, RESERVED_TRAITS } from "./metadata.js";
 export { getDerivativesTerm, resolveRemixPolicy } from "./remix-policy.js";
 export type { RemixPolicy, RemixPolicyInput } from "./remix-policy.js";
 export type { AssetAttribute, AssetMetadata, BuildAssetMetadataInput, BuildCollectionMetadataInput, CollectionMetadata } from "./metadata.js";
