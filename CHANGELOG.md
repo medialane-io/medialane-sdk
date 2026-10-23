@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.196.0] — 2026-10-23
+
+### Fixed
+
+- Passkey registration no longer restricts where the passkey is saved, so a phone, iCloud Keychain or password manager that returns the PRF secret can be chosen.
+
 ## [0.195.0] — 2026-10-23
 
 ### Fixed
