@@ -47,6 +47,17 @@ export function deployedCollectionFromReceipt(receipt: ReceiptLike, service: Dep
   return null;
 }
 
+export function createdCollectionFromReceipt(receipt: ReceiptLike, registry: string): { collectionId: string } | null {
+  const selector = BigInt(hash.getSelectorFromName("CollectionCreated"));
+  for (const e of receipt.events ?? []) {
+    if (!sameFelt(e.from_address, registry)) continue;
+    const keys = e.keys ?? [];
+    if (!sameFelt(keys[0], selector) || keys.length < 3) continue;
+    return { collectionId: u256(keys[1], keys[2]) };
+  }
+  return null;
+}
+
 export function mintedTokenIdFromReceipt(receipt: ReceiptLike, contract: string): string | null {
   for (const e of receipt.events ?? []) {
     if (!sameFelt(e.from_address, contract)) continue;
