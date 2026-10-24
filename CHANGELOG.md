@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.201.0] — 2026-10-24
+
+### Added
+
+- `FIELD_LIMITS`: the standard maximum lengths for names (255), symbols (10) and descriptions (2000).
+
 ## [0.200.0] — 2026-10-23
 
 ### Changed
