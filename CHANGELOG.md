@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.203.0] — 2026-10-24
+
+### Removed
+
+- `FIELD_LIMITS`, `UPLOAD_LIMITS`, `acceptFor` and `uploadError`. The SDK has no limits on names, symbols, descriptions or file types. `uploadSizeError`, `formatFileSize` and `MAX_UPLOAD_BYTES` stay.
+
 ## [0.202.0] — 2026-10-24
 
 ### Added
