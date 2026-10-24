@@ -159,5 +159,6 @@ export {
 
 export * from "./adapters/index.js";
 export { UserFacingError, MedialaneError } from "./errors.js";
+export { FIELD_LIMITS } from "./field-limits.js";
 export { MAX_UPLOAD_BYTES, UPLOAD_LIMITS, acceptFor, formatFileSize, uploadError, uploadSizeError } from "./uploads.js";
 export type { UploadKind, UploadLimit } from "./uploads.js";
