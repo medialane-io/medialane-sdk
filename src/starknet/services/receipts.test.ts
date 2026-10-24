@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import { hash } from "starknet";
 import { getService } from "../../services/registry.js";
-import { deployedCollectionFromReceipt, mintedTokenIdFromReceipt } from "./receipts.js";
+import { createdCollectionFromReceipt, deployedCollectionFromReceipt, mintedTokenIdFromReceipt } from "./receipts.js";
 
 const sel = (name: string) => hash.getSelectorFromName(name);
 const factoryOf = (id: string) => getService(id)!.onchain!.STARKNET!.factoryAddress!;
@@ -78,4 +78,25 @@ test("a transfer between holders is not a mint", () => {
 
 test("the fee token's transfer never reads as a mint", () => {
   expect(mintedTokenIdFromReceipt({ events: [feeTransfer] }, STRK)).toBeNull();
+});
+
+const REGISTRY = "0x0225c3ae09506b8d97adc39649ca740dad5aac195b7f5f0441cc1852947acaea";
+const createdEvent = (from: string, low: string, high: string) => ({ from_address: from, keys: [sel("CollectionCreated"), low, high], data: [] });
+
+test("reads the id of the collection the registry created", () => {
+  expect(createdCollectionFromReceipt({ events: [feeTransfer, createdEvent(REGISTRY, "0x5", "0x0")] }, REGISTRY)).toEqual({ collectionId: "5" });
+});
+
+test("reads an id that spills into the high half", () => {
+  expect(createdCollectionFromReceipt({ events: [createdEvent(REGISTRY, "0x0", "0x1")] }, REGISTRY)).toEqual({
+    collectionId: (1n << 128n).toString(),
+  });
+});
+
+test("ignores a CollectionCreated event from another contract", () => {
+  expect(createdCollectionFromReceipt({ events: [createdEvent(STRK, "0x5", "0x0")] }, REGISTRY)).toBeNull();
+});
+
+test("returns null when the receipt has no events", () => {
+  expect(createdCollectionFromReceipt({}, REGISTRY)).toBeNull();
 });

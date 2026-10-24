@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.202.0] — 2026-10-24
+
+### Added
+
+- `createdCollectionFromReceipt(receipt, registry)`: reads the id of the collection a registry created from a transaction receipt.
+
 ## [0.201.0] — 2026-10-24
 
 ### Added
