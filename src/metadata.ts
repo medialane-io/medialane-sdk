@@ -27,14 +27,12 @@ export interface BuildAssetMetadataInput {
   edition?: string | null;
 
   templateTraits?: { traitType: string; value: string }[];
-
-  registrationDate?: string;
 }
 
 export const RESERVED_TRAITS = new Set([
   "Creator", "IP Type", "License", "Commercial Use", "Derivatives",
   "Attribution", "Territory", "AI Policy", "Royalty", "Edition",
-  "Standard", "Registration",
+  "Standard",
 ]);
 const RESERVED_TRAITS_NORMALIZED = new Set([...RESERVED_TRAITS].map((t) => t.toLowerCase()));
 
@@ -64,13 +62,7 @@ export function buildAssetMetadata(input: BuildAssetMetadataInput): AssetMetadat
     attributes.push({ trait_type: traitType, value: traitValue });
   }
 
-  if (input.licenseType) {
-    attributes.push({ trait_type: "Standard", value: "Berne Convention" });
-    attributes.push({
-      trait_type: "Registration",
-      value: input.registrationDate ?? new Date().toISOString().split("T")[0],
-    });
-  }
+  if (input.licenseType) attributes.push({ trait_type: "Standard", value: "Berne Convention" });
 
   return {
     name: input.name,

@@ -10,6 +10,14 @@ describe("buildAssetMetadata", () => {
     const { attributes } = buildAssetMetadata({ name: "Post", templateTraits: [{ traitType: longName, value: longValue }] });
     expect(attributes).toEqual([{ trait_type: longName, value: longValue }]);
   });
+
+  test("writes no Registration trait", () => {
+    const { attributes } = buildAssetMetadata({ name: "Post", licenseType: "CC BY-SA" });
+    expect(attributes).toEqual([
+      { trait_type: "License", value: "CC BY-SA" },
+      { trait_type: "Standard", value: "Berne Convention" },
+    ]);
+  });
 });
 
 describe("buildCollectionMetadata", () => {

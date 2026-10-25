@@ -283,7 +283,6 @@ const metadata: IpNftMetadata = {
     { trait_type: "AI Policy",      value: "Not Allowed" },
     { trait_type: "Royalty",        value: "10%" },
     { trait_type: "Standard",       value: "Berne Convention" },
-    { trait_type: "Registration",   value: "2026-03-06" },
   ],
 };
 

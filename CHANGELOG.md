@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.204.0] — 2026-10-25
+
+### Removed
+
+- `buildAssetMetadata` no longer writes a `Registration` trait or accepts `registrationDate`. The time of a mint is its block timestamp, not a claim in the metadata.
+
 ## [0.203.0] — 2026-10-24
 
 ### Removed
