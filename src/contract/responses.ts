@@ -82,6 +82,7 @@ export const tokenSchema = z.object({
     licenseType: z.string().nullable(),
     commercialUse: z.boolean().nullable(),
     author: z.string().nullable(),
+    externalUrl: z.string().nullable(),
   }),
   balances: z.array(z.object({ owner: z.string(), amount: z.string() })).nullable(),
   holderCount: z.number().optional(),

@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.205.0] — 2026-10-25
+
+### Added
+
+- A token's `metadata.externalUrl`: the `external_url` of its metadata file, or `null`.
+
 ## [0.204.0] — 2026-10-25
 
 ### Removed

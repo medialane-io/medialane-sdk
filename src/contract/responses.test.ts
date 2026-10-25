@@ -33,7 +33,7 @@ const token = {
   tokenUri: null,
   metadataStatus: "FETCHED",
   standard: null,
-  metadata: { name: "n", description: null, image: null, animationUrl: null, attributes: null, ipType: null, licenseType: null, commercialUse: null, author: null },
+  metadata: { name: "n", description: null, image: null, animationUrl: null, attributes: null, ipType: null, licenseType: null, commercialUse: null, author: null, externalUrl: null },
   balances: null,
   activeOrders: [order],
   createdAt: "2026-01-01T00:00:00.000Z",
