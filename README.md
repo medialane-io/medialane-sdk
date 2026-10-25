@@ -290,6 +290,7 @@ const metadata: IpNftMetadata = {
 const token = await client.api.tokens.get(contract, tokenId);
 token.metadata.licenseType;   // "CC BY-NC-SA" | null
 token.metadata.commercialUse; // boolean | null
+token.metadata.externalUrl;  // string | null, the external_url of the metadata file
 token.metadata.attributes;    // IpAttribute[] | null, the rest of the license terms are here
 ```
 
