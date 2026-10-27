@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.206.0] — 2026-10-27
+
+### Changed
+
+- `UserFacingError` has `retryable`, true unless set otherwise.
+- `SponsoredCallRejectedError` is not retryable and carries `code`, `detail`, `status`, `stage` and `requestId`.
+- `MedialaneApiError` carries `requestId`, the `X-Request-Id` of the response.
+- A declined fee prompt throws `UserFacingError`.
+- Run request errors use the server's reason, or the response status.
+
 ## [0.205.0] — 2026-10-25
 
 ### Added

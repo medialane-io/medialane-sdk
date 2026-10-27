@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 import type { ProviderInterface } from "starknet";
-import { SponsoredCallRejectedError } from "../starknet/services/sponsoredExecutor.js";
+import { UserFacingError } from "../errors.js";
 import { createSelfFundConsent } from "./self-fund-consent.js";
 import { sponsoredExecutor } from "./executors.js";
 import type { WalletExecutor } from "./types.js";
@@ -93,7 +93,7 @@ test("declining leaves the transaction unsent", async () => {
 
   await expect(
     executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] }),
-  ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
+  ).rejects.toBeInstanceOf(UserFacingError);
 });
 
 test("a refused transaction is never offered for self-funding", async () => {
@@ -115,7 +115,7 @@ test("a refused transaction is never offered for self-funding", async () => {
 
   await expect(
     executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] }),
-  ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
+  ).rejects.toBeInstanceOf(UserFacingError);
   expect(asked).toBe(0);
 });
 

@@ -1,5 +1,6 @@
 import { test, expect, mock } from "bun:test";
 import type { TypedData } from "starknet";
+import { UserFacingError } from "../../errors.js";
 import { executeSponsored, SponsoredCallRejectedError, allowsFallbackFunding, type TypedDataSigner } from "./sponsoredExecutor.js";
 
 const FAKE_TYPED_DATA = {
@@ -210,4 +211,29 @@ test("a launchpad-run step is sponsored by the wallet address, with no calls in 
   const result = await executeSponsored({ proxyUrl: "/runs/1/collection", fetchImpl }, signer, { userAddress: "0xa" });
   expect(result).toEqual({ status: "sponsored", transactionHash: "0xh" });
   expect(bodies).toEqual([{ userAddress: "0xa" }, { userAddress: "0xa", typedData: { t: 1 }, signature: ["0xs"] }]);
+});
+
+test("a rejected execute keeps the server's reason as a user-facing error", async () => {
+  const fetchImpl = mock(async (url: string) => {
+    if (url === "/api/wallet/sponsored-invoke/build") {
+      return new Response(JSON.stringify({ typedData: FAKE_TYPED_DATA }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ error: "The transaction could not be executed as submitted", code: "not_executable", detail: "execution_error: boom" }), { status: 422, headers: { "x-request-id": "req-1234" } });
+  }) as unknown as typeof fetch;
+
+  const err = await executeSponsored(
+    { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
+    fakeSigner(),
+    { intentIds: ["i1"] },
+  ).catch((e: unknown) => e);
+
+  expect(err).toBeInstanceOf(UserFacingError);
+  expect((err as Error).message).toBe("The transaction could not be executed as submitted");
+  const rejection = err as SponsoredCallRejectedError;
+  expect(rejection.code).toBe("not_executable");
+  expect(rejection.retryable).toBe(false);
+  expect(rejection.detail).toBe("execution_error: boom");
+  expect(rejection.status).toBe(422);
+  expect(rejection.stage).toBe("execute");
+  expect(rejection.requestId).toBe("req-1234");
 });
