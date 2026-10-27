@@ -1,7 +1,8 @@
 import type { FetchLike } from "../utils/fetch.js";
 import { Account, typedData as starknetTypedData, type Call, type ProviderInterface } from "starknet";
 import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
-import { executeSponsored, SponsoredCallRejectedError } from "../starknet/services/sponsoredExecutor.js";
+import { UserFacingError } from "../errors.js";
+import { executeSponsored } from "../starknet/services/sponsoredExecutor.js";
 import type { SelfFundConsent, SelfFundFeeEstimate } from "./self-fund-consent.js";
 import type { ExecutedTransaction, WalletExecutor } from "./types.js";
 import { getTokenBySymbol } from "../utils/token.js";
@@ -60,7 +61,7 @@ export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
       const { userAddress, privateKeyHex, calls, intentIds } = input;
       if (!intentIds?.length) {
         const consented = await deps.consent.request({ address: userAddress, calls });
-        if (!consented) throw new SponsoredCallRejectedError("This action can't be sponsored");
+        if (!consented) throw new UserFacingError("This action can't be sponsored");
         return fallback.execute(input);
       }
       const result = await executeSponsored(
@@ -75,7 +76,7 @@ export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
       if (result.status === "sponsored") return { transactionHash: result.transactionHash };
 
       const consented = await deps.consent.request({ address: userAddress, calls });
-      if (!consented) throw new SponsoredCallRejectedError(result.reason);
+      if (!consented) throw new UserFacingError(result.reason);
       return fallback.execute(input);
     },
   };

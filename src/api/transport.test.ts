@@ -87,13 +87,14 @@ test("find can also treat extra statuses as absent", async () => {
 });
 
 test("a failure carries status, message, retry-after, details and the server's own code", async () => {
-  respond(429, { error: "slow down", code: "credits_exhausted" }, { "retry-after": "2" });
+  respond(429, { error: "slow down", code: "credits_exhausted" }, { "retry-after": "2", "x-request-id": "req-77" });
   const err = await failure(transport().get("/v1/orders"));
   expect(err).toBeInstanceOf(MedialaneApiError);
   expect(err.status).toBe(429);
   expect(err.message).toBe("slow down");
   expect(err.retryAfterMs).toBe(2000);
   expect(err.serverCode).toBe("credits_exhausted");
+  expect(err.requestId).toBe("req-77");
   expect(err.code).toBe("RATE_LIMITED");
   expect(err.details).toEqual({ error: "slow down", code: "credits_exhausted" });
 });

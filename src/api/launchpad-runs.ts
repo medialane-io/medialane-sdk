@@ -111,7 +111,7 @@ export function createLaunchpadRunsClient({ baseUrl, fetchImpl = fetch }: Launch
     });
     const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
     if (!res.ok) {
-      throw new RunRequestError(String(body.error ?? "Something went wrong with this run"), res.status, body);
+      throw new RunRequestError(String(body.error ?? `Request returned status ${res.status}`), res.status, body);
     }
     return { status: res.status, data: body.data as T };
   }

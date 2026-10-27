@@ -55,6 +55,7 @@ async function failureFrom(response: Response, path: string): Promise<MedialaneA
     details,
     path,
     serverCode,
+    response.headers.get("x-request-id") ?? undefined,
   );
 }
 

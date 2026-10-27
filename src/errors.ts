@@ -1,9 +1,12 @@
 import type { MedialaneErrorCode } from "./types/errors.js";
 
 export class UserFacingError extends Error {
-  constructor(message: string) {
+  readonly retryable: boolean;
+
+  constructor(message: string, options: { retryable?: boolean } = {}) {
     super(message);
     this.name = "UserFacingError";
+    this.retryable = options.retryable ?? true;
   }
 }
 
@@ -44,6 +47,7 @@ export class MedialaneApiError extends MedialaneError {
     public readonly details?: unknown,
     path?: string,
     public readonly serverCode?: string,
+    public readonly requestId?: string,
   ) {
     super(message, errorCodeFor(status, path));
     this.name = "MedialaneApiError";
