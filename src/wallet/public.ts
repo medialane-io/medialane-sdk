@@ -1,5 +1,6 @@
 export * from "./index.js";
 export * from "../session/session-wallet.js";
+export * from "../session/wallet-recovery.js";
 export {
   deriveOwnerKeyPair,
   ownerConstructorCalldata,

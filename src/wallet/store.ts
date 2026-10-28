@@ -5,6 +5,9 @@ export interface OwnerStore {
   loadAddress(): string | null;
   save(sealed: SealedOwner): void;
   clear(): void;
+  loadPending(): SealedOwner | null;
+  savePending(sealed: SealedOwner): void;
+  clearPending(): void;
   notifyChange(): void;
   onChange(listener: () => void): () => void;
 }
@@ -39,6 +42,21 @@ export function createOwnerStore(config: { storeKey: string; changeEvent: string
     clear() {
       localStorage.removeItem(storeKey);
       announce();
+    },
+    loadPending() {
+      if (typeof window === "undefined") return null;
+      try {
+        const raw = localStorage.getItem(`${storeKey}:pending`);
+        return raw ? (JSON.parse(raw) as SealedOwner) : null;
+      } catch {
+        return null;
+      }
+    },
+    savePending(sealed) {
+      localStorage.setItem(`${storeKey}:pending`, JSON.stringify(sealed));
+    },
+    clearPending() {
+      localStorage.removeItem(`${storeKey}:pending`);
     },
     notifyChange: announce,
     onChange(listener) {

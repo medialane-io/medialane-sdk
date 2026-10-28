@@ -10,6 +10,14 @@ export interface RegisteredUser {
   createdAt: string;
 }
 
+export interface WalletRecovery {
+  enabled: boolean;
+  state: "none" | "waiting" | "ready";
+  readyAt: number | null;
+  newOwnerGuid: string | null;
+  guardianPubkey: string | null;
+}
+
 export interface AccountApi {
   registerUser(params: { walletAddress: string; walletType?: string; chain?: ApiChain }): Promise<RegisteredUser>;
   upsertMyWallet(options?: { walletType?: string; chain?: ApiChain; email?: string }): Promise<ApiUserWallet>;
@@ -18,6 +26,9 @@ export interface AccountApi {
   sessionWallet(): Promise<{ walletAddress: string; needsKeySetup: boolean } | null>;
   setupWalletKey(params: { newOwnerPubkey: string }): Promise<{ walletAddress: string; removeOwnerGuid: string | null }>;
   generateWallet(newWalletSiwsToken: string): Promise<{ walletAddress: string }>;
+  walletRecovery(): Promise<WalletRecovery>;
+  startWalletRecovery(params: { newOwnerPubkey: string }): Promise<WalletRecovery>;
+  completeWalletRecovery(params: { newOwnerPubkey: string }): Promise<WalletRecovery>;
   emailExists(email: string): Promise<boolean>;
   requestEmailCode(email: string): Promise<void>;
   registerEmailAccount(email: string): Promise<void>;
@@ -51,6 +62,15 @@ export function createAccountApi(t: Transport): AccountApi {
     },
     generateWallet(newWalletSiwsToken) {
       return t.post("/v1/users/me/generate-wallet", { newWalletSiwsToken });
+    },
+    walletRecovery() {
+      return t.get("/v1/users/me/wallet/recovery");
+    },
+    startWalletRecovery(params) {
+      return t.post("/v1/users/me/wallet/recovery", params);
+    },
+    completeWalletRecovery(params) {
+      return t.post("/v1/users/me/wallet/recovery/complete", params);
     },
     async emailExists(email) {
       return (await t.get<{ exists: boolean }>("/v1/auth/email/exists", { email })).exists;

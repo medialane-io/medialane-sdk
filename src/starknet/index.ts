@@ -172,4 +172,5 @@ export type {
 
 export * from "../wallet/index.js";
 export * from "../session/session-wallet.js";
+export * from "../session/wallet-recovery.js";
 export { UserFacingError } from "../errors.js";
