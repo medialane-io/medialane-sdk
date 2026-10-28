@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.207.0] — 2026-10-28
+
+### Added
+
+- `createdCollectionAddress(provider, registry, collectionId)` reads the contract address of a collection just created in the registry, straight from the chain.
+
 ## [0.206.0] — 2026-10-27
 
 ### Changed

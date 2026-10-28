@@ -1,4 +1,4 @@
-import { hash } from "starknet";
+import { hash, uint256, type ProviderInterface } from "starknet";
 import { normalizeAddress } from "../../utils/address.js";
 import { getService } from "../../services/registry.js";
 
@@ -56,6 +56,13 @@ export function createdCollectionFromReceipt(receipt: ReceiptLike, registry: str
     return { collectionId: u256(keys[1], keys[2]) };
   }
   return null;
+}
+
+export async function createdCollectionAddress(provider: ProviderInterface, registry: string, collectionId: string): Promise<string | null> {
+  const [low, high] = Object.values(uint256.bnToUint256(BigInt(collectionId)));
+  const result = await provider.callContract({ contractAddress: registry, entrypoint: "get_collection", calldata: [low, high] });
+  const ipNft = result[result.length - 1];
+  return ipNft && !sameFelt(ipNft, 0n) ? normalizeAddress("STARKNET", ipNft) : null;
 }
 
 export function mintedTokenIdFromReceipt(receipt: ReceiptLike, contract: string): string | null {
