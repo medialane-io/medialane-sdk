@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.208.0] — 2026-10-28
+
+### Added
+
+- `startSessionRecovery`, `finishSessionRecovery` and `turnOnRecovery` recover a wallet on a new browser through its guardian, and turn recovery on.
+- `account.walletRecovery()`, `account.startWalletRecovery()` and `account.completeWalletRecovery()` call the recovery routes.
+- The owner store keeps a pending recovery key apart from the wallet: `loadPending`, `savePending` and `clearPending`.
+
 ## [0.207.0] — 2026-10-28
 
 ### Added

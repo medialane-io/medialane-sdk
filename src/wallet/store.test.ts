@@ -86,3 +86,18 @@ test("saving the same wallet again keeps no extra copy", () => {
   store.save({ ...FAKE, ciphertext: "ct-new" });
   expect(localStorage.length).toBe(1);
 });
+
+test("a pending recovery key is kept apart from the wallet and survives a reload of the store", () => {
+  expect(store.loadPending()).toBeNull();
+  store.savePending(FAKE);
+  expect(store.loadPending()).toEqual(FAKE);
+  expect(store.load()).toBeNull();
+  store.clearPending();
+  expect(store.loadPending()).toBeNull();
+});
+
+test("one app never reads another app's pending recovery key", () => {
+  const other = createOwnerStore({ storeKey: "app-two.wallet.owner.v1", changeEvent: "app-two-wallet" });
+  store.savePending(FAKE);
+  expect(other.loadPending()).toBeNull();
+});
