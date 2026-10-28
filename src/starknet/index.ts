@@ -32,6 +32,7 @@ export {
   type ReceiptProvider,
 } from "./services/executeIntent.js";
 export {
+  createdCollectionAddress,
   createdCollectionFromReceipt,
   deployedCollectionFromReceipt,
   mintedTokenIdFromReceipt,

@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import { hash } from "starknet";
 import { getService } from "../../services/registry.js";
-import { createdCollectionFromReceipt, deployedCollectionFromReceipt, mintedTokenIdFromReceipt } from "./receipts.js";
+import { createdCollectionAddress, createdCollectionFromReceipt, deployedCollectionFromReceipt, mintedTokenIdFromReceipt } from "./receipts.js";
 
 const sel = (name: string) => hash.getSelectorFromName(name);
 const factoryOf = (id: string) => getService(id)!.onchain!.STARKNET!.factoryAddress!;
@@ -99,4 +99,21 @@ test("ignores a CollectionCreated event from another contract", () => {
 
 test("returns null when the receipt has no events", () => {
   expect(createdCollectionFromReceipt({}, REGISTRY)).toBeNull();
+});
+
+test("reads the address of a created collection from the registry, whose last field it is", async () => {
+  let asked: unknown;
+  const provider = {
+    callContract: async (call: unknown) => {
+      asked = call;
+      return ["0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0xa11ce", "0xc0ffee"];
+    },
+  } as unknown as Parameters<typeof createdCollectionAddress>[0];
+  expect(await createdCollectionAddress(provider, "0xabc", "7")).toBe("0x0000000000000000000000000000000000000000000000000000000000c0ffee");
+  expect(asked).toEqual({ contractAddress: "0xabc", entrypoint: "get_collection", calldata: ["0x7", "0x0"] });
+});
+
+test("finds no address for a collection the registry does not hold", async () => {
+  const provider = { callContract: async () => ["0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0"] } as unknown as Parameters<typeof createdCollectionAddress>[0];
+  expect(await createdCollectionAddress(provider, "0xabc", "7")).toBeNull();
 });
