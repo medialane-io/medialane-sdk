@@ -43,6 +43,7 @@ export {
   sponsoredExecutor,
   estimateSelfFundedFee,
   accountFor,
+  GUARDIAN_WALLET_BUSY,
   type SelfFundedDeps,
   type SponsoredDeps,
 } from "./executors.js";

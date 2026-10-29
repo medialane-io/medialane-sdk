@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.209.0] — 2026-10-29
+
+### Changed
+
+- A wallet with a guardian is not offered to pay its own fee when sponsorship is unavailable; the executor throws a retryable `UserFacingError` instead (`GUARDIAN_WALLET_BUSY`). `SponsoredDeps.guardians` can supply the guardian lookup.
+
 ## [0.208.0] — 2026-10-28
 
 ### Added
