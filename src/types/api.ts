@@ -644,20 +644,6 @@ export type ApiFundingSubmit =
   | { status: "SETTLED"; credited?: number }
   | { status: "PENDING"; reason: string };
 
-export interface ApiSpendByAction {
-  actionKey: string;
-  credits: number;
-  units: number;
-}
-
-export interface ApiPortalSpend {
-  recent: Array<{ actionKey: string; credits: number; createdAt: string }>;
-  byAction: ApiSpendByAction[];
-  spent: number;
-  credited: number;
-  drift: number;
-}
-
 export interface ApiCollectionProfile {
   contractAddress: string;
   chain: string;

@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.210.0] — 2026-10-29
+
+### Removed
+
+- `portal.spend()` and the `ApiPortalSpend` / `ApiSpendByAction` types; the backend no longer serves `GET /v1/portal/credits/spend`.
+
 ## [0.209.0] — 2026-10-29
 
 ### Changed
