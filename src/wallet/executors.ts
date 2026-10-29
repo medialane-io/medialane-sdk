@@ -7,6 +7,9 @@ import type { SelfFundConsent, SelfFundFeeEstimate } from "./self-fund-consent.j
 import type { ExecutedTransaction, WalletExecutor } from "./types.js";
 import { getTokenBySymbol } from "../utils/token.js";
 import { erc20Balance } from "../starknet/erc20.js";
+import { getGuardians } from "../starknet/media-wallet/guardian.js";
+
+export const GUARDIAN_WALLET_BUSY = "This can't go through right now. Please try again in a moment.";
 
 export interface SelfFundedDeps {
   provider: () => ProviderInterface;
@@ -52,14 +55,27 @@ export interface SponsoredDeps extends SelfFundedDeps {
   consent: SelfFundConsent;
   fetchImpl?: FetchLike;
   fallback?: WalletExecutor;
+  guardians?: (address: string) => Promise<unknown[]>;
 }
 
 export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
   const fallback = deps.fallback ?? selfFundedExecutor(deps);
+  const guardians = deps.guardians ?? ((address: string) => getGuardians(deps.provider(), address));
+  const hasGuardian = async (address: string): Promise<boolean> => {
+    try {
+      return (await guardians(address)).length > 0;
+    } catch {
+      return false;
+    }
+  };
+  const refuseSelfFundingWithGuardian = async (address: string): Promise<void> => {
+    if (await hasGuardian(address)) throw new UserFacingError(GUARDIAN_WALLET_BUSY);
+  };
   return {
     async execute(input): Promise<ExecutedTransaction> {
       const { userAddress, privateKeyHex, calls, intentIds } = input;
       if (!intentIds?.length) {
+        await refuseSelfFundingWithGuardian(userAddress);
         const consented = await deps.consent.request({ address: userAddress, calls });
         if (!consented) throw new UserFacingError("This action can't be sponsored");
         return fallback.execute(input);
@@ -75,6 +91,7 @@ export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
       );
       if (result.status === "sponsored") return { transactionHash: result.transactionHash };
 
+      await refuseSelfFundingWithGuardian(userAddress);
       const consented = await deps.consent.request({ address: userAddress, calls });
       if (!consented) throw new UserFacingError(result.reason);
       return fallback.execute(input);

@@ -2,7 +2,7 @@ import { test, expect } from "bun:test";
 import type { ProviderInterface } from "starknet";
 import { UserFacingError } from "../errors.js";
 import { createSelfFundConsent } from "./self-fund-consent.js";
-import { sponsoredExecutor } from "./executors.js";
+import { GUARDIAN_WALLET_BUSY, sponsoredExecutor } from "./executors.js";
 import type { WalletExecutor } from "./types.js";
 
 const PRIVATE_KEY = "0x012b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b";
@@ -71,6 +71,7 @@ test("an unavailable sponsor asks the user, then pays from their wallet", async 
       build: new Response(JSON.stringify({ error: "down", code: "sponsor_unavailable" }), { status: 502 }),
     }),
     fallback: fallbackTo("0xselffunded"),
+    guardians: async () => [],
   });
 
   expect(await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] })).toEqual({
@@ -142,5 +143,43 @@ test("a transaction with no intent ids is never sent to the sponsor and goes str
   const result = await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS });
   expect(result.transactionHash).toBe("0xself");
   expect(fetched).toBe(false);
+  expect(asked).toHaveLength(1);
+});
+
+const unavailable = () => fetchStub({ build: new Response(JSON.stringify({ error: "down", code: "sponsor_unavailable" }), { status: 503 }) });
+
+test("an unavailable sponsor never offers self-funding to a wallet with a guardian", async () => {
+  const asked: unknown[] = [];
+  const consent = { request: async (p: unknown) => { asked.push(p); return true; } };
+  const executor = sponsoredExecutor({ provider, proxyUrl: "/p", fetchImpl: unavailable(), fallback: never, consent: consent as never, guardians: async () => [{}] });
+  const err = await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] }).catch((e: unknown) => e);
+  expect(err).toBeInstanceOf(UserFacingError);
+  expect((err as UserFacingError).message).toBe(GUARDIAN_WALLET_BUSY);
+  expect((err as UserFacingError).retryable).toBe(true);
+  expect(asked).toHaveLength(0);
+});
+
+test("a call with no intent ids is not offered self-funding when the wallet has a guardian", async () => {
+  const asked: unknown[] = [];
+  const consent = { request: async (p: unknown) => { asked.push(p); return true; } };
+  const executor = sponsoredExecutor({ provider, proxyUrl: "/p", fallback: never, consent: consent as never, guardians: async () => [{}] });
+  const err = await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS }).catch((e: unknown) => e);
+  expect(err).toBeInstanceOf(UserFacingError);
+  expect((err as UserFacingError).message).toBe(GUARDIAN_WALLET_BUSY);
+  expect(asked).toHaveLength(0);
+});
+
+test("guardian read failure keeps today's fallback", async () => {
+  const asked: unknown[] = [];
+  const consent = { request: async (p: unknown) => { asked.push(p); return true; } };
+  const executor = sponsoredExecutor({
+    provider,
+    proxyUrl: "/p",
+    fetchImpl: unavailable(),
+    fallback: fallbackTo("0xself"),
+    consent: consent as never,
+    guardians: async () => { throw new Error("rpc down"); },
+  });
+  expect((await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] })).transactionHash).toBe("0xself");
   expect(asked).toHaveLength(1);
 });
