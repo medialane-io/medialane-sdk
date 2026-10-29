@@ -28,15 +28,10 @@ test("portal routes send no wallet token; the session identifies the account", a
   expect(headers.Authorization).toBeUndefined();
 });
 
-test("credit history and spend read from the routes the backend serves", async () => {
+test("credit history reads from the route the backend serves", async () => {
   const calls = capture({ data: [] });
-  const api = client();
-  await api.portal.creditHistory();
-  await api.portal.spend();
-  expect(calls.map((c) => c.url)).toEqual([
-    "https://api.test/v1/portal/credits/history",
-    "https://api.test/v1/portal/credits/spend",
-  ]);
+  await client().portal.creditHistory();
+  expect(calls.map((c) => c.url)).toEqual(["https://api.test/v1/portal/credits/history"]);
 });
 
 test("a deposit is checked by its transaction", async () => {

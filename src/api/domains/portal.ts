@@ -9,7 +9,6 @@ import type {
   ApiPortalKey,
   ApiPortalKeyCreated,
   ApiPortalMe,
-  ApiPortalSpend,
   ApiPricing,
   ApiResponse,
 } from "../../types/api.js";
@@ -30,7 +29,6 @@ export interface PortalApi {
   createApiKey(input: { label?: string } | undefined, confirmation: ApiKeyConfirmation): Promise<ApiPortalKeyCreated>;
   deleteApiKey(id: string, confirmation: ApiKeyConfirmation): Promise<{ id: string }>;
   creditHistory(): Promise<ApiCreditPayment[]>;
-  spend(): Promise<ApiPortalSpend>;
   checkDeposit(txHash: string): Promise<{ deposits: number }>;
   pricing(): Promise<ApiPricing>;
   funding: FundingApi;
@@ -45,7 +43,6 @@ export function createPortalApi(t: Transport): PortalApi {
     createApiKey: (input, confirmation) => data(t.post("/v1/portal/keys", { ...(input ?? {}), confirmation })),
     deleteApiKey: (id, confirmation) => data(t.delete(`/v1/portal/keys/${id}`, { confirmation })),
     creditHistory: () => data(t.get("/v1/portal/credits/history")),
-    spend: () => data(t.get("/v1/portal/credits/spend")),
     checkDeposit: (txHash) => data(t.post("/v1/portal/credits/check", { txHash })),
     pricing: () => t.get("/v1/pricing"),
     funding: {
