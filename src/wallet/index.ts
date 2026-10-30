@@ -57,6 +57,8 @@ export {
 } from "./client.js";
 export {
   deploySponsored,
+  SponsoredDeployError,
+  isAccountRefusal,
   deploySelfFunded,
   completeDeployment,
   createDeploymentCoordinator,

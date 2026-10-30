@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.211.0] — 2026-10-30
+
+### Changed
+
+- `completeDeployment` takes `{ replace: true }` (was `forceNew`) to replace the wallet. A replacement stays pending until it is deployed, then becomes the device's wallet, and an unfinished one is resumed.
+- The sponsored deploy sends the replace request. A refusal from the account throws `SponsoredDeployError` with its `status` and `code` and is not retried at the user's cost; `isAccountRefusal` tells it apart.
+- `DeploymentDeps.store` needs `loadPending`, `savePending` and `clearPending`.
+
 ## [0.210.0] — 2026-10-29
 
 ### Removed

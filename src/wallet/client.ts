@@ -79,7 +79,7 @@ export interface MediaWallet {
   removeDevice(sealed: SealedOwner, ownerGuid: string): Promise<string>;
   completeDeployment(
     onStep: (step: DeploymentStep) => void,
-    options?: { forceNew?: boolean },
+    options?: { replace?: boolean },
   ): Promise<DeploymentResult>;
   isDeploying(): boolean;
 }
