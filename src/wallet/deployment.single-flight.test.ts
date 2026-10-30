@@ -72,7 +72,7 @@ test("forcing a new wallet while one is being set up is refused", async () => {
   const d = deferredRun();
   const coordinator = createDeploymentCoordinator(d.execute);
   const pending = coordinator.run(() => {});
-  await expect(coordinator.run(() => {}, { forceNew: true })).rejects.toThrow("already in progress");
+  await expect(coordinator.run(() => {}, { replace: true })).rejects.toThrow("already in progress");
   d.finish();
   await pending;
   expect(d.runs()).toBe(1);

@@ -11,9 +11,23 @@ export interface DeploymentResult {
   sealed: SealedOwner;
 }
 
+export class SponsoredDeployError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code?: string,
+  ) {
+    super(message);
+    this.name = "SponsoredDeployError";
+  }
+}
+
+export const isAccountRefusal = (err: unknown): boolean =>
+  err instanceof SponsoredDeployError && (err.status === 401 || err.status === 409);
+
 async function describeFailure(res: Response, fallback: string): Promise<never> {
-  const body = (await res.json().catch(() => null)) as { error?: string } | null;
-  throw new Error(body?.error || fallback);
+  const body = (await res.json().catch(() => null)) as { error?: string; code?: string } | null;
+  throw new SponsoredDeployError(body?.error || fallback, res.status, body?.code);
 }
 
 export async function deploySponsored(input: {
@@ -23,6 +37,7 @@ export async function deploySponsored(input: {
   ownerPubKey: string;
   privateKeyHex: string;
   salt?: string;
+  replace?: boolean;
   fetchImpl?: FetchLike;
 }): Promise<ExecutedTransaction> {
   const doFetch = input.fetchImpl ?? fetch;
@@ -57,7 +72,7 @@ export async function deploySponsored(input: {
   const executeRes = await doFetch(`${base}/execute`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ownerAddress: input.ownerAddress, typedData, signature, deployment, calls }),
+    body: JSON.stringify({ ownerAddress: input.ownerAddress, typedData, signature, deployment, calls, replace: input.replace === true }),
   });
   if (!executeRes.ok) {
     await describeFailure(executeRes, "We couldn't complete your wallet deployment. Please try again.");
@@ -110,7 +125,14 @@ export async function waitUntilDeployed(
 }
 
 export interface DeploymentDeps {
-  store: { load(): SealedOwner | null; save(sealed: SealedOwner): void; notifyChange(): void };
+  store: {
+    load(): SealedOwner | null;
+    save(sealed: SealedOwner): void;
+    loadPending(): SealedOwner | null;
+    savePending(sealed: SealedOwner): void;
+    clearPending(): void;
+    notifyChange(): void;
+  };
   passkey: {
     createOwnerKey(): Promise<{ sealed: SealedOwner; privateKeyHex: string }>;
     unlockOwnerKey(sealed: SealedOwner): Promise<string>;
@@ -127,6 +149,7 @@ export interface DeploymentDeps {
 async function deployWallet(
   deps: DeploymentDeps,
   wallet: { ownerAddress: string; ownerPubKey: string; privateKeyHex: string },
+  replace: boolean,
 ): Promise<void> {
   const sponsored = deps.deploySponsoredImpl ?? deploySponsored;
   const selfFunded = deps.deploySelfFundedImpl ?? deploySelfFunded;
@@ -137,9 +160,11 @@ async function deployWallet(
         proxyUrl: deps.deployProxyUrl,
         provider: deps.provider(),
         fetchImpl: deps.fetchImpl,
+        replace,
         ...wallet,
       });
     } catch (sponsoredErr) {
+      if (replace || isAccountRefusal(sponsoredErr)) throw sponsoredErr;
       try {
         await selfFunded({ provider: deps.provider(), ...wallet });
       } catch (selfFundedErr) {
@@ -155,13 +180,22 @@ async function deployWallet(
   await (deps.waitUntilDeployedImpl ?? waitUntilDeployed)(deps.provider(), wallet.ownerAddress);
 }
 
+async function unfinishedReplacement(deps: DeploymentDeps): Promise<SealedOwner | null> {
+  const pending = deps.store.loadPending();
+  if (!pending) return null;
+  const deployed = await (deps.isDeployedImpl ?? isDeployed)(deps.provider(), pending.address).catch(() => true);
+  return deployed ? null : pending;
+}
+
 export async function completeDeployment(
   deps: DeploymentDeps,
   onStep: (step: DeploymentStep) => void,
-  options: { forceNew?: boolean } = {},
+  options: { replace?: boolean } = {},
 ): Promise<DeploymentResult> {
-  let sealed = options.forceNew ? null : deps.store.load();
-  if (sealed && (await (deps.isDeployedImpl ?? isDeployed)(deps.provider(), sealed.address).catch(() => false))) {
+  const pending = await unfinishedReplacement(deps);
+  const replacing = options.replace === true || pending !== null;
+  let sealed: SealedOwner | null = replacing ? pending : deps.store.load();
+  if (!replacing && sealed && (await (deps.isDeployedImpl ?? isDeployed)(deps.provider(), sealed.address).catch(() => false))) {
     sealed = null;
   }
   let privateKeyHex: string;
@@ -171,25 +205,30 @@ export async function completeDeployment(
     const created = await deps.passkey.createOwnerKey();
     sealed = created.sealed;
     privateKeyHex = created.privateKeyHex;
-    deps.store.save(sealed);
+    if (replacing) deps.store.savePending(sealed);
+    else deps.store.save(sealed);
   } else {
     privateKeyHex = await deps.passkey.unlockOwnerKey(sealed);
   }
 
   onStep("deploying");
-  await deployWallet(deps, { ownerAddress: sealed.address, ownerPubKey: sealed.ownerPubKey, privateKeyHex });
+  await deployWallet(deps, { ownerAddress: sealed.address, ownerPubKey: sealed.ownerPubKey, privateKeyHex }, replacing);
 
+  if (replacing) {
+    deps.store.save(sealed);
+    deps.store.clearPending();
+  }
   deps.store.notifyChange();
   return { sealed };
 }
 
 export interface DeploymentCoordinator {
-  run(onStep: (step: DeploymentStep) => void, options?: { forceNew?: boolean }): Promise<DeploymentResult>;
+  run(onStep: (step: DeploymentStep) => void, options?: { replace?: boolean }): Promise<DeploymentResult>;
   isDeploying(): boolean;
 }
 
 export function createDeploymentCoordinator(
-  execute: (onStep: (step: DeploymentStep) => void, options: { forceNew?: boolean }) => Promise<DeploymentResult>,
+  execute: (onStep: (step: DeploymentStep) => void, options: { replace?: boolean }) => Promise<DeploymentResult>,
 ): DeploymentCoordinator {
   let inFlight: Promise<DeploymentResult> | null = null;
   let currentStep: DeploymentStep | null = null;
@@ -198,7 +237,7 @@ export function createDeploymentCoordinator(
   return {
     run(onStep, options = {}) {
       if (inFlight) {
-        if (options.forceNew) {
+        if (options.replace) {
           return Promise.reject(new Error("A wallet setup is already in progress."));
         }
         if (currentStep) onStep(currentStep);
