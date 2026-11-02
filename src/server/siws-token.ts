@@ -114,13 +114,18 @@ export function issueAccountSessionToken(
   return `${ACCOUNT_SESSION_PREFIX}${payload}.${sign(secret, ACCOUNT_SESSION_DOMAIN, payload)}`;
 }
 
-export function verifyAccountSessionToken(secret: string, raw: string): string | null {
+/** The account a valid session token is for, and when it was issued (seconds since the epoch). */
+export function readAccountSessionToken(secret: string, raw: string): { accountId: string; issuedAt: number } | null {
   const parts = splitToken(raw, ACCOUNT_SESSION_PREFIX);
   if (!parts) return null;
   if (!signatureMatches(secret, ACCOUNT_SESSION_DOMAIN, parts.payload, parts.signature)) return null;
 
   const data = decodePayload<AccountSessionPayload>(parts.payload);
-  if (!data?.accountId || !withinLifetime(data.iat, data.exp)) return null;
+  if (!data?.accountId || !data.iat || !withinLifetime(data.iat, data.exp)) return null;
 
-  return data.accountId;
+  return { accountId: data.accountId, issuedAt: data.iat };
+}
+
+export function verifyAccountSessionToken(secret: string, raw: string): string | null {
+  return readAccountSessionToken(secret, raw)?.accountId ?? null;
 }

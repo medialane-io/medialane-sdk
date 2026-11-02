@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.212.0] — 2026-11-02
+
+### Added
+
+- `readAccountSessionToken(secret, raw)` returns `{ accountId, issuedAt }` for a valid account session token (`issuedAt` in seconds). `verifyAccountSessionToken` uses it and is unchanged.
+
 ## [0.211.0] — 2026-10-30
 
 ### Changed
