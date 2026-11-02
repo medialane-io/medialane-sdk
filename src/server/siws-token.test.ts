@@ -5,6 +5,7 @@ import {
   verifySiwsToken,
   issueAccountSessionToken,
   verifyAccountSessionToken,
+  readAccountSessionToken,
   IDENTITY_TTL_SECONDS,
 } from "./siws-token.js";
 
@@ -102,5 +103,27 @@ describe("compatibility with the tokens already in circulation", () => {
       .update(payload!)
       .digest("hex");
     expect(signature).toBe(viaNode);
+  });
+});
+
+describe("readAccountSessionToken", () => {
+  test("returns the account id and the issue time", () => {
+    const realNow = Date.now;
+    Date.now = () => 1_800_000_000_000;
+    try {
+      const token = issueAccountSessionToken(SECRET, "acc_1");
+      expect(readAccountSessionToken(SECRET, token)).toEqual({ accountId: "acc_1", issuedAt: 1_800_000_000 });
+    } finally {
+      Date.now = realNow;
+    }
+  });
+
+  test("refuses what verifyAccountSessionToken refuses", () => {
+    const token = issueAccountSessionToken(SECRET, "acc_1");
+    const [head, sig] = [token.slice(0, token.lastIndexOf(".")), token.slice(token.lastIndexOf(".") + 1)];
+    expect(readAccountSessionToken(SECRET, `${head}.${sig.replace(/^./, sig[0] === "a" ? "b" : "a")}`)).toBeNull();
+    expect(readAccountSessionToken("another-secret-of-enough-length-xx", token)).toBeNull();
+    expect(readAccountSessionToken(SECRET, issueAccountSessionToken(SECRET, "acc_1", -120))).toBeNull();
+    expect(readAccountSessionToken(SECRET, issueSiwsToken(SECRET, "STARKNET", "0x1"))).toBeNull();
   });
 });

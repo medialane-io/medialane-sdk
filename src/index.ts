@@ -140,6 +140,7 @@ export {
   verifySiwsToken,
   issueAccountSessionToken,
   verifyAccountSessionToken,
+  readAccountSessionToken,
   IDENTITY_TTL_SECONDS,
   ACCOUNT_SESSION_TTL_SECONDS,
 } from "./server/siws-token.js";
