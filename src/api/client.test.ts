@@ -82,6 +82,14 @@ test("registerEmailAccount posts the email", async () => {
   expect(JSON.parse(calls[0].init.body as string)).toEqual({ email: "alice@example.com" });
 });
 
+test("signOutOtherDevices posts to the sign-out route", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: {} }));
+  await client().account.signOutOtherDevices();
+  expect(calls[0].url).toContain("/v1/users/me/sign-out-other-devices");
+  expect(calls[0].init.method).toBe("POST");
+  expect(JSON.parse(calls[0].init.body as string)).toEqual({});
+});
+
 test("registerEmailAccount throws with the status when the account exists", async () => {
   scriptFetch(() => ({ status: 409, body: { error: "ACCOUNT_EXISTS" } }));
   await expect(client().account.registerEmailAccount("alice@example.com")).rejects.toMatchObject({ status: 409 });

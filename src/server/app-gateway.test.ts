@@ -9,7 +9,7 @@ function gateway(reply: () => Response, extra: Partial<Parameters<typeof createA
     appId: "MEDIALANE_IO",
     backendUrl: "https://api.test",
     apiKey: "key",
-    allow: { GET: [/^collections$/], POST: [/^auth\/email\/register-account$/, /^auth\/siws\/verify$/, /^rpc$/] },
+    allow: { GET: [/^collections$/], POST: [/^auth\/email\/register-account$/, /^auth\/siws\/verify$/, /^users\/me\/sign-out-other-devices$/, /^rpc$/] },
     fetchImpl: (async (url: string, init: RequestInit) => {
       seen.push({
         url: String(url),
@@ -94,6 +94,16 @@ describe("app gateway", () => {
     const res = await handle(req("auth/siws/verify", { method: "POST", body: "{}" }), ["auth", "siws", "verify"]);
     expect(await res.json()).toEqual({ accountId: "a" });
     expect(res.headers.get("set-cookie") ?? "").toContain(`${ACCOUNT_SESSION_COOKIE}=tok`);
+  });
+
+  test("signing out other devices replaces the session cookie and keeps the token out of the body", async () => {
+    const { handle } = gateway(() => Response.json({ accountToken: "account_session_new" }));
+    const res = await handle(
+      req("users/me/sign-out-other-devices", { method: "POST", body: "{}", headers: { cookie: `${ACCOUNT_SESSION_COOKIE}=old` } }),
+      ["users", "me", "sign-out-other-devices"],
+    );
+    expect(await res.json()).toEqual({});
+    expect(res.headers.get("set-cookie") ?? "").toContain(`${ACCOUNT_SESSION_COOKIE}=account_session_new`);
   });
 
   test("a wallet sign-in token never reaches the browser, even without a session", async () => {
