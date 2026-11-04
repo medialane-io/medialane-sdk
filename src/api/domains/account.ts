@@ -34,6 +34,7 @@ export interface AccountApi {
   registerEmailAccount(email: string): Promise<void>;
   verifyEmailCode(email: string, code: string): Promise<void>;
   confirmEmail(token: string): Promise<{ email: string }>;
+  contactSupport(params: { message?: string }): Promise<void>;
 }
 
 export function createAccountApi(t: Transport): AccountApi {
@@ -87,6 +88,9 @@ export function createAccountApi(t: Transport): AccountApi {
     async confirmEmail(token) {
       const body = await t.post<{ ok: boolean; email: string }>("/v1/auth/email/confirm", { token });
       return { email: body.email };
+    },
+    async contactSupport(params) {
+      await t.post("/v1/users/me/support", params);
     },
   };
 }
