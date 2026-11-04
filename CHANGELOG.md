@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.213.0] — 2026-11-04
+
+### Added
+
+- `account.contactSupport({ message? })` sends a signed-in account's note to support, with the account email and wallets attached by the platform.
+
 ## [0.212.0] — 2026-11-02
 
 ### Added
