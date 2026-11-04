@@ -102,6 +102,13 @@ test("verifyEmailCode posts the email and the code", async () => {
   expect(JSON.parse(calls[0].init.body as string)).toEqual({ email: "alice@example.com", code: "482913" });
 });
 
+test("contactSupport posts the note", async () => {
+  const calls = scriptFetch(() => ({ status: 200, body: { ok: true } }));
+  await client().account.contactSupport({ message: "I lost my key" });
+  expect(calls[0].url).toContain("/v1/users/me/support");
+  expect(JSON.parse(calls[0].init.body as string)).toEqual({ message: "I lost my key" });
+});
+
 test("confirmEmail posts the token and returns the confirmed address", async () => {
   const calls = scriptFetch(() => ({ status: 200, body: { ok: true, email: "alice@example.com" } }));
   expect(await client().account.confirmEmail("tok.en")).toEqual({ email: "alice@example.com" });
