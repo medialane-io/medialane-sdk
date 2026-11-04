@@ -3,7 +3,13 @@ import { isSameOrigin } from "./origin.js";
 
 export const ACCOUNT_SESSION_COOKIE = "ml_account_session";
 const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
-const SIGN_IN_PATHS = new Set(["auth/email/register-account", "auth/email/verify-code", "auth/siws/verify"]);
+/** Routes whose response carries a new account session: the gateway moves it into the cookie. */
+const SIGN_IN_PATHS = new Set([
+  "auth/email/register-account",
+  "auth/email/verify-code",
+  "auth/siws/verify",
+  "users/me/sign-out-other-devices",
+]);
 const EDGE_CACHE_CONTROL = "public, s-maxage=30, stale-while-revalidate=120";
 const DROPPED_REQUEST_HEADERS = new Set([
   "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailers",

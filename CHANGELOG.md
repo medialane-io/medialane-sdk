@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.214.0] — 2026-11-04
+
+### Added
+
+- `account.signOutOtherDevices()` ends the account's other sessions. The app gateway renews this device's session cookie on that call.
+
 ## [0.213.0] — 2026-11-04
 
 ### Added

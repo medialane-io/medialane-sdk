@@ -29,6 +29,8 @@ export interface AccountApi {
   walletRecovery(): Promise<WalletRecovery>;
   startWalletRecovery(params: { newOwnerPubkey: string }): Promise<WalletRecovery>;
   completeWalletRecovery(params: { newOwnerPubkey: string }): Promise<WalletRecovery>;
+  /** Ends the account's other sessions. Through an app gateway, this device's session cookie is renewed. */
+  signOutOtherDevices(): Promise<void>;
   emailExists(email: string): Promise<boolean>;
   requestEmailCode(email: string): Promise<void>;
   registerEmailAccount(email: string): Promise<void>;
@@ -72,6 +74,9 @@ export function createAccountApi(t: Transport): AccountApi {
     },
     completeWalletRecovery(params) {
       return t.post("/v1/users/me/wallet/recovery/complete", params);
+    },
+    async signOutOtherDevices() {
+      await t.post("/v1/users/me/sign-out-other-devices", {});
     },
     async emailExists(email) {
       return (await t.get<{ exists: boolean }>("/v1/auth/email/exists", { email })).exists;
