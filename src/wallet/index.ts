@@ -37,7 +37,7 @@ export {
   type PasskeyOwner,
   type CreatedOwner,
 } from "./passkey.js";
-export { indexedDbDeviceKeys, type DeviceKeyStore } from "./device-keys.js";
+export { indexedDbDeviceKeys, createIndexedDbDeviceKeys, type DeviceKeyStore } from "./device-keys.js";
 export {
   selfFundedExecutor,
   sponsoredExecutor,

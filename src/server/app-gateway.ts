@@ -1,5 +1,6 @@
 import type { FetchLike } from "../utils/fetch.js";
 import { isSameOrigin } from "./origin.js";
+import { isSafePathSegment } from "./app-routes.js";
 
 export const ACCOUNT_SESSION_COOKIE = "ml_account_session";
 const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
@@ -57,7 +58,7 @@ export function createAppGateway(config: AppGatewayConfig): (req: Request, path:
   return async function appGateway(req, path) {
     if (!isSameOrigin(req)) return json({ error: "Cross-origin requests are not allowed" }, 403);
     if (!config.apiKey) return json({ error: "Service unavailable" }, 500);
-    if (path.some((s) => s === "." || s === ".." || s === "")) return json({ error: "Invalid path" }, 400);
+    if (!path.every(isSafePathSegment)) return json({ error: "Invalid path" }, 400);
 
     const joined = path.join("/");
     const method = req.method.toUpperCase();

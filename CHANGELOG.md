@@ -2,6 +2,35 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.215.0] — 2026-11-05
+
+### Changed
+
+- `OwnerStore` keeps a replacement wallet and a recovery key in separate slots: `loadReplacement` / `saveReplacement` / `clearReplacement` and `loadRecovery` / `saveRecovery` / `clearRecovery`. A key left in the previous `:pending` slot moves to the matching slot when the store is created.
+- `SessionRecoveryDeps` takes `loadRecovery`, `saveRecovery` and `clearRecovery`.
+- `completeDeployment` makes a replacement the device's wallet as soon as its sponsored deployment is accepted, and adopts a replacement that is already deployed. `DeploymentDeps.store` takes the replacement slot methods.
+- `SponsoredRequest` with `intentIds` also takes the `calls` the intents hold. Only the ids are sent.
+- `ImageProxyConfig` takes an optional `get(url, headers)` in place of `resolveHostname` and `fetchImpl`. The default connects only to addresses that are not private, checked when the connection is made.
+
+### Added
+
+- `sameFelt`, `sameCalls`, `typedDataMatchesCalls`, `deploymentIsMediaWallet`, `isMediaWalletSetupCall` and `buildWalletManageCall` in `@medialane/sdk/starknet`.
+- `createIndexedDbDeviceKeys(factory?)` in `@medialane/sdk/wallet`.
+- `isSafePathSegment` in `@medialane/sdk/server`.
+
+### Fixed
+
+- Sponsored typed data is signed only when it holds exactly the calls being executed; otherwise `executeSponsored` throws `SponsoredCallRejectedError` with code `calls_mismatch`.
+- A sponsored wallet deployment is signed only for a Media Wallet deployment at the expected address whose calls are setup calls for that wallet.
+- Wallet actions (devices, guardian, escape) run only when the intent holds exactly the call `buildWalletManageCall` builds.
+- A device key is reported as saved only after its IndexedDB transaction commits.
+- The app gateway refuses path segments that contain `/` or `\`.
+
+### Removed
+
+- `loadPending`, `savePending` and `clearPending`.
+- `createImageProxyHandler`, `readBodyWithCap`, `ImageProxyConfig` and `CappedBody` from the package root; they are exported from `@medialane/sdk/server`.
+
 ## [0.214.0] — 2026-11-04
 
 ### Added

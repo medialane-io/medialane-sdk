@@ -153,7 +153,10 @@ export {
   getOwners,
   getEscape,
   getEscapeSecurityPeriod,
+  buildWalletManageCall,
 } from "./media-wallet/index.js";
+export { sameCalls, typedDataMatchesCalls, deploymentIsMediaWallet, isMediaWalletSetupCall } from "./sponsored-checks.js";
+export { sameFelt } from "../utils/felt.js";
 export {
   deriveAesKey,
   generateStarkKeyPair,

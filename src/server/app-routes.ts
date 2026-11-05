@@ -24,7 +24,11 @@ const PUBLIC_ROUTES: Record<string, RegExp[]> = {
   ].map((p) => new RegExp(`^${p}$`)),
 };
 
+export function isSafePathSegment(segment: string): boolean {
+  return segment !== "" && segment !== "." && segment !== ".." && !/[/\\]/.test(segment);
+}
+
 export function isPublicAppRoute(method: string, path: string): boolean {
-  if (path.split("/").some((s) => s === "." || s === ".." || s === "")) return false;
+  if (!path.split("/").every(isSafePathSegment)) return false;
   return (PUBLIC_ROUTES[method.toUpperCase()] ?? []).some((re) => re.test(path));
 }

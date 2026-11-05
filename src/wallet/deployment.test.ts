@@ -1,5 +1,9 @@
 import { test, expect } from "bun:test";
-import type { ProviderInterface } from "starknet";
+import { hash, num, type Call, type ProviderInterface } from "starknet";
+import { getCoordinates } from "../chains.js";
+import { ownerConstructorCalldata } from "../starknet/media-wallet/account.js";
+import { buildSetFirstGuardianCall } from "../starknet/media-wallet/guardian.js";
+import { buildAddOwnerCall } from "../starknet/media-wallet/owners.js";
 import { completeDeployment, deploySponsored, isAccountRefusal, SponsoredDeployError, type DeploymentDeps } from "./deployment.js";
 import type { ExecutedTransaction, SealedOwner } from "./types.js";
 
@@ -30,13 +34,13 @@ function setup(
         log.push("saved");
         saved.push(sealed);
       },
-      loadPending: () => pending,
-      savePending: (sealed) => {
-        log.push("pending-saved");
+      loadReplacement: () => pending,
+      saveReplacement: (sealed) => {
+        log.push("replacement-saved");
         pending = sealed;
       },
-      clearPending: () => {
-        log.push("pending-cleared");
+      clearReplacement: () => {
+        log.push("replacement-cleared");
         pending = null;
       },
       notifyChange: () => void (announced += 1),
@@ -70,7 +74,7 @@ function setup(
   return {
     deps,
     log,
-    setPending: (sealed: SealedOwner | null) => void (pending = sealed),
+    setReplacement: (sealed: SealedOwner | null) => void (pending = sealed),
     counts: () => ({ unlocks, creates, saved: saved.length, announced }),
   };
 }
@@ -89,7 +93,7 @@ test("an existing wallet unlocks once and setup ends when it is deployed", async
 test("a first wallet is created and saved before it is deployed", async () => {
   const { deps, counts } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
-    store: { load: () => null, save: () => {}, loadPending: () => null, savePending: () => {}, clearPending: () => {}, notifyChange: () => {} },
+    store: { load: () => null, save: () => {}, loadReplacement: () => null, saveReplacement: () => {}, clearReplacement: () => {}, notifyChange: () => {} },
   });
   const steps: string[] = [];
   await completeDeployment(deps, (step) => steps.push(step));
@@ -109,7 +113,7 @@ test("replacing a wallet ignores the one already stored", async () => {
 const NEW_WALLET: SealedOwner = { ...SEALED, credentialId: "cred2", address: "0xaaa", ownerPubKey: "0xbbb" };
 const OLD_DEPLOYED = async (_provider: unknown, address: string) => address === SEALED.address;
 
-test("a replacement is held as pending and only becomes the device's wallet once it is deployed", async () => {
+test("a replacement is held apart and becomes the device's wallet once the sponsor accepts it", async () => {
   const { deps, log } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
     passkey: {
@@ -120,10 +124,10 @@ test("a replacement is held as pending and only becomes the device's wallet once
   });
   const result = await completeDeployment(deps, () => {}, { replace: true });
   expect(result).toEqual({ sealed: NEW_WALLET });
-  expect(log).toEqual(["pending-saved", "sponsored", "waited", "saved", "pending-cleared"]);
+  expect(log).toEqual(["replacement-saved", "sponsored", "saved", "replacement-cleared", "waited"]);
 });
 
-test("a replacement that fails leaves the stored wallet and keeps the new key pending", async () => {
+test("a replacement that fails leaves the stored wallet and keeps the new key apart", async () => {
   const { deps, log, counts } = setup(
     {
       deployProxyUrl: "/api/wallet/deploy-sponsored",
@@ -136,7 +140,7 @@ test("a replacement that fails leaves the stored wallet and keeps the new key pe
     { sponsored: async () => { throw new Error("sponsor down"); } },
   );
   await expect(completeDeployment(deps, () => {}, { replace: true })).rejects.toThrow("sponsor down");
-  expect(log).toEqual(["pending-saved", "sponsored"]);
+  expect(log).toEqual(["replacement-saved", "sponsored"]);
   expect(counts().saved).toBe(0);
 });
 
@@ -157,26 +161,73 @@ test("a replacement is never paid for by the user, because only the sponsored de
 });
 
 test("setup resumes an unfinished replacement instead of creating another wallet", async () => {
-  const { deps, log, counts, setPending } = setup({
+  const { deps, log, counts, setReplacement } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
     isDeployedImpl: OLD_DEPLOYED,
   });
-  setPending(NEW_WALLET);
+  setReplacement(NEW_WALLET);
   const result = await completeDeployment(deps, () => {});
   expect(result).toEqual({ sealed: NEW_WALLET });
   expect(counts().creates).toBe(0);
   expect(counts().unlocks).toBe(1);
-  expect(log).toEqual(["sponsored", "waited", "saved", "pending-cleared"]);
+  expect(log).toEqual(["sponsored", "saved", "replacement-cleared", "waited"]);
 });
 
-test("a pending key for a wallet that is already deployed is not a replacement", async () => {
-  const { deps, counts, setPending } = setup({
+test("a replacement already on chain is adopted without deploying again", async () => {
+  const { deps, log, counts, setReplacement } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
     isDeployedImpl: async () => true,
   });
-  setPending(NEW_WALLET);
+  setReplacement(NEW_WALLET);
+  const result = await completeDeployment(deps, () => {});
+  expect(result).toEqual({ sealed: NEW_WALLET });
+  expect(log).toEqual(["saved", "replacement-cleared"]);
+  expect(counts().creates).toBe(0);
+  expect(counts().unlocks).toBe(0);
+});
+
+test("a replacement becomes the device's wallet as soon as the sponsor accepts it", async () => {
+  const { deps, log } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    passkey: {
+      createOwnerKey: async () => ({ sealed: NEW_WALLET, privateKeyHex: PRIVATE_KEY }),
+      unlockOwnerKey: async () => PRIVATE_KEY,
+    },
+    isDeployedImpl: OLD_DEPLOYED,
+    waitUntilDeployedImpl: async () => {
+      throw new Error("Your wallet was submitted but has not appeared on Starknet yet. Please try again in a moment.");
+    },
+  });
+  await expect(completeDeployment(deps, () => {}, { replace: true })).rejects.toThrow(/has not appeared on Starknet/);
+  expect(log).toEqual(["replacement-saved", "sponsored", "saved", "replacement-cleared"]);
+});
+
+test("setup stops when the chain can't say whether a replacement is deployed", async () => {
+  const { deps, log, counts, setReplacement } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    isDeployedImpl: async () => {
+      throw new Error("rpc down");
+    },
+  });
+  setReplacement(NEW_WALLET);
+  await expect(completeDeployment(deps, () => {})).rejects.toThrow("rpc down");
+  expect(counts().creates).toBe(0);
+  expect(log).toEqual([]);
+});
+
+test("an adopted wallet that never landed is deployed again as this device's wallet", async () => {
+  const replaceFlags: boolean[] = [];
+  const { deps, counts } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    deploySponsoredImpl: async (input) => {
+      replaceFlags.push(input.replace === true);
+      return { transactionHash: "0xsponsored" };
+    },
+  });
   await completeDeployment(deps, () => {});
-  expect(counts().creates).toBe(1);
+  expect(replaceFlags).toEqual([false]);
+  expect(counts().unlocks).toBe(1);
+  expect(counts().creates).toBe(0);
 });
 
 test("the sponsor is told whether this is a replacement", async () => {
@@ -205,33 +256,39 @@ test("an account that refuses the wallet is not retried with the user's own fund
   }
 });
 
-test("the sponsored deploy sends the replace request and reports a refusal with its status and code", async () => {
-  const bodies: unknown[] = [];
-  const fetchImpl = (async (url: string, init?: RequestInit) => {
-    if (String(url).endsWith("/build")) {
-      return Response.json({
-        typedData: {
-          types: {
-            StarknetDomain: [
-              { name: "name", type: "shortstring" },
-              { name: "version", type: "shortstring" },
-              { name: "chainId", type: "shortstring" },
-              { name: "revision", type: "shortstring" },
-            ],
-            Message: [{ name: "value", type: "felt" }],
-          },
-          primaryType: "Message",
-          domain: { name: "test", version: "1", chainId: "SN_MAIN", revision: "1" },
-          message: { value: "1" },
-        },
-        deployment: {},
-        calls: [],
-      });
-    }
-    bodies.push(JSON.parse(String(init?.body)));
-    return Response.json({ error: "Your account is already set up.", code: "already_set_up" }, { status: 409 });
-  }) as unknown as typeof fetch;
-  const failure = await deploySponsored({
+const GUARDIAN_CALL = buildSetFirstGuardianCall(SEALED.address, "0x123");
+const VALID_DEPLOYMENT = {
+  address: SEALED.address,
+  class_hash: getCoordinates("STARKNET").mediaWalletClassHash,
+  salt: "0x0",
+  calldata: ownerConstructorCalldata(SEALED.ownerPubKey),
+};
+const signedCall = (c: Call) => ({ To: c.contractAddress, Selector: num.toHex(hash.getSelectorFromName(c.entrypoint)), Calldata: c.calldata });
+
+function buildAnswer(overrides: { deployment?: unknown; calls?: Call[]; signedCalls?: Call[] } = {}) {
+  const calls = overrides.calls ?? [GUARDIAN_CALL];
+  return Response.json({
+    typedData: {
+      types: {
+        StarknetDomain: [
+          { name: "name", type: "shortstring" },
+          { name: "version", type: "shortstring" },
+          { name: "chainId", type: "shortstring" },
+          { name: "revision", type: "shortstring" },
+        ],
+        Message: [{ name: "value", type: "felt" }],
+      },
+      primaryType: "Message",
+      domain: { name: "test", version: "1", chainId: "SN_MAIN", revision: "1" },
+      message: { value: "1", Calls: (overrides.signedCalls ?? calls).map(signedCall) },
+    },
+    deployment: overrides.deployment ?? VALID_DEPLOYMENT,
+    calls,
+  });
+}
+
+const deployWith = (fetchImpl: typeof fetch) =>
+  deploySponsored({
     proxyUrl: "/p",
     provider: {} as ProviderInterface,
     ownerAddress: SEALED.address,
@@ -239,10 +296,39 @@ test("the sponsored deploy sends the replace request and reports a refusal with 
     privateKeyHex: PRIVATE_KEY,
     replace: true,
     fetchImpl,
-  }).catch((e) => e);
+  });
+
+test("the sponsored deploy sends the replace request and reports a refusal with its status and code", async () => {
+  const bodies: unknown[] = [];
+  const fetchImpl = (async (url: string, init?: RequestInit) => {
+    if (String(url).endsWith("/build")) return buildAnswer();
+    bodies.push(JSON.parse(String(init?.body)));
+    return Response.json({ error: "Your account is already set up.", code: "already_set_up" }, { status: 409 });
+  }) as unknown as typeof fetch;
+  const failure = await deployWith(fetchImpl).catch((e) => e);
   expect(failure).toBeInstanceOf(SponsoredDeployError);
   expect(failure).toMatchObject({ status: 409, code: "already_set_up", message: "Your account is already set up." });
   expect(bodies[0]).toMatchObject({ replace: true });
+});
+
+test("a deploy built for another wallet is not signed", async () => {
+  const cases = [
+    buildAnswer({ deployment: { ...VALID_DEPLOYMENT, address: "0x9" } }),
+    buildAnswer({ calls: [buildAddOwnerCall(SEALED.address, "0x777")] }),
+    buildAnswer({ signedCalls: [buildSetFirstGuardianCall(SEALED.address, "0x999")] }),
+  ];
+  for (const answer of cases) {
+    let executed = false;
+    const fetchImpl = (async (url: string) => {
+      if (String(url).endsWith("/build")) return answer;
+      executed = true;
+      return Response.json({ transactionHash: "0x1" });
+    }) as unknown as typeof fetch;
+    const failure = await deployWith(fetchImpl).catch((e) => e);
+    expect(failure).toBeInstanceOf(SponsoredDeployError);
+    expect(failure).toMatchObject({ code: "calls_mismatch" });
+    expect(executed).toBe(false);
+  }
 });
 
 test("an app with no deploy proxy pays for its own deployment", async () => {

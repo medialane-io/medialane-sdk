@@ -124,8 +124,6 @@ export {
   MAX_IMAGE_REDIRECTS,
   MAX_IMAGE_PROXY_BYTES,
 } from "./server/ssrf-guard.js";
-export { createImageProxyHandler, readBodyWithCap } from "./server/image-proxy.js";
-export type { ImageProxyConfig, CappedBody } from "./server/image-proxy.js";
 export {
   uploadJsonToBackend,
   uploadFileToBackend,

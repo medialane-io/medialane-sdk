@@ -1,6 +1,7 @@
 import type { FetchLike } from "../../utils/fetch.js";
-import type { TypedData } from "starknet";
+import type { Call, TypedData } from "starknet";
 import { UserFacingError } from "../../errors.js";
+import { typedDataMatchesCalls } from "../sponsored-checks.js";
 
 export interface TypedDataSigner {
   address: string;
@@ -13,7 +14,7 @@ export interface SponsoredExecuteConfig {
   headers?: Record<string, string>;
 }
 
-export type SponsoredRequest = { intentIds: string[] } | { userAddress: string };
+export type SponsoredRequest = { intentIds: string[]; calls: readonly Call[] } | { userAddress: string };
 
 export type SponsoredExecuteResult =
   | { status: "sponsored"; transactionHash: string }
@@ -52,7 +53,8 @@ export type SponsorshipFailureCode =
   | "invalid_request"
   | "not_authorized"
   | "rate_limited"
-  | "may_have_broadcast";
+  | "may_have_broadcast"
+  | "calls_mismatch";
 
 const FALLBACK_FUNDING_FAILURES: ReadonlySet<string> = new Set(["sponsor_unavailable", "credits_exhausted"]);
 
@@ -79,11 +81,12 @@ export async function executeSponsored(
   const doFetch = config.fetchImpl ?? fetch;
   const base = config.proxyUrl.replace(/\/$/, "");
   const headers = { "Content-Type": "application/json", ...config.headers };
+  const target = "intentIds" in request ? { intentIds: request.intentIds } : { userAddress: request.userAddress };
 
   const buildRes = await doFetch(`${base}/build`, {
     method: "POST",
     headers,
-    body: JSON.stringify(request),
+    body: JSON.stringify(target),
   });
   if (!buildRes.ok) {
     const { reason, code, detail, requestId } = await failureOf(buildRes, "We couldn't prepare this transaction.");
@@ -91,13 +94,16 @@ export async function executeSponsored(
     throw new SponsoredCallRejectedError(reason, { code, detail, status: buildRes.status, stage: "build", requestId });
   }
   const { typedData } = (await buildRes.json()) as { typedData: TypedData };
+  if ("intentIds" in request && !typedDataMatchesCalls(typedData, request.calls)) {
+    throw new SponsoredCallRejectedError("This action couldn't be prepared. Please try again.", { code: "calls_mismatch", stage: "build" });
+  }
 
   const signature = await signer.signTypedData(typedData);
 
   const executeRes = await doFetch(`${base}/execute`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ ...request, typedData, signature }),
+    body: JSON.stringify({ ...target, typedData, signature }),
   });
   if (!executeRes.ok) {
     const { reason, code, detail, requestId } = await failureOf(executeRes, "We couldn't submit this transaction.");

@@ -75,6 +75,13 @@ describe("app gateway", () => {
     expect((await handle(req("collections"), ["..", "collections"])).status).toBe(400);
   });
 
+  test("a segment holding a slash is refused", async () => {
+    const { handle, seen } = gateway(() => Response.json({}), { allow: { GET: [/^tokens\/[^/]+\/[^/]+\/history$/] } });
+    const res = await handle(req("tokens/a%2F../history"), ["tokens", "a/..", "history"]);
+    expect(res.status).toBe(400);
+    expect(seen).toHaveLength(0);
+  });
+
   test("cross-origin requests are refused", async () => {
     const { handle } = gateway(() => Response.json({}));
     expect((await handle(req("collections", { headers: { origin: "https://evil.test" } }), ["collections"])).status).toBe(403);

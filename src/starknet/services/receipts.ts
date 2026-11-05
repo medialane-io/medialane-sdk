@@ -1,4 +1,5 @@
 import { hash, uint256, type ProviderInterface } from "starknet";
+import { sameFelt } from "../../utils/felt.js";
 import { normalizeAddress } from "../../utils/address.js";
 import { getService } from "../../services/registry.js";
 
@@ -20,15 +21,6 @@ const DEPLOY_EVENTS: Record<DeployingServiceId, { event: string; address: (e: Re
 
 const IP_MINTED_SELECTOR = BigInt(hash.getSelectorFromName("IPMinted"));
 const TRANSFER_SELECTOR = BigInt(hash.getSelectorFromName("Transfer"));
-
-function sameFelt(a: string | undefined, b: string | bigint): boolean {
-  if (a === undefined) return false;
-  try {
-    return BigInt(a) === BigInt(b);
-  } catch {
-    return false;
-  }
-}
 
 function u256(low: string | undefined, high: string | undefined): string {
   return (BigInt(low ?? 0) + (BigInt(high ?? 0) << 128n)).toString();

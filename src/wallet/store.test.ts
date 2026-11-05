@@ -87,17 +87,83 @@ test("saving the same wallet again keeps no extra copy", () => {
   expect(localStorage.length).toBe(1);
 });
 
-test("a pending recovery key is kept apart from the wallet and survives a reload of the store", () => {
-  expect(store.loadPending()).toBeNull();
-  store.savePending(FAKE);
-  expect(store.loadPending()).toEqual(FAKE);
+const KEY = "app-one.wallet.owner.v1";
+const OTHER: SealedOwner = { ...FAKE, credentialId: "cred2", address: "0x123", ciphertext: "ct2" };
+const fresh = () => createOwnerStore({ storeKey: KEY, changeEvent: "app-one-wallet" });
+
+test("a recovery key and a replacement are kept side by side", () => {
+  store.saveRecovery(FAKE);
+  store.saveReplacement(OTHER);
+  expect(store.loadRecovery()).toEqual(FAKE);
+  expect(store.loadReplacement()).toEqual(OTHER);
   expect(store.load()).toBeNull();
-  store.clearPending();
-  expect(store.loadPending()).toBeNull();
+  store.clearRecovery();
+  expect(store.loadRecovery()).toBeNull();
+  expect(store.loadReplacement()).toEqual(OTHER);
+  store.clearReplacement();
+  expect(store.loadReplacement()).toBeNull();
 });
 
-test("one app never reads another app's pending recovery key", () => {
+test("one app never reads another app's recovery key or replacement", () => {
   const other = createOwnerStore({ storeKey: "app-two.wallet.owner.v1", changeEvent: "app-two-wallet" });
-  store.savePending(FAKE);
-  expect(other.loadPending()).toBeNull();
+  store.saveRecovery(FAKE);
+  store.saveReplacement(OTHER);
+  expect(other.loadRecovery()).toBeNull();
+  expect(other.loadReplacement()).toBeNull();
+});
+
+test("a legacy pending key for the stored wallet becomes the recovery key", () => {
+  localStorage.setItem(KEY, JSON.stringify(FAKE));
+  localStorage.setItem(`${KEY}:pending`, JSON.stringify({ ...FAKE, credentialId: "cred-new", address: "0x0def" }));
+  const migrated = fresh();
+  expect(migrated.loadRecovery()?.credentialId).toBe("cred-new");
+  expect(migrated.loadReplacement()).toBeNull();
+  expect(localStorage.getItem(`${KEY}:pending`)).toBeNull();
+});
+
+test("a legacy pending key for another wallet becomes the replacement", () => {
+  localStorage.setItem(KEY, JSON.stringify(FAKE));
+  localStorage.setItem(`${KEY}:pending`, JSON.stringify(OTHER));
+  const migrated = fresh();
+  expect(migrated.loadReplacement()).toEqual(OTHER);
+  expect(migrated.loadRecovery()).toBeNull();
+  expect(localStorage.getItem(`${KEY}:pending`)).toBeNull();
+});
+
+test("a legacy pending key with no stored wallet becomes the replacement", () => {
+  localStorage.setItem(`${KEY}:pending`, JSON.stringify(OTHER));
+  expect(fresh().loadReplacement()).toEqual(OTHER);
+});
+
+test("a legacy key never overwrites a filled slot", () => {
+  const kept = { ...FAKE, credentialId: "cred-kept" };
+  localStorage.setItem(KEY, JSON.stringify(FAKE));
+  localStorage.setItem(`${KEY}:recovery`, JSON.stringify(kept));
+  localStorage.setItem(`${KEY}:pending`, JSON.stringify({ ...FAKE, credentialId: "cred-legacy" }));
+  const migrated = fresh();
+  expect(migrated.loadRecovery()).toEqual(kept);
+  expect(localStorage.getItem(`${KEY}:pending`)).toBeNull();
+});
+
+test("a replacement in progress does not disturb a recovery", async () => {
+  const { startSessionRecovery } = await import("../session/wallet-recovery.js");
+  store.save(FAKE);
+  store.saveReplacement(OTHER);
+  const key = { ...FAKE, credentialId: "cred-recovery", ownerPubKey: "0x0777" };
+  const api = {
+    account: {
+      walletRecovery: async () => ({ enabled: true, state: "none" as const, readyAt: null, newOwnerGuid: null, guardianPubkey: null }),
+      startWalletRecovery: async () => ({ enabled: true, state: "waiting" as const, readyAt: 1, newOwnerGuid: null, guardianPubkey: null }),
+      completeWalletRecovery: async () => ({ enabled: true, state: "none" as const, readyAt: null, newOwnerGuid: null, guardianPubkey: null }),
+    },
+  };
+  await startSessionRecovery(api, FAKE.address, {
+    createOwnerKey: async () => ({ privateKeyHex: "0x1", sealed: key }),
+    loadRecovery: () => store.loadRecovery(),
+    saveRecovery: (sealed) => store.saveRecovery(sealed),
+    clearRecovery: () => store.clearRecovery(),
+    saveOwner: (sealed) => store.save(sealed),
+  });
+  expect(store.loadReplacement()).toEqual(OTHER);
+  expect(store.loadRecovery()?.credentialId).toBe("cred-recovery");
 });

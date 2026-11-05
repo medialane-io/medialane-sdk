@@ -18,9 +18,9 @@ function deps(pending: SealedOwner | null = null) {
   let owner: SealedOwner | null = null;
   const d: SessionRecoveryDeps = {
     createOwnerKey: async () => (log.push("create"), { privateKeyHex: "0x1", sealed: created }),
-    loadPending: () => held,
-    savePending: (sealed) => (log.push("savePending"), void (held = sealed)),
-    clearPending: () => (log.push("clearPending"), void (held = null)),
+    loadRecovery: () => held,
+    saveRecovery: (sealed) => (log.push("saveRecovery"), void (held = sealed)),
+    clearRecovery: () => (log.push("clearRecovery"), void (held = null)),
     saveOwner: (sealed) => (log.push("saveOwner"), void (owner = sealed)),
   };
   return { d, log, held: () => held, owner: () => owner };
@@ -38,7 +38,7 @@ describe("starting a recovery on a new browser", () => {
       },
     };
     const result = await startSessionRecovery(api, WALLET, d);
-    expect(log).toEqual(["create", "savePending"]);
+    expect(log).toEqual(["create", "saveRecovery"]);
     expect(held()).toEqual({ ...created, address: WALLET });
     expect(asked).toEqual([KEY]);
     expect(result.state).toBe("waiting");
@@ -74,7 +74,7 @@ describe("starting a recovery on a new browser", () => {
     const { d, log } = deps(pendingFor("0x0777", "0xdef"));
     const api = { account: { walletRecovery: async () => none, startWalletRecovery: async ({ newOwnerPubkey }: { newOwnerPubkey: string }) => waitingFor(newOwnerPubkey), completeWalletRecovery: async () => none } };
     await startSessionRecovery(api, WALLET, d);
-    expect(log).toEqual(["create", "savePending"]);
+    expect(log).toEqual(["create", "saveRecovery"]);
   });
 });
 
@@ -85,7 +85,7 @@ describe("finishing a recovery", () => {
     const api = { account: { walletRecovery: async () => none, startWalletRecovery: async () => none, completeWalletRecovery: async ({ newOwnerPubkey }: { newOwnerPubkey: string }) => (asked.push(newOwnerPubkey), none) } };
     await finishSessionRecovery(api, WALLET, d);
     expect(asked).toEqual([KEY]);
-    expect(log).toEqual(["saveOwner", "clearPending"]);
+    expect(log).toEqual(["saveOwner", "clearRecovery"]);
     expect(owner()?.address).toBe(WALLET);
     expect(held()).toBeNull();
   });

@@ -20,7 +20,7 @@ export {
 } from "./backend-metadata.js";
 export type { BackendMetadataConfig, BackendUploadResult } from "./backend-metadata.js";
 export { isSameOrigin } from "./origin.js";
-export { isPublicAppRoute } from "./app-routes.js";
+export { isPublicAppRoute, isSafePathSegment } from "./app-routes.js";
 export {
   issueSiwsToken,
   verifySiwsToken,

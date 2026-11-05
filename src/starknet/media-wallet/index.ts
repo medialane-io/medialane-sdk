@@ -2,6 +2,7 @@ export { deriveOwnerKeyPair } from "./derive.js";
 export { ownerConstructorCalldata, computeAccountAddress } from "./account.js";
 export { computeOwnerGuid, buildAddOwnerCall, buildRemoveOwnerCall, buildRemoveOwnerByGuidCall } from "./owners.js";
 export { buildDeployAccountParams } from "./deploy.js";
+export { buildWalletManageCall } from "./manage.js";
 export {
   buildSetFirstGuardianCall,
   buildTriggerEscapeOwnerCall,

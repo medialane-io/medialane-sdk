@@ -1,7 +1,10 @@
 import { test, expect, mock } from "bun:test";
-import type { TypedData } from "starknet";
+import { hash, num, type TypedData } from "starknet";
 import { UserFacingError } from "../../errors.js";
 import { executeSponsored, SponsoredCallRejectedError, allowsFallbackFunding, type TypedDataSigner } from "./sponsoredExecutor.js";
+
+const CALL = { contractAddress: "0x1", entrypoint: "approve", calldata: ["0x2", "0x3"] };
+const SIGNED_CALL = { To: CALL.contractAddress, Selector: num.toHex(hash.getSelectorFromName(CALL.entrypoint)), Calldata: CALL.calldata };
 
 const FAKE_TYPED_DATA = {
   types: {
@@ -15,7 +18,7 @@ const FAKE_TYPED_DATA = {
   },
   primaryType: "Ping",
   domain: { name: "avnu.paymaster", version: "1", chainId: "SN_MAIN", revision: "1" },
-  message: { value: "1" },
+  message: { value: "1", Calls: [SIGNED_CALL] },
 } satisfies TypedData;
 
 function fakeSigner(address = "0xdeadbeef"): TypedDataSigner {
@@ -23,7 +26,7 @@ function fakeSigner(address = "0xdeadbeef"): TypedDataSigner {
 }
 
 test("executeSponsored calls build then execute and returns sponsored + tx hash", async () => {
-  const calls: { url: string; body: { userAddress?: string; signature?: string[] } }[] = [];
+  const calls: { url: string; body: { intentIds?: string[]; userAddress?: string; signature?: string[] } }[] = [];
   const fetchImpl = mock(async (url: string, init?: RequestInit) => {
     const body = JSON.parse(init!.body as string);
     calls.push({ url, body });
@@ -39,12 +42,12 @@ test("executeSponsored calls build then execute and returns sponsored + tx hash"
   const result = await executeSponsored(
     { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
     fakeSigner(),
-    { intentIds: ["i1"] },
+    { intentIds: ["i1"], calls: [CALL] },
   );
 
   expect(result).toEqual({ status: "sponsored", transactionHash: "0xtxhash" });
   expect(calls[0].url).toBe("/api/wallet/sponsored-invoke/build");
-  expect((calls[0].body as { intentIds?: string[] }).intentIds).toEqual(["i1"]);
+  expect(calls[0].body).toEqual({ intentIds: ["i1"] });
   expect(calls[1].url).toBe("/api/wallet/sponsored-invoke/execute");
   expect(calls[1].body.signature).toEqual(["0xr", "0xs"]);
 });
@@ -57,7 +60,7 @@ for (const status of [500, 502, 503]) {
     const result = await executeSponsored(
       { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
       fakeSigner(),
-      { intentIds: ["i1"] },
+      { intentIds: ["i1"], calls: [CALL] },
     );
 
     expect(result).toEqual({ status: "unavailable", reason: "boom" });
@@ -73,7 +76,7 @@ for (const status of [400, 401, 403, 429]) {
       executeSponsored(
         { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
         fakeSigner(),
-        { intentIds: ["i1"] },
+        { intentIds: ["i1"], calls: [CALL] },
       ),
     ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
   });
@@ -90,7 +93,7 @@ test("executeSponsored returns unavailable on a 503 from execute — the sponsor
   const result = await executeSponsored(
     { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
     fakeSigner(),
-    { intentIds: ["i1"] },
+    { intentIds: ["i1"], calls: [CALL] },
   );
 
   expect(result).toEqual({ status: "unavailable", reason: "boom" });
@@ -109,7 +112,7 @@ for (const status of [400, 403, 422, 429, 502]) {
       executeSponsored(
         { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
         fakeSigner(),
-        { intentIds: ["i1"] },
+        { intentIds: ["i1"], calls: [CALL] },
       ),
     ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
   });
@@ -121,7 +124,7 @@ test("executeSponsored falls back to a generic reason when the response has no e
   const result = await executeSponsored(
     { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
     fakeSigner(),
-    { intentIds: ["i1"] },
+    { intentIds: ["i1"], calls: [CALL] },
   );
 
   expect(result.status).toBe("unavailable");
@@ -152,7 +155,7 @@ test("exhausted credits at build offer self-funding", async () => {
   const result = await executeSponsored(
     { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
     fakeSigner(),
-    { intentIds: ["i1"] },
+    { intentIds: ["i1"], calls: [CALL] },
   );
 
   expect(result.status).toBe("unavailable");
@@ -170,7 +173,7 @@ test("an execute that may have broadcast is never offered for self-funding", asy
     executeSponsored(
       { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
       fakeSigner(),
-      { intentIds: ["i1"] },
+      { intentIds: ["i1"], calls: [CALL] },
     ),
   ).rejects.toBeInstanceOf(SponsoredCallRejectedError);
 });
@@ -180,22 +183,22 @@ test("with intent ids, build and execute send only the ids", async () => {
   const fetchImpl = (async (_url: string, init: RequestInit) => {
     bodies.push(JSON.parse(String(init.body)));
     return bodies.length === 1
-      ? new Response(JSON.stringify({ typedData: { t: 1 } }), { status: 200 })
+      ? new Response(JSON.stringify({ typedData: FAKE_TYPED_DATA }), { status: 200 })
       : new Response(JSON.stringify({ transactionHash: "0xtx" }), { status: 200 });
   }) as unknown as typeof fetch;
   const signer: TypedDataSigner = { address: "0x1", signTypedData: async () => ["0xs"] };
-  const result = await executeSponsored({ proxyUrl: "/p", fetchImpl }, signer, { intentIds: ["i1"] });
+  const result = await executeSponsored({ proxyUrl: "/p", fetchImpl }, signer, { intentIds: ["i1"], calls: [CALL] });
   expect(result).toEqual({ status: "sponsored", transactionHash: "0xtx" });
-  expect(bodies).toEqual([{ intentIds: ["i1"] }, { intentIds: ["i1"], typedData: { t: 1 }, signature: ["0xs"] }]);
+  expect(bodies).toEqual([{ intentIds: ["i1"] }, { intentIds: ["i1"], typedData: FAKE_TYPED_DATA, signature: ["0xs"] }]);
 });
 
 test("extra headers are sent on both requests", async () => {
   const seen: Headers[] = [];
   const fetchImpl = (async (_url: string, init: RequestInit) => {
     seen.push(new Headers(init.headers));
-    return new Response(JSON.stringify(seen.length === 1 ? { typedData: {} } : { transactionHash: "0x1" }), { status: 200 });
+    return new Response(JSON.stringify(seen.length === 1 ? { typedData: FAKE_TYPED_DATA } : { transactionHash: "0x1" }), { status: 200 });
   }) as unknown as typeof fetch;
-  await executeSponsored({ proxyUrl: "/p", fetchImpl, headers: { authorization: "Bearer t" } }, { address: "0x1", signTypedData: async () => [] }, { intentIds: ["i1"] });
+  await executeSponsored({ proxyUrl: "/p", fetchImpl, headers: { authorization: "Bearer t" } }, { address: "0x1", signTypedData: async () => [] }, { intentIds: ["i1"], calls: [CALL] });
   expect(seen.map((h) => h.get("authorization"))).toEqual(["Bearer t", "Bearer t"]);
 });
 
@@ -224,7 +227,7 @@ test("a rejected execute keeps the server's reason as a user-facing error", asyn
   const err = await executeSponsored(
     { proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl },
     fakeSigner(),
-    { intentIds: ["i1"] },
+    { intentIds: ["i1"], calls: [CALL] },
   ).catch((e: unknown) => e);
 
   expect(err).toBeInstanceOf(UserFacingError);
@@ -236,4 +239,23 @@ test("a rejected execute keeps the server's reason as a user-facing error", asyn
   expect(rejection.status).toBe(422);
   expect(rejection.stage).toBe("execute");
   expect(rejection.requestId).toBe("req-1234");
+});
+
+test("typed data for other calls is not signed", async () => {
+  const urls: string[] = [];
+  let signed = 0;
+  const fetchImpl = mock(async (url: string) => {
+    urls.push(url);
+    const other = { ...FAKE_TYPED_DATA, message: { value: "1", Calls: [{ ...SIGNED_CALL, Calldata: ["0x2", "0x999"] }] } };
+    return new Response(JSON.stringify({ typedData: other }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const signer: TypedDataSigner = { address: "0xdeadbeef", signTypedData: async () => (signed++, ["0xr", "0xs"]) };
+
+  const err = await executeSponsored({ proxyUrl: "/api/wallet/sponsored-invoke", fetchImpl }, signer, { intentIds: ["i1"], calls: [CALL] }).catch((e: unknown) => e);
+
+  expect(err).toBeInstanceOf(SponsoredCallRejectedError);
+  expect((err as SponsoredCallRejectedError).code).toBe("calls_mismatch");
+  expect((err as SponsoredCallRejectedError).stage).toBe("build");
+  expect(signed).toBe(0);
+  expect(urls).toEqual(["/api/wallet/sponsored-invoke/build"]);
 });

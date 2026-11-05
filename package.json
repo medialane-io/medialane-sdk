@@ -1,6 +1,6 @@
 {
   "name": "@medialane/sdk",
-  "version": "0.214.0",
+  "version": "0.215.0",
   "description": "Framework-agnostic TypeScript SDK for Medialane.io — the IP marketplace on Starknet",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -73,6 +73,7 @@
     "@solana/web3.js": "^1.98.4",
     "@stellar/stellar-sdk": "^16.0.1",
     "@types/bun": "^1.4.4",
+    "@types/node": "^22",
     "starknet": "10.0.2",
     "tsup": "^8.0.0",
     "typescript": "^5.6.0",
