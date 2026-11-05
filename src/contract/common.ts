@@ -11,7 +11,7 @@ export function pageQuery(opts: { defaultLimit?: number; maxLimit?: number } = {
   const defaultLimit = opts.defaultLimit ?? 20;
   const maxLimit = opts.maxLimit ?? 100;
   return z
-    .object({ page: z.unknown(), limit: z.unknown() })
+    .object({ page: z.unknown().optional(), limit: z.unknown().optional() })
     .transform(({ page: rawPage, limit: rawLimit }) => {
       const page = clampInt(rawPage, 1, 1, Number.MAX_SAFE_INTEGER);
       const limit = clampInt(rawLimit, defaultLimit, 1, maxLimit);

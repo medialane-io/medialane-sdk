@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.216.0] — 2026-11-05
+
+### Changed
+
+- Uses zod 4 (`^4.6.6`). The exported schemas accept the same input and the types derived from them are unchanged.
+- URL fields (`backendUrl`, profile URLs) are trimmed, and tabs and newlines inside them removed, before they are checked and returned. A profile URL with surrounding spaces is now accepted in its trimmed form.
+
 ## [0.215.0] — 2026-11-05
 
 ### Changed

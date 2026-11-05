@@ -3,10 +3,9 @@ import { z } from "zod";
 export const urlField = z.preprocess(
   (v) => (typeof v === "string" && v.trim() === "" ? null : v),
   z
-    .string()
     .url()
     .refine((v) => v.startsWith("https://") || v.startsWith("http://"), {
-      message: "URL must use http or https scheme",
+      error: "URL must use http or https scheme",
     })
     .nullable()
     .optional(),

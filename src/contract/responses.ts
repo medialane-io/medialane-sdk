@@ -55,13 +55,11 @@ export const orderSchema = z.object({
 
 export const metadataStatusSchema = z.enum(["PENDING", "FETCHING", "FETCHED", "FAILED"]);
 
-export const tokenAttributeSchema = z
-  .object({
-    trait_type: z.string(),
-    value: z.union([z.string(), z.number(), z.boolean()]),
-    display_type: z.string().optional(),
-  })
-  .passthrough();
+export const tokenAttributeSchema = z.looseObject({
+  trait_type: z.string(),
+  value: z.union([z.string(), z.number(), z.boolean()]),
+  display_type: z.string().optional(),
+});
 
 export const tokenSchema = z.object({
   id: z.string(),
