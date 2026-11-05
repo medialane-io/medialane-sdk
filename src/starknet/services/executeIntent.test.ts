@@ -224,3 +224,31 @@ test("executeIntent reads the receipt through the client's provider", async () =
   await executeIntent(fakeSigner(), client, PREBUILT);
   expect(seen).toEqual(["0xtx"]);
 });
+
+test("a locally built order is signed from its own typed data and executed with its own signed calls", async () => {
+  const { buildIntent } = await import("../intents/build.js");
+  const { populateSignedCalls } = await import("../intents/signed.js");
+  const { resolveConfig } = await import("../../config.js");
+  const { sameCalls } = await import("../sponsored-checks.js");
+  const params = {
+    offerer: "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    nftContract: "0x0222222222222222222222222222222222222222222222222222222222222222",
+    tokenId: "42",
+    currency: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    price: "1.5",
+    endTime: 1_900_000_000,
+    salt: "0xabc",
+    startTime: 1_800_000_000,
+  };
+  const built = buildIntent("listing", params, { counter: "5", royaltyMaxBps: "500" }, resolveConfig({}));
+  const signedWith: unknown[] = [];
+  const executed: unknown[] = [];
+  const signer = fakeSigner({
+    signTypedData: async (td) => (signedWith.push(td), ["0x1234", "0x5678"]),
+    execute: async (calls) => (executed.push(calls), { txHash: "0xtx" }),
+  });
+  const intent = { id: "i1", expiresAt: "x", requiresSignature: true as const, typedData: built.typedData, local: { kind: "listing" as const, built } };
+  await executeIntent(signer, fakeClient(), intent);
+  expect(signedWith[0]).toBe(built.typedData);
+  expect(sameCalls(executed[0] as never, populateSignedCalls("listing", built, ["0x1234", "0x5678"]))).toBe(true);
+});

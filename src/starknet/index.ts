@@ -169,8 +169,12 @@ export {
   type IntentOrder,
 } from "./intents/build.js";
 export { typedDataMatches } from "./intents/compare.js";
+export { createIntent, type CreatedIntent, type LocalBuild, type IntentCreationSources } from "./intents/create.js";
+export { createIntentReaders, type IntentReaderSources } from "./intents/readers.js";
+export { populateSignedCalls } from "./intents/signed.js";
 export {
   ORDER_START_WINDOW_SECONDS,
+  ORDER_START_DELAY_SECONDS,
   type ListingIntentParams,
   type OfferIntentParams,
   type CancelIntentParams,
