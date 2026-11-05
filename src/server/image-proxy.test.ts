@@ -1,5 +1,4 @@
 import { describe, test, expect } from "bun:test";
-import type { FetchLike } from "../utils/fetch.js";
 import { createImageProxyHandler, readBodyWithCap } from "./image-proxy.js";
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
@@ -11,14 +10,10 @@ function imageResponse(body: Uint8Array = PNG, contentType = "image/png"): Respo
   });
 }
 
-function handler(overrides: {
-  resolveHostname?: (h: string) => Promise<string[]>;
-  fetchImpl?: FetchLike;
-} = {}) {
-  return createImageProxyHandler({
-    resolveHostname: overrides.resolveHostname ?? (async () => ["93.184.216.34"]),
-    fetchImpl: overrides.fetchImpl ?? (async () => imageResponse()),
-  });
+type Get = (url: URL, headers: Record<string, string>) => Promise<Response>;
+
+function handler(overrides: { get?: Get } = {}) {
+  return createImageProxyHandler({ get: overrides.get ?? (async () => imageResponse()) });
 }
 
 function request(url: string): Request {
@@ -41,7 +36,7 @@ describe("image proxy", () => {
   test("rejects http and private hosts before any fetch", async () => {
     let fetched = false;
     const h = handler({
-      fetchImpl: async () => {
+      get: async () => {
         fetched = true;
         return imageResponse();
       },
@@ -52,55 +47,53 @@ describe("image proxy", () => {
     expect(fetched).toBe(false);
   });
 
-  test("rejects a public name that resolves to a private address", async () => {
-    const res = await handler({ resolveHostname: async () => ["127.0.0.1"] })(
-      request("https://evil.example/a.png"),
-    );
-    expect(res.status).toBe(502);
-  });
-
-  test("refuses when a hostname resolves to nothing", async () => {
-    const res = await handler({ resolveHostname: async () => [] })(
-      request("https://nowhere.example/a.png"),
-    );
-    expect(res.status).toBe(502);
-  });
-
-  test("refuses when resolution throws", async () => {
+  test("a connection the guard refuses fails the request", async () => {
     const res = await handler({
-      resolveHostname: async () => {
-        throw new Error("SERVFAIL");
+      get: async () => {
+        throw Object.assign(new Error("blocked"), { code: "EBLOCKED" });
       },
-    })(request("https://broken.example/a.png"));
+    })(request("https://evil.example/a.png"));
     expect(res.status).toBe(502);
+  });
+
+  test("a redirect is fetched through the guarded connection", async () => {
+    const seen: string[] = [];
+    const res = await handler({
+      get: async (url) => {
+        seen.push(url.toString());
+        return seen.length === 1
+          ? new Response(null, { status: 302, headers: { location: "https://other.example/x.png" } })
+          : imageResponse();
+      },
+    })(request("https://cdn.example/a.png"));
+    expect(res.status).toBe(200);
+    expect(seen).toEqual(["https://cdn.example/a.png", "https://other.example/x.png"]);
   });
 
   test("blocks a redirect into a private address", async () => {
     const res = await handler({
-      fetchImpl: async () =>
-        new Response(null, { status: 302, headers: { location: "https://127.0.0.1/a.png" } }),
+      get: async () => new Response(null, { status: 302, headers: { location: "https://127.0.0.1/a.png" } }),
     })(request("https://cdn.example/a.png"));
     expect(res.status).toBe(502);
   });
 
   test("blocks a redirect chain that never terminates", async () => {
     const res = await handler({
-      fetchImpl: async () =>
-        new Response(null, { status: 302, headers: { location: "https://cdn.example/next.png" } }),
+      get: async () => new Response(null, { status: 302, headers: { location: "https://cdn.example/next.png" } }),
     })(request("https://cdn.example/a.png"));
     expect(res.status).toBe(502);
   });
 
   test("rejects a non-image content type", async () => {
     const res = await handler({
-      fetchImpl: async () => imageResponse(PNG, "text/html"),
+      get: async () => imageResponse(PNG, "text/html"),
     })(request("https://cdn.example/a.png"));
     expect(res.status).toBe(400);
   });
 
   test("passes the upstream status through when it fails", async () => {
     const res = await handler({
-      fetchImpl: async () => new Response(null, { status: 404 }),
+      get: async () => new Response(null, { status: 404 }),
     })(request("https://cdn.example/missing.png"));
     expect(res.status).toBe(404);
   });
@@ -117,16 +110,16 @@ describe("image proxy with backend credentials", () => {
 
   function recording() {
     const seen: Array<{ url: string; headers: Record<string, string> }> = [];
-    const fetchImpl = (async (url: string, init?: RequestInit) => {
-      seen.push({ url, headers: { ...(init?.headers as Record<string, string>) } });
+    const get = async (url: URL, headers: Record<string, string>) => {
+      seen.push({ url: url.toString(), headers: { ...headers } });
       return imageResponse();
-    }) as unknown as typeof fetch;
-    return { seen, fetchImpl };
+    };
+    return { seen, get };
   }
 
   test("an image from the backend is fetched with the app's credentials", async () => {
-    const { seen, fetchImpl } = recording();
-    const h = createImageProxyHandler({ resolveHostname: async () => ["93.184.216.34"], fetchImpl, backend });
+    const { seen, get } = recording();
+    const h = createImageProxyHandler({ get, backend });
     expect((await h(request("https://api.example/media/starknet/0xabc/1/image"))).status).toBe(200);
     expect(seen[0]!.headers["x-api-key"]).toBe("ml_live_key");
     expect(seen[0]!.headers["x-app-id"]).toBe("APP");
@@ -134,8 +127,8 @@ describe("image proxy with backend credentials", () => {
   });
 
   test("a backend image link on another host is fetched from the configured backend with credentials", async () => {
-    const { seen, fetchImpl } = recording();
-    const h = createImageProxyHandler({ resolveHostname: async () => ["93.184.216.34"], fetchImpl, backend });
+    const { seen, get } = recording();
+    const h = createImageProxyHandler({ get, backend });
     expect((await h(request("https://public.example/media/starknet/0xabc/1/image"))).status).toBe(200);
     expect(seen[0]!.url).toBe("https://api.example/media/starknet/0xabc/1/image");
     expect(seen[0]!.headers["x-api-key"]).toBe("ml_live_key");
@@ -144,8 +137,8 @@ describe("image proxy with backend credentials", () => {
   });
 
   test("an image from any other host gets no credentials", async () => {
-    const { seen, fetchImpl } = recording();
-    const h = createImageProxyHandler({ resolveHostname: async () => ["93.184.216.34"], fetchImpl, backend });
+    const { seen, get } = recording();
+    const h = createImageProxyHandler({ get, backend });
     for (const url of ["https://cdn.example/a.png", "https://api.example.evil.example/a.png", "https://api.example:8443/a.png"]) {
       await h(request(url));
     }
@@ -158,13 +151,13 @@ describe("image proxy with backend credentials", () => {
 
   test("a redirect away from the backend carries no credentials", async () => {
     const seen: Array<Record<string, string>> = [];
-    const fetchImpl = (async (url: string, init?: RequestInit) => {
-      seen.push({ ...(init?.headers as Record<string, string>) });
-      return url.startsWith("https://api.example/")
+    const get = async (url: URL, headers: Record<string, string>) => {
+      seen.push({ ...headers });
+      return url.toString().startsWith("https://api.example/")
         ? new Response(null, { status: 302, headers: { location: "https://cdn.example/a.png" } })
         : imageResponse();
-    }) as unknown as typeof fetch;
-    const h = createImageProxyHandler({ resolveHostname: async () => ["93.184.216.34"], fetchImpl, backend });
+    };
+    const h = createImageProxyHandler({ get, backend });
     expect((await h(request("https://api.example/media/starknet/0xabc/1/image"))).status).toBe(200);
     expect(seen[0]!["x-api-key"]).toBe("ml_live_key");
     expect(seen[1]!["x-api-key"]).toBeUndefined();

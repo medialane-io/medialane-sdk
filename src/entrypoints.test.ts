@@ -12,7 +12,7 @@ function isTypeOnly(clause: string): boolean {
   return members.length > 0 && members.every((m) => m.startsWith("type "));
 }
 
-function runtimePeers(entry: string): Set<string> {
+function runtimeImports(entry: string, wanted: (specifier: string) => boolean): Set<string> {
   const found = new Set<string>();
   const seen = new Set<string>();
   const visit = (file: string) => {
@@ -27,12 +27,15 @@ function runtimePeers(entry: string): Set<string> {
         if (existsSync(target)) visit(target);
         continue;
       }
-      if (PEERS.includes(specifier)) found.add(specifier);
+      if (wanted(specifier)) found.add(specifier);
     }
   };
   visit(resolve(entry));
   return found;
 }
+
+const runtimePeers = (entry: string) => runtimeImports(entry, (specifier) => PEERS.includes(specifier));
+const nodeBuiltins = (entry: string) => runtimeImports(entry, (specifier) => specifier.startsWith("node:"));
 
 describe("entry points load only the chain libraries they declare", () => {
   test("the root entry needs no chain library", () => {
@@ -49,5 +52,15 @@ describe("entry points load only the chain libraries they declare", () => {
 
   test("the starknet entry loads starknet", () => {
     expect([...runtimePeers("src/starknet/index.ts")]).toEqual(["starknet"]);
+  });
+});
+
+describe("Node built-ins stay out of entries a browser loads", () => {
+  test("the root entry loads no Node built-in", () => {
+    expect([...nodeBuiltins("src/index.ts")]).toEqual([]);
+  });
+
+  test("the wallet entry loads no Node built-in", () => {
+    expect([...nodeBuiltins("src/wallet/public.ts")]).toEqual([]);
   });
 });

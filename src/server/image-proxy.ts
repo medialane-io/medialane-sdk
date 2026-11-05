@@ -1,17 +1,14 @@
-import type { FetchLike } from "../utils/fetch.js";
 import {
   ALLOWED_IMAGE_CONTENT_TYPES,
   MAX_IMAGE_PROXY_BYTES,
   MAX_IMAGE_REDIRECTS,
-  isPrivateHost,
   validateUrl,
 } from "./ssrf-guard.js";
+import { guardedGet } from "./guarded-get.js";
 import type { AppGatewayConfig } from "./app-gateway.js";
 
 export interface ImageProxyConfig {
-
-  resolveHostname: (hostname: string) => Promise<string[]>;
-  fetchImpl?: FetchLike;
+  get?: (url: URL, headers: Record<string, string>) => Promise<Response>;
   userAgent?: string;
   backend?: Pick<AppGatewayConfig, "appId" | "backendUrl" | "apiKey" | "appSecret">;
 }
@@ -65,7 +62,7 @@ export async function readBodyWithCap(res: Response, maxBytes: number): Promise<
 export function createImageProxyHandler(
   config: ImageProxyConfig,
 ): (req: Request) => Promise<Response> {
-  const doFetch = config.fetchImpl ?? fetch;
+  const get = config.get ?? guardedGet;
   const userAgent = config.userAgent ?? DEFAULT_USER_AGENT;
   const backendOrigin = config.backend ? new URL(config.backend.backendUrl).origin : null;
 
@@ -78,30 +75,13 @@ export function createImageProxyHandler(
     return headers;
   }
 
-  async function resolvesToPrivateHost(hostname: string): Promise<boolean> {
-    try {
-      const addresses = await config.resolveHostname(hostname);
-
-      if (addresses.length === 0) return true;
-      return addresses.some((address) => isPrivateHost(address));
-    } catch {
-      return true;
-    }
-  }
-
   async function safeFetch(url: URL, hopsLeft: number): Promise<Response> {
     if (hopsLeft < 0) throw new Error("Too many redirects");
 
-    if (await resolvesToPrivateHost(url.hostname)) {
-      throw new Error("Blocked: hostname resolves to a private address");
-    }
-
-    const res = await doFetch(url.toString(), {
-      redirect: "manual",
-      headers: headersFor(url),
-    });
+    const res = await get(url, headersFor(url));
 
     if (res.status >= 300 && res.status < 400) {
+      await res.body?.cancel().catch(() => {});
       const location = res.headers.get("location");
       if (!location) throw new Error("Redirect with no Location header");
 
