@@ -2,6 +2,20 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.217.0] — 2026-11-05
+
+### Added
+
+- `buildIntent(kind, params, inputs, config)` builds an intent's calls and, for orders, its typed data. `resolveIntentInputs(kind, params, readers)` reads what a build needs through `IntentReaders` (`counterOf`, `royaltyCapOf`, `orderOf`). `canBuildIntent(kind)` tells which kinds have a builder: `listing`, `offer`, `cancel` and `counter-offer`.
+- `typedDataMatches(a, b)` compares typed data field by field, felts by value.
+- `ORDER_START_WINDOW_SECONDS` (300): how far ahead an order's start time may be set.
+- Listing and offer requests accept an optional `startTime`; counter-offer requests accept optional `salt` and `startTime`.
+
+### Changed
+
+- `parseAmount` ignores thousands separators (`"1,234.5"`).
+- A counter-offer built by `buildIntent` ends `durationSeconds` after its start time.
+
 ## [0.216.0] — 2026-11-05
 
 ### Changed

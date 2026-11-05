@@ -18,6 +18,7 @@ export const listingSchema = z.object({
   price: z.string(),
   endTime: z.number(),
   salt: z.string().optional(),
+  startTime: z.number().int().optional(),
 
   amount: z.string().optional(),
 });
@@ -181,6 +182,8 @@ export const counterOfferSchema = z.object({
   durationSeconds:   z.number().int().min(3600).max(2592000),
   priceRaw:          z.string().regex(/^\d+$/, "priceRaw must be a non-negative integer string"),
   message:           z.string().max(500).optional(),
+  salt:              z.string().optional(),
+  startTime:         z.number().int().optional(),
 });
 
 const checkoutItemSchema = z.object({

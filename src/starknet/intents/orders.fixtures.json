@@ -1,0 +1,897 @@
+{
+  "now": 1793880000,
+  "listing721": {
+    "params": {
+      "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "nftContract": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "tokenId": "42",
+      "currency": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "price": "1.5",
+      "endTime": 1900000000,
+      "salt": "0xabc"
+    },
+    "typedData": {
+      "domain": {
+        "name": "Medialane",
+        "version": "5",
+        "chainId": "0x534e5f4d41494e",
+        "revision": "1"
+      },
+      "primaryType": "OrderParameters",
+      "types": {
+        "StarknetDomain": [
+          {
+            "name": "name",
+            "type": "shortstring"
+          },
+          {
+            "name": "version",
+            "type": "shortstring"
+          },
+          {
+            "name": "chainId",
+            "type": "shortstring"
+          },
+          {
+            "name": "revision",
+            "type": "shortstring"
+          }
+        ],
+        "OrderParameters": [
+          {
+            "name": "offerer",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "marketplace",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "offer",
+            "type": "OfferItem"
+          },
+          {
+            "name": "consideration",
+            "type": "ConsiderationItem"
+          },
+          {
+            "name": "royalty_max_bps",
+            "type": "felt"
+          },
+          {
+            "name": "start_time",
+            "type": "felt"
+          },
+          {
+            "name": "end_time",
+            "type": "felt"
+          },
+          {
+            "name": "salt",
+            "type": "felt"
+          },
+          {
+            "name": "counter",
+            "type": "felt"
+          }
+        ],
+        "OfferItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          }
+        ],
+        "ConsiderationItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          },
+          {
+            "name": "recipient",
+            "type": "ContractAddress"
+          }
+        ]
+      },
+      "message": {
+        "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "marketplace": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "offer": {
+          "item_type": "ERC721",
+          "token": "0x0222222222222222222222222222222222222222222222222222222222222222",
+          "identifier_or_criteria": "0x2a",
+          "amount": "0x1"
+        },
+        "consideration": {
+          "item_type": "ERC20",
+          "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+          "identifier_or_criteria": "0x0",
+          "amount": "0x14d1120d7b160000",
+          "recipient": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        },
+        "royalty_max_bps": "0x1f4",
+        "start_time": "0x6aec6fde",
+        "end_time": "0x713fb300",
+        "salt": "0xabc",
+        "counter": "0x5"
+      }
+    },
+    "calls": [
+      {
+        "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+          "42",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "entrypoint": "register_order",
+        "calldata": []
+      }
+    ]
+  },
+  "listing1155": {
+    "params": {
+      "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "nftContract": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "tokenId": "42",
+      "currency": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "price": "1.5",
+      "endTime": 1900000000,
+      "salt": "0xabc",
+      "amount": "3"
+    },
+    "typedData": {
+      "domain": {
+        "name": "Medialane",
+        "version": "4",
+        "chainId": "0x534e5f4d41494e",
+        "revision": "1"
+      },
+      "primaryType": "OrderParameters",
+      "types": {
+        "StarknetDomain": [
+          {
+            "name": "name",
+            "type": "shortstring"
+          },
+          {
+            "name": "version",
+            "type": "shortstring"
+          },
+          {
+            "name": "chainId",
+            "type": "shortstring"
+          },
+          {
+            "name": "revision",
+            "type": "shortstring"
+          }
+        ],
+        "OrderParameters": [
+          {
+            "name": "offerer",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "marketplace",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "offer",
+            "type": "OfferItem"
+          },
+          {
+            "name": "consideration",
+            "type": "ConsiderationItem"
+          },
+          {
+            "name": "royalty_max_bps",
+            "type": "felt"
+          },
+          {
+            "name": "start_time",
+            "type": "felt"
+          },
+          {
+            "name": "end_time",
+            "type": "felt"
+          },
+          {
+            "name": "salt",
+            "type": "felt"
+          },
+          {
+            "name": "counter",
+            "type": "felt"
+          }
+        ],
+        "OfferItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          }
+        ],
+        "ConsiderationItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          },
+          {
+            "name": "recipient",
+            "type": "ContractAddress"
+          }
+        ]
+      },
+      "message": {
+        "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "marketplace": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "offer": {
+          "item_type": "ERC1155",
+          "token": "0x0222222222222222222222222222222222222222222222222222222222222222",
+          "identifier_or_criteria": "0x2a",
+          "amount": "0x3"
+        },
+        "consideration": {
+          "item_type": "ERC20",
+          "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+          "identifier_or_criteria": "0x0",
+          "amount": "0x14d1120d7b160000",
+          "recipient": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        },
+        "royalty_max_bps": "0x1f4",
+        "start_time": "0x6aec6fde",
+        "end_time": "0x713fb300",
+        "salt": "0xabc",
+        "counter": "0x5"
+      }
+    },
+    "calls": [
+      {
+        "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "entrypoint": "set_approval_for_all",
+        "calldata": [
+          "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+          "0x1"
+        ]
+      },
+      {
+        "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "entrypoint": "register_order",
+        "calldata": []
+      }
+    ]
+  },
+  "offer721": {
+    "params": {
+      "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "nftContract": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "tokenId": "42",
+      "currency": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "price": "1.5",
+      "endTime": 1900000000,
+      "salt": "0xabc"
+    },
+    "typedData": {
+      "domain": {
+        "name": "Medialane",
+        "version": "5",
+        "chainId": "0x534e5f4d41494e",
+        "revision": "1"
+      },
+      "primaryType": "OrderParameters",
+      "types": {
+        "StarknetDomain": [
+          {
+            "name": "name",
+            "type": "shortstring"
+          },
+          {
+            "name": "version",
+            "type": "shortstring"
+          },
+          {
+            "name": "chainId",
+            "type": "shortstring"
+          },
+          {
+            "name": "revision",
+            "type": "shortstring"
+          }
+        ],
+        "OrderParameters": [
+          {
+            "name": "offerer",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "marketplace",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "offer",
+            "type": "OfferItem"
+          },
+          {
+            "name": "consideration",
+            "type": "ConsiderationItem"
+          },
+          {
+            "name": "royalty_max_bps",
+            "type": "felt"
+          },
+          {
+            "name": "start_time",
+            "type": "felt"
+          },
+          {
+            "name": "end_time",
+            "type": "felt"
+          },
+          {
+            "name": "salt",
+            "type": "felt"
+          },
+          {
+            "name": "counter",
+            "type": "felt"
+          }
+        ],
+        "OfferItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          }
+        ],
+        "ConsiderationItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          },
+          {
+            "name": "recipient",
+            "type": "ContractAddress"
+          }
+        ]
+      },
+      "message": {
+        "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "marketplace": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "offer": {
+          "item_type": "ERC20",
+          "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+          "identifier_or_criteria": "0x0",
+          "amount": "0x14d1120d7b160000"
+        },
+        "consideration": {
+          "item_type": "ERC721",
+          "token": "0x0222222222222222222222222222222222222222222222222222222222222222",
+          "identifier_or_criteria": "0x2a",
+          "amount": "0x1",
+          "recipient": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        },
+        "royalty_max_bps": "0x1f4",
+        "start_time": "0x6aec6fde",
+        "end_time": "0x713fb300",
+        "salt": "0xabc",
+        "counter": "0x5"
+      }
+    },
+    "calls": [
+      {
+        "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+          "1500000000000000000",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "entrypoint": "register_order",
+        "calldata": []
+      }
+    ]
+  },
+  "offer1155": {
+    "params": {
+      "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "nftContract": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "tokenId": "42",
+      "currency": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "price": "1.5",
+      "endTime": 1900000000,
+      "salt": "0xabc",
+      "tokenStandard": "ERC1155",
+      "quantity": "2"
+    },
+    "typedData": {
+      "domain": {
+        "name": "Medialane",
+        "version": "4",
+        "chainId": "0x534e5f4d41494e",
+        "revision": "1"
+      },
+      "primaryType": "OrderParameters",
+      "types": {
+        "StarknetDomain": [
+          {
+            "name": "name",
+            "type": "shortstring"
+          },
+          {
+            "name": "version",
+            "type": "shortstring"
+          },
+          {
+            "name": "chainId",
+            "type": "shortstring"
+          },
+          {
+            "name": "revision",
+            "type": "shortstring"
+          }
+        ],
+        "OrderParameters": [
+          {
+            "name": "offerer",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "marketplace",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "offer",
+            "type": "OfferItem"
+          },
+          {
+            "name": "consideration",
+            "type": "ConsiderationItem"
+          },
+          {
+            "name": "royalty_max_bps",
+            "type": "felt"
+          },
+          {
+            "name": "start_time",
+            "type": "felt"
+          },
+          {
+            "name": "end_time",
+            "type": "felt"
+          },
+          {
+            "name": "salt",
+            "type": "felt"
+          },
+          {
+            "name": "counter",
+            "type": "felt"
+          }
+        ],
+        "OfferItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          }
+        ],
+        "ConsiderationItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          },
+          {
+            "name": "recipient",
+            "type": "ContractAddress"
+          }
+        ]
+      },
+      "message": {
+        "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "marketplace": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "offer": {
+          "item_type": "ERC20",
+          "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+          "identifier_or_criteria": "0x0",
+          "amount": "0x14d1120d7b160000"
+        },
+        "consideration": {
+          "item_type": "ERC1155",
+          "token": "0x0222222222222222222222222222222222222222222222222222222222222222",
+          "identifier_or_criteria": "0x2a",
+          "amount": "0x2",
+          "recipient": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        },
+        "royalty_max_bps": "0x1f4",
+        "start_time": "0x6aec6fde",
+        "end_time": "0x713fb300",
+        "salt": "0xabc",
+        "counter": "0x5"
+      }
+    },
+    "calls": [
+      {
+        "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+          "1500000000000000000",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "entrypoint": "register_order",
+        "calldata": []
+      }
+    ]
+  },
+  "cancel721": {
+    "params": {
+      "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "orderHash": "0x0777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "typedData": {
+      "domain": {
+        "name": "Medialane",
+        "version": "5",
+        "chainId": "0x534e5f4d41494e",
+        "revision": "1"
+      },
+      "primaryType": "OrderCancellation",
+      "types": {
+        "StarknetDomain": [
+          {
+            "name": "name",
+            "type": "shortstring"
+          },
+          {
+            "name": "version",
+            "type": "shortstring"
+          },
+          {
+            "name": "chainId",
+            "type": "shortstring"
+          },
+          {
+            "name": "revision",
+            "type": "shortstring"
+          }
+        ],
+        "OrderCancellation": [
+          {
+            "name": "order_hash",
+            "type": "felt"
+          },
+          {
+            "name": "offerer",
+            "type": "ContractAddress"
+          }
+        ]
+      },
+      "message": {
+        "order_hash": "0x0777777777777777777777777777777777777777777777777777777777777777",
+        "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      }
+    },
+    "calls": [
+      {
+        "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "entrypoint": "cancel_order",
+        "calldata": []
+      }
+    ]
+  },
+  "cancel1155": {
+    "params": {
+      "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "orderHash": "0x0777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "typedData": {
+      "domain": {
+        "name": "Medialane",
+        "version": "4",
+        "chainId": "0x534e5f4d41494e",
+        "revision": "1"
+      },
+      "primaryType": "OrderCancellation",
+      "types": {
+        "StarknetDomain": [
+          {
+            "name": "name",
+            "type": "shortstring"
+          },
+          {
+            "name": "version",
+            "type": "shortstring"
+          },
+          {
+            "name": "chainId",
+            "type": "shortstring"
+          },
+          {
+            "name": "revision",
+            "type": "shortstring"
+          }
+        ],
+        "OrderCancellation": [
+          {
+            "name": "order_hash",
+            "type": "felt"
+          },
+          {
+            "name": "offerer",
+            "type": "ContractAddress"
+          }
+        ]
+      },
+      "message": {
+        "order_hash": "0x0777777777777777777777777777777777777777777777777777777777777777",
+        "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      }
+    },
+    "calls": [
+      {
+        "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "entrypoint": "cancel_order",
+        "calldata": []
+      }
+    ]
+  },
+  "counterOffer": {
+    "params": {
+      "sellerAddress": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "nftContract": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "tokenId": "42",
+      "currencyAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "priceRaw": "2000000000000000000",
+      "durationSeconds": 86400,
+      "salt": "0xdef"
+    },
+    "typedData": {
+      "domain": {
+        "name": "Medialane",
+        "version": "5",
+        "chainId": "0x534e5f4d41494e",
+        "revision": "1"
+      },
+      "primaryType": "OrderParameters",
+      "types": {
+        "StarknetDomain": [
+          {
+            "name": "name",
+            "type": "shortstring"
+          },
+          {
+            "name": "version",
+            "type": "shortstring"
+          },
+          {
+            "name": "chainId",
+            "type": "shortstring"
+          },
+          {
+            "name": "revision",
+            "type": "shortstring"
+          }
+        ],
+        "OrderParameters": [
+          {
+            "name": "offerer",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "marketplace",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "offer",
+            "type": "OfferItem"
+          },
+          {
+            "name": "consideration",
+            "type": "ConsiderationItem"
+          },
+          {
+            "name": "royalty_max_bps",
+            "type": "felt"
+          },
+          {
+            "name": "start_time",
+            "type": "felt"
+          },
+          {
+            "name": "end_time",
+            "type": "felt"
+          },
+          {
+            "name": "salt",
+            "type": "felt"
+          },
+          {
+            "name": "counter",
+            "type": "felt"
+          }
+        ],
+        "OfferItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          }
+        ],
+        "ConsiderationItem": [
+          {
+            "name": "item_type",
+            "type": "shortstring"
+          },
+          {
+            "name": "token",
+            "type": "ContractAddress"
+          },
+          {
+            "name": "identifier_or_criteria",
+            "type": "felt"
+          },
+          {
+            "name": "amount",
+            "type": "felt"
+          },
+          {
+            "name": "recipient",
+            "type": "ContractAddress"
+          }
+        ]
+      },
+      "message": {
+        "offerer": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "marketplace": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "offer": {
+          "item_type": "ERC721",
+          "token": "0x0222222222222222222222222222222222222222222222222222222222222222",
+          "identifier_or_criteria": "0x2a",
+          "amount": "0x1"
+        },
+        "consideration": {
+          "item_type": "ERC20",
+          "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+          "identifier_or_criteria": "0x0",
+          "amount": "0x1bc16d674ec80000",
+          "recipient": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        },
+        "royalty_max_bps": "0x1f4",
+        "start_time": "0x6aec6fde",
+        "end_time": "0x6aedc140",
+        "salt": "0xdef",
+        "counter": "0x5"
+      }
+    },
+    "calls": [
+      {
+        "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+          "42",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "entrypoint": "register_order",
+        "calldata": []
+      }
+    ]
+  }
+}

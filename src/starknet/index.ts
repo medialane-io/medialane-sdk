@@ -158,6 +158,26 @@ export {
 export { sameCalls, typedDataMatchesCalls, deploymentIsMediaWallet, isMediaWalletSetupCall } from "./sponsored-checks.js";
 export { sameFelt } from "../utils/felt.js";
 export {
+  buildIntent,
+  resolveIntentInputs,
+  canBuildIntent,
+  UnknownIntentKindError,
+  type BuiltIntent,
+  type BuildableIntentKind,
+  type IntentDefinition,
+  type IntentReaders,
+} from "./intents/build.js";
+export { typedDataMatches } from "./intents/compare.js";
+export {
+  ORDER_START_WINDOW_SECONDS,
+  type ListingIntentParams,
+  type OfferIntentParams,
+  type CancelIntentParams,
+  type CounterOfferIntentParams,
+  type OrderInputs,
+  type CounterOfferInputs,
+} from "./intents/orders.js";
+export {
   deriveAesKey,
   generateStarkKeyPair,
   starkKeyPairFromPrivateKey,

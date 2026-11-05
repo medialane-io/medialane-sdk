@@ -64,3 +64,7 @@ describe("looking a token up with nothing", () => {
     expect(getTokenBySymbol("usdc")?.symbol).toBe("USDC");
   });
 });
+
+test("a price written with thousands separators is read", () => {
+  expect(parseAmount("1,234.5", 6)).toBe("1234500000");
+});

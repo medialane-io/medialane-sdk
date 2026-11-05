@@ -2,6 +2,7 @@ import type { Call, TypedData } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import type { IntentKind } from "../../contract/intents.js";
 import type { ApiOrder } from "../../types/api.js";
+import { cancelIntent, counterOfferIntent, listingIntent, offerIntent } from "./orders.js";
 
 export interface BuiltIntent {
   calls: Call[];
@@ -9,7 +10,7 @@ export interface BuiltIntent {
 }
 
 export interface IntentReaders {
-  counterOf(marketplace: string, offerer: string): Promise<string>;
+  counterOf(offerer: string, standard: "ERC721" | "ERC1155"): Promise<string>;
   royaltyCapOf(nftContract: string, tokenId: string): Promise<string>;
   orderOf(orderHash: string): Promise<ApiOrder | null>;
 }
@@ -26,16 +27,22 @@ export class UnknownIntentKindError extends Error {
   }
 }
 
-const DEFINITIONS: Partial<Record<IntentKind, IntentDefinition<never, never>>> = {};
+const DEFINITIONS = {
+  listing: listingIntent,
+  offer: offerIntent,
+  cancel: cancelIntent,
+  "counter-offer": counterOfferIntent,
+} satisfies Partial<Record<IntentKind, unknown>>;
 
-function definitionOf(kind: IntentKind): IntentDefinition<unknown, unknown> {
-  const definition = DEFINITIONS[kind];
-  if (!definition) throw new UnknownIntentKindError(kind);
-  return definition as IntentDefinition<unknown, unknown>;
+export type BuildableIntentKind = keyof typeof DEFINITIONS;
+
+export function canBuildIntent(kind: IntentKind): kind is BuildableIntentKind {
+  return Object.prototype.hasOwnProperty.call(DEFINITIONS, kind);
 }
 
-export function canBuildIntent(kind: IntentKind): boolean {
-  return DEFINITIONS[kind] !== undefined;
+function definitionOf(kind: IntentKind): IntentDefinition<unknown, unknown> {
+  if (!canBuildIntent(kind)) throw new UnknownIntentKindError(kind);
+  return DEFINITIONS[kind] as unknown as IntentDefinition<unknown, unknown>;
 }
 
 export function resolveIntentInputs(kind: IntentKind, params: unknown, readers: IntentReaders): Promise<unknown> {
