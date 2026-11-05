@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isPublicAppRoute } from "./app-routes.js";
+import { isPublicAppRoute, isSafePathSegment } from "./app-routes.js";
 
 const A = "0x" + "a".repeat(64);
 
@@ -52,4 +52,14 @@ describe("public app routes", () => {
   for (const [method, path] of closed) {
     test(`${method} ${path} needs an account`, () => expect(isPublicAppRoute(method, path)).toBe(false));
   }
+});
+
+describe("isSafePathSegment", () => {
+  test("a plain segment is safe", () => {
+    expect(isSafePathSegment("a")).toBe(true);
+  });
+
+  test.each([[""], ["."], [".."], ["a/b"], ["a\\b"]])("%p is not a safe segment", (segment) => {
+    expect(isSafePathSegment(segment)).toBe(false);
+  });
 });
