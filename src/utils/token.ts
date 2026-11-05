@@ -3,7 +3,7 @@ import { SUPPORTED_TOKENS } from "../constants.js";
 export type SupportedToken = (typeof SUPPORTED_TOKENS)[number];
 
 export function parseAmount(human: string, decimals: number): string {
-  const [whole, frac = ""] = human.split(".");
+  const [whole, frac = ""] = human.replace(/,/g, "").split(".");
   const fracPadded = frac.padEnd(decimals, "0").slice(0, decimals);
   return (BigInt(whole) * BigInt(10) ** BigInt(decimals) + BigInt(fracPadded)).toString();
 }

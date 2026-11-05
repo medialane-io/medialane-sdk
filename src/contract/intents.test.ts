@@ -87,3 +87,20 @@ describe("intent request schemas", () => {
     expect(S.createCollectionSchema.safeParse({ owner: A, name: "n", symbol: "s", service: "drop-collection" }).success).toBe(true);
   });
 });
+
+describe("order requests carry the values the client chooses", () => {
+  const listing = { offerer: "0x1", nftContract: "0x2", tokenId: "1", currency: "0x3", price: "1", endTime: 2 };
+
+  test("a listing may carry its start time", () => {
+    expect(S.listingSchema.parse({ ...listing, salt: "0xabc", startTime: 1 })).toMatchObject({ salt: "0xabc", startTime: 1 });
+  });
+
+  test("an offer may carry its start time", () => {
+    expect(S.offerSchema.parse({ ...listing, startTime: 1 }).startTime).toBe(1);
+  });
+
+  test("a counter-offer may carry its salt and start time", () => {
+    const parsed = S.counterOfferSchema.parse({ sellerAddress: "0x1", originalOrderHash: "0x2", durationSeconds: 3600, priceRaw: "1", salt: "0xabc", startTime: 1 });
+    expect(parsed).toMatchObject({ salt: "0xabc", startTime: 1 });
+  });
+});
