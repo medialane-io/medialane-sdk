@@ -30,13 +30,13 @@ function setup(
         log.push("saved");
         saved.push(sealed);
       },
-      loadPending: () => pending,
-      savePending: (sealed) => {
-        log.push("pending-saved");
+      loadReplacement: () => pending,
+      saveReplacement: (sealed) => {
+        log.push("replacement-saved");
         pending = sealed;
       },
-      clearPending: () => {
-        log.push("pending-cleared");
+      clearReplacement: () => {
+        log.push("replacement-cleared");
         pending = null;
       },
       notifyChange: () => void (announced += 1),
@@ -70,7 +70,7 @@ function setup(
   return {
     deps,
     log,
-    setPending: (sealed: SealedOwner | null) => void (pending = sealed),
+    setReplacement: (sealed: SealedOwner | null) => void (pending = sealed),
     counts: () => ({ unlocks, creates, saved: saved.length, announced }),
   };
 }
@@ -89,7 +89,7 @@ test("an existing wallet unlocks once and setup ends when it is deployed", async
 test("a first wallet is created and saved before it is deployed", async () => {
   const { deps, counts } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
-    store: { load: () => null, save: () => {}, loadPending: () => null, savePending: () => {}, clearPending: () => {}, notifyChange: () => {} },
+    store: { load: () => null, save: () => {}, loadReplacement: () => null, saveReplacement: () => {}, clearReplacement: () => {}, notifyChange: () => {} },
   });
   const steps: string[] = [];
   await completeDeployment(deps, (step) => steps.push(step));
@@ -109,7 +109,7 @@ test("replacing a wallet ignores the one already stored", async () => {
 const NEW_WALLET: SealedOwner = { ...SEALED, credentialId: "cred2", address: "0xaaa", ownerPubKey: "0xbbb" };
 const OLD_DEPLOYED = async (_provider: unknown, address: string) => address === SEALED.address;
 
-test("a replacement is held as pending and only becomes the device's wallet once it is deployed", async () => {
+test("a replacement is held apart and becomes the device's wallet once the sponsor accepts it", async () => {
   const { deps, log } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
     passkey: {
@@ -120,10 +120,10 @@ test("a replacement is held as pending and only becomes the device's wallet once
   });
   const result = await completeDeployment(deps, () => {}, { replace: true });
   expect(result).toEqual({ sealed: NEW_WALLET });
-  expect(log).toEqual(["pending-saved", "sponsored", "waited", "saved", "pending-cleared"]);
+  expect(log).toEqual(["replacement-saved", "sponsored", "saved", "replacement-cleared", "waited"]);
 });
 
-test("a replacement that fails leaves the stored wallet and keeps the new key pending", async () => {
+test("a replacement that fails leaves the stored wallet and keeps the new key apart", async () => {
   const { deps, log, counts } = setup(
     {
       deployProxyUrl: "/api/wallet/deploy-sponsored",
@@ -136,7 +136,7 @@ test("a replacement that fails leaves the stored wallet and keeps the new key pe
     { sponsored: async () => { throw new Error("sponsor down"); } },
   );
   await expect(completeDeployment(deps, () => {}, { replace: true })).rejects.toThrow("sponsor down");
-  expect(log).toEqual(["pending-saved", "sponsored"]);
+  expect(log).toEqual(["replacement-saved", "sponsored"]);
   expect(counts().saved).toBe(0);
 });
 
@@ -157,26 +157,73 @@ test("a replacement is never paid for by the user, because only the sponsored de
 });
 
 test("setup resumes an unfinished replacement instead of creating another wallet", async () => {
-  const { deps, log, counts, setPending } = setup({
+  const { deps, log, counts, setReplacement } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
     isDeployedImpl: OLD_DEPLOYED,
   });
-  setPending(NEW_WALLET);
+  setReplacement(NEW_WALLET);
   const result = await completeDeployment(deps, () => {});
   expect(result).toEqual({ sealed: NEW_WALLET });
   expect(counts().creates).toBe(0);
   expect(counts().unlocks).toBe(1);
-  expect(log).toEqual(["sponsored", "waited", "saved", "pending-cleared"]);
+  expect(log).toEqual(["sponsored", "saved", "replacement-cleared", "waited"]);
 });
 
-test("a pending key for a wallet that is already deployed is not a replacement", async () => {
-  const { deps, counts, setPending } = setup({
+test("a replacement already on chain is adopted without deploying again", async () => {
+  const { deps, log, counts, setReplacement } = setup({
     deployProxyUrl: "/api/wallet/deploy-sponsored",
     isDeployedImpl: async () => true,
   });
-  setPending(NEW_WALLET);
+  setReplacement(NEW_WALLET);
+  const result = await completeDeployment(deps, () => {});
+  expect(result).toEqual({ sealed: NEW_WALLET });
+  expect(log).toEqual(["saved", "replacement-cleared"]);
+  expect(counts().creates).toBe(0);
+  expect(counts().unlocks).toBe(0);
+});
+
+test("a replacement becomes the device's wallet as soon as the sponsor accepts it", async () => {
+  const { deps, log } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    passkey: {
+      createOwnerKey: async () => ({ sealed: NEW_WALLET, privateKeyHex: PRIVATE_KEY }),
+      unlockOwnerKey: async () => PRIVATE_KEY,
+    },
+    isDeployedImpl: OLD_DEPLOYED,
+    waitUntilDeployedImpl: async () => {
+      throw new Error("Your wallet was submitted but has not appeared on Starknet yet. Please try again in a moment.");
+    },
+  });
+  await expect(completeDeployment(deps, () => {}, { replace: true })).rejects.toThrow(/has not appeared on Starknet/);
+  expect(log).toEqual(["replacement-saved", "sponsored", "saved", "replacement-cleared"]);
+});
+
+test("setup stops when the chain can't say whether a replacement is deployed", async () => {
+  const { deps, log, counts, setReplacement } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    isDeployedImpl: async () => {
+      throw new Error("rpc down");
+    },
+  });
+  setReplacement(NEW_WALLET);
+  await expect(completeDeployment(deps, () => {})).rejects.toThrow("rpc down");
+  expect(counts().creates).toBe(0);
+  expect(log).toEqual([]);
+});
+
+test("an adopted wallet that never landed is deployed again as this device's wallet", async () => {
+  const replaceFlags: boolean[] = [];
+  const { deps, counts } = setup({
+    deployProxyUrl: "/api/wallet/deploy-sponsored",
+    deploySponsoredImpl: async (input) => {
+      replaceFlags.push(input.replace === true);
+      return { transactionHash: "0xsponsored" };
+    },
+  });
   await completeDeployment(deps, () => {});
-  expect(counts().creates).toBe(1);
+  expect(replaceFlags).toEqual([false]);
+  expect(counts().unlocks).toBe(1);
+  expect(counts().creates).toBe(0);
 });
 
 test("the sponsor is told whether this is a replacement", async () => {

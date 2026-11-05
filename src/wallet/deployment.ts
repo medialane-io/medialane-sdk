@@ -4,6 +4,7 @@ import { getCoordinates } from "../chains.js";
 import { ownerConstructorCalldata } from "../starknet/media-wallet/account.js";
 import { isDeployed } from "./addresses.js";
 import type { ExecutedTransaction, SealedOwner } from "./types.js";
+import type { OwnerStore } from "./store.js";
 
 export type DeploymentStep = "creating-passkey" | "deploying";
 
@@ -125,14 +126,7 @@ export async function waitUntilDeployed(
 }
 
 export interface DeploymentDeps {
-  store: {
-    load(): SealedOwner | null;
-    save(sealed: SealedOwner): void;
-    loadPending(): SealedOwner | null;
-    savePending(sealed: SealedOwner): void;
-    clearPending(): void;
-    notifyChange(): void;
-  };
+  store: Pick<OwnerStore, "load" | "save" | "loadReplacement" | "saveReplacement" | "clearReplacement" | "notifyChange">;
   passkey: {
     createOwnerKey(): Promise<{ sealed: SealedOwner; privateKeyHex: string }>;
     unlockOwnerKey(sealed: SealedOwner): Promise<string>;
@@ -146,7 +140,7 @@ export interface DeploymentDeps {
   isDeployedImpl?: typeof isDeployed;
 }
 
-async function deployWallet(
+async function submitDeployment(
   deps: DeploymentDeps,
   wallet: { ownerAddress: string; ownerPubKey: string; privateKeyHex: string },
   replace: boolean,
@@ -154,37 +148,28 @@ async function deployWallet(
   const sponsored = deps.deploySponsoredImpl ?? deploySponsored;
   const selfFunded = deps.deploySelfFundedImpl ?? deploySelfFunded;
 
-  if (deps.deployProxyUrl) {
-    try {
-      await sponsored({
-        proxyUrl: deps.deployProxyUrl,
-        provider: deps.provider(),
-        fetchImpl: deps.fetchImpl,
-        replace,
-        ...wallet,
-      });
-    } catch (sponsoredErr) {
-      if (replace || isAccountRefusal(sponsoredErr)) throw sponsoredErr;
-      try {
-        await selfFunded({ provider: deps.provider(), ...wallet });
-      } catch (selfFundedErr) {
-        const sponsored = sponsoredErr instanceof Error ? sponsoredErr.message : String(sponsoredErr);
-        const selfFunded = selfFundedErr instanceof Error ? selfFundedErr.message : String(selfFundedErr);
-        throw new Error(`Sponsored deploy failed: ${sponsored}. Self-funded fallback failed: ${selfFunded}`);
-      }
-    }
-  } else {
+  if (!deps.deployProxyUrl) {
     await selfFunded({ provider: deps.provider(), ...wallet });
+    return;
   }
-
-  await (deps.waitUntilDeployedImpl ?? waitUntilDeployed)(deps.provider(), wallet.ownerAddress);
-}
-
-async function unfinishedReplacement(deps: DeploymentDeps): Promise<SealedOwner | null> {
-  const pending = deps.store.loadPending();
-  if (!pending) return null;
-  const deployed = await (deps.isDeployedImpl ?? isDeployed)(deps.provider(), pending.address).catch(() => true);
-  return deployed ? null : pending;
+  try {
+    await sponsored({
+      proxyUrl: deps.deployProxyUrl,
+      provider: deps.provider(),
+      fetchImpl: deps.fetchImpl,
+      replace,
+      ...wallet,
+    });
+  } catch (sponsoredErr) {
+    if (replace || isAccountRefusal(sponsoredErr)) throw sponsoredErr;
+    try {
+      await selfFunded({ provider: deps.provider(), ...wallet });
+    } catch (selfFundedErr) {
+      const sponsored = sponsoredErr instanceof Error ? sponsoredErr.message : String(sponsoredErr);
+      const selfFunded = selfFundedErr instanceof Error ? selfFundedErr.message : String(selfFundedErr);
+      throw new Error(`Sponsored deploy failed: ${sponsored}. Self-funded fallback failed: ${selfFunded}`);
+    }
+  }
 }
 
 export async function completeDeployment(
@@ -192,32 +177,40 @@ export async function completeDeployment(
   onStep: (step: DeploymentStep) => void,
   options: { replace?: boolean } = {},
 ): Promise<DeploymentResult> {
-  const pending = await unfinishedReplacement(deps);
-  const replacing = options.replace === true || pending !== null;
-  let sealed: SealedOwner | null = replacing ? pending : deps.store.load();
-  if (!replacing && sealed && (await (deps.isDeployedImpl ?? isDeployed)(deps.provider(), sealed.address).catch(() => false))) {
-    sealed = null;
-  }
-  let privateKeyHex: string;
+  const deployed = (address: string) => (deps.isDeployedImpl ?? isDeployed)(deps.provider(), address);
+  const adopt = (sealed: SealedOwner) => {
+    deps.store.save(sealed);
+    deps.store.clearReplacement();
+  };
 
+  const replacement = deps.store.loadReplacement();
+  if (replacement && (await deployed(replacement.address))) {
+    adopt(replacement);
+    deps.store.notifyChange();
+    return { sealed: replacement };
+  }
+
+  const replacing = options.replace === true || replacement !== null;
+  let sealed: SealedOwner | null = replacing ? replacement : deps.store.load();
+  if (!replacing && sealed && (await deployed(sealed.address).catch(() => false))) sealed = null;
+
+  let privateKeyHex: string;
   if (!sealed) {
     onStep("creating-passkey");
     const created = await deps.passkey.createOwnerKey();
     sealed = created.sealed;
     privateKeyHex = created.privateKeyHex;
-    if (replacing) deps.store.savePending(sealed);
+    if (replacing) deps.store.saveReplacement(sealed);
     else deps.store.save(sealed);
   } else {
     privateKeyHex = await deps.passkey.unlockOwnerKey(sealed);
   }
 
   onStep("deploying");
-  await deployWallet(deps, { ownerAddress: sealed.address, ownerPubKey: sealed.ownerPubKey, privateKeyHex }, replacing);
+  await submitDeployment(deps, { ownerAddress: sealed.address, ownerPubKey: sealed.ownerPubKey, privateKeyHex }, replacing);
+  if (replacing) adopt(sealed);
 
-  if (replacing) {
-    deps.store.save(sealed);
-    deps.store.clearPending();
-  }
+  await (deps.waitUntilDeployedImpl ?? waitUntilDeployed)(deps.provider(), sealed.address);
   deps.store.notifyChange();
   return { sealed };
 }
