@@ -6,33 +6,40 @@ export interface DeviceKeyStore {
 const DATABASE = "medialane-wallet";
 const STORE = "device-keys";
 
-function open(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE, 1);
-    request.onupgradeneeded = () => request.result.createObjectStore(STORE);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-async function run<T>(mode: IDBTransactionMode, act: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  const db = await open();
-  try {
-    return await new Promise<T>((resolve, reject) => {
-      const request = act(db.transaction(STORE, mode).objectStore(STORE));
+export function createIndexedDbDeviceKeys(factory: () => IDBFactory = () => indexedDB): DeviceKeyStore {
+  function open(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const request = factory().open(DATABASE, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore(STORE);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
-  } finally {
-    db.close();
   }
+
+  async function run<T>(mode: IDBTransactionMode, act: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+    const db = await open();
+    try {
+      return await new Promise<T>((resolve, reject) => {
+        const transaction = db.transaction(STORE, mode);
+        const request = act(transaction.objectStore(STORE));
+        const fail = () => reject(transaction.error ?? request.error);
+        transaction.oncomplete = () => resolve(request.result);
+        transaction.onerror = fail;
+        transaction.onabort = fail;
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  return {
+    async save(credentialId, key) {
+      await run("readwrite", (store) => store.put(key, credentialId));
+    },
+    async load(credentialId) {
+      return ((await run("readonly", (store) => store.get(credentialId))) as CryptoKey | undefined) ?? null;
+    },
+  };
 }
 
-export const indexedDbDeviceKeys: DeviceKeyStore = {
-  async save(credentialId, key) {
-    await run("readwrite", (store) => store.put(key, credentialId));
-  },
-  async load(credentialId) {
-    return ((await run("readonly", (store) => store.get(credentialId))) as CryptoKey | undefined) ?? null;
-  },
-};
+export const indexedDbDeviceKeys: DeviceKeyStore = createIndexedDbDeviceKeys();
