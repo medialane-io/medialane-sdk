@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.218.0] — 2026-11-05
+
+### Added
+
+- `builtIntentSchema`: an intent's calls and, for orders, typed data. Listing, offer, cancel and counter-offer requests accept it as an optional `built` field, so a client can send the intent it built itself for the backend to check.
+
 ## [0.217.0] — 2026-11-05
 
 ### Added
