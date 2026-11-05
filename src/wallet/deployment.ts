@@ -1,7 +1,8 @@
 import type { FetchLike } from "../utils/fetch.js";
-import { Account, stark, type ProviderInterface } from "starknet";
+import { Account, stark, type Call, type ProviderInterface } from "starknet";
 import { getCoordinates } from "../chains.js";
 import { ownerConstructorCalldata } from "../starknet/media-wallet/account.js";
+import { deploymentIsMediaWallet, isMediaWalletSetupCall, typedDataMatchesCalls } from "../starknet/sponsored-checks.js";
 import { isDeployed } from "./addresses.js";
 import type { ExecutedTransaction, SealedOwner } from "./types.js";
 import type { OwnerStore } from "./store.js";
@@ -59,8 +60,17 @@ export async function deploySponsored(input: {
   const { typedData, deployment, calls } = (await buildRes.json()) as {
     typedData: object;
     deployment: object;
-    calls: object[];
+    calls: Call[];
   };
+  const classHash = getCoordinates("STARKNET").mediaWalletClassHash;
+  if (
+    !Array.isArray(calls) ||
+    !deploymentIsMediaWallet(deployment, input.ownerAddress, classHash) ||
+    !typedDataMatchesCalls(typedData, calls) ||
+    !calls.every((call) => isMediaWalletSetupCall(call, input.ownerAddress))
+  ) {
+    throw new SponsoredDeployError("We couldn't prepare your wallet deployment. Please try again.", 502, "calls_mismatch");
+  }
 
   const account = new Account({
     provider: input.provider,

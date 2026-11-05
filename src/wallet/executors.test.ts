@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import type { ProviderInterface } from "starknet";
+import { hash, num, type ProviderInterface } from "starknet";
 import { UserFacingError } from "../errors.js";
 import { createSelfFundConsent } from "./self-fund-consent.js";
 import { GUARDIAN_WALLET_BUSY, sponsoredExecutor } from "./executors.js";
@@ -20,7 +20,7 @@ const TYPED_DATA = {
   },
   primaryType: "Ping",
   domain: { name: "avnu.paymaster", version: "1", chainId: "SN_MAIN", revision: "1" },
-  message: { value: "1" },
+  message: { value: "1", Calls: CALLS.map((c) => ({ To: c.contractAddress, Selector: num.toHex(hash.getSelectorFromName(c.entrypoint)), Calldata: c.calldata })) },
 };
 
 const provider = (): ProviderInterface => ({}) as ProviderInterface;
@@ -182,4 +182,24 @@ test("guardian read failure keeps today's fallback", async () => {
   });
   expect((await executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] })).transactionHash).toBe("0xself");
   expect(asked).toHaveLength(1);
+});
+
+test("a mismatched sponsor answer is not paid for by the user", async () => {
+  let asked = 0;
+  const consent = createSelfFundConsent(async () => ({ feeRaw: 1n, unit: "FRI", balanceRaw: null }));
+  consent.registerHandler(async () => {
+    asked += 1;
+    return true;
+  });
+  const other = { ...TYPED_DATA, message: { value: "1", Calls: [{ To: "0x9", Selector: "0x1", Calldata: [] }] } };
+  const executor = sponsoredExecutor({
+    provider,
+    proxyUrl: "/api/wallet/sponsored-invoke",
+    consent,
+    fetchImpl: fetchStub({ build: new Response(JSON.stringify({ typedData: other }), { status: 200 }) }),
+    fallback: never,
+    guardians: async () => [],
+  });
+  await expect(executor.execute({ userAddress: USER, privateKeyHex: PRIVATE_KEY, calls: CALLS, intentIds: ["i1"] })).rejects.toThrow();
+  expect(asked).toBe(0);
 });

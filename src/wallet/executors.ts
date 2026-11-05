@@ -87,7 +87,7 @@ export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
           signTypedData: async (data) =>
             signWithPrivateKey(privateKeyHex, starknetTypedData.getMessageHash(data, userAddress)),
         },
-        { intentIds },
+        { intentIds, calls },
       );
       if (result.status === "sponsored") return { transactionHash: result.transactionHash };
 

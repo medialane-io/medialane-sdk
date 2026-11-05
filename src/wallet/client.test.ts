@@ -1,7 +1,9 @@
 import { test, expect } from "bun:test";
 import type { Call, ProviderInterface } from "starknet";
 import { createMediaWallet, canRemoveDevice, describeDevices } from "./client.js";
-import { computeOwnerGuid } from "../starknet/media-wallet/owners.js";
+import { buildAddOwnerCall, computeOwnerGuid } from "../starknet/media-wallet/owners.js";
+import { buildWalletManageCall } from "../starknet/media-wallet/manage.js";
+import type { CreateWalletManageIntentParams } from "../types/api.js";
 import type { GuardianInfo } from "../starknet/media-wallet/guardian.js";
 import type { PasskeyOwner, SealedOwner, WalletExecutor } from "./index.js";
 
@@ -15,7 +17,7 @@ const SEALED: SealedOwner = {
 };
 const TARGET = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
 
-function walletWith(overrides: { unlocks?: () => Promise<string> } = {}) {
+function walletWith(overrides: { unlocks?: () => Promise<string>; intentCalls?: (params: CreateWalletManageIntentParams) => Call[] } = {}) {
   const sent: Array<{ userAddress: string; calls: Call[]; intentIds?: string[] }> = [];
   const intents: Array<Record<string, unknown>> = [];
   let unlockCount = 0;
@@ -39,7 +41,7 @@ function walletWith(overrides: { unlocks?: () => Promise<string> } = {}) {
     unlockTtlMs: 10_000,
     walletIntents: async (params) => {
       intents.push(params as Record<string, unknown>);
-      return { id: `wm-${intents.length}`, calls: [{ contractAddress: params.owner, entrypoint: params.action, calldata: [] }] };
+      return { id: `wm-${intents.length}`, calls: overrides.intentCalls ? overrides.intentCalls(params) : [buildWalletManageCall(params)] };
     },
   });
   return { wallet, sent, intents, unlockCount: () => unlockCount };
@@ -144,11 +146,17 @@ test("device and recovery operations run the backend's wallet-manage intent with
     { owner: TARGET, action: "trigger_escape", newOwnerPubkey: "0xdef456" },
   ]);
   expect(sent.map((s) => s.intentIds)).toEqual([["wm-1"], ["wm-2"]]);
-  expect(sent[0]!.calls).toEqual([{ contractAddress: SEALED.address, entrypoint: "add_owner", calldata: [] }]);
+  expect(sent[0]!.calls).toEqual([buildWalletManageCall({ owner: SEALED.address, action: "add_owner", pubkey: "0xbeef01" })]);
 });
 
 test("a signer passes intent ids through to the executor", async () => {
   const { wallet, sent } = walletWith();
   await wallet.signerFor(SEALED).execute([{ contractAddress: "0x1", entrypoint: "x", calldata: [] }], { intentIds: ["i7"] });
   expect(sent[0]!.intentIds).toEqual(["i7"]);
+});
+
+test("a wallet action is run only if the backend built exactly that call", async () => {
+  const { wallet, sent } = walletWith({ intentCalls: (params) => [buildAddOwnerCall(params.owner, "0x0bad")] });
+  await expect(wallet.addDevice(SEALED, "0xbeef01")).rejects.toThrow("This action couldn't be prepared. Please try again.");
+  expect(sent).toHaveLength(0);
 });
