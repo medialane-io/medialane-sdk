@@ -9,10 +9,12 @@ export interface BuiltIntent {
   typedData?: TypedData;
 }
 
+export type IntentOrder = Pick<ApiOrder, "offer" | "consideration">;
+
 export interface IntentReaders {
   counterOf(offerer: string, standard: "ERC721" | "ERC1155"): Promise<string>;
   royaltyCapOf(nftContract: string, tokenId: string): Promise<string>;
-  orderOf(orderHash: string): Promise<ApiOrder | null>;
+  orderOf(orderHash: string): Promise<IntentOrder | null>;
 }
 
 export interface IntentDefinition<P = unknown, I = unknown> {

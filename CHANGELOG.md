@@ -8,6 +8,10 @@ All notable changes to `@medialane/sdk` are documented here.
 
 - `builtIntentSchema`: an intent's calls and, for orders, typed data. Listing, offer, cancel and counter-offer requests accept it as an optional `built` field, so a client can send the intent it built itself for the backend to check.
 
+### Changed
+
+- `IntentReaders.orderOf` returns `IntentOrder` (an order's `offer` and `consideration`), the part of an order the builders read.
+
 ## [0.217.0] — 2026-11-05
 
 ### Added

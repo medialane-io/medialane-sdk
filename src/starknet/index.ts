@@ -166,6 +166,7 @@ export {
   type BuildableIntentKind,
   type IntentDefinition,
   type IntentReaders,
+  type IntentOrder,
 } from "./intents/build.js";
 export { typedDataMatches } from "./intents/compare.js";
 export {
