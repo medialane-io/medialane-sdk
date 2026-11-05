@@ -9,20 +9,20 @@ type RecoveryApi = { account: Pick<AccountApi, "walletRecovery" | "startWalletRe
 
 export interface SessionRecoveryDeps {
   createOwnerKey(): Promise<CreatedOwner>;
-  loadPending(): SealedOwner | null;
-  savePending(sealed: SealedOwner): void;
-  clearPending(): void;
+  loadRecovery(): SealedOwner | null;
+  saveRecovery(sealed: SealedOwner): void;
+  clearRecovery(): void;
   saveOwner(sealed: SealedOwner): void;
 }
 
 const sameWallet = (a: string, b: string) => normalizeWalletAddress(a) === normalizeWalletAddress(b);
 
 export async function startSessionRecovery(api: RecoveryApi, walletAddress: string, deps: SessionRecoveryDeps) {
-  const saved = deps.loadPending();
+  const saved = deps.loadRecovery();
   let pending = saved && sameWallet(saved.address, walletAddress) ? saved : null;
   if (!pending) {
     pending = { ...(await deps.createOwnerKey()).sealed, address: walletAddress };
-    deps.savePending(pending);
+    deps.saveRecovery(pending);
   }
   const current = await api.account.walletRecovery();
   if (current.state !== "none" && current.newOwnerGuid !== null && BigInt(current.newOwnerGuid) === BigInt(computeOwnerGuid(pending.ownerPubKey))) {
@@ -32,11 +32,11 @@ export async function startSessionRecovery(api: RecoveryApi, walletAddress: stri
 }
 
 export async function finishSessionRecovery(api: RecoveryApi, walletAddress: string, deps: SessionRecoveryDeps): Promise<void> {
-  const saved = deps.loadPending();
+  const saved = deps.loadRecovery();
   if (!saved || !sameWallet(saved.address, walletAddress)) throw new UserFacingError("There is no recovery to finish on this browser");
   await api.account.completeWalletRecovery({ newOwnerPubkey: saved.ownerPubKey });
   deps.saveOwner(saved);
-  deps.clearPending();
+  deps.clearRecovery();
 }
 
 export async function turnOnRecovery(
