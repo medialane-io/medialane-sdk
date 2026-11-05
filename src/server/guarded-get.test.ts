@@ -60,4 +60,17 @@ describe("guardedGet", () => {
       server.close();
     }
   });
+
+  test("a request that outlives its signal is abandoned", async () => {
+    const server = createServer(() => {});
+    await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
+    const { port } = server.address() as AddressInfo;
+    try {
+      const failure = await guardedGet(new URL(`http://127.0.0.1:${port}/a.png`), {}, AbortSignal.timeout(50)).catch((e: unknown) => e);
+      expect((failure as Error).name).toBe("TimeoutError");
+    } finally {
+      server.closeAllConnections();
+      server.close();
+    }
+  });
 });

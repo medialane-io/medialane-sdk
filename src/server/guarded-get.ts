@@ -44,11 +44,18 @@ function toResponse(res: IncomingMessage): Response {
   return new Response(Readable.toWeb(res) as unknown as BodyInit, { status, headers });
 }
 
-export function guardedGet(url: URL, headers: Record<string, string>): Promise<Response> {
+export function guardedGet(url: URL, headers: Record<string, string>, signal?: AbortSignal): Promise<Response> {
   return new Promise((resolve, reject) => {
     const options = { method: "GET", headers, lookup: createGuardedLookup() };
     const onResponse = (res: IncomingMessage) => resolve(toResponse(res));
     const req = url.protocol === "https:" ? httpsRequest(url, options, onResponse) : httpRequest(url, options, onResponse);
+    const abort = () => {
+      req.destroy(signal!.reason);
+      reject(signal!.reason);
+    };
+    if (signal?.aborted) abort();
+    else signal?.addEventListener("abort", abort, { once: true });
+    req.on("close", () => signal?.removeEventListener("abort", abort));
     req.on("error", reject);
     req.end();
   });
