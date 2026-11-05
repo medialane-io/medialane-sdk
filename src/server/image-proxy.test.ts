@@ -188,3 +188,53 @@ describe("readBodyWithCap", () => {
     expect(Array.from(capped.body!)).toEqual(Array.from(PNG));
   });
 });
+
+describe("image proxy limits", () => {
+  const hanging = (signal: AbortSignal) =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        signal.addEventListener("abort", () => controller.error(signal.reason));
+      },
+    });
+
+  function closable(contentType: string, status = 200) {
+    let closed = false;
+    const body = new ReadableStream<Uint8Array>({
+      cancel() {
+        closed = true;
+      },
+    });
+    return { response: new Response(body, { status, headers: { "content-type": contentType } }), closed: () => closed };
+  }
+
+  test("an upstream that never answers times out", async () => {
+    const h = createImageProxyHandler({
+      timeoutMs: 20,
+      get: (_url, _headers, signal) =>
+        new Promise<Response>((_, reject) => signal.addEventListener("abort", () => reject(signal.reason))),
+    });
+    expect((await h(request("https://cdn.example/a.png"))).status).toBe(504);
+  });
+
+  test("the timeout also covers reading the image", async () => {
+    const h = createImageProxyHandler({
+      timeoutMs: 20,
+      get: async (_url, _headers, signal) => new Response(hanging(signal), { headers: { "content-type": "image/png" } }),
+    });
+    expect((await h(request("https://cdn.example/a.png"))).status).toBe(504);
+  });
+
+  test("a response that is not an image is closed", async () => {
+    const upstream = closable("text/html");
+    const res = await createImageProxyHandler({ get: async () => upstream.response })(request("https://cdn.example/a.png"));
+    expect(res.status).toBe(400);
+    expect(upstream.closed()).toBe(true);
+  });
+
+  test("a failed upstream response is closed", async () => {
+    const upstream = closable("text/html", 404);
+    const res = await createImageProxyHandler({ get: async () => upstream.response })(request("https://cdn.example/a.png"));
+    expect(res.status).toBe(404);
+    expect(upstream.closed()).toBe(true);
+  });
+});

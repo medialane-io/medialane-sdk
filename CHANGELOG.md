@@ -2,6 +2,18 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.216.0] — 2026-11-05
+
+### Changed
+
+- Uses zod 4 (`^4.6.6`). The exported schemas accept the same input and the types derived from them are unchanged.
+- URL fields (`backendUrl`, profile URLs) are trimmed, and tabs and newlines inside them removed, before they are checked and returned. A profile URL with surrounding spaces is now accepted in its trimmed form.
+- The image proxy gives up on an image that takes longer than `timeoutMs` (default 55 s), including reading its body, and answers 504. `ImageProxyConfig.get` receives an `AbortSignal` as its third argument.
+
+### Fixed
+
+- The image proxy closes an upstream response it rejects (failed status or not an image) instead of leaving it open.
+
 ## [0.215.0] — 2026-11-05
 
 ### Changed

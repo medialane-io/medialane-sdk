@@ -6,7 +6,7 @@ import { FeeConfigSchema, resolveFeeConfig, type ResolvedFeeConfig } from "./fee
 export const MedialaneConfigSchema = z.object({
 
   chain: z.enum(CHAINS).default(DEFAULT_CHAIN),
-  backendUrl: z.string().url().optional(),
+  backendUrl: z.url().optional(),
   apiKey: z.string().optional(),
 
   marketplace721Contract: z.string().optional(),

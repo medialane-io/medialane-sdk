@@ -17,8 +17,8 @@ export const emissionSchema = z
     batchSize: z.number().int().min(1).max(100).default(DEFAULT_BATCH_SIZE),
   })
   .refine((v) => v.collectionId || v.collectionContract, {
-    message: "collectionId or collectionContract is required",
+    error: "collectionId or collectionContract is required",
   })
   .refine((v) => v.tokenUri || (v.tokenId && v.amount), {
-    message: "tokenUri, or tokenId and amount, is required",
+    error: "tokenUri, or tokenId and amount, is required",
   });

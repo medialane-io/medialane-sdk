@@ -195,7 +195,7 @@ export const checkoutBodySchema = z
     items: z.array(checkoutItemSchema).min(1).max(20).optional(),
   })
   .refine((b) => Boolean(b.items?.length || b.orderHashes?.length), {
-    message: "Provide items or orderHashes",
+    error: "Provide items or orderHashes",
   });
 
 export const confirmSchema = z.object({

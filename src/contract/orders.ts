@@ -5,8 +5,8 @@ export const ordersListQuery = z.object({
   collection: z.string().optional(),
   currency: z.string().optional(),
   sort: z.enum(["price_asc", "price_desc", "recent"]).default("recent"),
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
+  page: z.coerce.number<number>().min(1).default(1),
+  limit: z.coerce.number<number>().min(1).max(100).default(20),
   offerer: z.string().optional(),
   minPrice: z.string().regex(/^\d+$/).optional(),
   maxPrice: z.string().regex(/^\d+$/).optional(),
@@ -21,5 +21,5 @@ export const ordersListQuery = z.object({
     }
     return true;
   },
-  { message: "minPrice must be less than or equal to maxPrice", path: ["minPrice"] }
+  { error: "minPrice must be less than or equal to maxPrice", path: ["minPrice"] }
 );
