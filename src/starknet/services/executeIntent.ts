@@ -5,6 +5,8 @@ import type { StarknetVenueSigner } from "../signer.js";
 import type { IntentsApi } from "../../api/domains/intents.js";
 import type { ApiIntentCreated } from "../../types/api.js";
 import type { ReceiptLike } from "./receipts.js";
+import type { CreatedIntent } from "../intents/create.js";
+import { populateSignedCalls } from "../intents/signed.js";
 
 export interface ReceiptProvider {
   getTransactionReceipt(txHash: string): Promise<unknown>;
@@ -100,11 +102,12 @@ export async function executeIntent(
   intent: ApiIntentCreated,
   opts: ExecuteIntentOpts = {},
 ): Promise<{ txHash: string; receipt: ReceiptLike }> {
+  const local = (intent as CreatedIntent).local;
   let calls: Call[];
   if (intent.requiresSignature) {
     const signature = await signer.signTypedData(intent.typedData as TypedData);
     const signed = await client.api.intents.submitSignature(intent.id, signature);
-    calls = signed.calls as Call[];
+    calls = local ? populateSignedCalls(local.kind, local.built, signature) : (signed.calls as Call[]);
   } else {
     calls = intent.calls as Call[];
   }

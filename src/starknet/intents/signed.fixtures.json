@@ -1,0 +1,211 @@
+{
+  "signature": [
+    "0x1234",
+    "0x5678"
+  ],
+  "listing721": [
+    {
+      "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "entrypoint": "approve",
+      "calldata": [
+        "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "42",
+        "0"
+      ]
+    },
+    {
+      "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+      "entrypoint": "register_order",
+      "calldata": [
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "0x455243373231",
+        "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "0x2a",
+        "0x1",
+        "0x4552433230",
+        "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "0x0",
+        "0x14d1120d7b160000",
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x1f4",
+        "0x6aec6fde",
+        "0x713fb300",
+        "0xabc",
+        "0x5",
+        "2",
+        "0x1234",
+        "0x5678"
+      ]
+    }
+  ],
+  "listing1155": [
+    {
+      "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "entrypoint": "set_approval_for_all",
+      "calldata": [
+        "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "0x1"
+      ]
+    },
+    {
+      "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+      "entrypoint": "register_order",
+      "calldata": [
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "0x45524331313535",
+        "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "0x2a",
+        "0x3",
+        "0x4552433230",
+        "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "0x0",
+        "0x14d1120d7b160000",
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x1f4",
+        "0x6aec6fde",
+        "0x713fb300",
+        "0xabc",
+        "0x5",
+        "2",
+        "0x1234",
+        "0x5678"
+      ]
+    }
+  ],
+  "offer721": [
+    {
+      "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "entrypoint": "approve",
+      "calldata": [
+        "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "1500000000000000000",
+        "0"
+      ]
+    },
+    {
+      "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+      "entrypoint": "register_order",
+      "calldata": [
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "0x4552433230",
+        "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "0x0",
+        "0x14d1120d7b160000",
+        "0x455243373231",
+        "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "0x2a",
+        "0x1",
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x1f4",
+        "0x6aec6fde",
+        "0x713fb300",
+        "0xabc",
+        "0x5",
+        "2",
+        "0x1234",
+        "0x5678"
+      ]
+    }
+  ],
+  "offer1155": [
+    {
+      "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "entrypoint": "approve",
+      "calldata": [
+        "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "1500000000000000000",
+        "0"
+      ]
+    },
+    {
+      "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+      "entrypoint": "register_order",
+      "calldata": [
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "0x4552433230",
+        "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "0x0",
+        "0x14d1120d7b160000",
+        "0x45524331313535",
+        "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "0x2a",
+        "0x2",
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x1f4",
+        "0x6aec6fde",
+        "0x713fb300",
+        "0xabc",
+        "0x5",
+        "2",
+        "0x1234",
+        "0x5678"
+      ]
+    }
+  ],
+  "cancel721": [
+    {
+      "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+      "entrypoint": "cancel_order",
+      "calldata": [
+        "0x0777777777777777777777777777777777777777777777777777777777777777",
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "2",
+        "0x1234",
+        "0x5678"
+      ]
+    }
+  ],
+  "cancel1155": [
+    {
+      "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+      "entrypoint": "cancel_order",
+      "calldata": [
+        "0x0777777777777777777777777777777777777777777777777777777777777777",
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "2",
+        "0x1234",
+        "0x5678"
+      ]
+    }
+  ],
+  "counterOffer": [
+    {
+      "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "entrypoint": "approve",
+      "calldata": [
+        "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "42",
+        "0"
+      ]
+    },
+    {
+      "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+      "entrypoint": "register_order",
+      "calldata": [
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "0x455243373231",
+        "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "0x2a",
+        "0x1",
+        "0x4552433230",
+        "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "0x0",
+        "0x1bc16d674ec80000",
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "0x1f4",
+        "0x6aec6fde",
+        "0x6aedc140",
+        "0xdef",
+        "0x5",
+        "2",
+        "0x1234",
+        "0x5678"
+      ]
+    }
+  ]
+}

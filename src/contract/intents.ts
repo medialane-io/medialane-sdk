@@ -10,6 +10,17 @@ export const COLLECTION_SERVICE_IDS = [
   "data-tokenization-erc721",
 ] as const;
 
+export const builtCallSchema = z.object({
+  contractAddress: z.string(),
+  entrypoint: z.string(),
+  calldata: z.array(z.string()),
+});
+
+export const builtIntentSchema = z.object({
+  calls: z.array(builtCallSchema),
+  typedData: z.record(z.string(), z.unknown()).optional(),
+});
+
 export const listingSchema = z.object({
   offerer: address,
   nftContract: address,
@@ -21,6 +32,7 @@ export const listingSchema = z.object({
   startTime: z.number().int().optional(),
 
   amount: z.string().optional(),
+  built: builtIntentSchema.optional(),
 });
 
 export const offerSchema = listingSchema.extend({
@@ -39,6 +51,7 @@ export const cancelSchema = z.object({
   offerer: address,
   orderHash: z.string(),
   tokenStandard: z.enum(["ERC721", "ERC1155"]).optional(),
+  built: builtIntentSchema.optional(),
 });
 
 export const mintSchema = z.object({
@@ -184,6 +197,7 @@ export const counterOfferSchema = z.object({
   message:           z.string().max(500).optional(),
   salt:              z.string().optional(),
   startTime:         z.number().int().optional(),
+  built:             builtIntentSchema.optional(),
 });
 
 const checkoutItemSchema = z.object({

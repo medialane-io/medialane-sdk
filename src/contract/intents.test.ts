@@ -104,3 +104,28 @@ describe("order requests carry the values the client chooses", () => {
     expect(parsed).toMatchObject({ salt: "0xabc", startTime: 1 });
   });
 });
+
+describe("order requests may carry the client's own build", () => {
+  const built = {
+    calls: [{ contractAddress: "0x1", entrypoint: "register_order", calldata: [] }],
+    typedData: { primaryType: "Order", message: { salt: "0x1" } },
+  };
+  const listing = { offerer: "0x1", nftContract: "0x2", tokenId: "1", currency: "0x3", price: "1", endTime: 2 };
+
+  test("a listing keeps its build", () => {
+    expect(S.listingSchema.parse({ ...listing, built }).built).toEqual(built);
+  });
+
+  test("a cancel keeps its build", () => {
+    expect(S.cancelSchema.parse({ offerer: "0x1", orderHash: "0x2", built }).built).toEqual(built);
+  });
+
+  test("a counter-offer keeps its build", () => {
+    const parsed = S.counterOfferSchema.parse({ sellerAddress: "0x1", originalOrderHash: "0x2", durationSeconds: 3600, priceRaw: "1", built });
+    expect(parsed.built).toEqual(built);
+  });
+
+  test("a build without calls is refused", () => {
+    expect(() => S.listingSchema.parse({ ...listing, built: { typedData: {} } })).toThrow();
+  });
+});

@@ -2,6 +2,19 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.218.0] — 2026-11-05
+
+### Added
+
+- `builtIntentSchema`: an intent's calls and, for orders, typed data. Listing, offer, cancel and counter-offer requests accept it as an optional `built` field, so a client can send the intent it built itself for the backend to check.
+- `MedialaneClient.createIntent(kind, params)` (and `createIntent(sources, kind, params)`). For `listing`, `offer`, `cancel` and `counter-offer` it builds the intent itself: it chooses a salt and a start time (`ORDER_START_DELAY_SECONDS`, 30 s ahead) unless given, reads the counter, royalty cap and stored order, builds, and sends the build as `built`. It returns the intent with the local typed data and calls, and the build in `local`. Other kinds are created as with `api.intents.create`. An `intent_mismatch` answer becomes a `UserFacingError`.
+- `executeIntent` signs and executes an intent's own build when it has one: the typed data it built, and `register_order` / `cancel_order` calls populated locally with `populateSignedCalls(kind, built, signature)`.
+- `createIntentReaders({ provider, orders, config })`: the SDK's `IntentReaders`, reading the chain and the orders API.
+
+### Changed
+
+- `IntentReaders.orderOf` returns `IntentOrder` (an order's `offer` and `consideration`), the part of an order the builders read.
+
 ## [0.217.0] — 2026-11-05
 
 ### Added

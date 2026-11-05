@@ -6,6 +6,7 @@ import { buildCancel1155TypedData, buildListing1155Order, buildOffer1155Order } 
 import type { BuiltIntent, IntentDefinition } from "./build.js";
 
 export const ORDER_START_WINDOW_SECONDS = 300;
+export const ORDER_START_DELAY_SECONDS = 30;
 
 type TokenStandard = "ERC721" | "ERC1155";
 
