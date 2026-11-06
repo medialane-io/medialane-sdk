@@ -2,6 +2,16 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.219.0] — 2026-11-06
+
+### Fixed
+
+- `executeIntent` populates a locally built order's calls with the signature the account stored for it, so the calls match what the account prepares for wallets whose signature is extended.
+
+### Changed
+
+- One message, `ACTION_PROBLEM` ("We had a problem with this action. If this error persists please contact our support."), replaces "This action couldn't be prepared. Please try again." wherever prepared calls do not match.
+
 ## [0.218.0] — 2026-11-05
 
 ### Added

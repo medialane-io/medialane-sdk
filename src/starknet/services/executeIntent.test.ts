@@ -243,12 +243,14 @@ test("a locally built order is signed from its own typed data and executed with 
   const built = buildIntent("listing", params, { counter: "5", royaltyMaxBps: "500" }, resolveConfig({}));
   const signedWith: unknown[] = [];
   const executed: unknown[] = [];
+  const stored = ["0x1", "0x0", "0xabc", "0x1234", "0x5678"];
   const signer = fakeSigner({
     signTypedData: async (td) => (signedWith.push(td), ["0x1234", "0x5678"]),
     execute: async (calls) => (executed.push(calls), { txHash: "0xtx" }),
   });
   const intent = { id: "i1", expiresAt: "x", requiresSignature: true as const, typedData: built.typedData, local: { kind: "listing" as const, built } };
-  await executeIntent(signer, fakeClient(), intent);
+  const client = fakeClient({ intents: { submitSignature: async () => ({ calls: [], signature: stored }) } });
+  await executeIntent(signer, client, intent);
   expect(signedWith[0]).toBe(built.typedData);
-  expect(sameCalls(executed[0] as never, populateSignedCalls("listing", built, ["0x1234", "0x5678"]))).toBe(true);
+  expect(sameCalls(executed[0] as never, populateSignedCalls("listing", built, stored))).toBe(true);
 });

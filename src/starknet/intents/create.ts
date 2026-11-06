@@ -1,6 +1,6 @@
 import type { IntentsApi } from "../../api/domains/intents.js";
 import type { IntentKind } from "../../contract/intents.js";
-import { MedialaneApiError, UserFacingError } from "../../errors.js";
+import { ACTION_PROBLEM, MedialaneApiError, UserFacingError } from "../../errors.js";
 import type { ApiIntentCreated, IntentParamsByKind } from "../../types/api.js";
 import { generateSalt } from "../marketplace/utils.js";
 import { buildIntent, canBuildIntent, resolveIntentInputs, type BuildableIntentKind, type BuiltIntent } from "./build.js";
@@ -45,7 +45,7 @@ export async function createIntent<K extends IntentKind>(
     created = await sources.intents.create(kind, { ...timed, built } as IntentParamsByKind[K]);
   } catch (err) {
     if (err instanceof MedialaneApiError && err.serverCode === "intent_mismatch") {
-      throw new UserFacingError("This action couldn't be prepared. Please try again.");
+      throw new UserFacingError(ACTION_PROBLEM);
     }
     throw err;
   }

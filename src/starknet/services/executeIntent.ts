@@ -107,7 +107,7 @@ export async function executeIntent(
   if (intent.requiresSignature) {
     const signature = await signer.signTypedData(intent.typedData as TypedData);
     const signed = await client.api.intents.submitSignature(intent.id, signature);
-    calls = local ? populateSignedCalls(local.kind, local.built, signature) : (signed.calls as Call[]);
+    calls = local ? populateSignedCalls(local.kind, local.built, signed.signature) : (signed.calls as Call[]);
   } else {
     calls = intent.calls as Call[];
   }

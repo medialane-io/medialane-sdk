@@ -10,6 +10,8 @@ export class UserFacingError extends Error {
   }
 }
 
+export const ACTION_PROBLEM = "We had a problem with this action. If this error persists please contact our support.";
+
 export class MedialaneError extends Error {
   constructor(
     message: string,

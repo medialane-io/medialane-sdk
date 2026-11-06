@@ -157,6 +157,6 @@ test("a signer passes intent ids through to the executor", async () => {
 
 test("a wallet action is run only if the backend built exactly that call", async () => {
   const { wallet, sent } = walletWith({ intentCalls: (params) => [buildAddOwnerCall(params.owner, "0x0bad")] });
-  await expect(wallet.addDevice(SEALED, "0xbeef01")).rejects.toThrow("This action couldn't be prepared. Please try again.");
+  await expect(wallet.addDevice(SEALED, "0xbeef01")).rejects.toThrow("We had a problem with this action. If this error persists please contact our support.");
   expect(sent).toHaveLength(0);
 });

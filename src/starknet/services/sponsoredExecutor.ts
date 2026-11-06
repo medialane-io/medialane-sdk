@@ -1,6 +1,6 @@
 import type { FetchLike } from "../../utils/fetch.js";
 import type { Call, TypedData } from "starknet";
-import { UserFacingError } from "../../errors.js";
+import { ACTION_PROBLEM, UserFacingError } from "../../errors.js";
 import { typedDataMatchesCalls } from "../sponsored-checks.js";
 
 export interface TypedDataSigner {
@@ -95,7 +95,7 @@ export async function executeSponsored(
   }
   const { typedData } = (await buildRes.json()) as { typedData: TypedData };
   if ("intentIds" in request && !typedDataMatchesCalls(typedData, request.calls)) {
-    throw new SponsoredCallRejectedError("This action couldn't be prepared. Please try again.", { code: "calls_mismatch", stage: "build" });
+    throw new SponsoredCallRejectedError(ACTION_PROBLEM, { code: "calls_mismatch", stage: "build" });
   }
 
   const signature = await signer.signTypedData(typedData);

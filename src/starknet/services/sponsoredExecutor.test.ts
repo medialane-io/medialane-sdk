@@ -256,6 +256,7 @@ test("typed data for other calls is not signed", async () => {
   expect(err).toBeInstanceOf(SponsoredCallRejectedError);
   expect((err as SponsoredCallRejectedError).code).toBe("calls_mismatch");
   expect((err as SponsoredCallRejectedError).stage).toBe("build");
+  expect((err as Error).message).toBe("We had a problem with this action. If this error persists please contact our support.");
   expect(signed).toBe(0);
   expect(urls).toEqual(["/api/wallet/sponsored-invoke/build"]);
 });
