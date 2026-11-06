@@ -68,6 +68,6 @@ describe("creating an intent", () => {
     });
     const failure = await createIntent(s, "listing", listing).catch((e: unknown) => e);
     expect(failure).toBeInstanceOf(UserFacingError);
-    expect((failure as Error).message).toBe("This action couldn't be prepared. Please try again.");
+    expect((failure as Error).message).toBe("We had a problem with this action. If this error persists please contact our support.");
   });
 });

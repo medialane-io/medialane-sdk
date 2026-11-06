@@ -12,7 +12,7 @@ import {
 import { computeOwnerGuid } from "../starknet/media-wallet/owners.js";
 import { buildWalletManageCall } from "../starknet/media-wallet/manage.js";
 import { sameCalls } from "../starknet/sponsored-checks.js";
-import { UserFacingError } from "../errors.js";
+import { ACTION_PROBLEM, UserFacingError } from "../errors.js";
 import { normalizeWalletAddress } from "./addresses.js";
 import { ApiClient } from "../api/client.js";
 import type { CreateWalletManageIntentParams } from "../types/api.js";
@@ -139,7 +139,7 @@ export function createMediaWallet(config: MediaWalletConfig): MediaWallet {
   const manage = async (sealed: SealedOwner, params: CreateWalletManageIntentParams): Promise<string> => {
     const intent = await walletIntents(params);
     if (!sameCalls(intent.calls, [buildWalletManageCall(params)])) {
-      throw new UserFacingError("This action couldn't be prepared. Please try again.");
+      throw new UserFacingError(ACTION_PROBLEM);
     }
     const { transactionHash } = await run(sealed, intent.calls, params.owner, [intent.id]);
     return transactionHash;
