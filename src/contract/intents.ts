@@ -225,15 +225,16 @@ export const signatureSchema = z.object({
   signature: z.array(z.string()).min(1, "signature array required"),
 });
 
-export const transferTokenSchema = z.object({ owner: address, token: address, recipient: address, amount: uint });
+export const transferTokenSchema = z.object({ owner: address, token: address, recipient: address, amount: uint, built: builtIntentSchema.optional() });
 export const transferNftSchema = z.object({
   owner: address,
   contractAddress: address,
   tokenId: uint,
   recipient: address,
   tokenStandard: z.enum(["ERC721", "ERC1155"]),
+  built: builtIntentSchema.optional(),
 });
-export const transferCollectionOwnershipSchema = z.object({ owner: address, collectionId: uint, newOwner: address });
+export const transferCollectionOwnershipSchema = z.object({ owner: address, collectionId: uint, newOwner: address, built: builtIntentSchema.optional() });
 export const commentSchema = z.object({ author: address, nftContract: address, tokenId: uint, text: z.string().trim().min(1).max(1000) });
 export const genesisMintSchema = z.object({ owner: address, recipient: address });
 
@@ -255,7 +256,7 @@ export const swapIntentSchema = z.object({
   sellAmountRaw: uint.optional(),
   buyAmountRaw: uint.optional(),
 });
-export const fundingTransferSchema = z.object({ owner: address, asset: address, amountAtomic: uint });
+export const fundingTransferSchema = z.object({ owner: address, asset: address, amountAtomic: uint, built: builtIntentSchema.optional() });
 
 export const dropManageSchema = z.object({
   owner: address,

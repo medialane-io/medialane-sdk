@@ -142,3 +142,17 @@ describe("purchase requests may carry the client's own build", () => {
     expect(parsed.items?.[0]?.built).toEqual(built);
   });
 });
+
+describe("transfer and funding requests may carry the client's own build", () => {
+  const built = { calls: [{ contractAddress: "0x1", entrypoint: "transfer", calldata: ["0x2", "1", "0"] }] };
+  const A = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+  test.each([
+    ["transferTokenSchema", { owner: A, token: A, recipient: A, amount: "1" }],
+    ["transferNftSchema", { owner: A, contractAddress: A, tokenId: "1", recipient: A, tokenStandard: "ERC721" }],
+    ["transferCollectionOwnershipSchema", { owner: A, collectionId: "1", newOwner: A }],
+    ["fundingTransferSchema", { owner: A, asset: A, amountAtomic: "1" }],
+  ] as const)("%s keeps its build", (name, body) => {
+    expect(((S[name] as ZodTypeAny).parse({ ...body, built }) as { built?: unknown }).built).toEqual(built);
+  });
+});
