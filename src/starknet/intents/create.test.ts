@@ -4,7 +4,8 @@ import { resolveConfig } from "../../config.js";
 import { MedialaneApiError, UserFacingError } from "../../errors.js";
 import type { ApiIntentCreated, ApiOrder } from "../../types/api.js";
 import { buildIntent } from "./build.js";
-import { createIntent } from "./create.js";
+import { createCheckout, createIntent } from "./create.js";
+import fulfillFixtures from "./fulfill.fixtures.json";
 import { typedDataMatches } from "./compare.js";
 
 const config = resolveConfig({});
@@ -69,5 +70,25 @@ describe("creating an intent", () => {
     const failure = await createIntent(s, "listing", listing).catch((e: unknown) => e);
     expect(failure).toBeInstanceOf(UserFacingError);
     expect((failure as Error).message).toBe("We had a problem with this action. If this error persists please contact our support.");
+  });
+});
+
+describe("creating a checkout", () => {
+  const listedOrder = fulfillFixtures.listing721.order;
+  const withOrder = { ...{ provider, config }, orders: { get: async () => listedOrder as unknown as ApiOrder } };
+
+  test("each item is built locally, sent with its build, and returned with it", async () => {
+    const sent: unknown[] = [];
+    const intents = {
+      checkout: async (body: unknown) => {
+        sent.push(body);
+        return [{ id: "c1", orderHash: "0xaa", calls: [{ contractAddress: "0xserver", entrypoint: "x", calldata: [] }] }, { orderHash: "0xbb", error: "gone" }];
+      },
+    };
+    const results = await createCheckout({ ...withOrder, intents: intents as never }, { fulfiller: OFFERER, items: [{ orderHash: "0xaa" }, { orderHash: "0xbb" }] });
+    const body = sent[0] as { items: Array<{ orderHash: string; built: { calls: Array<{ entrypoint: string }> } }> };
+    expect(body.items.map((i) => i.built.calls.map((c) => c.entrypoint))).toEqual([["approve", "fulfill_order"], ["approve", "fulfill_order"]]);
+    expect((results[0]!.calls as Array<{ entrypoint: string }>).map((c) => c.entrypoint)).toEqual(["approve", "fulfill_order"]);
+    expect(results[1]).toEqual({ orderHash: "0xbb", error: "gone" });
   });
 });

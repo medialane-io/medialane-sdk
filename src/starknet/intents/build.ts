@@ -3,6 +3,7 @@ import type { ResolvedConfig } from "../../config.js";
 import type { IntentKind } from "../../contract/intents.js";
 import type { ApiOrder } from "../../types/api.js";
 import { cancelIntent, counterOfferIntent, listingIntent, offerIntent } from "./orders.js";
+import { fulfillIntent } from "./fulfill.js";
 
 export interface BuiltIntent {
   calls: Call[];
@@ -34,6 +35,7 @@ const DEFINITIONS = {
   offer: offerIntent,
   cancel: cancelIntent,
   "counter-offer": counterOfferIntent,
+  fulfill: fulfillIntent,
 } satisfies Partial<Record<IntentKind, unknown>>;
 
 export type BuildableIntentKind = keyof typeof DEFINITIONS;
