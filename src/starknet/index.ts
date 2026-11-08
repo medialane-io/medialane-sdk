@@ -178,6 +178,7 @@ export type {
   TransferCollectionOwnershipIntentParams,
   FundingTransferIntentParams,
 } from "./intents/transfers.js";
+export { type GenesisMintIntentParams } from "./intents/genesis.js";
 export { createIntentReaders, type IntentReaderSources } from "./intents/readers.js";
 export { populateSignedCalls } from "./intents/signed.js";
 export {
