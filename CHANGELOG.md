@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.220.0] — 2026-11-08
+
+### Added
+
+- `transfer-nft` and `genesis-mint` are built by `MedialaneClient.createIntent`, like orders: the client builds the calls, sends them as `built`, and executes its own build. `transferNftSchema` and `genesisMintSchema` accept the optional `built` field.
+- `TransferNftIntentParams` and `GenesisMintIntentParams`.
+
 ## [0.219.0] — 2026-11-06
 
 ### Fixed

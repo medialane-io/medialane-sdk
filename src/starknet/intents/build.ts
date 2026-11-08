@@ -2,6 +2,7 @@ import type { Call, TypedData } from "starknet";
 import type { ResolvedConfig } from "../../config.js";
 import type { IntentKind } from "../../contract/intents.js";
 import type { ApiOrder } from "../../types/api.js";
+import { genesisMintIntent, transferNftIntent } from "./actions.js";
 import { cancelIntent, counterOfferIntent, listingIntent, offerIntent } from "./orders.js";
 
 export interface BuiltIntent {
@@ -34,6 +35,8 @@ const DEFINITIONS = {
   offer: offerIntent,
   cancel: cancelIntent,
   "counter-offer": counterOfferIntent,
+  "transfer-nft": transferNftIntent,
+  "genesis-mint": genesisMintIntent,
 } satisfies Partial<Record<IntentKind, unknown>>;
 
 export type BuildableIntentKind = keyof typeof DEFINITIONS;

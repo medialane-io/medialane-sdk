@@ -129,3 +129,18 @@ describe("order requests may carry the client's own build", () => {
     expect(() => S.listingSchema.parse({ ...listing, built: { typedData: {} } })).toThrow();
   });
 });
+
+describe("transfer and genesis mint requests may carry the client's own build", () => {
+  const built = { calls: [{ contractAddress: "0x1", entrypoint: "transfer_from", calldata: ["0x1", "0x2", "0x3", "0x0"] }] };
+
+  test("a transfer keeps its build", () => {
+    const transfer = { owner: "0x1", contractAddress: "0x2", tokenId: "1", recipient: "0x3", tokenStandard: "ERC721" };
+    expect(S.transferNftSchema.parse({ ...transfer, built }).built).toEqual(built);
+    expect(S.transferNftSchema.parse(transfer).built).toBeUndefined();
+  });
+
+  test("a genesis mint keeps its build", () => {
+    expect(S.genesisMintSchema.parse({ owner: "0x1", recipient: "0x1", built }).built).toEqual(built);
+    expect(S.genesisMintSchema.parse({ owner: "0x1", recipient: "0x1" }).built).toBeUndefined();
+  });
+});

@@ -54,6 +54,16 @@ describe("creating an intent", () => {
     expect(sent[0]!.body).toMatchObject({ salt: "0xabc", startTime });
   });
 
+  test("a transfer is built locally, sent with its build and executed from it", async () => {
+    const params = { owner: OFFERER, contractAddress: NFT, tokenId: "7", recipient: "0x0abc", tokenStandard: "ERC721" as const };
+    const hostile = [{ contractAddress: "0x1", entrypoint: "transfer_from", calldata: ["0x1", "0x2", "0x3", "0x4"] }];
+    const { sources: s, sent } = sources(() => ({ id: "i3", expiresAt: "x", requiresSignature: false, calls: hostile }));
+    const created = await createIntent(s, "transfer-nft", params);
+    const expected = buildIntent("transfer-nft", params, undefined, config);
+    expect(sent[0]!.body).toEqual({ ...params, built: expected });
+    expect(created).toMatchObject({ requiresSignature: false, calls: expected.calls });
+  });
+
   test("a kind without a builder is created as before", async () => {
     const { sources: s, sent } = sources(() => ({ id: "i2", expiresAt: "x", requiresSignature: false, calls: [] }));
     const params = { author: OFFERER, nftContract: NFT, tokenId: "1", text: "hi" };
