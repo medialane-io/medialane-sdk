@@ -171,6 +171,12 @@ export {
 export { typedDataMatches } from "./intents/compare.js";
 export { createIntent, createCheckout, type CreatedIntent, type LocalBuild, type IntentCreationSources, type CheckoutCreationSources } from "./intents/create.js";
 export { type FulfillIntentParams, type FulfillInputs } from "./intents/fulfill.js";
+export type {
+  TransferTokenIntentParams,
+  TransferNftIntentParams,
+  TransferCollectionOwnershipIntentParams,
+  FundingTransferIntentParams,
+} from "./intents/transfers.js";
 export { createIntentReaders, type IntentReaderSources } from "./intents/readers.js";
 export { populateSignedCalls } from "./intents/signed.js";
 export {

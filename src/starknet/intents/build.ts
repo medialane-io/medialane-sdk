@@ -4,6 +4,7 @@ import type { IntentKind } from "../../contract/intents.js";
 import type { ApiOrder } from "../../types/api.js";
 import { cancelIntent, counterOfferIntent, listingIntent, offerIntent } from "./orders.js";
 import { fulfillIntent } from "./fulfill.js";
+import { fundingTransferIntent, transferCollectionOwnershipIntent, transferNftIntent, transferTokenIntent } from "./transfers.js";
 
 export interface BuiltIntent {
   calls: Call[];
@@ -36,6 +37,10 @@ const DEFINITIONS = {
   cancel: cancelIntent,
   "counter-offer": counterOfferIntent,
   fulfill: fulfillIntent,
+  "transfer-token": transferTokenIntent,
+  "transfer-nft": transferNftIntent,
+  "transfer-collection-ownership": transferCollectionOwnershipIntent,
+  "funding-transfer": fundingTransferIntent,
 } satisfies Partial<Record<IntentKind, unknown>>;
 
 export type BuildableIntentKind = keyof typeof DEFINITIONS;

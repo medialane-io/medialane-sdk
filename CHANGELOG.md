@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.221.0] — 2026-11-08
+
+### Added
+
+- `transfer-token`, `transfer-nft`, `transfer-collection-ownership` and `funding-transfer` builders. `createIntent` builds these intents locally and sends the build for the backend to check. A funding transfer goes to `feeConfig.fundAddress`, the platform fund by default.
+- The transfer-token, transfer-nft, transfer-collection-ownership and funding-transfer request schemas accept an optional `built`.
+
 ## [0.220.0] — 2026-11-08
 
 ### Added

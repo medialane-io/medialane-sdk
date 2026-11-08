@@ -1,0 +1,108 @@
+{
+  "fund": "0x064c51746dbcb7498cc6e4b8abfcacd60805c0762b0411bb0515c611b5ae8223",
+  "transferToken": {
+    "kind": "transfer-token",
+    "params": {
+      "owner": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "recipient": "0x0999999999999999999999999999999999999999999999999999999999999999",
+      "amount": "1234567890123456789012"
+    },
+    "calls": [
+      {
+        "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "entrypoint": "transfer",
+        "calldata": [
+          "0x0999999999999999999999999999999999999999999999999999999999999999",
+          "1234567890123456789012",
+          "0"
+        ]
+      }
+    ]
+  },
+  "transferNft721": {
+    "kind": "transfer-nft",
+    "params": {
+      "owner": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "tokenId": "42",
+      "recipient": "0x0999999999999999999999999999999999999999999999999999999999999999",
+      "tokenStandard": "ERC721"
+    },
+    "calls": [
+      {
+        "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "entrypoint": "transfer_from",
+        "calldata": [
+          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+          "0x0999999999999999999999999999999999999999999999999999999999999999",
+          "42",
+          "0"
+        ]
+      }
+    ]
+  },
+  "transferNft1155": {
+    "kind": "transfer-nft",
+    "params": {
+      "owner": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+      "tokenId": "340282366920938463463374607431768211457",
+      "recipient": "0x0999999999999999999999999999999999999999999999999999999999999999",
+      "tokenStandard": "ERC1155"
+    },
+    "calls": [
+      {
+        "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "entrypoint": "safe_transfer_from",
+        "calldata": [
+          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+          "0x0999999999999999999999999999999999999999999999999999999999999999",
+          "1",
+          "1",
+          "1",
+          "0",
+          "0"
+        ]
+      }
+    ]
+  },
+  "transferCollectionOwnership": {
+    "kind": "transfer-collection-ownership",
+    "params": {
+      "owner": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "collectionId": "7",
+      "newOwner": "0x0999999999999999999999999999999999999999999999999999999999999999"
+    },
+    "calls": [
+      {
+        "contractAddress": "0x0225c3ae09506b8d97adc39649ca740dad5aac195b7f5f0441cc1852947acaea",
+        "entrypoint": "transfer_collection_ownership",
+        "calldata": [
+          "7",
+          "0",
+          "4342203346399357328383911937825796544497624424961521151479659400296742361497"
+        ]
+      }
+    ]
+  },
+  "fundingTransfer": {
+    "kind": "funding-transfer",
+    "params": {
+      "owner": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "asset": "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb",
+      "amountAtomic": "2500000"
+    },
+    "calls": [
+      {
+        "contractAddress": "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb",
+        "entrypoint": "transfer",
+        "calldata": [
+          "0x064c51746dbcb7498cc6e4b8abfcacd60805c0762b0411bb0515c611b5ae8223",
+          "2500000",
+          "0"
+        ]
+      }
+    ]
+  }
+}
