@@ -77,7 +77,7 @@ describe("dropMintCost", () => {
   });
 
   test("equals the fee buildFeeCall charges for the same amount", () => {
-    const cfg = resolveFeeConfig({ fundAddress: "0x123" });
+    const cfg = resolveFeeConfig({ enabled: true, fundAddress: "0x123" });
     const { fee } = dropMintCost(1_234_567n, 3, feeBps("launchpad", cfg));
     const call = buildFeeCall({ surface: "launchpad", token: USDC, grossAmount: 1_234_567n * 3n }, cfg)!;
     expect(BigInt((call.calldata as string[])[1]!)).toBe(fee);

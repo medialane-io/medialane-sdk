@@ -17,13 +17,13 @@ function fakeProvider(price = "0x4c4b40") {
 }
 
 test("a paid claim is priced from the chain and sends approve, claim and the platform fee", async () => {
-  const { feeConfig } = resolveConfig({ chain: "STARKNET", feeConfig: { fundAddress: "0x999" } });
+  const { feeConfig } = resolveConfig({ chain: "STARKNET", feeConfig: { enabled: true, fundAddress: "0x999" } });
   const calls = await buildDropClaimCalls(fakeProvider(), DROP, { quantity: 2 }, feeConfig);
   expect(calls.map((c) => c.entrypoint)).toEqual(["approve", "claim", "transfer"]);
 });
 
 test("a free claim sends only the claim", async () => {
-  const { feeConfig } = resolveConfig({ chain: "STARKNET", feeConfig: { fundAddress: "0x999" } });
+  const { feeConfig } = resolveConfig({ chain: "STARKNET", feeConfig: { enabled: true, fundAddress: "0x999" } });
   const calls = await buildDropClaimCalls(fakeProvider("0x0"), DROP, { quantity: 1 }, feeConfig);
   expect(calls.map((c) => c.entrypoint)).toEqual(["claim"]);
 });
