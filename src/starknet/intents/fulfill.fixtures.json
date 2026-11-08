@@ -1,0 +1,261 @@
+{
+  "fund": "0x0555555555555555555555555555555555555555555555555555555555555555",
+  "listing721": {
+    "params": {
+      "fulfiller": "0x0999999999999999999999999999999999999999999999999999999999999999",
+      "orderHash": "0x0777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "order": {
+      "offer": {
+        "itemType": "ERC721",
+        "token": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "identifier": "42",
+        "startAmount": "1",
+        "endAmount": "1"
+      },
+      "consideration": {
+        "itemType": "ERC20",
+        "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "identifier": "0",
+        "startAmount": "1500000000000000000",
+        "endAmount": "1",
+        "recipient": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      }
+    },
+    "withFee": [
+      {
+        "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+          "1500000000000000000",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "entrypoint": "fulfill_order",
+        "calldata": [
+          "0x0777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      },
+      {
+        "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "entrypoint": "transfer",
+        "calldata": [
+          "0x0555555555555555555555555555555555555555555555555555555555555555",
+          "15000000000000000",
+          "0"
+        ]
+      }
+    ],
+    "withoutFee": [
+      {
+        "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+          "1500000000000000000",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "entrypoint": "fulfill_order",
+        "calldata": [
+          "0x0777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      }
+    ]
+  },
+  "listing1155": {
+    "params": {
+      "fulfiller": "0x0999999999999999999999999999999999999999999999999999999999999999",
+      "orderHash": "0x0777777777777777777777777777777777777777777777777777777777777777",
+      "quantity": "2"
+    },
+    "order": {
+      "offer": {
+        "itemType": "ERC1155",
+        "token": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "identifier": "42",
+        "startAmount": "10",
+        "endAmount": "1"
+      },
+      "consideration": {
+        "itemType": "ERC20",
+        "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "identifier": "0",
+        "startAmount": "1500000000000000000",
+        "endAmount": "1",
+        "recipient": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      }
+    },
+    "withFee": [
+      {
+        "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+          "3000000000000000000",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "entrypoint": "fulfill_order",
+        "calldata": [
+          "0x0777777777777777777777777777777777777777777777777777777777777777",
+          "0x2"
+        ]
+      },
+      {
+        "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "entrypoint": "transfer",
+        "calldata": [
+          "0x0555555555555555555555555555555555555555555555555555555555555555",
+          "30000000000000000",
+          "0"
+        ]
+      }
+    ],
+    "withoutFee": [
+      {
+        "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+          "3000000000000000000",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "entrypoint": "fulfill_order",
+        "calldata": [
+          "0x0777777777777777777777777777777777777777777777777777777777777777",
+          "0x2"
+        ]
+      }
+    ]
+  },
+  "offer721": {
+    "params": {
+      "fulfiller": "0x0999999999999999999999999999999999999999999999999999999999999999",
+      "orderHash": "0x0777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "order": {
+      "offer": {
+        "itemType": "ERC20",
+        "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "identifier": "0",
+        "startAmount": "2000000000000000000",
+        "endAmount": "1"
+      },
+      "consideration": {
+        "itemType": "ERC721",
+        "token": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "identifier": "42",
+        "startAmount": "1",
+        "endAmount": "1",
+        "recipient": "0x0999999999999999999999999999999999999999999999999999999999999999"
+      }
+    },
+    "withFee": [
+      {
+        "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+          "42",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "entrypoint": "fulfill_order",
+        "calldata": [
+          "0x0777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      }
+    ],
+    "withoutFee": [
+      {
+        "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "entrypoint": "approve",
+        "calldata": [
+          "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+          "42",
+          "0"
+        ]
+      },
+      {
+        "contractAddress": "0x03eda9a2b6ad90845a43591bac8083ebaf677d51fdf20f503b2c01889e3131fc",
+        "entrypoint": "fulfill_order",
+        "calldata": [
+          "0x0777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      }
+    ]
+  },
+  "offer1155": {
+    "params": {
+      "fulfiller": "0x0999999999999999999999999999999999999999999999999999999999999999",
+      "orderHash": "0x0777777777777777777777777777777777777777777777777777777777777777",
+      "quantity": "3"
+    },
+    "order": {
+      "offer": {
+        "itemType": "ERC20",
+        "token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "identifier": "0",
+        "startAmount": "2000000000000000000",
+        "endAmount": "1"
+      },
+      "consideration": {
+        "itemType": "ERC1155",
+        "token": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "identifier": "42",
+        "startAmount": "3",
+        "endAmount": "1",
+        "recipient": "0x0999999999999999999999999999999999999999999999999999999999999999"
+      }
+    },
+    "withFee": [
+      {
+        "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "entrypoint": "set_approval_for_all",
+        "calldata": [
+          "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+          "0x1"
+        ]
+      },
+      {
+        "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "entrypoint": "fulfill_order",
+        "calldata": [
+          "0x0777777777777777777777777777777777777777777777777777777777777777",
+          "0x3"
+        ]
+      }
+    ],
+    "withoutFee": [
+      {
+        "contractAddress": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "entrypoint": "set_approval_for_all",
+        "calldata": [
+          "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+          "0x1"
+        ]
+      },
+      {
+        "contractAddress": "0x07c4ce1c19ea48cc11135ed22b19ff745f5aec508c3828593002e4f76fdb1b38",
+        "entrypoint": "fulfill_order",
+        "calldata": [
+          "0x0777777777777777777777777777777777777777777777777777777777777777",
+          "0x3"
+        ]
+      }
+    ]
+  }
+}

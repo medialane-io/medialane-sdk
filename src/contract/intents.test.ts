@@ -129,3 +129,16 @@ describe("order requests may carry the client's own build", () => {
     expect(() => S.listingSchema.parse({ ...listing, built: { typedData: {} } })).toThrow();
   });
 });
+
+describe("purchase requests may carry the client's own build", () => {
+  const built = { calls: [{ contractAddress: "0x1", entrypoint: "fulfill_order", calldata: ["0x2"] }] };
+
+  test("a fulfill keeps its build", () => {
+    expect(S.fulfillSchema.parse({ fulfiller: "0x1", orderHash: "0x2", built }).built).toEqual(built);
+  });
+
+  test("each checkout item keeps its build", () => {
+    const parsed = S.checkoutBodySchema.parse({ fulfiller: "0x1", items: [{ orderHash: "0x2", built }] });
+    expect(parsed.items?.[0]?.built).toEqual(built);
+  });
+});

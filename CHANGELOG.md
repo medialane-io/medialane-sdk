@@ -2,6 +2,19 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.220.0] — 2026-11-08
+
+### Added
+
+- `fulfill` builder: `buildIntent("fulfill", …)` builds the approve, `fulfill_order` and, for a listing, the platform fee call. `MedialaneClient.createIntent("fulfill", …)` builds a purchase locally.
+- `MedialaneClient.createCheckout(params)` (and `createCheckout(sources, params)`) builds each item locally, sends it with its build, and returns each successful item with its own calls.
+- `fulfillSchema` and checkout items accept an optional `built`.
+- `feeFundAddress` in the Starknet coordinates: the platform fee fund.
+
+### Changed
+
+- **Fees are off by default.** `feeConfig.enabled` now defaults to `false`; with `enabled: true` and no `fundAddress`, fees go to `feeFundAddress`. A caller that relied on fees being on by default must set `enabled: true`.
+
 ## [0.219.0] — 2026-11-06
 
 ### Fixed

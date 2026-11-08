@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { getCoordinates } from "../chains.js";
 
 export const FeeConfigSchema = z.object({
-  enabled: z.boolean().default(true),
+  enabled: z.boolean().default(false),
   fundAddress: z.string().min(1).optional(),
   marketplaceBps: z.number().int().min(0).max(10000).default(100),
   launchpadBps: z.number().int().min(0).max(10000).default(100),
@@ -22,7 +23,7 @@ export function resolveFeeConfig(raw: FeeConfig | undefined): ResolvedFeeConfig 
   const p = FeeConfigSchema.parse(raw ?? {});
   return {
     enabled: p.enabled,
-    fundAddress: p.fundAddress,
+    fundAddress: p.fundAddress ?? getCoordinates("STARKNET").feeFundAddress,
     marketplaceBps: p.marketplaceBps,
     launchpadBps: p.launchpadBps,
     sponsorshipBps: p.sponsorshipBps,

@@ -169,7 +169,8 @@ export {
   type IntentOrder,
 } from "./intents/build.js";
 export { typedDataMatches } from "./intents/compare.js";
-export { createIntent, type CreatedIntent, type LocalBuild, type IntentCreationSources } from "./intents/create.js";
+export { createIntent, createCheckout, type CreatedIntent, type LocalBuild, type IntentCreationSources, type CheckoutCreationSources } from "./intents/create.js";
+export { type FulfillIntentParams, type FulfillInputs } from "./intents/fulfill.js";
 export { createIntentReaders, type IntentReaderSources } from "./intents/readers.js";
 export { populateSignedCalls } from "./intents/signed.js";
 export {

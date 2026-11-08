@@ -45,6 +45,7 @@ export const fulfillSchema = z.object({
   orderHash: z.string(),
   tokenStandard: z.enum(["ERC721", "ERC1155"]).optional(),
   quantity: z.string().optional(),
+  built: builtIntentSchema.optional(),
 });
 
 export const cancelSchema = z.object({
@@ -203,6 +204,7 @@ export const counterOfferSchema = z.object({
 const checkoutItemSchema = z.object({
   orderHash: z.string().min(1),
   quantity: z.string().regex(/^[1-9][0-9]*$/).optional(),
+  built: builtIntentSchema.optional(),
 });
 
 export const checkoutBodySchema = z

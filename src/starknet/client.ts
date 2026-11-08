@@ -3,8 +3,8 @@ import { type MedialaneConfig, resolveConfig, type ResolvedConfig } from "../con
 import { ApiClient } from "../api/client.js";
 import { createChainProvider } from "./chain-provider.js";
 import type { IntentKind } from "../contract/intents.js";
-import type { IntentParamsByKind } from "../types/api.js";
-import { createIntent, type CreatedIntent } from "./intents/create.js";
+import type { ApiCheckoutIntentResult, CreateCheckoutIntentParams, IntentParamsByKind } from "../types/api.js";
+import { createCheckout, createIntent, type CreatedIntent } from "./intents/create.js";
 
 const NO_BACKEND = "backendUrl not configured. Pass backendUrl to MedialaneClient to use";
 
@@ -43,5 +43,9 @@ export class MedialaneClient {
 
   async createIntent<K extends IntentKind>(kind: K, params: IntentParamsByKind[K]): Promise<CreatedIntent> {
     return createIntent({ provider: this.provider, orders: this.api.orders, intents: this.api.intents, config: this.config }, kind, params);
+  }
+
+  async createCheckout(params: CreateCheckoutIntentParams): Promise<ApiCheckoutIntentResult[]> {
+    return createCheckout({ provider: this.provider, orders: this.api.orders, intents: this.api.intents, config: this.config }, params);
   }
 }
