@@ -47,6 +47,7 @@ export interface StarknetCoordinates {
   mediaWalletClassHash: `0x${string}`;
   genesisMint: `0x${string}`;
   feeFundAddress: `0x${string}`;
+  swapExchange: `0x${string}`;
 }
 
 export interface EvmCoordinates {
@@ -129,6 +130,7 @@ const COORDINATES: CoordinatesByChain = {
     ipSponsorshipStartBlock: 11896456,
     mediaWalletClassHash: "0x014b210c7d47392691144bafecdca3c6c7791cc295ea305988da0a724c05ac31",
     feeFundAddress: "0x064c51746dbcb7498cc6e4b8abfcacd60805c0762b0411bb0515c611b5ae8223",
+    swapExchange: "0x04270219d365d6b017231b52e92b3fb5d7c8378b05e9abc97724537a80e93b0f",
     genesisMint: "0x06ed61abba98a44d45bed2c4b1a456df15053c3321cfd6e007afb33b7226c9f0",
   },
 };

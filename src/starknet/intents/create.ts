@@ -1,3 +1,4 @@
+import type { Call } from "starknet";
 import type { IntentsApi } from "../../api/domains/intents.js";
 import type { IntentKind } from "../../contract/intents.js";
 import { ACTION_PROBLEM, MedialaneApiError, UserFacingError } from "../../errors.js";
@@ -6,6 +7,7 @@ import { generateSalt } from "../marketplace/utils.js";
 import { buildIntent, canBuildIntent, resolveIntentInputs, type BuildableIntentKind, type BuiltIntent } from "./build.js";
 import { ORDER_START_DELAY_SECONDS } from "./orders.js";
 import { createIntentReaders, type IntentReaderSources } from "./readers.js";
+import { swapCallsWithinBounds, type SwapRequest } from "./swap.js";
 
 export interface LocalBuild {
   kind: BuildableIntentKind;
@@ -49,7 +51,13 @@ export async function createIntent<K extends IntentKind>(
   kind: K,
   params: IntentParamsByKind[K],
 ): Promise<CreatedIntent> {
-  if (!canBuildIntent(kind)) return sources.intents.create(kind, params);
+  if (!canBuildIntent(kind)) {
+    const created = await sources.intents.create(kind, params);
+    if (kind === "swap" && !(created.requiresSignature === false && swapCallsWithinBounds(params as SwapRequest, created.calls as Call[]))) {
+      throw new UserFacingError(ACTION_PROBLEM);
+    }
+    return created;
+  }
 
   const timed = withTiming(kind, params as Record<string, unknown>);
   const inputs = await resolveIntentInputs(kind, timed, createIntentReaders(sources));

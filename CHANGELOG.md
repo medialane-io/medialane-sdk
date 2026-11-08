@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.222.0] — 2026-11-08
+
+### Added
+
+- `swapCallsWithinBounds(request, calls)`: true when a swap route only approves the sell token to the swap exchange, for exactly the amount sold or the maximum sold, with an optional closing reset to zero. It must also swap on that exchange, for the requested tokens and the exact amount sold (`multi_route_swap`) or bought (`swap_exact_token_to`), pay the taker, and charge no integrator fee.
+- `swapExchange` in the Starknet coordinates: avnu's Exchange contract.
+
+### Changed
+
+- `createIntent("swap", …)` checks the route the backend returns with `swapCallsWithinBounds`, and refuses one out of bounds with `ACTION_PROBLEM` before anything is signed.
+
 ## [0.221.0] — 2026-11-08
 
 ### Added
