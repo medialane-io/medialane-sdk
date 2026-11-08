@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import type { RpcProvider } from "starknet";
 import { resolveConfig } from "../../config.js";
-import { MedialaneApiError, UserFacingError } from "../../errors.js";
+import { ACTION_PROBLEM, MedialaneApiError, UserFacingError } from "../../errors.js";
 import type { ApiIntentCreated, ApiOrder } from "../../types/api.js";
 import { buildIntent } from "./build.js";
 import { createCheckout, createIntent } from "./create.js";
 import fulfillFixtures from "./fulfill.fixtures.json";
+import swapFixturesJson from "./swap.fixtures.json";
 import { typedDataMatches } from "./compare.js";
 
 const config = resolveConfig({});
@@ -90,5 +91,35 @@ describe("creating a checkout", () => {
     expect(body.items.map((i) => i.built.calls.map((c) => c.entrypoint))).toEqual([["approve", "fulfill_order"], ["approve", "fulfill_order"]]);
     expect((results[0]!.calls as Array<{ entrypoint: string }>).map((c) => c.entrypoint)).toEqual(["approve", "fulfill_order"]);
     expect(results[1]).toEqual({ orderHash: "0xbb", error: "gone" });
+  });
+});
+
+describe("creating a swap", () => {
+  const swapFixtures = (swapFixturesJson as unknown) as {
+    taker: string; sellToken: string; buyToken: string;
+    sell: { request: { sellAmountRaw: string }; calls: Array<{ contractAddress: string; entrypoint: string; calldata: string[] }> };
+  };
+  const params = {
+    taker: swapFixtures.taker,
+    sellTokenAddress: swapFixtures.sellToken,
+    buyTokenAddress: swapFixtures.buyToken,
+    sellAmountRaw: swapFixtures.sell.request.sellAmountRaw,
+  };
+  const answering = (calls: unknown[]) => sources(() => ({ id: "s1", expiresAt: "x", requiresSignature: false, calls: calls as never }));
+
+  test("a route within bounds is returned as the backend created it", async () => {
+    const { sources: s } = answering(swapFixtures.sell.calls);
+    const created = await createIntent(s, "swap", params);
+    expect(created.requiresSignature === false && created.calls).toEqual(swapFixtures.sell.calls);
+  });
+
+  test("a route out of bounds is refused before anything is signed", async () => {
+    const tampered = swapFixtures.sell.calls.map((call, i) =>
+      i === 1 ? { ...call, calldata: call.calldata.map((v, j) => (j === 8 ? "0x0999" : v)) } : call,
+    );
+    const { sources: s } = answering(tampered);
+    const failure = await createIntent(s, "swap", params).catch((e: unknown) => e);
+    expect(failure).toBeInstanceOf(UserFacingError);
+    expect((failure as Error).message).toBe(ACTION_PROBLEM);
   });
 });
