@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.223.0] — 2026-11-08
+
+### Added
+
+- `genesis-mint` builder: `createIntent("genesis-mint", …)` builds the mint locally and sends the build for the backend to check. `genesisMintSchema` accepts an optional `built`.
+- `GenesisMintIntentParams`.
+
 ## [0.222.0] — 2026-11-08
 
 ### Added
