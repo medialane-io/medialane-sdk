@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.224.0] — 2026-11-09
+
+### Added
+
+- `markets` in `ApiPlatformStats`: the number of active listings and offers.
+
 ## [0.223.0] — 2026-11-08
 
 ### Added
