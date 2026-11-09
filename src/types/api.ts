@@ -826,6 +826,7 @@ export interface ApiPointEvent {
 export interface ApiPlatformStats {
   collections: number;
   tokens: number;
+  markets: number;
   sales: number;
 }
 
