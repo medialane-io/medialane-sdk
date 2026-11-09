@@ -16,6 +16,7 @@ export function createOrdersApi(t: Transport): OrdersApi {
       return t.get("/v1/orders", {
         status: query.status,
         collection: query.collection,
+        isFeatured: query.isFeatured,
         currency: query.currency,
         sort: query.sort,
         page: query.page,
