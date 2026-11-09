@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.225.0] — 2026-11-09
+
+### Added
+
+- `isFeatured` in the orders list query: only orders for assets in featured collections.
+
 ## [0.224.0] — 2026-11-09
 
 ### Added

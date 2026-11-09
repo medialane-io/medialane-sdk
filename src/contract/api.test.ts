@@ -8,6 +8,13 @@ describe("ordersListQuery", () => {
     expect(ordersListQuery.parse({})).toEqual({ sort: "recent", page: 1, limit: 20 });
   });
 
+  test("isFeatured is read from the query string or a boolean", () => {
+    expect(ordersListQuery.parse({ isFeatured: "true" }).isFeatured).toBe(true);
+    expect(ordersListQuery.parse({ isFeatured: "false" }).isFeatured).toBe(false);
+    expect(ordersListQuery.parse({ isFeatured: true }).isFeatured).toBe(true);
+    expect(ordersListQuery.safeParse({ isFeatured: "yes" }).success).toBe(false);
+  });
+
   test("numbers are read from strings and bounded", () => {
     expect(ordersListQuery.parse({ page: "2", limit: "50" })).toMatchObject({ page: 2, limit: 50 });
     expect(ordersListQuery.safeParse({ limit: "101" }).success).toBe(false);

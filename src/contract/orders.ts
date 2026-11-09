@@ -3,6 +3,7 @@ import { z } from "zod";
 export const ordersListQuery = z.object({
   status: z.enum(["ACTIVE", "FULFILLED", "CANCELLED", "EXPIRED"]).optional(),
   collection: z.string().optional(),
+  isFeatured: z.union([z.boolean(), z.enum(["true", "false"])]).transform((v) => v === true || v === "true").optional(),
   currency: z.string().optional(),
   sort: z.enum(["price_asc", "price_desc", "recent"]).default("recent"),
   page: z.coerce.number<number>().min(1).default(1),
