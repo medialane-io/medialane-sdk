@@ -47,3 +47,55 @@ test("anything else is not a recovery key", () => {
     expect(() => parseRecoveryKey(bad)).toThrow(InvalidRecoveryKeyError);
   }
 });
+
+test("a recovery key proves its wallet by signing the sign-in message", async () => {
+  const { signRecoveryKeyProof } = await import("./recovery-key.js");
+  const { signWithPrivateKey } = await import("../starknet/passkey-wallet/crypto.js");
+  const { typedData } = await import("starknet");
+  const message = {
+    domain: { name: "Medialane", version: "1", chainId: "SN_MAIN", revision: "1" },
+    primaryType: "SiwsMessage",
+    types: {
+      StarknetDomain: [
+        { name: "name", type: "shortstring" },
+        { name: "version", type: "shortstring" },
+        { name: "chainId", type: "shortstring" },
+        { name: "revision", type: "shortstring" },
+      ],
+      SiwsMessage: [
+        { name: "wallet", type: "ContractAddress" },
+        { name: "nonce", type: "shortstring" },
+        { name: "app", type: "shortstring" },
+      ],
+    },
+    message: { wallet: WALLET, nonce: "abc123", app: "medialane" },
+  };
+  const requests: { url: string; body: unknown }[] = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (url: string, init: { body: string }) => {
+    requests.push({ url, body: JSON.parse(init.body) });
+    return Response.json({ nonce: "abc123", typedData: message });
+  }) as unknown as typeof fetch;
+  try {
+    const proof = await signRecoveryKeyProof({ backendUrl: "/api/proxy", key: { walletAddress: WALLET, privateKey: PRIVATE_KEY } });
+    expect(requests).toEqual([{ url: "/api/proxy/v1/auth/siws/nonce", body: { walletAddress: WALLET } }]);
+    expect(proof).toEqual({
+      walletAddress: WALLET,
+      nonce: "abc123",
+      signature: (await signWithPrivateKey(PRIVATE_KEY, typedData.getMessageHash(message, WALLET))).map(String),
+    });
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("a nonce that cannot be fetched stops the proof", async () => {
+  const { signRecoveryKeyProof } = await import("./recovery-key.js");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response("no", { status: 500 })) as unknown as typeof fetch;
+  try {
+    await expect(signRecoveryKeyProof({ backendUrl: "/api/proxy", key: { walletAddress: WALLET, privateKey: PRIVATE_KEY } })).rejects.toThrow();
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

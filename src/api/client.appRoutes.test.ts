@@ -120,6 +120,14 @@ test("generating a wallet posts the new wallet's token", async () => {
   });
 });
 
+test("recovering a wallet with its key posts the proof", async () => {
+  await withStub({ walletAddress: W }, async (client, calls) => {
+    const proof = { walletAddress: W, nonce: "n1", signature: ["0x1", "0x2"] };
+    expect((await client.account.recoverWalletWithKey(proof)).walletAddress).toBe(W);
+    expect(calls[0].body).toEqual(proof);
+  });
+});
+
 test("sponsorship lists pass their filters", async () => {
   await withStub({ data: [] }, async (client, calls) => {
     await client.sponsorship.offers({ author: W, open: true });
