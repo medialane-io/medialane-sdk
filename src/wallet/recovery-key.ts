@@ -1,5 +1,7 @@
+import { typedData, type TypedData } from "starknet";
 import { computeAccountAddress } from "../starknet/media-wallet/account.js";
-import { starkKeyPairFromPrivateKey } from "../starknet/passkey-wallet/crypto.js";
+import { signWithPrivateKey, starkKeyPairFromPrivateKey } from "../starknet/passkey-wallet/crypto.js";
+import { normalizeSiwsSignature } from "../starknet/siws/client.js";
 
 const PREFIX = "medialane-recovery:v1:";
 const ADDRESS = /^0x[0-9a-fA-F]{1,64}$/;
@@ -43,4 +45,23 @@ export function parseRecoveryKey(input: string): RecoveryKey {
     throw new InvalidRecoveryKeyError();
   }
   return { walletAddress: canonicalAddress(walletAddress), privateKey: keyPair(privateKey).privateKeyHex };
+}
+
+export interface RecoveryKeyProof {
+  walletAddress: string;
+  nonce: string;
+  signature: string[];
+}
+
+export async function signRecoveryKeyProof(args: { backendUrl: string; key: RecoveryKey }): Promise<RecoveryKeyProof> {
+  const { key } = args;
+  const nonceRes = await fetch(`${args.backendUrl.replace(/\/$/, "")}/v1/auth/siws/nonce`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ walletAddress: key.walletAddress }),
+  });
+  if (!nonceRes.ok) throw new Error("Failed to prepare the wallet proof");
+  const { nonce, typedData: message } = (await nonceRes.json()) as { nonce: string; typedData: TypedData };
+  const signature = await signWithPrivateKey(key.privateKey, typedData.getMessageHash(message, key.walletAddress));
+  return { walletAddress: key.walletAddress, nonce, signature: normalizeSiwsSignature(signature) };
 }

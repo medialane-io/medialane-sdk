@@ -26,6 +26,7 @@ export interface AccountApi {
   sessionWallet(): Promise<{ walletAddress: string; needsKeySetup: boolean } | null>;
   setupWalletKey(params: { newOwnerPubkey: string }): Promise<{ walletAddress: string; removeOwnerGuid: string | null }>;
   generateWallet(newWalletSiwsToken: string): Promise<{ walletAddress: string }>;
+  recoverWalletWithKey(proof: { walletAddress: string; nonce: string; signature: string[] }): Promise<{ walletAddress: string }>;
   walletRecovery(): Promise<WalletRecovery>;
   startWalletRecovery(params: { newOwnerPubkey: string }): Promise<WalletRecovery>;
   completeWalletRecovery(params: { newOwnerPubkey: string }): Promise<WalletRecovery>;
@@ -65,6 +66,9 @@ export function createAccountApi(t: Transport): AccountApi {
     },
     generateWallet(newWalletSiwsToken) {
       return t.post("/v1/users/me/generate-wallet", { newWalletSiwsToken });
+    },
+    recoverWalletWithKey(proof) {
+      return t.post("/v1/users/me/wallet/recover-with-key", proof);
     },
     walletRecovery() {
       return t.get("/v1/users/me/wallet/recovery");

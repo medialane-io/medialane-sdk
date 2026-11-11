@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.226.0] — 2026-11-11
+
+### Added
+
+- `account.recoverWalletWithKey`: makes the wallet a recovery key opens the account's wallet.
+- `signRecoveryKeyProof`: signs the wallet sign-in message with a recovery key.
+
 ## [0.225.0] — 2026-11-09
 
 ### Added
