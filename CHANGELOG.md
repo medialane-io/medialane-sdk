@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.228.0] — 2026-11-13
+
+### Added
+
+- `SESSION_ERROR_CODES`: the codes the backend uses when a session has ended, shared with the app session handler.
+- `createAppSessionHandler` option `requireEmail`: a session without an email is treated as a visitor and the cookie is kept.
+
+### Changed
+
+- Account session tokens no longer carry an expiry field. Their lifetime is counted from the issue time, and tokens that still carry the field keep working.
+
 ## [0.227.0] — 2026-11-13
 
 ### Changed

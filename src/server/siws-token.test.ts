@@ -167,3 +167,31 @@ describe("account session lifetime", () => {
     });
   });
 });
+
+describe("account session payload", () => {
+  const decode = (token: string) =>
+    JSON.parse(Buffer.from(token.slice("account_session_".length).split(".")[0]!, "base64url").toString());
+
+  test("an issued token carries no exp", () => {
+    expect("exp" in decode(issueAccountSessionToken(SECRET, "acc_1"))).toBe(false);
+  });
+
+  test("a token that still carries an exp verifies", () => {
+    const iat = nowSeconds();
+    const token = sessionTokenWith({ accountId: "acc_old", iat, exp: iat + 60 });
+    expect(readAccountSessionToken(SECRET, token)).toEqual({ accountId: "acc_old", issuedAt: iat });
+  });
+
+  test("a token without exp verifies and lasts a year from iat", () => {
+    const iat = nowSeconds();
+    const token = sessionTokenWith({ accountId: "acc_new", iat });
+    expect(readAccountSessionToken(SECRET, token)).toEqual({ accountId: "acc_new", issuedAt: iat });
+    const realNow = Date.now;
+    Date.now = () => (iat + ACCOUNT_SESSION_TTL_SECONDS + 120) * 1000;
+    try {
+      expect(readAccountSessionToken(SECRET, token)).toBeNull();
+    } finally {
+      Date.now = realNow;
+    }
+  });
+});

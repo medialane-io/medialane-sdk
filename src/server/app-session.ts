@@ -6,10 +6,16 @@ export interface AppSessionConfig {
   backendUrl: string;
   apiKey: string | undefined;
   appSecret?: string;
+  requireEmail?: boolean;
   fetchImpl?: FetchLike;
 }
 
-const SESSION_ENDED_CODES = new Set(["sign_in_required", "account_inactive"]);
+export const SESSION_ERROR_CODES = {
+  signInRequired: "sign_in_required",
+  accountInactive: "account_inactive",
+} as const;
+
+const SESSION_ENDED_CODES = new Set<string>(Object.values(SESSION_ERROR_CODES));
 
 async function sessionEnded(res: Response): Promise<boolean> {
   if (res.status !== 401 && res.status !== 403) return false;
@@ -44,7 +50,9 @@ export function createAppSessionHandler(config: AppSessionConfig): {
       });
       if (await sessionEnded(res.clone())) return signedOut();
       if (!res.ok) return Response.json({ error: "Session check failed" }, { status: 502 });
-      return Response.json(await res.json());
+      const account = (await res.json()) as { email?: string | null };
+      if (config.requireEmail && !account.email) return Response.json(null);
+      return Response.json(account);
     },
     async DELETE() {
       return signedOut();

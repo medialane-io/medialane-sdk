@@ -1,6 +1,6 @@
 export { createAppGateway, ACCOUNT_SESSION_COOKIE } from "./app-gateway.js";
 export type { AppGatewayConfig } from "./app-gateway.js";
-export { createAppSessionHandler } from "./app-session.js";
+export { createAppSessionHandler, SESSION_ERROR_CODES } from "./app-session.js";
 export type { AppSessionConfig } from "./app-session.js";
 export {
   isPrivateHost,

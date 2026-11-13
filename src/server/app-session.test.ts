@@ -1,14 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { createAppSessionHandler } from "./app-session.js";
+import { createAppSessionHandler, SESSION_ERROR_CODES } from "./app-session.js";
+
 import { ACCOUNT_SESSION_COOKIE } from "./app-gateway.js";
 
-function handler(status: number, body: unknown, appSecret?: string) {
+function handler(status: number, body: unknown, appSecret?: string, requireEmail?: boolean) {
   const seen: Headers[] = [];
   const h = createAppSessionHandler({
     appId: "MEDIALANE_STARKNET",
     backendUrl: "https://api.test",
     apiKey: "key",
     appSecret,
+    requireEmail,
     fetchImpl: (async (_url: string, init: RequestInit) => {
       seen.push(new Headers(init.headers));
       return Response.json(body, { status });
@@ -73,5 +75,26 @@ describe("app session handler", () => {
     const res = await h.GET(withCookie("s"));
     expect(res.status).toBe(502);
     expect(res.headers.get("set-cookie")).toBeNull();
+  });
+
+  test("requireEmail makes a session without an email a visitor and keeps the cookie", async () => {
+    const { h } = handler(200, { accountId: "a", email: null }, undefined, true);
+    const res = await h.GET(withCookie("s"));
+    expect(await res.json()).toBeNull();
+    expect(res.headers.get("set-cookie")).toBeNull();
+  });
+
+  test("a session without an email is returned when requireEmail is not set", async () => {
+    const { h } = handler(200, { accountId: "a", email: null });
+    expect(await (await h.GET(withCookie("s"))).json()).toEqual({ accountId: "a", email: null });
+  });
+
+  test("the codes that end a session are the exported ones", async () => {
+    for (const [status, code] of [[401, SESSION_ERROR_CODES.signInRequired], [403, SESSION_ERROR_CODES.accountInactive]] as const) {
+      const { h } = handler(status, { error: "x", code });
+      const res = await h.GET(withCookie("s"));
+      expect(await res.json()).toBeNull();
+      expect(res.headers.get("set-cookie") ?? "").toContain("Max-Age=0");
+    }
   });
 });
