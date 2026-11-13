@@ -7,6 +7,7 @@ import {
   verifyAccountSessionToken,
   readAccountSessionToken,
   IDENTITY_TTL_SECONDS,
+  ACCOUNT_SESSION_TTL_SECONDS,
 } from "./siws-token.js";
 
 const SECRET = "test-secret-not-used-anywhere-real";
@@ -15,6 +16,12 @@ function legacyToken(prefix: string, payload: Record<string, unknown>): string {
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const sig = createHmac("sha256", SECRET).update(encoded).digest("hex");
   return `${prefix}${encoded}.${sig}`;
+}
+
+function sessionTokenWith(payload: Record<string, unknown>): string {
+  const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = createHmac("sha256", SECRET).update("account-session-v1").update(".").update(encoded).digest("hex");
+  return `account_session_${encoded}.${sig}`;
 }
 
 function nowSeconds(): number {
@@ -123,7 +130,40 @@ describe("readAccountSessionToken", () => {
     const [head, sig] = [token.slice(0, token.lastIndexOf(".")), token.slice(token.lastIndexOf(".") + 1)];
     expect(readAccountSessionToken(SECRET, `${head}.${sig.replace(/^./, sig[0] === "a" ? "b" : "a")}`)).toBeNull();
     expect(readAccountSessionToken("another-secret-of-enough-length-xx", token)).toBeNull();
-    expect(readAccountSessionToken(SECRET, issueAccountSessionToken(SECRET, "acc_1", -120))).toBeNull();
+    expect(readAccountSessionToken(SECRET, issueAccountSessionToken(SECRET, "acc_1"))).not.toBeNull();
     expect(readAccountSessionToken(SECRET, issueSiwsToken(SECRET, "STARKNET", "0x1"))).toBeNull();
+  });
+});
+
+describe("account session lifetime", () => {
+  const issuedAt = 1_800_000_000;
+  const at = (seconds: number, run: () => void) => {
+    const realNow = Date.now;
+    Date.now = () => seconds * 1000;
+    try {
+      run();
+    } finally {
+      Date.now = realNow;
+    }
+  };
+
+  test("lasts a year from the issue time", () => {
+    let token = "";
+    at(issuedAt, () => {
+      token = issueAccountSessionToken(SECRET, "acc_1");
+    });
+    at(issuedAt + ACCOUNT_SESSION_TTL_SECONDS - 60, () => {
+      expect(readAccountSessionToken(SECRET, token)).not.toBeNull();
+    });
+    at(issuedAt + ACCOUNT_SESSION_TTL_SECONDS + 60, () => {
+      expect(readAccountSessionToken(SECRET, token)).toBeNull();
+    });
+  });
+
+  test("a token issued with a shorter stored expiry lasts the full year", () => {
+    const token = sessionTokenWith({ accountId: "acc_old", iat: issuedAt, exp: issuedAt + 30 * 86_400 });
+    at(issuedAt + 40 * 86_400, () => {
+      expect(readAccountSessionToken(SECRET, token)).toEqual({ accountId: "acc_old", issuedAt });
+    });
   });
 });

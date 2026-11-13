@@ -10,7 +10,7 @@ const IDENTITY_DOMAIN = "siws-identity-v1";
 const ACCOUNT_SESSION_DOMAIN = "account-session-v1";
 
 export const IDENTITY_TTL_SECONDS = 86_400;
-export const ACCOUNT_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
+export const ACCOUNT_SESSION_TTL_SECONDS = 365 * 24 * 60 * 60;
 
 const CLOCK_SKEW_SECONDS = 60;
 
@@ -104,13 +104,9 @@ export function verifySiwsToken(secret: string, raw: string): SiwsIdentity | nul
   return { address: data.sub, chain: data.chain ?? "STARKNET" };
 }
 
-export function issueAccountSessionToken(
-  secret: string,
-  accountId: string,
-  ttlSeconds: number = ACCOUNT_SESSION_TTL_SECONDS,
-): string {
+export function issueAccountSessionToken(secret: string, accountId: string): string {
   const iat = Math.floor(Date.now() / 1000);
-  const payload = encodePayload({ accountId, iat, exp: iat + ttlSeconds });
+  const payload = encodePayload({ accountId, iat, exp: iat + ACCOUNT_SESSION_TTL_SECONDS });
   return `${ACCOUNT_SESSION_PREFIX}${payload}.${sign(secret, ACCOUNT_SESSION_DOMAIN, payload)}`;
 }
 
@@ -121,7 +117,7 @@ export function readAccountSessionToken(secret: string, raw: string): { accountI
   if (!signatureMatches(secret, ACCOUNT_SESSION_DOMAIN, parts.payload, parts.signature)) return null;
 
   const data = decodePayload<AccountSessionPayload>(parts.payload);
-  if (!data?.accountId || !data.iat || !withinLifetime(data.iat, data.exp)) return null;
+  if (!data?.accountId || !data.iat || !withinLifetime(data.iat, data.iat + ACCOUNT_SESSION_TTL_SECONDS)) return null;
 
   return { accountId: data.accountId, issuedAt: data.iat };
 }

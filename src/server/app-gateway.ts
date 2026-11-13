@@ -1,9 +1,9 @@
 import type { FetchLike } from "../utils/fetch.js";
 import { isSameOrigin } from "./origin.js";
 import { isSafePathSegment } from "./app-routes.js";
+import { ACCOUNT_SESSION_TTL_SECONDS } from "./siws-token.js";
 
 export const ACCOUNT_SESSION_COOKIE = "ml_account_session";
-const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 /** Routes whose response carries a new account session: the gateway moves it into the cookie. */
 const SIGN_IN_PATHS = new Set([
   "auth/email/register-account",
@@ -42,7 +42,7 @@ export function readCookie(req: Request, name: string): string | null {
   return null;
 }
 
-export function sessionCookie(value: string, maxAge = SESSION_MAX_AGE_SECONDS): string {
+export function sessionCookie(value: string, maxAge = ACCOUNT_SESSION_TTL_SECONDS): string {
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
   return `${ACCOUNT_SESSION_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
 }

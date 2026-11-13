@@ -2,6 +2,14 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.227.0] — 2026-11-13
+
+### Changed
+
+- Account sessions last a year from the day they were issued, and the sign-in cookie uses the same lifetime. Sessions already issued last a year too.
+- `issueAccountSessionToken` no longer takes a lifetime.
+- The app session handler signs a visitor out only when the backend says the session is not signed in or the account is not active. Any other refusal keeps the cookie.
+
 ## [0.226.0] — 2026-11-11
 
 ### Added
