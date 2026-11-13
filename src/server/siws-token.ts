@@ -29,7 +29,6 @@ interface IdentityPayload {
 interface AccountSessionPayload {
   accountId?: string;
   iat?: number;
-  exp?: number;
 }
 
 const encoder = new TextEncoder();
@@ -106,7 +105,7 @@ export function verifySiwsToken(secret: string, raw: string): SiwsIdentity | nul
 
 export function issueAccountSessionToken(secret: string, accountId: string): string {
   const iat = Math.floor(Date.now() / 1000);
-  const payload = encodePayload({ accountId, iat, exp: iat + ACCOUNT_SESSION_TTL_SECONDS });
+  const payload = encodePayload({ accountId, iat });
   return `${ACCOUNT_SESSION_PREFIX}${payload}.${sign(secret, ACCOUNT_SESSION_DOMAIN, payload)}`;
 }
 

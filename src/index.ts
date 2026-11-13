@@ -114,7 +114,7 @@ export { stringifyBigInts, u256ToBigInt, encodeU256 } from "./utils/bigint.js";
 export type { RetryOptions } from "./utils/retry.js";
 export { createAppGateway, ACCOUNT_SESSION_COOKIE } from "./server/app-gateway.js";
 export type { AppGatewayConfig } from "./server/app-gateway.js";
-export { createAppSessionHandler } from "./server/app-session.js";
+export { createAppSessionHandler, SESSION_ERROR_CODES } from "./server/app-session.js";
 export type { AppSessionConfig } from "./server/app-session.js";
 export {
   isPrivateHost,
