@@ -9,6 +9,14 @@ export interface AppSessionConfig {
   fetchImpl?: FetchLike;
 }
 
+const SESSION_ENDED_CODES = new Set(["sign_in_required", "account_inactive"]);
+
+async function sessionEnded(res: Response): Promise<boolean> {
+  if (res.status !== 401 && res.status !== 403) return false;
+  const body = (await res.json().catch(() => null)) as { code?: string } | null;
+  return SESSION_ENDED_CODES.has(body?.code ?? "");
+}
+
 function signedOut(): Response {
   const res = Response.json(null);
   res.headers.append("set-cookie", sessionCookie("", 0));
@@ -34,7 +42,7 @@ export function createAppSessionHandler(config: AppSessionConfig): {
         },
         cache: "no-store",
       });
-      if (res.status === 401 || res.status === 403) return signedOut();
+      if (await sessionEnded(res.clone())) return signedOut();
       if (!res.ok) return Response.json({ error: "Session check failed" }, { status: 502 });
       return Response.json(await res.json());
     },

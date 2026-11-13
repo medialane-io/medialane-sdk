@@ -34,11 +34,25 @@ describe("app session handler", () => {
     expect(seen[0].get("x-account-session")).toBe("s");
   });
 
-  test("a refused session is a visitor and the cookie is cleared", async () => {
-    const { h } = handler(401, { error: "no" });
+  test("a session the backend says is not signed in is a visitor and the cookie is cleared", async () => {
+    const { h } = handler(401, { error: "Sign in to continue", code: "sign_in_required" });
     const res = await h.GET(withCookie("s"));
     expect(await res.json()).toBeNull();
     expect(res.headers.get("set-cookie") ?? "").toContain("Max-Age=0");
+  });
+
+  test("an inactive account is a visitor and the cookie is cleared", async () => {
+    const { h } = handler(403, { error: "Account is not active", code: "account_inactive" });
+    const res = await h.GET(withCookie("s"));
+    expect(await res.json()).toBeNull();
+    expect(res.headers.get("set-cookie") ?? "").toContain("Max-Age=0");
+  });
+
+  test("a refusal that is not about the session keeps the cookie", async () => {
+    const { h } = handler(401, { error: "Invalid or revoked API key" });
+    const res = await h.GET(withCookie("s"));
+    expect(res.status).toBe(502);
+    expect(res.headers.get("set-cookie")).toBeNull();
   });
 
   test("sign-out clears the cookie", async () => {
