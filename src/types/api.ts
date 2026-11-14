@@ -695,8 +695,8 @@ export interface ApiCreatorProfile {
 
 export interface ApiAccount {
   address: string;
-  collections: number;
-  assets: number;
+  image: string | null;
+  ipType: string | null;
 }
 
 export type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BASE" | "BITCOIN";
