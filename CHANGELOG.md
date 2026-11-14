@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.229.0] — 2026-11-14
+
+### Added
+
+- `client.accounts.list`: the onchain accounts directory, with each account's collection and asset counts.
+
+### Removed
+
+- `client.creators.list` and `ApiCreatorListResult`: the directory of accounts replaces the list of creators that registered a name.
+- `ApiCreatorProfile.collectionImage`.
+
 ## [0.228.0] — 2026-11-13
 
 ### Added
