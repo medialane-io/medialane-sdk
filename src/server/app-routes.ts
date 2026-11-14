@@ -6,7 +6,7 @@ const PUBLIC_ROUTES: Record<string, RegExp[]> = {
     "tokens", `tokens/owned/${SEG}`, `tokens/${SEG}/${SEG}`, `tokens/${SEG}/${SEG}/(history|comments|remixes)`, `tokens/${SEG}/${SEG}/balances/${SEG}`,
     "collections", `collections/${SEG}`, `collections/${SEG}/tokens`, `collections/${SEG}/profile`,
     "activities", `activities/${SEG}`, "search", "metadata/resolve",
-    "accounts", "creators", `creators/${SEG}/profile`, `creators/by-username/${SEG}`, `creators/${SEG}/hidden`,
+    "accounts", `creators/${SEG}/profile`, `creators/by-username/${SEG}`, `creators/${SEG}/hidden`,
     "coins", "coins/prices", "coins/claims", `coins/${SEG}`, `coins/${SEG}/guarantees`, `pop/${SEG}/claim-info`,
     "drops", `drops/${SEG}`, `drops/${SEG}/mints`, `drops/${SEG}/state`,
     "rewards", "rewards/config", "rewards/batch", `rewards/${SEG}`, `rewards/${SEG}/events`,

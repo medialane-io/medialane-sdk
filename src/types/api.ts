@@ -686,7 +686,6 @@ export interface ApiCreatorProfile {
   bio: string | null;
   avatarImage: string | null;
 
-  collectionImage?: string | null;
   websiteUrl: string | null;
   twitterUrl: string | null;
   discordUrl: string | null;
@@ -698,13 +697,6 @@ export interface ApiAccount {
   address: string;
   collections: number;
   assets: number;
-}
-
-export interface ApiCreatorListResult {
-  creators: ApiCreatorProfile[];
-  total: number;
-  page: number;
-  limit: number;
 }
 
 export type ApiChain = "STARKNET" | "ETHEREUM" | "SOLANA" | "BASE" | "BITCOIN";

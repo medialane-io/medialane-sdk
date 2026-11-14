@@ -1,8 +1,7 @@
 import type { Transport } from "../transport.js";
-import type { ApiCreatorListResult, ApiCreatorProfile, ApiUsernameClaim } from "../../types/api.js";
+import type { ApiCreatorProfile, ApiUsernameClaim } from "../../types/api.js";
 
 export interface CreatorsApi {
-  list(opts?: { search?: string; page?: number; limit?: number }): Promise<ApiCreatorListResult>;
   findProfile(walletAddress: string): Promise<ApiCreatorProfile | null>;
   findByUsername(username: string): Promise<ApiCreatorProfile | null>;
   updateProfile(
@@ -17,9 +16,6 @@ export interface CreatorsApi {
 
 export function createCreatorsApi(t: Transport): CreatorsApi {
   return {
-    list(opts = {}) {
-      return t.get("/v1/creators", { search: opts.search, page: opts.page || undefined, limit: opts.limit || undefined });
-    },
     findProfile(walletAddress) {
       return t.find(`/v1/creators/${t.addr(walletAddress)}/profile`);
     },
