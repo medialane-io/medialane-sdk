@@ -16,6 +16,7 @@ export type { ActivityApi, SearchApi } from "./api/domains/activity.js";
 export type { IntentsApi } from "./api/domains/intents.js";
 export type { MetadataApi } from "./api/domains/metadata.js";
 export type { CreatorsApi } from "./api/domains/creators.js";
+export type { AccountsApi } from "./api/domains/accounts.js";
 export type { AccountApi, RegisteredUser, WalletRecovery } from "./api/domains/account.js";
 export type { PortalApi, FundingApi } from "./api/domains/portal.js";
 export type { BusinessApi, ProvisioningResult } from "./api/domains/business.js";

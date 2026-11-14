@@ -7,6 +7,7 @@ import { createActivityApi, createSearchApi, type ActivityApi, type SearchApi } 
 import { createIntentsApi, type IntentsApi } from "./domains/intents.js";
 import { createMetadataApi, type MetadataApi } from "./domains/metadata.js";
 import { createCreatorsApi, type CreatorsApi } from "./domains/creators.js";
+import { createAccountsApi, type AccountsApi } from "./domains/accounts.js";
 import { createAccountApi, type AccountApi } from "./domains/account.js";
 import { createPortalApi, type PortalApi } from "./domains/portal.js";
 import { createBusinessApi, type BusinessApi } from "./domains/business.js";
@@ -33,6 +34,7 @@ export class ApiClient {
   readonly intents: IntentsApi;
   readonly metadata: MetadataApi;
   readonly creators: CreatorsApi;
+  readonly accounts: AccountsApi;
   readonly account: AccountApi;
   readonly portal: PortalApi;
   readonly business: BusinessApi;
@@ -55,6 +57,7 @@ export class ApiClient {
     this.intents = createIntentsApi(t);
     this.metadata = createMetadataApi(t);
     this.creators = createCreatorsApi(t);
+    this.accounts = createAccountsApi(t);
     this.account = createAccountApi(t);
     this.portal = createPortalApi(t);
     this.business = createBusinessApi(t);

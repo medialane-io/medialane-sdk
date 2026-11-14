@@ -694,6 +694,12 @@ export interface ApiCreatorProfile {
   updatedAt: string;
 }
 
+export interface ApiAccount {
+  address: string;
+  collections: number;
+  assets: number;
+}
+
 export interface ApiCreatorListResult {
   creators: ApiCreatorProfile[];
   total: number;

@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.229.0] — 2026-11-14
+
+### Added
+
+- `client.accounts.list`: the onchain accounts directory, with each account's collection and asset counts.
+
 ## [0.228.0] — 2026-11-13
 
 ### Added
