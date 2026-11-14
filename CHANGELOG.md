@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.231.0] — 2026-11-14
+
+### Removed
+
+- `Software`, `Patents` and `Custom` from the `IPType` union.
+
 ## [0.230.0] — 2026-11-14
 
 ### Changed

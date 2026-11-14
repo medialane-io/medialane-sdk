@@ -12,12 +12,9 @@ export type IPType =
   | "NFT"
   | "Video"
   | "Photography"
-  | "Patents"
   | "Posts"
   | "Publications"
-  | "RWA"
-  | "Software"
-  | "Custom";
+  | "RWA";
 
 export type CollectionSort = "recent" | "supply" | "floor" | "volume" | "name";
 
