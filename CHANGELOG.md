@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.230.0] — 2026-11-14
+
+### Changed
+
+- `client.accounts.list` takes `ipType` and returns each account's most recently received visible asset (`image`, `ipType`) in place of the collection and asset counts.
+
 ## [0.229.0] — 2026-11-14
 
 ### Added
