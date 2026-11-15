@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.232.0] — 2026-11-15
+
+### Removed
+
+- `ApiCollection.claimedBy`: who owns a collection is read from the chain.
+
 ## [0.231.0] — 2026-11-14
 
 ### Removed
