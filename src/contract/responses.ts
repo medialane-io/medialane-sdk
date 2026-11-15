@@ -107,7 +107,6 @@ export const collectionSchema = z.object({
   isFeatured: z.boolean(),
   isHidden: z.boolean(),
   service: z.string().nullable(),
-  claimedBy: z.string().nullable(),
   floorPrice: z.string().nullable(),
   totalVolume: z.string().nullable(),
   holderCount: z.number(),

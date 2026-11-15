@@ -57,7 +57,6 @@ const collection = {
   isFeatured: false,
   isHidden: false,
   service: null,
-  claimedBy: null,
   floorPrice: null,
   totalVolume: null,
   holderCount: 0,
