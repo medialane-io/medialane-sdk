@@ -69,6 +69,7 @@ export const tokenSchema = z.object({
   owner: z.string().nullable(),
   tokenUri: z.string().nullable(),
   metadataStatus: metadataStatusSchema,
+  isArchived: z.boolean().default(false),
   standard: z.enum(["ERC721", "ERC1155"]).nullable(),
   metadata: z.object({
     name: z.string().nullable(),

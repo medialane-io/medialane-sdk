@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.233.0] — 2026-11-16
+
+### Added
+
+- `ApiToken.isArchived`: whether the token has been permanently archived. Tokens from servers that do not send it read as not archived.
+
 ## [0.232.0] — 2026-11-15
 
 ### Removed
