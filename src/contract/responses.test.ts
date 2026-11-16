@@ -67,6 +67,11 @@ const collection = {
 };
 
 describe("response schemas", () => {
+  test("a token without the archived flag reads as not archived, and one with it keeps it", () => {
+    expect(tokenSchema.parse(token).isArchived).toBe(false);
+    expect(tokenSchema.parse({ ...token, isArchived: true }).isArchived).toBe(true);
+  });
+
   test("a representative order, token and collection parse", () => {
     expect(orderSchema.safeParse(order).success).toBe(true);
     expect(tokenSchema.safeParse(token).success).toBe(true);
