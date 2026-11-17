@@ -234,6 +234,7 @@ export const transferNftSchema = z.object({
   tokenStandard: z.enum(["ERC721", "ERC1155"]),
   built: builtIntentSchema.optional(),
 });
+export const archiveNftSchema = z.object({ owner: address, collectionId: uint, tokenId: uint, built: builtIntentSchema.optional() });
 export const transferCollectionOwnershipSchema = z.object({ owner: address, collectionId: uint, newOwner: address, built: builtIntentSchema.optional() });
 export const commentSchema = z.object({ author: address, nftContract: address, tokenId: uint, text: z.string().trim().min(1).max(1000) });
 export const genesisMintSchema = z.object({ owner: address, recipient: address, built: builtIntentSchema.optional() });
@@ -283,6 +284,7 @@ export const INTENT_KINDS = [
   "mint",
   "transfer-token",
   "transfer-nft",
+  "archive-nft",
   "transfer-collection-ownership",
   "comment",
   "genesis-mint",

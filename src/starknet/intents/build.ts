@@ -5,6 +5,7 @@ import type { ApiOrder } from "../../types/api.js";
 import { cancelIntent, counterOfferIntent, listingIntent, offerIntent } from "./orders.js";
 import { fulfillIntent } from "./fulfill.js";
 import { genesisMintIntent } from "./genesis.js";
+import { archiveNftIntent } from "./archive.js";
 import { fundingTransferIntent, transferCollectionOwnershipIntent, transferNftIntent, transferTokenIntent } from "./transfers.js";
 
 export interface BuiltIntent {
@@ -40,6 +41,7 @@ const DEFINITIONS = {
   fulfill: fulfillIntent,
   "transfer-token": transferTokenIntent,
   "transfer-nft": transferNftIntent,
+  "archive-nft": archiveNftIntent,
   "transfer-collection-ownership": transferCollectionOwnershipIntent,
   "funding-transfer": fundingTransferIntent,
   "genesis-mint": genesisMintIntent,

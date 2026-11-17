@@ -1011,6 +1011,8 @@ export type CreateTransferTokenIntentParams = z.input<typeof intents.transferTok
 
 export type CreateTransferNftIntentParams = z.input<typeof intents.transferNftSchema>;
 
+export type CreateArchiveNftIntentParams = z.input<typeof intents.archiveNftSchema>;
+
 export type CreateTransferCollectionOwnershipIntentParams = z.input<typeof intents.transferCollectionOwnershipSchema>;
 
 export type CreateCommentIntentParams = z.input<typeof intents.commentSchema>;
@@ -1047,6 +1049,7 @@ export interface IntentParamsByKind {
   mint: CreateMintIntentParams;
   "transfer-token": CreateTransferTokenIntentParams;
   "transfer-nft": CreateTransferNftIntentParams;
+  "archive-nft": CreateArchiveNftIntentParams;
   "transfer-collection-ownership": CreateTransferCollectionOwnershipIntentParams;
   comment: CreateCommentIntentParams;
   "genesis-mint": CreateGenesisMintIntentParams;

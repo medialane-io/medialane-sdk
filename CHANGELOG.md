@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.234.0] — 2026-11-17
+
+### Added
+
+- `archive-nft` intent: `client.createIntent("archive-nft", { owner, collectionId, tokenId })` builds the registry `archive` call, so it is recorded as an intent and can be sponsored like a transfer.
+
 ## [0.233.0] — 2026-11-16
 
 ### Added

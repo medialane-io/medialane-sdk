@@ -230,6 +230,7 @@ test("a JSON POST still sends Content-Type", async () => {
 test.each([
   ["transfer-token", "/v1/intents/transfer-token", { owner: "0x1", token: "0x2", recipient: "0x3", amount: "1" }],
   ["transfer-nft", "/v1/intents/transfer-nft", { owner: "0x1", contractAddress: "0x2", tokenId: "1", recipient: "0x3", tokenStandard: "ERC721" }],
+  ["archive-nft", "/v1/intents/archive-nft", { owner: "0x1", collectionId: "1", tokenId: "2" }],
   ["transfer-collection-ownership", "/v1/intents/transfer-collection-ownership", { owner: "0x1", collectionId: "1", newOwner: "0x3" }],
   ["comment", "/v1/intents/comment", { author: "0x1", nftContract: "0x2", tokenId: "1", text: "hi" }],
   ["genesis-mint", "/v1/intents/genesis-mint", { owner: "0x1", recipient: "0x1" }],

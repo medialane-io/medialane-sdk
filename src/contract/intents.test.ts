@@ -31,6 +31,7 @@ const cases: Array<[string, ZodTypeAny, Record<string, unknown>, string]> = [
   ["signatureSchema", S.signatureSchema, { signature: ["0x1"] }, "signature"],
   ["transferTokenSchema", S.transferTokenSchema, { owner: A, token: B, recipient: C, amount: "1" }, "amount"],
   ["transferNftSchema", S.transferNftSchema, { owner: A, contractAddress: B, tokenId: "1", recipient: C, tokenStandard: "ERC721" }, "tokenStandard"],
+  ["archiveNftSchema", S.archiveNftSchema, { owner: A, collectionId: "1", tokenId: "2" }, "tokenId"],
   ["transferCollectionOwnershipSchema", S.transferCollectionOwnershipSchema, { owner: A, collectionId: "1", newOwner: B }, "newOwner"],
   ["commentSchema", S.commentSchema, { author: A, nftContract: B, tokenId: "1", text: "hi" }, "text"],
   ["genesisMintSchema", S.genesisMintSchema, { owner: A, recipient: B }, "recipient"],
@@ -150,6 +151,7 @@ describe("transfer and funding requests may carry the client's own build", () =>
   test.each([
     ["transferTokenSchema", { owner: A, token: A, recipient: A, amount: "1" }],
     ["transferNftSchema", { owner: A, contractAddress: A, tokenId: "1", recipient: A, tokenStandard: "ERC721" }],
+    ["archiveNftSchema", { owner: A, collectionId: "1", tokenId: "2" }],
     ["transferCollectionOwnershipSchema", { owner: A, collectionId: "1", newOwner: A }],
     ["fundingTransferSchema", { owner: A, asset: A, amountAtomic: "1" }],
   ] as const)("%s keeps its build", (name, body) => {
