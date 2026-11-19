@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.235.0] — 2026-11-19
+
+### Added
+
+- `network_unavailable` failure code: a sponsored request that fails because the network could not be read is never offered as a pay-from-wallet fallback.
+
 ## [0.234.0] — 2026-11-17
 
 ### Added
