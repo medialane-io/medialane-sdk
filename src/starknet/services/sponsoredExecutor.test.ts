@@ -135,7 +135,7 @@ test("the failure code decides whether the user can self-fund", () => {
   expect(allowsFallbackFunding("sponsor_unavailable", 502, "build")).toBe(true);
   expect(allowsFallbackFunding("credits_exhausted", 402, "build")).toBe(true);
   expect(allowsFallbackFunding("credits_exhausted", 402, "execute")).toBe(true);
-  for (const code of ["not_authorized", "rate_limited", "invalid_request", "account_not_deployed", "not_executable", "may_have_broadcast"]) {
+  for (const code of ["not_authorized", "rate_limited", "invalid_request", "account_not_deployed", "not_executable", "may_have_broadcast", "network_unavailable"]) {
     expect(allowsFallbackFunding(code, 502, "build")).toBe(false);
     expect(allowsFallbackFunding(code, 503, "execute")).toBe(false);
   }

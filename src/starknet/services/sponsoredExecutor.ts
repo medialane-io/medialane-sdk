@@ -47,6 +47,7 @@ export class SponsoredCallRejectedError extends UserFacingError {
 
 export type SponsorshipFailureCode =
   | "sponsor_unavailable"
+  | "network_unavailable"
   | "credits_exhausted"
   | "account_not_deployed"
   | "not_executable"
