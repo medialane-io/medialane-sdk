@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.236.0] — 2026-11-20
+
+### Added
+
+- `IPFS_PUBLIC_GATEWAYS`: public IPFS gateways that serve any CID, in the order to try them.
+
 ## [0.235.0] — 2026-11-19
 
 ### Added
