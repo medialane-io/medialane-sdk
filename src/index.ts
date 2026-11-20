@@ -155,6 +155,7 @@ export {
   resolveSafeImageContentType,
   IPFS_SAFE_CONTENT_TYPE_PREFIXES,
   MAX_IPFS_GATEWAY_RESPONSE_BYTES,
+  IPFS_PUBLIC_GATEWAYS,
 } from "./utils/ipfs-gateway.js";
 
 export * from "./adapters/index.js";
