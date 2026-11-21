@@ -2,6 +2,12 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.238.0] — 2026-11-21
+
+### Added
+
+- `WalletRecovery.securityPeriod`: seconds the wallet contract waits before a started recovery can complete, or `null` when recovery is off.
+
 ## [0.237.0] — 2026-11-21
 
 ### Added
