@@ -9,8 +9,8 @@ const KEY = "0x0222";
 const created: SealedOwner = { credentialId: "c", ownerPubKey: KEY, address: "0x999", iv: "i", ciphertext: "x" };
 const pendingFor = (pubkey: string, address = WALLET): SealedOwner => ({ ...created, ownerPubKey: pubkey, address });
 
-const none: WalletRecovery = { enabled: true, state: "none", readyAt: null, newOwnerGuid: null, guardianPubkey: null };
-const waitingFor = (pubkey: string): WalletRecovery => ({ enabled: true, state: "waiting", readyAt: 1_900_000_000, newOwnerGuid: computeOwnerGuid(pubkey), guardianPubkey: null });
+const none: WalletRecovery = { enabled: true, state: "none", readyAt: null, securityPeriod: 604_800, newOwnerGuid: null, guardianPubkey: null };
+const waitingFor = (pubkey: string): WalletRecovery => ({ enabled: true, state: "waiting", readyAt: 1_900_000_000, securityPeriod: 604_800, newOwnerGuid: computeOwnerGuid(pubkey), guardianPubkey: null });
 
 function deps(pending: SealedOwner | null = null) {
   const log: string[] = [];

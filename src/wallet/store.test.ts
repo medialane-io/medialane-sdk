@@ -152,9 +152,9 @@ test("a replacement in progress does not disturb a recovery", async () => {
   const key = { ...FAKE, credentialId: "cred-recovery", ownerPubKey: "0x0777" };
   const api = {
     account: {
-      walletRecovery: async () => ({ enabled: true, state: "none" as const, readyAt: null, newOwnerGuid: null, guardianPubkey: null }),
-      startWalletRecovery: async () => ({ enabled: true, state: "waiting" as const, readyAt: 1, newOwnerGuid: null, guardianPubkey: null }),
-      completeWalletRecovery: async () => ({ enabled: true, state: "none" as const, readyAt: null, newOwnerGuid: null, guardianPubkey: null }),
+      walletRecovery: async () => ({ enabled: true, state: "none" as const, readyAt: null, securityPeriod: 604_800, newOwnerGuid: null, guardianPubkey: null }),
+      startWalletRecovery: async () => ({ enabled: true, state: "waiting" as const, readyAt: 1, securityPeriod: 604_800, newOwnerGuid: null, guardianPubkey: null }),
+      completeWalletRecovery: async () => ({ enabled: true, state: "none" as const, readyAt: null, securityPeriod: 604_800, newOwnerGuid: null, guardianPubkey: null }),
     },
   };
   await startSessionRecovery(api, FAKE.address, {

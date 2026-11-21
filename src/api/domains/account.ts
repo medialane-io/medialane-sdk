@@ -14,6 +14,7 @@ export interface WalletRecovery {
   enabled: boolean;
   state: "none" | "waiting" | "ready";
   readyAt: number | null;
+  securityPeriod: number | null;
   newOwnerGuid: string | null;
   guardianPubkey: string | null;
 }
