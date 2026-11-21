@@ -2,9 +2,7 @@ import { hash } from "starknet";
 import { normalizeAddress } from "../utils/address.js";
 
 export interface PopAllowlist {
-  /** Merkle root to publish with `set_allowlist_root`. */
   root: string;
-  /** Proof per address, keyed by normalized Starknet address. */
   proofs: Record<string, string[]>;
 }
 
@@ -15,12 +13,10 @@ const poseidon = (xs: bigint[]) =>
   BigInt(hash.computePoseidonHashOnElements(xs.map((x) => "0x" + x.toString(16))));
 const nodeHash = (a: bigint, b: bigint) => (a < b ? poseidon([a, b]) : poseidon([b, a]));
 
-/** Leaf for an address: poseidon([poseidon([address])]), as the collection computes it. */
 export function popLeafHash(address: string): bigint {
   return poseidon([poseidon([BigInt(address)])]);
 }
 
-/** OpenZeppelin standard tree over leaf hashes (sorted leaves, sorted-pair Poseidon nodes). */
 export function merkleTree(leafHashes: bigint[]) {
   const leaves = [...leafHashes].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const tree: bigint[] = new Array(2 * leaves.length - 1);
@@ -53,7 +49,6 @@ export function buildPopAllowlist(addresses: string[]): PopAllowlist {
   return { root: toHex(tree.root), proofs };
 }
 
-/** True when `proof` places `address` under `root` — checked before sending a claim. */
 export function verifyPopProof(root: string, address: string, proof: string[]): boolean {
   let computed = popLeafHash(address);
   for (const sibling of proof) computed = nodeHash(computed, BigInt(sibling));
@@ -64,7 +59,6 @@ export function encodePopClaimFragment(proof: string[]): string {
   return `#${FRAGMENT_KEY}=${proof.join(",")}`;
 }
 
-/** The proof in a claim link's fragment; `null` when absent or malformed. */
 export function decodePopClaimFragment(fragment: string): string[] | null {
   const raw = new URLSearchParams(fragment.replace(/^#/, "")).get(FRAGMENT_KEY);
   if (raw === null) return null;

@@ -19,10 +19,6 @@ export function resolveSafeImageContentType(contentType: string): string {
 
 export const MAX_IPFS_GATEWAY_RESPONSE_BYTES = 25 * 1024 * 1024;
 
-/**
- * Public IPFS gateways that serve any CID, in the order to try them. No trailing slash:
- * a file's URL is `${gateway}/${cid}/${path}`.
- */
 export const IPFS_PUBLIC_GATEWAYS: readonly string[] = [
   "https://ipfs.filebase.io/ipfs",
   "https://gateway.pinata.cloud/ipfs",

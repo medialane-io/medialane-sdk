@@ -4,7 +4,6 @@ import { isSafePathSegment } from "./app-routes.js";
 import { ACCOUNT_SESSION_TTL_SECONDS } from "./siws-token.js";
 
 export const ACCOUNT_SESSION_COOKIE = "ml_account_session";
-/** Routes whose response carries a new account session: the gateway moves it into the cookie. */
 const SIGN_IN_PATHS = new Set([
   "auth/email/register-account",
   "auth/email/verify-code",

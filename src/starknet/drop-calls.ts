@@ -4,14 +4,12 @@ import { normalizeAddress } from "../utils/address.js";
 import { DropCollectionABI, DropFactoryABI } from "./abis/index.js";
 import { feeAmount } from "./fee/build-fee-call.js";
 
-/** Most tokens one claim transaction mints. */
 export const DROP_MAX_CLAIM_QUANTITY = 50n;
 
 const addr = (a: string) => normalizeAddress("STARKNET", a);
 const factoryData = new CallData(DropFactoryABI as never);
 const collectionData = new CallData(DropCollectionABI as never);
 
-/** Sale terms as the contract's `SaleTerms` struct. A free drop names no token. */
 export function toContractTerms(t: DropTerms) {
   const price = BigInt(t.price);
   return {
@@ -23,7 +21,6 @@ export function toContractTerms(t: DropTerms) {
   };
 }
 
-/** Calls on the drop factory and drop collections, ready for `account.execute` or an intent. */
 export const dropCalls = {
   create(factory: string, p: CreateDropParams): Call {
     return {
@@ -40,7 +37,6 @@ export const dropCalls = {
     };
   },
 
-  /** Approve (paid drops) and claim. The platform fee call is added by the caller. */
   claim(
     collection: string,
     p: { quantity: bigint | string | number; proof?: string[]; price: bigint | string; paymentToken: string },
@@ -64,7 +60,6 @@ export const dropCalls = {
     return calls;
   },
 
-  /** Organizer only: free mint within the supply cap. */
   issue(collection: string, recipient: string, quantity: bigint | string | number): Call {
     const q = BigInt(quantity);
     if (q < 1n) throw new RangeError("quantity must be at least 1");
@@ -75,16 +70,13 @@ export const dropCalls = {
     };
   },
 
-  /** Organizer only. 0 opens the drop to everyone. */
   setAllowlistRoot(collection: string, root: string): Call {
     return { contractAddress: addr(collection), entrypoint: "set_allowlist_root", calldata: collectionData.compile("set_allowlist_root", { root }) };
   },
 };
 
 export interface DropMintCost {
-  /** price × quantity — paid to the organizer. */
   subtotal: bigint;
-  /** Platform fee on the subtotal. */
   fee: bigint;
   total: bigint;
 }

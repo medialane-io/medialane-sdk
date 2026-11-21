@@ -16,11 +16,8 @@ export interface FulfillInputs {
 }
 
 export interface PurchaseCost {
-  /** The price for the quantity bought. */
   gross: bigint;
-  /** The platform fee the purchase transfers on top of the price. */
   fee: bigint;
-  /** What the purchase spends: `gross + fee`. */
   total: bigint;
   feeBps: number;
 }
@@ -32,10 +29,6 @@ function listingCost(unitPrice: bigint, units: bigint, feeConfig: ResolvedFeeCon
   return { gross, fee, total: gross + fee, feeBps: bps };
 }
 
-/**
- * What buying `quantity` from a listing spends in the listing's currency, with the same price and
- * fee the fulfill intent builds. Quantity counts only for ERC-1155 listings.
- */
 export function purchaseCost(order: IntentOrder, quantity: bigint | number | string, feeConfig: ResolvedFeeConfig): PurchaseCost {
   const units = order.offer.itemType === "ERC1155" ? BigInt(quantity) : 1n;
   return listingCost(BigInt(order.consideration.startAmount ?? "0"), units, feeConfig);

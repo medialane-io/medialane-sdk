@@ -43,7 +43,6 @@ export class MedialaneClient {
     return (this._provider ??= createChainProvider(this.config.backendUrl, this.config.apiKey));
   }
 
-  /** What buying `quantity` from `order` spends, platform fee included, as this client builds the purchase. */
   purchaseCost(order: IntentOrder, quantity: bigint | number | string = 1): PurchaseCost {
     return purchaseCost(order, quantity, this.config.feeConfig);
   }

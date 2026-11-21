@@ -1,5 +1,3 @@
-
-
 export {
   EVM_ORDER_TYPES,
   evmOrderDomain,

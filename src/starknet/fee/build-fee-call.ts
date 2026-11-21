@@ -11,7 +11,6 @@ export interface BuildFeeCallParams {
   grossAmount: bigint;
 }
 
-/** Basis points charged on `surface`; 0 when the fee is off or has nowhere to go. */
 export function feeBps(surface: FeeSurface, cfg: ResolvedFeeConfig): number {
   if (!cfg.enabled || !cfg.fundAddress) return 0;
   return surface === "marketplace" ? cfg.marketplaceBps

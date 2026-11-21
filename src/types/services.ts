@@ -2,32 +2,23 @@ export interface CreatePopCollectionParams {
   name: string;
   symbol: string;
   baseUri: string;
-  /** Unix seconds; 0 = no deadline. */
   claimEndTime: number;
 }
 
 export interface DropTerms {
-  /** Unix seconds; 0 = open from creation. */
   startTime: number;
-  /** Unix seconds; 0 = never closes. */
   endTime: number;
-  /** Per token, in the payment token's smallest unit; 0 = free. */
   price: bigint | string;
-  /** Sent as zero when the drop is free. */
   paymentToken: string;
-  /** Claims per wallet; 0 = unlimited. */
   maxPerWallet: bigint | string;
 }
 
 export interface CreateDropParams {
   name: string;
   symbol: string;
-  /** Token URI = baseUri + token id. */
   baseUri: string;
-  /** 0 = no cap. */
   maxSupply: bigint | string;
   terms: DropTerms;
-  /** Merkle root of the allowlist; absent or 0 = open to everyone. */
   allowlistRoot?: string;
 }
 
