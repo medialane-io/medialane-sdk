@@ -3,6 +3,7 @@ import type { Call } from "starknet";
 import { resolveConfig } from "../../config.js";
 import { sameCalls } from "../sponsored-checks.js";
 import { buildIntent, resolveIntentInputs, type IntentOrder, type IntentReaders } from "./build.js";
+import { purchaseCost } from "./fulfill.js";
 import fixtures from "./fulfill.fixtures.json";
 
 const withFees = resolveConfig({ feeConfig: { enabled: true, fundAddress: fixtures.fund } });
@@ -45,5 +46,39 @@ describe("fulfill reads the stored order", () => {
   test("a given ERC-1155 standard is kept", async () => {
     const inputs = await resolveIntentInputs("fulfill", { ...fixtures.listing721.params, tokenStandard: "ERC1155" }, readers(null));
     expect(inputs).toEqual({ order: null, is1155: true });
+  });
+});
+
+describe("purchaseCost", () => {
+  const spent = (calls: Call[], token: string) =>
+    calls
+      .filter((c) => BigInt(c.contractAddress) === BigInt(token) && (c.entrypoint === "approve" || c.entrypoint === "transfer"))
+      .reduce((sum, c) => {
+        const data = (c.calldata as string[]).map(String);
+        return sum + BigInt(data[1]!) + (BigInt(data[2]!) << 128n);
+      }, 0n);
+
+  for (const name of ["listing721", "listing1155"] as const) {
+    test(`${name}: the total is what the purchase spends`, () => {
+      const c = fixtures[name];
+      const order = c.order as IntentOrder;
+      const quantity = is1155(name) ? BigInt((c.params as { quantity?: string }).quantity ?? "1") : 1n;
+      const built = buildIntent("fulfill", c.params, { order, is1155: is1155(name) }, withFees);
+      const cost = purchaseCost(order, quantity, withFees.feeConfig);
+      expect(cost.total).toBe(spent(built.calls, order.consideration.token!));
+      expect(cost.total).toBe(cost.gross + cost.fee);
+      expect(cost.feeBps).toBe(100);
+    });
+  }
+
+  test("without the platform fee the total is the price", () => {
+    const order = fixtures.listing721.order as IntentOrder;
+    const cost = purchaseCost(order, 1, withoutFees.feeConfig);
+    expect(cost).toEqual({ gross: BigInt(order.consideration.startAmount), fee: 0n, total: BigInt(order.consideration.startAmount), feeBps: 0 });
+  });
+
+  test("quantity counts only for ERC-1155 listings", () => {
+    const order = fixtures.listing721.order as IntentOrder;
+    expect(purchaseCost(order, 5, withFees.feeConfig)).toEqual(purchaseCost(order, 1, withFees.feeConfig));
   });
 });

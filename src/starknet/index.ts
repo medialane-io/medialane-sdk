@@ -170,7 +170,7 @@ export {
 } from "./intents/build.js";
 export { typedDataMatches } from "./intents/compare.js";
 export { createIntent, createCheckout, type CreatedIntent, type LocalBuild, type IntentCreationSources, type CheckoutCreationSources } from "./intents/create.js";
-export { type FulfillIntentParams, type FulfillInputs } from "./intents/fulfill.js";
+export { purchaseCost, type PurchaseCost, type FulfillIntentParams, type FulfillInputs } from "./intents/fulfill.js";
 export { swapCallsWithinBounds, type SwapRequest } from "./intents/swap.js";
 export type { ArchiveNftIntentParams } from "./intents/archive.js";
 export type {

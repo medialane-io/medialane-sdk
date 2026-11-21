@@ -5,6 +5,8 @@ import { createChainProvider } from "./chain-provider.js";
 import type { IntentKind } from "../contract/intents.js";
 import type { ApiCheckoutIntentResult, CreateCheckoutIntentParams, IntentParamsByKind } from "../types/api.js";
 import { createCheckout, createIntent, type CreatedIntent } from "./intents/create.js";
+import type { IntentOrder } from "./intents/build.js";
+import { purchaseCost, type PurchaseCost } from "./intents/fulfill.js";
 
 const NO_BACKEND = "backendUrl not configured. Pass backendUrl to MedialaneClient to use";
 
@@ -39,6 +41,11 @@ export class MedialaneClient {
       throw new Error(`${NO_BACKEND} .provider`);
     }
     return (this._provider ??= createChainProvider(this.config.backendUrl, this.config.apiKey));
+  }
+
+  /** What buying `quantity` from `order` spends, platform fee included, as this client builds the purchase. */
+  purchaseCost(order: IntentOrder, quantity: bigint | number | string = 1): PurchaseCost {
+    return purchaseCost(order, quantity, this.config.feeConfig);
   }
 
   async createIntent<K extends IntentKind>(kind: K, params: IntentParamsByKind[K]): Promise<CreatedIntent> {

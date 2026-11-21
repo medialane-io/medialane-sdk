@@ -51,6 +51,7 @@ export type SponsorshipFailureCode =
   | "credits_exhausted"
   | "account_not_deployed"
   | "not_executable"
+  | "insufficient_balance"
   | "invalid_request"
   | "not_authorized"
   | "rate_limited"
