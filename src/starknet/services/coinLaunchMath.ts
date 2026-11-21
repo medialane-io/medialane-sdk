@@ -1,5 +1,3 @@
-
-
 export const COIN_DECIMALS = 18;
 
 export const SUGGESTED_DEFAULT_PRICE = 0.01;

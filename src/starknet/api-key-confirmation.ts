@@ -4,15 +4,11 @@ export type ApiKeyAction = "replace_api_key" | "delete_api_key";
 
 export interface ApiKeyConfirmationInput {
   action: ApiKeyAction;
-  /** For `delete_api_key`, the key's id; for `replace_api_key`, the current key's id, or `none`. */
   key: string;
-  /** The account's public id. */
   account: string;
-  /** Unix seconds. */
   expiresAt: number;
 }
 
-/** What the account's wallet signs to approve one API key change. */
 export interface ApiKeyConfirmation {
   expiresAt: number;
   signature: string[];

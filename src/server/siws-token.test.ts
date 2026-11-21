@@ -82,11 +82,6 @@ describe("token kinds cannot be interchanged", () => {
 });
 
 describe("untagged signatures are no longer accepted", () => {
-  // The domain tag's backward-compat window (medialane-backend commit a9ad9aa,
-  // 2026-08-27) closed once the longest-lived token type (the 30-day account
-  // session) could no longer be in circulation from before the tag existed.
-  // Accepting an untagged signature indefinitely would have kept alive the
-  // exact cross-token-type confusion that tag was added to close.
   test("rejects an untagged identity token", () => {
     const iat = nowSeconds();
     const token = legacyToken("siws_", { sub: "0xdef", chain: "STARKNET", iat, exp: iat + IDENTITY_TTL_SECONDS });

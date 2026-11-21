@@ -1,4 +1,3 @@
-
 export const Medialane1155ABI = [
   {
     "type": "impl",

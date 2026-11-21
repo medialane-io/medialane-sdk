@@ -1,4 +1,3 @@
-
 export const IPMarketplaceABI = [
   {
     "type": "impl",

@@ -1,5 +1,3 @@
-
-
 export { MedialaneClient } from "./client.js";
 export { createChainProvider } from "./chain-provider.js";
 export { erc20Balance } from "./erc20.js";

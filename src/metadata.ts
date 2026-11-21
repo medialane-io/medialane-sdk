@@ -1,5 +1,3 @@
-
-
 export type AssetAttribute = { trait_type: string; value: string };
 
 export interface AssetMetadata {

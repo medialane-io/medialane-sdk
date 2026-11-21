@@ -1,5 +1,3 @@
-
-
 export { IPMarketplaceABI } from "./ipMarketplace.js";
 export { POPCollectionABI } from "./popCollection.js";
 export { POPFactoryABI } from "./popFactory.js";

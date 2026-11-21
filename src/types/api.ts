@@ -349,16 +349,11 @@ export type CollectionServiceId = (typeof intents.COLLECTION_SERVICE_IDS)[number
 
 export type CreateMintIntentParams = z.input<typeof intents.mintSchema>;
 
-/** Drop sale terms on the wire: amounts as decimal strings in the token's smallest unit. */
 export interface DropTermsBody {
-  /** Unix seconds; 0 = open from creation. */
   startTime: number;
-  /** Unix seconds; 0 = never closes. */
   endTime: number;
-  /** Per token; "0" = free. */
   price: string;
   paymentToken: string;
-  /** "0" = unlimited. */
   maxPerWallet: string;
 }
 
@@ -372,22 +367,17 @@ export interface ApiDrop {
   symbol: string | null;
   description: string | null;
   image: string | null;
-  /** Token URI = baseUri + token id. */
   baseUri: string | null;
-  /** "0" = no cap. */
   maxSupply: string;
   minted: string;
-  /** Total paid to the organizer, in the payment token's smallest unit. */
   revenue: string;
   collectors: number;
   terms: DropTermsBody;
-  /** "0x0" = open to everyone. */
   allowlistRoot: string;
   createdBlock: string;
 }
 
 export interface ApiDropFee {
-  /** Platform fee added to a mint, in basis points; 0 when none applies. */
   launchpadBps: number;
 }
 

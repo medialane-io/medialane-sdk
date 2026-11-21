@@ -1,5 +1,3 @@
-
-
 export { type MedialaneConfig, type ResolvedConfig, resolveConfig } from "./config.js";
 
 export { resolveFeeConfig } from "./fee/index.js";

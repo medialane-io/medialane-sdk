@@ -15,7 +15,6 @@ const key = (a: string) => "0x" + a.slice(2).padStart(64, "0");
 
 describe("merkle tree", () => {
   test("matches OpenZeppelin's published poseidon vector", () => {
-    // openzeppelin_merkle_tree, tests/merkle_proof/test_with_poseidon.cairo
     const leaves: [bigint, bigint][] = [
       [0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc8n, 0xfc104e31d098d1ab488fc1acaeb0269n],
       [0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffc66ca5c000n, 0xfc104e31d098d1ab488fc1acaeb0269n],
@@ -33,7 +32,6 @@ describe("merkle tree", () => {
 });
 
 describe("buildPopAllowlist", () => {
-  // Same vector the Cairo tests verify (contracts/Pop-Protocol/tests/utils.cairo).
   test("produces the root and proofs the contract verifies", () => {
     const list = buildPopAllowlist(["0x111", "0x222", "0x333"]);
     expect(list.root).toBe("0x055671b388a2640bb77a4a14b1650b4e2b08731a6e1bd966a642ddbaf2f150cb");

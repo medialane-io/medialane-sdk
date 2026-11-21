@@ -10,17 +10,12 @@ import type { PopClaimLink } from "./pop-claim.js";
 
 export interface DropOnchain {
   organizer: string;
-  /** Unix seconds; 0 = open from creation. */
   startTime: number;
-  /** Unix seconds; 0 = never closes. */
   endTime: number;
   price: bigint;
   paymentToken: string;
-  /** 0 = unlimited. */
   maxPerWallet: bigint;
-  /** 0x0 = open to everyone. */
   allowlistRoot: string;
-  /** 0 = no cap. */
   maxSupply: bigint;
   totalMinted: bigint;
 }
@@ -29,7 +24,6 @@ const hex = (v: string | undefined) => normalizeAddress("STARKNET", v ?? "0x0");
 const u256 = (low: string | undefined, high: string | undefined) =>
   BigInt(low ?? "0x0") + (BigInt(high ?? "0x0") << 128n);
 
-/** A drop's organizer, terms, allowlist root and supply, read from chain. */
 export async function readDrop(provider: Pick<ProviderInterface, "callContract">, collection: string): Promise<DropOnchain> {
   const contractAddress = hex(collection);
   const read = (entrypoint: string) => provider.callContract({ contractAddress, entrypoint, calldata: [] });
@@ -49,7 +43,6 @@ export async function readDrop(provider: Pick<ProviderInterface, "callContract">
   };
 }
 
-/** Approve, claim and the platform fee for `quantity` tokens, priced from the drop's terms on chain. */
 export async function buildDropClaimCalls(
   provider: Pick<ProviderInterface, "callContract">,
   collection: string,
@@ -71,7 +64,6 @@ export async function buildDropClaimCalls(
   return fee ? [...calls, fee] : calls;
 }
 
-/** How many tokens `wallet` has claimed from this drop (gifts not included). */
 export async function dropClaimedBy(
   provider: Pick<ProviderInterface, "callContract">,
   collection: string,
@@ -87,23 +79,16 @@ export type DropMintStateKind =
 
 export interface DropMintState {
   state: DropMintStateKind;
-  /** Largest quantity this wallet can claim now; 0 unless `ready`. */
   maxQuantity: bigint;
 }
 
-/** What the mint button should show, decided before any transaction is sent. */
 export function dropMintState(input: {
   drop: DropOnchain | null;
   wallet: string | null;
-  /** `claimed_by(wallet)`; null while loading. */
   claimed: bigint | null;
-  /** From the claim link; null when the page was opened without one. */
   proof: string[] | null;
-  /** Wallet balance of the payment token; null while loading (ignored for free drops). */
   balance: bigint | null;
-  /** Platform fee added to a mint, in basis points. */
   feeBps: number;
-  /** Unix seconds. */
   now: number;
 }): DropMintState {
   const none = (state: DropMintStateKind): DropMintState => ({ state, maxQuantity: 0n });
@@ -133,7 +118,6 @@ export function dropMintState(input: {
   return { state: "ready", maxQuantity: max };
 }
 
-/** One claim link per allowlisted address: the drop page with the proof in its fragment. */
 export function dropClaimLinks(origin: string, collection: string, list: PopAllowlist): PopClaimLink[] {
   const base = `${origin}${dropHref(collection)}`;
   return Object.entries(list.proofs).map(([address, proof]) => ({

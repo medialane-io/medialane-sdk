@@ -1,5 +1,3 @@
-
-
 export const CHAINS = ["STARKNET", "ETHEREUM", "SOLANA", "BASE", "STELLAR", "BITCOIN"] as const;
 export type Chain = (typeof CHAINS)[number];
 

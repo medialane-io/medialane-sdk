@@ -1,4 +1,3 @@
-
 export function stringifyBigInts(obj: unknown): unknown {
   if (typeof obj === "bigint") {
     return obj.toString();
