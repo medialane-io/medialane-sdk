@@ -2,6 +2,13 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.237.0] — 2026-11-21
+
+### Added
+
+- `purchaseCost(order, quantity, feeConfig)` and `MedialaneClient.purchaseCost(order, quantity)`: what buying from a listing spends (`gross`, `fee`, `total`, `feeBps`), with the same price and platform fee the fulfill intent builds. Quantity counts only for ERC-1155 listings.
+- `insufficient_balance` sponsorship failure code: the transaction would fail because the account's balance doesn't cover it.
+
 ## [0.236.0] — 2026-11-20
 
 ### Added

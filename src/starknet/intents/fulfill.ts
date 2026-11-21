@@ -1,5 +1,6 @@
 import { cairo, type Call } from "starknet";
-import { buildFeeCall } from "../fee/index.js";
+import type { ResolvedFeeConfig } from "../../fee/config.js";
+import { buildFeeCall, feeAmount, feeBps } from "../fee/index.js";
 import type { IntentDefinition, IntentOrder } from "./build.js";
 
 export interface FulfillIntentParams {
@@ -12,6 +13,32 @@ export interface FulfillIntentParams {
 export interface FulfillInputs {
   order: IntentOrder | null;
   is1155: boolean;
+}
+
+export interface PurchaseCost {
+  /** The price for the quantity bought. */
+  gross: bigint;
+  /** The platform fee the purchase transfers on top of the price. */
+  fee: bigint;
+  /** What the purchase spends: `gross + fee`. */
+  total: bigint;
+  feeBps: number;
+}
+
+function listingCost(unitPrice: bigint, units: bigint, feeConfig: ResolvedFeeConfig): PurchaseCost {
+  const gross = unitPrice * units;
+  const bps = feeBps("marketplace", feeConfig);
+  const fee = feeAmount(gross, bps);
+  return { gross, fee, total: gross + fee, feeBps: bps };
+}
+
+/**
+ * What buying `quantity` from a listing spends in the listing's currency, with the same price and
+ * fee the fulfill intent builds. Quantity counts only for ERC-1155 listings.
+ */
+export function purchaseCost(order: IntentOrder, quantity: bigint | number | string, feeConfig: ResolvedFeeConfig): PurchaseCost {
+  const units = order.offer.itemType === "ERC1155" ? BigInt(quantity) : 1n;
+  return listingCost(BigInt(order.consideration.startAmount ?? "0"), units, feeConfig);
 }
 
 const isNft = (itemType: string | undefined) => itemType === "ERC721" || itemType === "ERC1155";
@@ -37,7 +64,7 @@ export const fulfillIntent: IntentDefinition<FulfillIntentParams, FulfillInputs>
     let gross: bigint | null = null;
 
     if (isListing && consideration?.token && consideration.startAmount) {
-      gross = BigInt(consideration.startAmount) * quantity;
+      gross = listingCost(BigInt(consideration.startAmount), quantity, config.feeConfig).gross;
       calls.push({ contractAddress: consideration.token, entrypoint: "approve", calldata: [marketplace, ...uint256Calldata(gross)] });
     } else if (isNft(consideration?.itemType) && consideration?.token && consideration.identifier) {
       calls.push(
