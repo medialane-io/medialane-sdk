@@ -2,6 +2,22 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.239.0] — 2026-11-26
+
+### Added
+
+- `cosignedSelfFundedExecutor`: pays for a transaction from the wallet when it needs the backend to co-sign. Uses `POST {proxyUrl}/cosign`.
+- `CREDITS_EXHAUSTED` message.
+- `SponsoredExecuteResult` carries the failure `code` when sponsorship is unavailable.
+
+### Fixed
+
+- `sponsoredExecutor` offers self-payment to wallets with a guardian or several owners when sponsorship is unavailable.
+
+### Removed
+
+- `GUARDIAN_WALLET_BUSY`.
+
 ## [0.238.0] — 2026-11-21
 
 ### Added

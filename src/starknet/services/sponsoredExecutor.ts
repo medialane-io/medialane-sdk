@@ -18,7 +18,7 @@ export type SponsoredRequest = { intentIds: string[]; calls: readonly Call[] } |
 
 export type SponsoredExecuteResult =
   | { status: "sponsored"; transactionHash: string }
-  | { status: "unavailable"; reason: string };
+  | { status: "unavailable"; reason: string; code?: string };
 
 export interface SponsoredRejection {
   code?: string;
@@ -92,7 +92,7 @@ export async function executeSponsored(
   });
   if (!buildRes.ok) {
     const { reason, code, detail, requestId } = await failureOf(buildRes, "We couldn't prepare this transaction.");
-    if (allowsFallbackFunding(code, buildRes.status, "build")) return { status: "unavailable", reason };
+    if (allowsFallbackFunding(code, buildRes.status, "build")) return { status: "unavailable", reason, code };
     throw new SponsoredCallRejectedError(reason, { code, detail, status: buildRes.status, stage: "build", requestId });
   }
   const { typedData } = (await buildRes.json()) as { typedData: TypedData };
@@ -110,7 +110,7 @@ export async function executeSponsored(
   if (!executeRes.ok) {
     const { reason, code, detail, requestId } = await failureOf(executeRes, "We couldn't submit this transaction.");
     if (allowsFallbackFunding(code, executeRes.status, "execute")) {
-      return { status: "unavailable", reason };
+      return { status: "unavailable", reason, code };
     }
     throw new SponsoredCallRejectedError(reason, { code, detail, status: executeRes.status, stage: "execute", requestId });
   }
