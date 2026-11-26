@@ -43,10 +43,10 @@ export {
   sponsoredExecutor,
   estimateSelfFundedFee,
   accountFor,
-  GUARDIAN_WALLET_BUSY,
   type SelfFundedDeps,
   type SponsoredDeps,
 } from "./executors.js";
+export { cosignedSelfFundedExecutor, CREDITS_EXHAUSTED, type CosignedSelfFundedDeps } from "./cosigned-self-pay.js";
 export {
   createMediaWallet,
   describeDevices,

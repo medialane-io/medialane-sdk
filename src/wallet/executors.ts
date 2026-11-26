@@ -1,15 +1,14 @@
 import type { FetchLike } from "../utils/fetch.js";
 import { Account, typedData as starknetTypedData, type Call, type ProviderInterface } from "starknet";
 import { signWithPrivateKey } from "../starknet/passkey-wallet/crypto.js";
-import { UserFacingError } from "../errors.js";
+import { ACTION_PROBLEM, UserFacingError } from "../errors.js";
 import { executeSponsored } from "../starknet/services/sponsoredExecutor.js";
 import type { SelfFundConsent, SelfFundFeeEstimate } from "./self-fund-consent.js";
 import type { ExecutedTransaction, WalletExecutor } from "./types.js";
 import { getTokenBySymbol } from "../utils/token.js";
 import { erc20Balance } from "../starknet/erc20.js";
-import { getGuardians } from "../starknet/media-wallet/guardian.js";
-
-export const GUARDIAN_WALLET_BUSY = "This can't go through right now. Please try again in a moment.";
+import { getGuardians, getOwners } from "../starknet/media-wallet/guardian.js";
+import { CREDITS_EXHAUSTED, cosignedSelfFundedExecutor } from "./cosigned-self-pay.js";
 
 export interface SelfFundedDeps {
   provider: () => ProviderInterface;
@@ -55,46 +54,52 @@ export interface SponsoredDeps extends SelfFundedDeps {
   consent: SelfFundConsent;
   fetchImpl?: FetchLike;
   fallback?: WalletExecutor;
+  cosignedFallback?: WalletExecutor;
   guardians?: (address: string) => Promise<unknown[]>;
+  owners?: (address: string) => Promise<unknown[]>;
 }
 
 export function sponsoredExecutor(deps: SponsoredDeps): WalletExecutor {
   const fallback = deps.fallback ?? selfFundedExecutor(deps);
+  const cosignedFallback = deps.cosignedFallback ?? cosignedSelfFundedExecutor(deps);
   const guardians = deps.guardians ?? ((address: string) => getGuardians(deps.provider(), address));
-  const hasGuardian = async (address: string): Promise<boolean> => {
+  const owners = deps.owners ?? ((address: string) => getOwners(deps.provider(), address));
+  const ownerCanSignAlone = async (address: string): Promise<boolean | null> => {
     try {
-      return (await guardians(address)).length > 0;
+      if ((await guardians(address)).length > 0) return false;
+      return (await owners(address)).length <= 1;
     } catch {
-      return false;
+      return null;
     }
-  };
-  const refuseSelfFundingWithGuardian = async (address: string): Promise<void> => {
-    if (await hasGuardian(address)) throw new UserFacingError(GUARDIAN_WALLET_BUSY);
   };
   return {
     async execute(input): Promise<ExecutedTransaction> {
       const { userAddress, privateKeyHex, calls, intentIds } = input;
-      if (!intentIds?.length) {
-        await refuseSelfFundingWithGuardian(userAddress);
-        const consented = await deps.consent.request({ address: userAddress, calls });
-        if (!consented) throw new UserFacingError("This action can't be sponsored");
-        return fallback.execute(input);
-      }
-      const result = await executeSponsored(
-        { proxyUrl: deps.proxyUrl, fetchImpl: deps.fetchImpl },
-        {
-          address: userAddress,
-          signTypedData: async (data) =>
-            signWithPrivateKey(privateKeyHex, starknetTypedData.getMessageHash(data, userAddress)),
-        },
-        { intentIds, calls },
-      );
-      if (result.status === "sponsored") return { transactionHash: result.transactionHash };
+      const hasIntents = Boolean(intentIds?.length);
+      let refusal: { reason: string; code?: string } = { reason: "This action can't be sponsored" };
 
-      await refuseSelfFundingWithGuardian(userAddress);
+      if (intentIds?.length) {
+        const result = await executeSponsored(
+          { proxyUrl: deps.proxyUrl, fetchImpl: deps.fetchImpl },
+          {
+            address: userAddress,
+            signTypedData: async (data) =>
+              signWithPrivateKey(privateKeyHex, starknetTypedData.getMessageHash(data, userAddress)),
+          },
+          { intentIds, calls },
+        );
+        if (result.status === "sponsored") return { transactionHash: result.transactionHash };
+        refusal = result;
+      }
+
+      const alone = await ownerCanSignAlone(userAddress);
+      const needsCosigning = alone === false || (alone === null && hasIntents);
+      if (needsCosigning && !hasIntents) throw new UserFacingError(ACTION_PROBLEM);
+      if (needsCosigning && refusal.code === "credits_exhausted") throw new UserFacingError(CREDITS_EXHAUSTED);
+
       const consented = await deps.consent.request({ address: userAddress, calls });
-      if (!consented) throw new UserFacingError(result.reason);
-      return fallback.execute(input);
+      if (!consented) throw new UserFacingError(refusal.reason);
+      return (needsCosigning ? cosignedFallback : fallback).execute(input);
     },
   };
 }
