@@ -5,13 +5,11 @@ import {
   validateUrl,
 } from "./ssrf-guard.js";
 import { guardedGet } from "./guarded-get.js";
-import type { AppGatewayConfig } from "./app-gateway.js";
 
 export interface ImageProxyConfig {
   get?: (url: URL, headers: Record<string, string>, signal: AbortSignal) => Promise<Response>;
   timeoutMs?: number;
   userAgent?: string;
-  backend?: Pick<AppGatewayConfig, "appId" | "backendUrl" | "apiKey" | "appSecret">;
 }
 
 const DEFAULT_USER_AGENT =
@@ -63,21 +61,11 @@ export async function readBodyWithCap(res: Response, maxBytes: number): Promise<
 }
 
 export function createImageProxyHandler(
-  config: ImageProxyConfig,
+  config: ImageProxyConfig = {},
 ): (req: Request) => Promise<Response> {
   const get = config.get ?? guardedGet;
   const userAgent = config.userAgent ?? DEFAULT_USER_AGENT;
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const backendOrigin = config.backend ? new URL(config.backend.backendUrl).origin : null;
-
-  function headersFor(url: URL): Record<string, string> {
-    const headers: Record<string, string> = { "User-Agent": userAgent };
-    if (!config.backend || url.origin !== backendOrigin) return headers;
-    if (config.backend.apiKey) headers["x-api-key"] = config.backend.apiKey;
-    headers["x-app-id"] = config.backend.appId;
-    if (config.backend.appSecret) headers["x-app-secret"] = config.backend.appSecret;
-    return headers;
-  }
 
   async function discard(res: Response): Promise<void> {
     await res.body?.cancel().catch(() => {});
@@ -86,7 +74,7 @@ export function createImageProxyHandler(
   async function safeFetch(url: URL, hopsLeft: number, signal: AbortSignal): Promise<Response> {
     if (hopsLeft < 0) throw new Error("Too many redirects");
 
-    const res = await get(url, headersFor(url), signal);
+    const res = await get(url, { "User-Agent": userAgent }, signal);
 
     if (res.status >= 300 && res.status < 400) {
       await discard(res);
@@ -116,12 +104,7 @@ export function createImageProxyHandler(
 
     let upstream: Response;
     try {
-      const isBackendImage = backendOrigin && /^\/media\/[^/]+\/[^/]+\/[^/]+\/image$/.test(validated.url.pathname);
-      upstream = await safeFetch(
-        isBackendImage ? new URL(validated.url.pathname, backendOrigin) : validated.url,
-        MAX_IMAGE_REDIRECTS,
-        signal,
-      );
+      upstream = await safeFetch(validated.url, MAX_IMAGE_REDIRECTS, signal);
     } catch {
       return failed();
     }

@@ -105,66 +105,6 @@ describe("image proxy", () => {
   });
 });
 
-describe("image proxy with backend credentials", () => {
-  const backend = { appId: "APP", backendUrl: "https://api.example", apiKey: "ml_live_key", appSecret: "secret" };
-
-  function recording() {
-    const seen: Array<{ url: string; headers: Record<string, string> }> = [];
-    const get = async (url: URL, headers: Record<string, string>) => {
-      seen.push({ url: url.toString(), headers: { ...headers } });
-      return imageResponse();
-    };
-    return { seen, get };
-  }
-
-  test("an image from the backend is fetched with the app's credentials", async () => {
-    const { seen, get } = recording();
-    const h = createImageProxyHandler({ get, backend });
-    expect((await h(request("https://api.example/media/starknet/0xabc/1/image"))).status).toBe(200);
-    expect(seen[0]!.headers["x-api-key"]).toBe("ml_live_key");
-    expect(seen[0]!.headers["x-app-id"]).toBe("APP");
-    expect(seen[0]!.headers["x-app-secret"]).toBe("secret");
-  });
-
-  test("a backend image link on another host is fetched from the configured backend with credentials", async () => {
-    const { seen, get } = recording();
-    const h = createImageProxyHandler({ get, backend });
-    expect((await h(request("https://public.example/media/starknet/0xabc/1/image"))).status).toBe(200);
-    expect(seen[0]!.url).toBe("https://api.example/media/starknet/0xabc/1/image");
-    expect(seen[0]!.headers["x-api-key"]).toBe("ml_live_key");
-    expect(seen[0]!.headers["x-app-id"]).toBe("APP");
-    expect(seen[0]!.headers["x-app-secret"]).toBe("secret");
-  });
-
-  test("an image from any other host gets no credentials", async () => {
-    const { seen, get } = recording();
-    const h = createImageProxyHandler({ get, backend });
-    for (const url of ["https://cdn.example/a.png", "https://api.example.evil.example/a.png", "https://api.example:8443/a.png"]) {
-      await h(request(url));
-    }
-    for (const { headers } of seen) {
-      expect(headers["x-api-key"]).toBeUndefined();
-      expect(headers["x-app-id"]).toBeUndefined();
-      expect(headers["x-app-secret"]).toBeUndefined();
-    }
-  });
-
-  test("a redirect away from the backend carries no credentials", async () => {
-    const seen: Array<Record<string, string>> = [];
-    const get = async (url: URL, headers: Record<string, string>) => {
-      seen.push({ ...headers });
-      return url.toString().startsWith("https://api.example/")
-        ? new Response(null, { status: 302, headers: { location: "https://cdn.example/a.png" } })
-        : imageResponse();
-    };
-    const h = createImageProxyHandler({ get, backend });
-    expect((await h(request("https://api.example/media/starknet/0xabc/1/image"))).status).toBe(200);
-    expect(seen[0]!["x-api-key"]).toBe("ml_live_key");
-    expect(seen[1]!["x-api-key"]).toBeUndefined();
-    expect(seen[1]!["x-app-secret"]).toBeUndefined();
-  });
-});
-
 describe("readBodyWithCap", () => {
   test("rejects a declared content-length over the cap without reading", async () => {
     const res = new Response(PNG as unknown as BodyInit, {

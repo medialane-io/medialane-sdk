@@ -18,7 +18,6 @@ describe("public app routes", () => {
     ["GET", `club/${A}/1/member/${A}`],
     ["GET", "metadata/resolve"],
     ["GET", "auth/email/exists"],
-    ["GET", `media/starknet/${A}/1/image`],
     ["POST", "auth/email/register-account"],
     ["POST", "auth/email/request-code"],
     ["POST", "auth/email/verify-code"],

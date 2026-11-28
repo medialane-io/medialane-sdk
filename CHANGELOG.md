@@ -2,6 +2,17 @@
 
 All notable changes to `@medialane/sdk` are documented here.
 
+## [0.240.0] — 2026-11-28
+
+### Changed
+
+- `createImageProxyHandler` config is optional.
+
+### Removed
+
+- `createImageProxyHandler` `backend` option. Images are fetched from their own URL with no app credentials.
+- `media/:chain/:contract/:tokenId/image` from the public app routes.
+
 ## [0.239.0] — 2026-11-26
 
 ### Added
